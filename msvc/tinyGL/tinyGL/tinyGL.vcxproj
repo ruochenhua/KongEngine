@@ -76,7 +76,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../3rdparty/glew/include;../../../3rdparty/glfw/include;../../../3rdparty/glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../3rdparty/glew/include;../../../3rdparty/glfw/include;../../../3rdparty/glm;../../../3rdparty/objloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32d.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -124,6 +124,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\src\model.cpp" />
+    <ClCompile Include="..\..\..\src\render.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\common.h" />
+    <ClInclude Include="..\..\..\src\model.h" />
+    <ClInclude Include="..\..\..\src\render.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
