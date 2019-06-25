@@ -4,8 +4,19 @@
 using namespace glm;
 using namespace std;
 
+mat4 CCamera::GetProjectionMatrix() const
+{
+	return perspective(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
+}
+
+mat4 CCamera::GetViewMatrix() const
+{
+	return lookAt(m_eye, m_center, m_up);
+}
+
 int CRender::Init()
 {
+	
 	glewExperimental = true;
 	if (!glfwInit())
 	{
@@ -37,6 +48,10 @@ int CRender::Init()
 	// Ensure we can capture the escape key being pressed below
 	glfwSetInputMode(m_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
 
+	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.5f, 300.0f);
+	m_pCamera = new CCamera(vec3(0.0f, 0.0f, 200.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
+
+
 	return 0;
 }
 
@@ -67,8 +82,7 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	glGenBuffers(1, &info._vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, info._vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-
-	//info._program_id = LoadShaders("../../../resource/shader/vertex.shader", "../../../resource/shader/fragment.shader");
+	
 	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	info._vertex_size = vertices.size();
 
@@ -78,7 +92,15 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 
 void CRender::RenderModel(const SRenderInfo& render_info) const
 {
-	glUseProgram(render_info._program_id);
+	glUseProgram(render_info._program_id);	
+
+	mat4 Model = mat4(1.0f);
+	mat4 projection = m_pCamera->GetProjectionMatrix();
+	mat4 mvp = projection * m_pCamera->GetViewMatrix() * Model; // 
+	GLuint MatrixID = glGetUniformLocation(render_info._program_id, "MVP");
+
+	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, render_info._vertex_buffer);
 	glVertexAttribPointer(
@@ -90,7 +112,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 		(void*)0            // array buffer offset
 	);
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glDisableVertexAttribArray(0);
 }
 
