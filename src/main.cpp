@@ -2,7 +2,7 @@
 #include "render.h"
 #include "model.h"
 using namespace glm;
-
+using namespace std;
 int main()
 {
 	CRender* render = new CRender;
@@ -11,8 +11,10 @@ int main()
 	CModel* test_model = new CModel;
 	test_model->ImportObj("../../../resource/african_head/african_head.obj");
 
-	std::vector<float> render_vertices = test_model->GetVertices();
-	render->AddRenderVertices(render_vertices);
+	string shader_path[] = {
+		"../../../resource/shader/vertex.shader", "../../../resource/shader/fragment.shader"
+	};
+	render->AddModel(test_model, shader_path);
 
 	while (1)
 	{

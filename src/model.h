@@ -9,4 +9,7 @@ public:
 
 private:	
 	std::vector<glm::vec3> m_vVertex;	//for now, only have positions
+	
+	//information for rendering 
+	SRenderInfo m_RenderInfo;
 };

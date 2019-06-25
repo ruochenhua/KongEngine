@@ -1,11 +1,6 @@
 #include "render.h"
 #include "model.h"
 
-GLuint vertex_buffer = 0;
-GLuint vertex_array_id;
-int vertex_size = 0;
-GLuint program_id = 0;
-
 using namespace glm;
 using namespace std;
 
@@ -48,10 +43,44 @@ int CRender::Init()
 int CRender::Update()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll
-	glUseProgram(program_id);
 
+	for (auto& render_info : m_vRenderInfo)
+	{
+		RenderModel(render_info);
+	}
+
+	// Swap buffers
+	glfwSwapBuffers(m_pWindow);
+	glfwPollEvents();
+	return 0;
+}
+
+SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
+{
+	std::vector<float> vertices = model->GetVertices();
+	SRenderInfo info;
+
+	glGenVertexArrays(1, &info._vertex_array_id);
+	glBindVertexArray(info._vertex_array_id);
+
+	//init buffer
+	glGenBuffers(1, &info._vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, info._vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+	//info._program_id = LoadShaders("../../../resource/shader/vertex.shader", "../../../resource/shader/fragment.shader");
+	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
+	info._vertex_size = vertices.size();
+
+	m_vRenderInfo.push_back(info);
+	return info;
+}
+
+void CRender::RenderModel(const SRenderInfo& render_info) const
+{
+	glUseProgram(render_info._program_id);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info._vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -61,30 +90,8 @@ int CRender::Update()
 		(void*)0            // array buffer offset
 	);
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, vertex_size); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glDisableVertexAttribArray(0);
-
-	// Swap buffers
-	glfwSwapBuffers(m_pWindow);
-	glfwPollEvents();
-	return 0;
-}
-
-bool CRender::AddRenderVertices(const std::vector<float>& vertices)
-{
-	
-	glGenVertexArrays(1, &vertex_array_id);
-	glBindVertexArray(vertex_array_id);
-
-	//init buffer
-	glGenBuffers(1, &vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-	vertex_size = vertices.size();
-
-	program_id = LoadShaders("../../../resource/shader/vertex.shader", "../../../resource/shader/fragment.shader");	
-	return true;
 }
 
 GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path) 
@@ -103,7 +110,7 @@ GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::stri
 		vs_stream.close();
 	}
 	else {
-		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
+		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path.c_str());
 		getchar();
 		return 0;
 	}
