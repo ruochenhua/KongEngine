@@ -11,7 +11,8 @@ mat4 CCamera::GetProjectionMatrix() const
 
 mat4 CCamera::GetViewMatrix() const
 {
-	return lookAt(m_eye, m_center, m_up);
+	//look at will not calculate translation, need to do it ourselves
+	return translate(lookAt(m_eye, m_center, m_up), m_center);	
 }
 
 int CRender::Init()
@@ -49,7 +50,7 @@ int CRender::Init()
 	glfwSetInputMode(m_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
 
 	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.5f, 300.0f);
-	m_pCamera = new CCamera(vec3(0.0f, 0.0f, 200.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
+	m_pCamera = new CCamera(vec3(4.0f, 0.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
 
 
 	return 0;
