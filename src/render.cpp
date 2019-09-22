@@ -1,5 +1,6 @@
 #include "render.h"
 #include "model.h"
+#include "tgaimage.h"
 
 using namespace glm;
 using namespace std;
@@ -50,7 +51,7 @@ int CRender::Init()
 	glfwSetInputMode(m_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
 
 	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.5f, 300.0f);
-	m_pCamera = new CCamera(vec3(4.0f, 0.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
+	m_pCamera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
 
 
 	return 0;
@@ -79,13 +80,23 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	glGenVertexArrays(1, &info._vertex_array_id);
 	glBindVertexArray(info._vertex_array_id);
 
-	//init buffer
+	//init vertex buffer
 	glGenBuffers(1, &info._vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, info._vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 	
+	TGAImage* tex_img = model->GetTextureImage();
+	if (tex_img)
+	{
+		std::vector<float> tex_coords = model->GetTextureCoords();
+		glGenBuffers(1, &info._texture_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info._texture_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
+	}
+
 	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	info._vertex_size = vertices.size();
+	info._texture_img = model->GetTextureImage();
 
 	m_vRenderInfo.push_back(info);
 	return info;
@@ -93,15 +104,22 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 
 void CRender::RenderModel(const SRenderInfo& render_info) const
 {
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
 	glUseProgram(render_info._program_id);	
 
 	mat4 Model = mat4(1.0f);
 	mat4 projection = m_pCamera->GetProjectionMatrix();
 	mat4 mvp = projection * m_pCamera->GetViewMatrix() * Model; // 
-	GLuint MatrixID = glGetUniformLocation(render_info._program_id, "MVP");
+	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
 
-	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+	TGAImage* texture_img = render_info._texture_img;
+	assert(texture_img);
 
+	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
+
+	//vertex buffer
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, render_info._vertex_buffer);
 	glVertexAttribPointer(
@@ -112,9 +130,36 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 		0,                  // stride
 		(void*)0            // array buffer offset
 	);
+
+	GLuint texture_id;
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
+	int tex_width = texture_img->get_width();
+	int tex_height = texture_img->get_height();
+	unsigned char* tex_data = texture_img->buffer();
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//texture buffer
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info._texture_buffer);
+	glVertexAttribPointer(
+		1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		2,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
+
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
 }
 
 GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path) 

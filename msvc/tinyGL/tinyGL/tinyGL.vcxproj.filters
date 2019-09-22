@@ -4,10 +4,12 @@
     <ClCompile Include="..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\src\model.cpp" />
     <ClCompile Include="..\..\..\src\render.cpp" />
+    <ClCompile Include="..\..\..\src\tgaimage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\model.h" />
     <ClInclude Include="..\..\..\src\render.h" />
     <ClInclude Include="..\..\..\src\common.h" />
+    <ClInclude Include="..\..\..\src\tgaimage.h" />
   </ItemGroup>
 </Project>

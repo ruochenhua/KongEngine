@@ -11,6 +11,8 @@ struct SScreenInfo
 	float _aspect_ratio;
 	float _near, _far;
 };
+
+
 class CCamera
 {
 public:
@@ -28,6 +30,8 @@ private:
 
 	SScreenInfo m_screenInfo;
 };
+
+
 class CRender
 {
 public:
