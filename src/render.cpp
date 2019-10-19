@@ -1,9 +1,12 @@
 #include "render.h"
 #include "model.h"
 #include "tgaimage.h"
+#include "message.h"
 
 using namespace glm;
 using namespace std;
+
+CCamera* g_Camera = nullptr;
 
 mat4 CCamera::GetProjectionMatrix() const
 {
@@ -11,14 +14,117 @@ mat4 CCamera::GetProjectionMatrix() const
 }
 
 mat4 CCamera::GetViewMatrix() const
-{
-	//look at will not calculate translation, need to do it ourselves
-	return translate(lookAt(m_eye, m_center, m_up), m_center);	
+{	
+	return lookAt(m_center, m_eye, m_up); 
 }
+
+glm::mat4 CCamera::UpdateRotation()
+{
+	glm::mat4 rot_mat = glm::identity<mat4>();
+
+	double x_pos, y_pos;
+	glfwGetCursorPos(CRender::s_pWindow, &x_pos, &y_pos);
+
+	double delta_x = x_pos - m_cursorX, delta_y = y_pos - m_cursorY;
+	m_cursorX = x_pos; m_cursorY = y_pos;
+
+	rot_mat = glm::rotate(rot_mat, (float)-delta_x*0.02f, vec3(0.0, 1.0, 0.0));
+
+	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
+	vec3 right = cross(dir, g_Camera->m_up);
+	rot_mat = glm::rotate(rot_mat, (float)-delta_y * 0.02f, normalize(right));
+
+	return rot_mat;
+}
+
+void CCamera::Update()
+{
+	glm::mat4 transform_mat = glm::identity<mat4>();
+	
+	if (m_updateRotation)
+	{
+		transform_mat = UpdateRotation();
+	}
+
+	//update translate
+	transform_mat[3][0] = m_moveVec.x;
+	transform_mat[3][1] = m_moveVec.y;
+	transform_mat[3][2] = m_moveVec.z;
+
+	m_eye = vec3(transform_mat * vec4(m_eye, 1));
+	m_center = vec3(transform_mat * vec4(m_center, 1));	
+
+	m_moveVec = vec3(0, 0, 0);
+}
+
+void CCamera::InitControl()
+{
+	CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_PRESS, MoveForward);
+	CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_PRESS, MoveBackward);
+	CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_PRESS, MoveLeft);
+	CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_PRESS, MoveRight);
+	CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_REPEAT, MoveForward);
+	CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_REPEAT, MoveBackward);
+	CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_REPEAT, MoveLeft);
+	CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_REPEAT, MoveRight);
+
+	CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, RotateStart);
+	CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, RotateEnd);
+}
+
+void CCamera::MoveForward()
+{
+	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
+	g_Camera->m_moveVec += dir * 0.1f;
+}
+
+void CCamera::MoveBackward()
+{
+	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
+	g_Camera->m_moveVec -= dir * 0.1f;
+}
+
+void CCamera::MoveLeft()
+{
+	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
+	vec3 right = cross(dir, g_Camera->m_up);
+
+	g_Camera->m_moveVec -= right * 0.1f;
+}
+
+void CCamera::MoveRight()
+{
+	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
+	vec3 right = cross(dir, g_Camera->m_up);
+
+	g_Camera->m_moveVec += right * 0.1f;
+}
+
+
+void CCamera::RotateStart()
+{
+
+	glfwGetCursorPos(CRender::s_pWindow, &g_Camera->m_cursorX, &g_Camera->m_cursorX);
+	g_Camera->m_updateRotation = true;
+}
+
+void CCamera::RotateEnd()
+{
+	g_Camera->m_updateRotation = false;
+}
+
+
+GLFWwindow* CRender::s_pWindow = nullptr;
 
 int CRender::Init()
 {
-	
+	InitRender();
+	InitCameraControl();
+	return 0;
+}
+
+int CRender::InitRender()
+{	
 	glewExperimental = true;
 	if (!glfwInit())
 	{
@@ -33,14 +139,18 @@ int CRender::Init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
 
 	// Open a window and create its OpenGL context
-	m_pWindow; // (In the accompanying source code, this variable is global for simplicity)
-	m_pWindow = glfwCreateWindow(1024, 768, "tinyGL", NULL, NULL);
-	if (m_pWindow == NULL) {
+	// (In the accompanying source code, this variable is global for simplicity)
+	s_pWindow = glfwCreateWindow(1024, 768, "tinyGL", NULL, NULL);
+	if (s_pWindow == NULL) {
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(m_pWindow); // Initialize GLEW
+	//set keyboard and mouse call back
+	glfwSetKeyCallback(s_pWindow, CMessage::KeyCallback);
+	glfwSetMouseButtonCallback(s_pWindow, CMessage::MouseButtonCallback);
+
+	glfwMakeContextCurrent(s_pWindow); // Initialize GLEW
 	glewExperimental = true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
@@ -48,28 +158,36 @@ int CRender::Init()
 	}
 
 	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(m_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(s_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
+		
+	return 0;
+}
 
+int CRender::InitCameraControl()
+{
 	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.5f, 300.0f);
-	m_pCamera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
+	g_Camera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
 
-
+	g_Camera->InitControl();
 	return 0;
 }
 
 int CRender::Update()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll
+	//update camera
+	g_Camera->Update();
 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll
+	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 	for (auto& render_info : m_vRenderInfo)
 	{
 		RenderModel(render_info);
 	}
 
 	// Swap buffers
-	glfwSwapBuffers(m_pWindow);
+	glfwSwapBuffers(s_pWindow);
 	glfwPollEvents();
-	return 0;
+	return 1;
 }
 
 SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
@@ -102,6 +220,8 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	return info;
 }
 
+
+
 void CRender::RenderModel(const SRenderInfo& render_info) const
 {
 	glEnable(GL_DEPTH_TEST);
@@ -110,8 +230,8 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glUseProgram(render_info._program_id);	
 
 	mat4 Model = mat4(1.0f);
-	mat4 projection = m_pCamera->GetProjectionMatrix();
-	mat4 mvp = projection * m_pCamera->GetViewMatrix() * Model; // 
+	mat4 projection = g_Camera->GetProjectionMatrix();
+	mat4 mvp = projection * g_Camera->GetViewMatrix() * Model; // 
 	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
 
 	TGAImage* texture_img = render_info._texture_img;

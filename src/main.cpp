@@ -1,6 +1,7 @@
 //tiny openGL project
 #include "render.h"
 #include "model.h"
+#include "message.h"
 
 using namespace glm;
 using namespace std;
@@ -19,9 +20,9 @@ int main()
 	};
 	
 	render->AddModel(test_model, shader_path);
-
-	while (1)
+	
+	while (render->Update())
 	{
-		render->Update();
+		
 	}
 }
