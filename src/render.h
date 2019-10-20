@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-
+#include "skybox.h"
 class CModel;
 struct SScreenInfo
 {
@@ -13,12 +13,11 @@ struct SScreenInfo
 	float _near, _far;
 };
 
-
 class CCamera
 {
 public:
 	CCamera(const glm::vec3& center, const glm::vec3& eye, const glm::vec3& up, const SScreenInfo& screen_info)
-		: m_center(center), m_eye(eye), m_up(up), m_moveVec(glm::vec3(0,0,0)), m_screenInfo(screen_info)
+		: m_center(center), m_eye(eye), m_up(up), m_moveVec(glm::vec3(0, 0, 0)), m_screenInfo(screen_info)
 		, m_updateRotation(false), m_cursorX(0.0), m_cursorY(0.0)
 	{}
 
@@ -26,6 +25,7 @@ public:
 
 	glm::mat4 GetProjectionMatrix() const;
 	glm::mat4 GetViewMatrix() const;
+	glm::mat4 GetViewMatrixNoTranslate() const;
 
 public:
 	//camera control
@@ -36,7 +36,7 @@ public:
 	static void MoveRight();
 	static void RotateStart();
 	static void RotateEnd();
-	
+
 private:
 	glm::mat4 UpdateRotation();
 	bool m_updateRotation;
@@ -56,6 +56,7 @@ class CRender
 {
 public:
 	static GLFWwindow* s_pWindow;
+	static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 public:
 	CRender() { }
@@ -63,17 +64,16 @@ public:
 
 	int Update();
 
-	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
-
-	GLuint LoadShaders(const std::string& vs, const std::string& fs);
+	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);	
 
 private:
 	int InitRender();
 	int InitCameraControl();
-
+		
+	void RenderSkyBox();
 	void RenderModel(const SRenderInfo& render_info) const;
 
 private:
 	std::vector<SRenderInfo> m_vRenderInfo;
-
+	CSkyBox m_SkyBox;
 };

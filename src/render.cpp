@@ -14,8 +14,14 @@ mat4 CCamera::GetProjectionMatrix() const
 }
 
 mat4 CCamera::GetViewMatrix() const
-{	
-	return lookAt(m_center, m_eye, m_up); 
+{
+	return lookAt(m_center, m_eye, m_up);
+}
+
+mat4 CCamera::GetViewMatrixNoTranslate() const
+{
+	vec3 dir = m_eye - m_center;
+	return lookAt(vec3(0, 0, 0), dir, m_up);
 }
 
 glm::mat4 CCamera::UpdateRotation()
@@ -24,11 +30,11 @@ glm::mat4 CCamera::UpdateRotation()
 
 	double x_pos, y_pos;
 	glfwGetCursorPos(CRender::s_pWindow, &x_pos, &y_pos);
-
+	
 	double delta_x = x_pos - m_cursorX, delta_y = y_pos - m_cursorY;
 	m_cursorX = x_pos; m_cursorY = y_pos;
 
-	rot_mat = glm::rotate(rot_mat, (float)-delta_x*0.02f, vec3(0.0, 1.0, 0.0));
+	rot_mat = glm::rotate(rot_mat, (float)-delta_x * 0.02f, vec3(0.0, 1.0, 0.0));
 
 	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
 	vec3 right = cross(dir, g_Camera->m_up);
@@ -40,7 +46,7 @@ glm::mat4 CCamera::UpdateRotation()
 void CCamera::Update()
 {
 	glm::mat4 transform_mat = glm::identity<mat4>();
-	
+
 	if (m_updateRotation)
 	{
 		transform_mat = UpdateRotation();
@@ -52,7 +58,7 @@ void CCamera::Update()
 	transform_mat[3][2] = m_moveVec.z;
 
 	m_eye = vec3(transform_mat * vec4(m_eye, 1));
-	m_center = vec3(transform_mat * vec4(m_center, 1));	
+	m_center = vec3(transform_mat * vec4(m_center, 1));
 
 	m_moveVec = vec3(0, 0, 0);
 }
@@ -100,10 +106,8 @@ void CCamera::MoveRight()
 	g_Camera->m_moveVec += right * 0.1f;
 }
 
-
 void CCamera::RotateStart()
 {
-
 	glfwGetCursorPos(CRender::s_pWindow, &g_Camera->m_cursorX, &g_Camera->m_cursorX);
 	g_Camera->m_updateRotation = true;
 }
@@ -113,18 +117,35 @@ void CCamera::RotateEnd()
 	g_Camera->m_updateRotation = false;
 }
 
-
 GLFWwindow* CRender::s_pWindow = nullptr;
 
 int CRender::Init()
 {
 	InitRender();
 	InitCameraControl();
+
+	std::vector<std::string> tex_path_vec = {
+		"../../../resource/sky_box/dark_sky/darkskies_bk.tga",
+		"../../../resource/sky_box/dark_sky/darkskies_dn.tga",
+		"../../../resource/sky_box/dark_sky/darkskies_ft.tga",
+		"../../../resource/sky_box/dark_sky/darkskies_lf.tga",
+		"../../../resource/sky_box/dark_sky/darkskies_rt.tga",
+		"../../../resource/sky_box/dark_sky/darkskies_up.tga",
+	};
+	std::vector<unsigned int> tex_type_vec = {
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+	};
+	m_SkyBox.Init(tex_path_vec, tex_type_vec);
 	return 0;
 }
 
 int CRender::InitRender()
-{	
+{
 	glewExperimental = true;
 	if (!glfwInit())
 	{
@@ -136,7 +157,7 @@ int CRender::InitRender()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
 	// Open a window and create its OpenGL context
 	// (In the accompanying source code, this variable is global for simplicity)
@@ -159,13 +180,13 @@ int CRender::InitRender()
 
 	// Ensure we can capture the escape key being pressed below
 	glfwSetInputMode(s_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
-		
+
 	return 0;
 }
 
 int CRender::InitCameraControl()
 {
-	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.5f, 300.0f);
+	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.1f, 500.0f);
 	g_Camera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
 
 	g_Camera->InitControl();
@@ -175,10 +196,13 @@ int CRender::InitCameraControl()
 int CRender::Update()
 {
 	//update camera
-	g_Camera->Update();
-
+	g_Camera->Update();	
+	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+
+	RenderSkyBox();
+
 	for (auto& render_info : m_vRenderInfo)
 	{
 		RenderModel(render_info);
@@ -202,7 +226,7 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	glGenBuffers(1, &info._vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, info._vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-	
+
 	TGAImage* tex_img = model->GetTextureImage();
 	if (tex_img)
 	{
@@ -220,23 +244,24 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	return info;
 }
 
-
+void CRender::RenderSkyBox()
+{
+	mat4 projection = g_Camera->GetProjectionMatrix();
+	mat4 mvp = projection * g_Camera->GetViewMatrixNoTranslate(); //
+	m_SkyBox.Render(mvp);
+}
 
 void CRender::RenderModel(const SRenderInfo& render_info) const
-{
+{	
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	glUseProgram(render_info._program_id);	
+	glUseProgram(render_info._program_id);
 
 	mat4 Model = mat4(1.0f);
 	mat4 projection = g_Camera->GetProjectionMatrix();
-	mat4 mvp = projection * g_Camera->GetViewMatrix() * Model; // 
+	mat4 mvp = projection * g_Camera->GetViewMatrix() * Model; //
 	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
-
-	TGAImage* texture_img = render_info._texture_img;
-	assert(texture_img);
-
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 
 	//vertex buffer
@@ -250,6 +275,9 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 		0,                  // stride
 		(void*)0            // array buffer offset
 	);
+	
+	TGAImage* texture_img = render_info._texture_img;
+	assert(texture_img);
 
 	GLuint texture_id;
 	glGenTextures(1, &texture_id);
@@ -275,14 +303,13 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 		(void*)0            // array buffer offset
 	);
 
-
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 }
 
-GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path) 
+GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
 {
 	// Create the shaders
 	GLuint vs_id = glCreateShader(GL_VERTEX_SHADER);

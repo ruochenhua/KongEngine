@@ -99,7 +99,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../3rdparty/glew/include;../../../3rdparty/glfw/include;../../../3rdparty/glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../3rdparty/glew/include;../../../3rdparty/glfw/include;../../../3rdparty/glm;../../../3rdparty/objloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -124,14 +124,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\src\model.cpp" />
     <ClCompile Include="..\..\..\src\render.cpp" />
+    <ClCompile Include="..\..\..\src\skybox.cpp" />
     <ClCompile Include="..\..\..\src\tgaimage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common.h" />
+    <ClInclude Include="..\..\..\src\message.h" />
     <ClInclude Include="..\..\..\src\model.h" />
     <ClInclude Include="..\..\..\src\render.h" />
+    <ClInclude Include="..\..\..\src\skybox.h" />
     <ClInclude Include="..\..\..\src\tgaimage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

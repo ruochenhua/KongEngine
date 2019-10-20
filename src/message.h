@@ -9,7 +9,7 @@ public:
 	static void KeyCallback(GLFWwindow* window, int key, int scan_code, int action, int mods);
 	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mode);
 
-	static void BindKeyToFunction(int key, int action, void (*func)());
+	static void BindKeyToFunction(int key, int action, void(*func)());
 	static void BindMouseToFunction(int key, int action, void(*func)());
 
 private:

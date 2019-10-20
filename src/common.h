@@ -18,7 +18,6 @@ struct SRenderInfo
 	GLuint _vertex_array_id = 0;
 
 	GLuint _texture_buffer = 0;
-	GLuint _texture_array_id = 0;
 
 	GLuint _program_id = 0;
 	unsigned _vertex_size = 0;
