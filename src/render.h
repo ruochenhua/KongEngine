@@ -26,6 +26,8 @@ public:
 	glm::mat4 GetProjectionMatrix() const;
 	glm::mat4 GetViewMatrix() const;
 	glm::mat4 GetViewMatrixNoTranslate() const;
+	glm::vec3 GetDirection() const;
+	glm::vec3 GetPosition() const;
 
 public:
 	//camera control
@@ -59,7 +61,7 @@ public:
 	static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 public:
-	CRender() { }
+	CRender() : m_LightDir(glm::normalize(glm::vec3(1, 0, 0))), m_LightColor(0.3, 0.3, 0.3) { }
 	int Init();
 
 	int Update();
@@ -76,4 +78,7 @@ private:
 private:
 	std::vector<SRenderInfo> m_vRenderInfo;
 	CSkyBox m_SkyBox;
+
+	glm::vec3 m_LightDir;
+	glm::vec3 m_LightColor;
 };

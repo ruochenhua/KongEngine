@@ -82,6 +82,19 @@ std::vector<float> CModel::GetTextureCoords() const
 	return tex_coords;
 }
 
+std::vector<float> CModel::GetNormals() const
+{
+	std::vector<float> normals(m_vNormal.size() * 3);
+	for (size_t i = 0; i < m_vNormal.size(); ++i)
+	{
+		normals[3 * i] = m_vNormal[i].x;
+		normals[3 * i + 1] = m_vNormal[i].y;
+		normals[3 * i + 2] = m_vNormal[i].z;
+	}
+
+	return normals;
+}
+
 TGAImage* CModel::GetTextureImage() const
 {
 	return m_pDiffuseTex;

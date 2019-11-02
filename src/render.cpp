@@ -20,8 +20,17 @@ mat4 CCamera::GetViewMatrix() const
 
 mat4 CCamera::GetViewMatrixNoTranslate() const
 {
-	vec3 dir = m_eye - m_center;
-	return lookAt(vec3(0, 0, 0), dir, m_up);
+	return lookAt(vec3(0, 0, 0), GetDirection(), m_up);
+}
+
+vec3 CCamera::GetDirection() const
+{
+	return normalize(m_eye - m_center);	
+}
+
+vec3 CCamera::GetPosition() const
+{
+	return m_center;
 }
 
 glm::mat4 CCamera::UpdateRotation()
@@ -236,6 +245,12 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
 	}
 
+	//normal buffer
+	std::vector<float> normals = model->GetNormals();
+	glGenBuffers(1, &info._normal_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, info._normal_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
+
 	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	info._vertex_size = vertices.size();
 	info._texture_img = model->GetTextureImage();
@@ -263,6 +278,18 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	mat4 mvp = projection * g_Camera->GetViewMatrix() * Model; //
 	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
+
+	GLuint light_shininess_id = glGetUniformLocation(render_info._program_id, "shininess");
+	glUniform1f(light_shininess_id, render_info._material._shininess);
+
+	GLuint cam_pos_id = glGetUniformLocation(render_info._program_id, "cam_pos");
+	glUniform3fv(cam_pos_id, 1, &g_Camera->GetPosition()[0]);
+
+	GLuint light_dir_id = glGetUniformLocation(render_info._program_id, "light_dir");
+	glUniform3fv(light_dir_id, 1, &m_LightDir[0]);
+	
+	GLuint light_color_id = glGetUniformLocation(render_info._program_id, "light_color");
+	glUniform3fv(light_color_id, 1, &m_LightColor[0]);
 
 	//vertex buffer
 	glEnableVertexAttribArray(0);
@@ -303,10 +330,22 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 		(void*)0            // array buffer offset
 	);
 
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info._normal_buffer);
+	glVertexAttribPointer(
+		2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 }
 
 GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)

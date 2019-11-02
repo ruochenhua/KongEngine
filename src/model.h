@@ -8,6 +8,7 @@ public:
 	int ImportObj(const std::string& model_path, const std::string& diffuse_tex_path);
 	std::vector<float> GetVertices() const;
 	std::vector<float> GetTextureCoords() const;
+	std::vector<float> GetNormals() const;
 	TGAImage* GetTextureImage() const;
 
 private:
