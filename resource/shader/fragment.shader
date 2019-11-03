@@ -3,10 +3,13 @@
 in vec2 uv;
 in vec3 normal_world;
 in vec3 in_pos;
+in vec4 ShadowCoord;
 
 out vec3 color;
 
 uniform sampler2D texture_sampler;
+uniform sampler2DShadow shadowMap;
+
 uniform float shininess;
 uniform vec3 light_color;
 uniform vec3 light_dir;
@@ -43,5 +46,9 @@ void main(){
 	}
 
 	color = texture(texture_sampler, uv).rgb;
+
+	//shadow
+	float visibility = texture( shadowMap, vec3(ShadowCoord.xy, (ShadowCoord.z)/ShadowCoord.w) );
 	color += ambient + diffuse;// + specular;
+	color *= visibility;
 }

@@ -216,6 +216,7 @@ void CSkyBox::Init(const std::vector<std::string>& tex_path_vec, const std::vect
 
 void CSkyBox::Render(const glm::mat4& mvp)
 {
+	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 
 	auto& mesh_info = m_BoxMesh._render_info;

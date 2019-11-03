@@ -14,7 +14,7 @@ class TGAImage;
 
 struct SMaterial
 {
-	float _shininess = 0.3;
+	float _shininess = 0.8;
 };
 
 struct SRenderInfo

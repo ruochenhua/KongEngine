@@ -61,9 +61,13 @@ public:
 	static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 public:
-	CRender() : m_LightDir(glm::normalize(glm::vec3(1, 0, 0))), m_LightColor(0.3, 0.3, 0.3) { }
-	int Init();
+	CRender() 
+		: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
+		, m_LightColor(0.8, 0.8, 0.8)
+		, m_LightPos(5, 5, 0)
+	{ }
 
+	int Init();
 	int Update();
 
 	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);	
@@ -73,6 +77,7 @@ private:
 	int InitCameraControl();
 		
 	void RenderSkyBox();
+	void RenderShadowMap(const SRenderInfo& render_info);
 	void RenderModel(const SRenderInfo& render_info) const;
 
 private:
@@ -81,4 +86,12 @@ private:
 
 	glm::vec3 m_LightDir;
 	glm::vec3 m_LightColor;
+	glm::vec3 m_LightPos;
+
+	//shadow map
+	GLuint m_FrameBuffer;
+	GLuint m_ShadowMapProgramID;
+	GLuint m_DepthTexture;
+	GLuint m_DepthMatrixID;
+	glm::mat4 m_DepthMVP;
 };

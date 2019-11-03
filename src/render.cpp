@@ -150,6 +150,28 @@ int CRender::Init()
 		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
 	};
 	m_SkyBox.Init(tex_path_vec, tex_type_vec);
+
+	//init show map
+	glGenFramebuffers(1, &m_FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+
+	glGenTextures(1, &m_DepthTexture);
+	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthTexture, 0);
+	glDrawBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		return -1;
+
+	m_ShadowMapProgramID = LoadShaders("../../../resource/shader/shadowmap_vert.shader",
+		"../../../resource/shader/shadowmap_frag.shader");
+
+	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 	return 0;
 }
 
@@ -205,17 +227,29 @@ int CRender::InitCameraControl()
 int CRender::Update()
 {
 	//update camera
-	g_Camera->Update();	
-	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	g_Camera->Update();		
 
-	RenderSkyBox();
+	// Clear the screen
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+	glViewport(0, 0, 1024, 1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
 	for (auto& render_info : m_vRenderInfo)
 	{
+		RenderShadowMap(render_info);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll	
+	glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+
+	RenderSkyBox();
+	for (auto& render_info : m_vRenderInfo)
+	{	
 		RenderModel(render_info);
 	}
+	
 
 	// Swap buffers
 	glfwSwapBuffers(s_pWindow);
@@ -266,10 +300,49 @@ void CRender::RenderSkyBox()
 	m_SkyBox.Render(mvp);
 }
 
+void CRender::RenderShadowMap(const SRenderInfo& render_info)
+{		
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK); // Cull back-facing triangles -> draw only front-facing triangles
+
+	// Use our shader
+	glUseProgram(m_ShadowMapProgramID);	
+
+	// Compute the MVP matrix from the light's point of view
+	//1024.0f / 768.0f, 0.1f, 500.0f
+	glm::mat4 depth_proj_mat = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+	glm::mat4 depth_view_mat = glm::lookAt(m_LightDir+m_LightPos, m_LightPos, glm::vec3(0, 1, 0));
+
+	glm::mat4 depth_model_mat = glm::mat4(1.0);
+	m_DepthMVP = depth_proj_mat * depth_view_mat * depth_model_mat;
+
+	// in the "MVP" uniform
+	glUniformMatrix4fv(m_DepthMatrixID, 1, GL_FALSE, &m_DepthMVP[0][0]);
+
+	// 1rst attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info._vertex_buffer);
+	glVertexAttribPointer(
+		0,  // The attribute we want to configure
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);	
+
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+
+	glDisableVertexAttribArray(0);
+}
+
 void CRender::RenderModel(const SRenderInfo& render_info) const
 {	
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	glUseProgram(render_info._program_id);
 
@@ -291,6 +364,19 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	GLuint light_color_id = glGetUniformLocation(render_info._program_id, "light_color");
 	glUniform3fv(light_color_id, 1, &m_LightColor[0]);
 
+	//use shadow map
+	glm::mat4 bias_mat(
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	);
+
+	glm::mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
+
+	GLuint depth_bias_id = glGetUniformLocation(render_info._program_id, "depth_bias_mvp");
+	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
+
 	//vertex buffer
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, render_info._vertex_buffer);
@@ -306,6 +392,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	TGAImage* texture_img = render_info._texture_img;
 	assert(texture_img);
 
+	// FIXME: 不用每次都生成吧
 	GLuint texture_id;
 	glGenTextures(1, &texture_id);
 	glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -317,6 +404,11 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);	
+	GLuint sm_id = glGetUniformLocation(render_info._program_id, "shadowmap_id");
+	glUniform1i(sm_id, m_DepthTexture);
 
 	//texture buffer
 	glEnableVertexAttribArray(1);
@@ -342,7 +434,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	);
 
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);

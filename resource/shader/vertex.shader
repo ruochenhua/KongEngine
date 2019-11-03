@@ -7,8 +7,10 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 out vec2 uv;
 out vec3 normal_world;
 out vec3 in_pos;
+out vec4 ShadowCoord;
 
 uniform mat4 MVP;
+uniform mat4 depth_bias_mvp;
 
 void main(){
 	gl_Position = MVP * vec4(vertexPosition_modelspace, 1.0); 	
@@ -18,4 +20,5 @@ void main(){
 	
 	normal_world = (MVP * vec4(vertexNormal_modelspace, 1.0)).xyz;	
 		
+	ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);
 }
