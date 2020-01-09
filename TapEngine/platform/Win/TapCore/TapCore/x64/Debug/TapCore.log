@@ -1,0 +1,15 @@
+﻿  BoxShape.cpp
+d:\testground\tapengine\src\tapcore\boxshape.h(3): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  CollisionSolver.cpp
+d:\testground\tapengine\src\tapcore\collisionsolver.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  Integration.cpp
+d:\testground\tapengine\src\tapcore\intergration.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  RigidBody.cpp
+d:\testground\tapengine\src\tapcore\transform.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  TapBodyManager.cpp
+d:\testground\tapengine\src\tapcore\transform.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  TapScene.cpp
+d:\testground\tapengine\src\tapcore\transform.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  Transform.cpp
+d:\testground\tapengine\src\tapcore\transform.h(2): fatal error C1083: 无法打开包括文件: “glm/glm.hpp”: No such file or directory
+  正在生成代码...

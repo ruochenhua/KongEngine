@@ -1,0 +1,297 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BD2EF07C21CF3B6200AC9510 /* TapCorePriv.hpp in Headers */ = {isa = PBXBuildFile; fileRef = BD2EF07821CF3B6100AC9510 /* TapCorePriv.hpp */; };
+		BD2EF07D21CF3B6200AC9510 /* TapCore.hpp in Headers */ = {isa = PBXBuildFile; fileRef = BD2EF07921CF3B6100AC9510 /* TapCore.hpp */; };
+		BD2EF07E21CF3B6200AC9510 /* TapCore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD2EF07B21CF3B6100AC9510 /* TapCore.cpp */; };
+		BD86CDDF21CF8082009BE5C3 /* TapScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD86CDDD21CF8082009BE5C3 /* TapScene.cpp */; };
+		BD86CDE021CF8082009BE5C3 /* TapScene.hpp in Headers */ = {isa = PBXBuildFile; fileRef = BD86CDDE21CF8082009BE5C3 /* TapScene.hpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BD2EF06821CF3AA300AC9510 /* libTapCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTapCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD2EF07821CF3B6100AC9510 /* TapCorePriv.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TapCorePriv.hpp; path = ../../../src/TapCore/TapCorePriv.hpp; sourceTree = "<group>"; };
+		BD2EF07921CF3B6100AC9510 /* TapCore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TapCore.hpp; path = ../../../src/TapCore/TapCore.hpp; sourceTree = "<group>"; };
+		BD2EF07A21CF3B6100AC9510 /* Data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Data; path = ../../../src/TapCore/Data; sourceTree = "<group>"; };
+		BD2EF07B21CF3B6100AC9510 /* TapCore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TapCore.cpp; path = ../../../src/TapCore/TapCore.cpp; sourceTree = "<group>"; };
+		BD86CDDD21CF8082009BE5C3 /* TapScene.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = TapScene.cpp; path = ../../../src/TapCore/TapScene.cpp; sourceTree = "<group>"; };
+		BD86CDDE21CF8082009BE5C3 /* TapScene.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = TapScene.hpp; path = ../../../src/TapCore/TapScene.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BD2EF06621CF3AA300AC9510 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BD2EF05F21CF3AA300AC9510 = {
+			isa = PBXGroup;
+			children = (
+				BD86CDDD21CF8082009BE5C3 /* TapScene.cpp */,
+				BD86CDDE21CF8082009BE5C3 /* TapScene.hpp */,
+				BD2EF07A21CF3B6100AC9510 /* Data */,
+				BD2EF07B21CF3B6100AC9510 /* TapCore.cpp */,
+				BD2EF07921CF3B6100AC9510 /* TapCore.hpp */,
+				BD2EF07821CF3B6100AC9510 /* TapCorePriv.hpp */,
+				BD2EF06921CF3AA300AC9510 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BD2EF06921CF3AA300AC9510 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BD2EF06821CF3AA300AC9510 /* libTapCore.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		BD2EF06421CF3AA300AC9510 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD86CDE021CF8082009BE5C3 /* TapScene.hpp in Headers */,
+				BD2EF07C21CF3B6200AC9510 /* TapCorePriv.hpp in Headers */,
+				BD2EF07D21CF3B6200AC9510 /* TapCore.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		BD2EF06721CF3AA300AC9510 /* TapCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD2EF07321CF3AA300AC9510 /* Build configuration list for PBXNativeTarget "TapCore" */;
+			buildPhases = (
+				BD2EF06421CF3AA300AC9510 /* Headers */,
+				BD2EF06521CF3AA300AC9510 /* Sources */,
+				BD2EF06621CF3AA300AC9510 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TapCore;
+			productName = TapCore;
+			productReference = BD2EF06821CF3AA300AC9510 /* libTapCore.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BD2EF06021CF3AA300AC9510 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = "Ruochen Hua";
+				TargetAttributes = {
+					BD2EF06721CF3AA300AC9510 = {
+						CreatedOnToolsVersion = 10.1;
+					};
+				};
+			};
+			buildConfigurationList = BD2EF06321CF3AA300AC9510 /* Build configuration list for PBXProject "TapCore" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = BD2EF05F21CF3AA300AC9510;
+			productRefGroup = BD2EF06921CF3AA300AC9510 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BD2EF06721CF3AA300AC9510 /* TapCore */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BD2EF06521CF3AA300AC9510 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD86CDDF21CF8082009BE5C3 /* TapScene.cpp in Sources */,
+				BD2EF07E21CF3B6200AC9510 /* TapCore.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BD2EF07121CF3AA300AC9510 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		BD2EF07221CF3AA300AC9510 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		BD2EF07421CF3AA300AC9510 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = BQJ4G5WVT8;
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		BD2EF07521CF3AA300AC9510 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = BQJ4G5WVT8;
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BD2EF06321CF3AA300AC9510 /* Build configuration list for PBXProject "TapCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD2EF07121CF3AA300AC9510 /* Debug */,
+				BD2EF07221CF3AA300AC9510 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD2EF07321CF3AA300AC9510 /* Build configuration list for PBXNativeTarget "TapCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD2EF07421CF3AA300AC9510 /* Debug */,
+				BD2EF07521CF3AA300AC9510 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BD2EF06021CF3AA300AC9510 /* Project object */;
+}
