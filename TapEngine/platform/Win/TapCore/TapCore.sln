@@ -10,11 +10,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TapSample", "..\TapSample\T
 		{DCD72520-2967-4BB8-BBD1-48DE5048CBA2} = {DCD72520-2967-4BB8-BBD1-48DE5048CBA2}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyApplication", "..\..\..\demo\magnum-bootstrap-base\build\src\MyApplication.vcxproj", "{26CE9384-B333-35B3-85E5-505798EDA7CA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{DCD72520-2967-4BB8-BBD1-48DE5048CBA2} = {DCD72520-2967-4BB8-BBD1-48DE5048CBA2}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -59,18 +54,6 @@ Global
 		{3A596874-5155-4891-A8DE-0B365A8B1CBB}.RelWithDebInfo|x64.Build.0 = Release|x64
 		{3A596874-5155-4891-A8DE-0B365A8B1CBB}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
 		{3A596874-5155-4891-A8DE-0B365A8B1CBB}.RelWithDebInfo|x86.Build.0 = Release|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Debug|x64.ActiveCfg = Debug|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Debug|x86.ActiveCfg = Debug|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Debug|x86.Build.0 = Debug|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.MinSizeRel|x64.ActiveCfg = MinSizeRel|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.MinSizeRel|x86.ActiveCfg = MinSizeRel|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.MinSizeRel|x86.Build.0 = MinSizeRel|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Release|x64.ActiveCfg = Release|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Release|x86.ActiveCfg = Release|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.Release|x86.Build.0 = Release|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.RelWithDebInfo|x86.ActiveCfg = RelWithDebInfo|Win32
-		{26CE9384-B333-35B3-85E5-505798EDA7CA}.RelWithDebInfo|x86.Build.0 = RelWithDebInfo|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
