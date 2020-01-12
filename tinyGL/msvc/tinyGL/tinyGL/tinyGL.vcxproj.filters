@@ -7,6 +7,8 @@
     <ClCompile Include="..\..\..\src\tgaimage.cpp" />
     <ClCompile Include="..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\src\skybox.cpp" />
+    <ClCompile Include="..\..\..\src\utilityshape.cpp" />
+    <ClCompile Include="..\..\..\src\renderobj.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\model.h" />
@@ -15,5 +17,7 @@
     <ClInclude Include="..\..\..\src\tgaimage.h" />
     <ClInclude Include="..\..\..\src\message.h" />
     <ClInclude Include="..\..\..\src\skybox.h" />
+    <ClInclude Include="..\..\..\src\utilityshape.h" />
+    <ClInclude Include="..\..\..\src\renderobj.h" />
   </ItemGroup>
 </Project>

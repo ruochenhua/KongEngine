@@ -127,16 +127,20 @@
     <ClCompile Include="..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\src\model.cpp" />
     <ClCompile Include="..\..\..\src\render.cpp" />
+    <ClCompile Include="..\..\..\src\renderobj.cpp" />
     <ClCompile Include="..\..\..\src\skybox.cpp" />
     <ClCompile Include="..\..\..\src\tgaimage.cpp" />
+    <ClCompile Include="..\..\..\src\utilityshape.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common.h" />
     <ClInclude Include="..\..\..\src\message.h" />
     <ClInclude Include="..\..\..\src\model.h" />
     <ClInclude Include="..\..\..\src\render.h" />
+    <ClInclude Include="..\..\..\src\renderobj.h" />
     <ClInclude Include="..\..\..\src\skybox.h" />
     <ClInclude Include="..\..\..\src\tgaimage.h" />
+    <ClInclude Include="..\..\..\src\utilityshape.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
