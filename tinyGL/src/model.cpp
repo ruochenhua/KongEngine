@@ -2,10 +2,8 @@
 #include "OBJ_Loader.h"
 #include "tgaimage.h"
 
-namespace tinyGL
-{
 using namespace glm;
-
+using namespace tinyGL;
 int CModel::ImportObj(const std::string& model_path, const std::string& diffuse_tex_coord)
 {
 	objl::Loader obj_loader;
@@ -56,49 +54,4 @@ int CModel::ImportObj(const std::string& model_path, const std::string& diffuse_
 	}
 
 	return 0;
-}
-
-std::vector<float> CModel::GetVertices() const
-{
-	std::vector<float> vertices(m_vVertex.size() * 3);
-
-	for (size_t i = 0; i < m_vVertex.size(); ++i)
-	{
-		vertices[3 * i] = m_vVertex[i].x;
-		vertices[3 * i + 1] = m_vVertex[i].y;
-		vertices[3 * i + 2] = m_vVertex[i].z;
-	}
-
-	return vertices;
-}
-
-std::vector<float> CModel::GetTextureCoords() const
-{
-	std::vector<float> tex_coords(m_vTexCoord.size() * 2);
-	for (size_t i = 0; i < m_vVertex.size(); ++i)
-	{
-		tex_coords[2 * i] = m_vTexCoord[i].x;
-		tex_coords[2 * i + 1] = 1.0 - m_vTexCoord[i].y;	//to opengl, invert y coord
-	}
-
-	return tex_coords;
-}
-
-std::vector<float> CModel::GetNormals() const
-{
-	std::vector<float> normals(m_vNormal.size() * 3);
-	for (size_t i = 0; i < m_vNormal.size(); ++i)
-	{
-		normals[3 * i] = m_vNormal[i].x;
-		normals[3 * i + 1] = m_vNormal[i].y;
-		normals[3 * i + 2] = m_vNormal[i].z;
-	}
-
-	return normals;
-}
-
-TGAImage* CModel::GetTextureImage() const
-{
-	return m_pDiffuseTex;
-}
 }
