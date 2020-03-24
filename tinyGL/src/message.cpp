@@ -1,6 +1,8 @@
 #include "message.h"
 #include "render.h"
 
+using namespace tinyGL;
+
 CMessage g_MessageHandler;
 
 CMessage* GetMessageHandler()

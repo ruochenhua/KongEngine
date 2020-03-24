@@ -2,7 +2,8 @@
 #define __IMAGE_H__
 
 #include <fstream>
-
+namespace tinyGL
+{
 #pragma pack(push,1)
 struct TGA_Header {
 	char idlength;
@@ -92,5 +93,5 @@ public:
 	unsigned char *buffer();
 	void clear();
 };
-
+}
 #endif //__IMAGE_H__

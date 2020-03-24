@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
-
+namespace tinyGL
+{
 struct SCubeMapTexture {
 	void Bind(GLenum texture_unit);
 	void Load(const std::vector<std::string>& tex_path_vec,
@@ -36,7 +37,8 @@ public:
 
 private:
 	//SSkyBoxTech m_Tech;
-	SSkyBoxMesh m_BoxMesh;	
+	SSkyBoxMesh m_BoxMesh;
 	//Ìì¿ÕºÐµÄshader
 	GLuint m_programID;
 };
+}

@@ -2,6 +2,8 @@
 #include <map>
 
 struct GLFWwindow;
+namespace tinyGL
+{
 
 class CMessage
 {
@@ -20,3 +22,4 @@ private:
 };
 
 CMessage* GetMessageHandler();
+}

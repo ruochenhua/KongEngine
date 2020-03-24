@@ -1,6 +1,9 @@
 #pragma once
 #include "common.h"
 #include "skybox.h"
+
+namespace tinyGL
+{
 class CModel;
 struct SScreenInfo
 {
@@ -61,7 +64,7 @@ public:
 	static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 public:
-	CRender() 
+	CRender()
 		: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
 		, m_LightColor(0.8, 0.8, 0.8)
 		, m_LightPos(5, 5, 0)
@@ -70,12 +73,12 @@ public:
 	int Init();
 	int Update();
 
-	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);	
+	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
 
 private:
 	int InitRender();
 	int InitCameraControl();
-		
+
 	void RenderSkyBox();
 	void RenderShadowMap(const SRenderInfo& render_info);
 	void RenderModel(const SRenderInfo& render_info) const;
@@ -95,3 +98,4 @@ private:
 	GLuint m_DepthMatrixID;
 	glm::mat4 m_DepthMVP;
 };
+}

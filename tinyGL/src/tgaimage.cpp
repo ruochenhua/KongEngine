@@ -5,6 +5,8 @@
 #include <math.h>
 #include "tgaimage.h"
 
+namespace tinyGL
+{
 TGAImage::TGAImage() : data(NULL), width(0), height(0), bytespp(0) {}
 
 TGAImage::TGAImage(int w, int h, int bpp) : data(NULL), width(w), height(h), bytespp(bpp) {
@@ -356,4 +358,5 @@ bool TGAImage::scale(int w, int h) {
 	width = w;
 	height = h;
 	return true;
+}
 }

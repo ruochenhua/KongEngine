@@ -2,6 +2,8 @@
 #include "OBJ_Loader.h"
 #include "tgaimage.h"
 
+namespace tinyGL
+{
 using namespace glm;
 
 int CModel::ImportObj(const std::string& model_path, const std::string& diffuse_tex_coord)
@@ -98,4 +100,5 @@ std::vector<float> CModel::GetNormals() const
 TGAImage* CModel::GetTextureImage() const
 {
 	return m_pDiffuseTex;
+}
 }

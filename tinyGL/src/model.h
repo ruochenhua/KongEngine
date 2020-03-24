@@ -1,6 +1,8 @@
 #pragma once
 #include "common.h"
 
+namespace tinyGL
+{
 class TGAImage;
 class CModel
 {
@@ -22,3 +24,4 @@ private:
 	//information for rendering
 	SRenderInfo m_RenderInfo;
 };
+}

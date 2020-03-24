@@ -3,10 +3,13 @@
 #include "tgaimage.h"
 #include "message.h"
 
+using namespace tinyGL;
 using namespace glm;
 using namespace std;
 
 CCamera* g_Camera = nullptr;
+
+GLFWwindow* CRender::s_pWindow = nullptr;
 
 mat4 CCamera::GetProjectionMatrix() const
 {
@@ -126,7 +129,6 @@ void CCamera::RotateEnd()
 	g_Camera->m_updateRotation = false;
 }
 
-GLFWwindow* CRender::s_pWindow = nullptr;
 
 int CRender::Init()
 {
@@ -134,12 +136,12 @@ int CRender::Init()
 	InitCameraControl();
 
 	std::vector<std::string> tex_path_vec = {
-		"../../../resource/sky_box/dark_sky/darkskies_bk.tga",
-		"../../../resource/sky_box/dark_sky/darkskies_dn.tga",
-		"../../../resource/sky_box/dark_sky/darkskies_ft.tga",
-		"../../../resource/sky_box/dark_sky/darkskies_lf.tga",
-		"../../../resource/sky_box/dark_sky/darkskies_rt.tga",
-		"../../../resource/sky_box/dark_sky/darkskies_up.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_bk.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_dn.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_ft.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_lf.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_rt.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_up.tga",
 	};
 	std::vector<unsigned int> tex_type_vec = {
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
@@ -168,8 +170,8 @@ int CRender::Init()
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		return -1;
 
-	m_ShadowMapProgramID = LoadShaders("../../../resource/shader/shadowmap_vert.shader",
-		"../../../resource/shader/shadowmap_frag.shader");
+	m_ShadowMapProgramID = LoadShaders("../../../../resource/shader/shadowmap_vert.shader",
+		"../../../../resource/shader/shadowmap_frag.shader");
 
 	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 	return 0;
