@@ -1,101 +1,54 @@
 #pragma once
+#include "Camera.h"
 #include "common.h"
 #include "skybox.h"
 
 namespace tinyGL
 {
-class CModel;
-struct SScreenInfo
-{
-	SScreenInfo(float fov, float aspect_ratio, float near, float far) :
-		_fov(fov), _aspect_ratio(aspect_ratio), _near(near), _far(far)
-	{}
+	class CModel;
+	class CCamera;
 
-	float _fov;
-	float _aspect_ratio;
-	float _near, _far;
-};
+	class CRender
+	{
+	public:
+		static GLFWwindow* s_pWindow;
+		static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
-class CCamera
-{
-public:
-	CCamera(const glm::vec3& center, const glm::vec3& eye, const glm::vec3& up, const SScreenInfo& screen_info)
-		: m_center(center), m_eye(eye), m_up(up), m_moveVec(glm::vec3(0, 0, 0)), m_screenInfo(screen_info)
-		, m_updateRotation(false), m_cursorX(0.0), m_cursorY(0.0)
-	{}
+	public:
+		CRender()
+			: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
+			, m_LightColor(0.8, 0.8, 0.8)
+			, m_LightPos(5, 5, 0)
+		{ }
 
-	void Update();
+		int Init();
+		int Update();
 
-	glm::mat4 GetProjectionMatrix() const;
-	glm::mat4 GetViewMatrix() const;
-	glm::mat4 GetViewMatrixNoTranslate() const;
-	glm::vec3 GetDirection() const;
-	glm::vec3 GetPosition() const;
+		SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
 
-public:
-	//camera control
-	void InitControl();
-	static void MoveForward();
-	static void MoveBackward();
-	static void MoveLeft();
-	static void MoveRight();
-	static void RotateStart();
-	static void RotateEnd();
+	private:
+		int InitRender();
+		int InitCameraControl();
 
-private:
-	glm::mat4 UpdateRotation();
-	bool m_updateRotation;
-	double m_cursorX, m_cursorY;
+		void RenderSkyBox();
+		void RenderShadowMap(const SRenderInfo& render_info);
+		void RenderModel(const SRenderInfo& render_info) const;
 
-	glm::vec3 m_center;
-	glm::vec3 m_eye;
-	glm::vec3 m_up;
+	private:
+		std::vector<SRenderInfo> m_vRenderInfo;
+		CSkyBox m_SkyBox;
 
-	glm::vec3 m_moveVec;
-	glm::vec3 m_rotateVec;
+		glm::vec3 m_LightDir;
+		glm::vec3 m_LightColor;
+		glm::vec3 m_LightPos;
 
-	SScreenInfo m_screenInfo;
-};
+		//shadow map
+		GLuint m_FrameBuffer;
+		GLuint m_ShadowMapProgramID;
+		GLuint m_DepthTexture;
+		GLuint m_DepthMatrixID;
+		glm::mat4 m_DepthMVP;
 
-class CRender
-{
-public:
-	static GLFWwindow* s_pWindow;
-	static GLuint LoadShaders(const std::string& vs, const std::string& fs);
-
-public:
-	CRender()
-		: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
-		, m_LightColor(0.8, 0.8, 0.8)
-		, m_LightPos(5, 5, 0)
-	{ }
-
-	int Init();
-	int Update();
-
-	SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
-
-private:
-	int InitRender();
-	int InitCameraControl();
-
-	void RenderSkyBox();
-	void RenderShadowMap(const SRenderInfo& render_info);
-	void RenderModel(const SRenderInfo& render_info) const;
-
-private:
-	std::vector<SRenderInfo> m_vRenderInfo;
-	CSkyBox m_SkyBox;
-
-	glm::vec3 m_LightDir;
-	glm::vec3 m_LightColor;
-	glm::vec3 m_LightPos;
-
-	//shadow map
-	GLuint m_FrameBuffer;
-	GLuint m_ShadowMapProgramID;
-	GLuint m_DepthTexture;
-	GLuint m_DepthMatrixID;
-	glm::mat4 m_DepthMVP;
-};
+		CCamera* mainCamera = nullptr;
+	};
 }

@@ -12,19 +12,20 @@ CMessage* GetMessageHandler()
 
 void CMessage::KeyCallback(GLFWwindow* window, int key, int scan_code, int action, int mods)
 {
-	//先不管scan code和mode
+	//鍏堜笉绠can code鍜宮ode
 	auto key_pair = std::make_pair(key, action);
 	auto key_func_pair = g_MessageHandler.m_mKeyFuncMap.find(key_pair);
 
 	if (key_func_pair != g_MessageHandler.m_mKeyFuncMap.end())
 	{
+		// 杩愯缁戝畾鐨刦unction
 		key_func_pair->second();
 	}
 }
 
 void CMessage::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-	//先不管mode
+	//鍏堜笉绠ode
 	auto mouse_pair = std::make_pair(button, action);
 	auto mouse_func_pair = g_MessageHandler.m_mMouseFuncMap.find(mouse_pair);
 

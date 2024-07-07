@@ -142,10 +142,10 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 		0.0f, 0.0f,	// A
 	// 	};
 
-		// ÷∏∂®∞¸Œß∫–µƒ∂•µ„ Ù–‘ Œª÷√
+		// ÊåáÂÆöÂåÖÂõ¥ÁõíÁöÑÈ°∂ÁÇπÂ±ûÊÄß ‰ΩçÁΩÆ
 	_vGeoBB.clear();
 	_vGeoBB = {
-		// ±≥√Ê
+		// ËÉåÈù¢
 		-1.0f, 1.0f, -1.0f,		// A
 		-1.0f, -1.0f, -1.0f,	// B
 		1.0f, -1.0f, -1.0f,		// C
@@ -153,7 +153,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		1.0f, 1.0f, -1.0f,		// D
 		-1.0f, 1.0f, -1.0f,		// A
 
-		// ◊Û≤‡√Ê
+		// Â∑¶‰æßÈù¢
 		-1.0f, -1.0f, 1.0f,		// E
 		-1.0f, -1.0f, -1.0f,	// B
 		-1.0f, 1.0f, -1.0f,		// A
@@ -161,7 +161,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		-1.0f, 1.0f, 1.0f,		// F
 		-1.0f, -1.0f, 1.0f,		// E
 
-		// ”“≤‡√Ê
+		// Âè≥‰æßÈù¢
 		1.0f, -1.0f, -1.0f,		// C
 		1.0f, -1.0f, 1.0f,		// G
 		1.0f, 1.0f, 1.0f,		// H
@@ -169,7 +169,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		1.0f, 1.0f, -1.0f,		// D
 		1.0f, -1.0f, -1.0f,		// C
 
-		// ’˝√Ê
+		// Ê≠£Èù¢
 		-1.0f, -1.0f, 1.0f,  // E
 		-1.0f, 1.0f, 1.0f,  // F
 		1.0f, 1.0f, 1.0f,  // H
@@ -177,7 +177,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		1.0f, -1.0f, 1.0f,  // G
 		-1.0f, -1.0f, 1.0f,  // E
 
-		// ∂•√Ê
+		// È°∂Èù¢
 		-1.0f, 1.0f, -1.0f,  // A
 		1.0f, 1.0f, -1.0f,  // D
 		1.0f, 1.0f, 1.0f,  // H
@@ -185,7 +185,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		-1.0f, 1.0f, 1.0f,  // F
 		-1.0f, 1.0f, -1.0f,  // A
 
-		// µ◊√Ê
+		// Â∫ïÈù¢
 		-1.0f, -1.0f, -1.0f,  // B
 		-1.0f, -1.0f, 1.0f,   // E
 		1.0f, -1.0f, 1.0f,    // G
@@ -211,8 +211,25 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	_cube_map_tex.Load(tex_path_vec, tex_type_vec);
 }
 
-void CSkyBox::Init(const std::vector<std::string>& tex_path_vec, const std::vector<unsigned int>& tex_type_vec)
+void CSkyBox::Init()
 {
+	std::vector<std::string> tex_path_vec = {
+		"../../../../resource/sky_box/dark_sky/darkskies_bk.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_dn.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_ft.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_lf.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_rt.tga",
+		"../../../../resource/sky_box/dark_sky/darkskies_up.tga",
+	};
+	std::vector<unsigned int> tex_type_vec = {
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+	};
+	
 	m_BoxMesh.Init(tex_path_vec, tex_type_vec);
 }
 

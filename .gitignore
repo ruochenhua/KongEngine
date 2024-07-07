@@ -1,0 +1,14 @@
+
+/TapEngine/platform/Win/TapCore/TapCore/Debug
+*.pdb
+*.idb
+/tinyGL/msvc/tinyGL/tinyGL/Debug
+/tinyGL/msvc/tinyGL/.idea
+/tinyGL/msvc/tinyGL/.vs
+/TapEngine/platform/Win/TapSample/.idea
+/tinyGL/msvc/tinyGL/tinyGL/Debug
+/tinyGL/msvc/tinyGL/tinyGL/Debug
+*.exe
+*.lastbuildstate
+*.user
+/build

@@ -1,4 +1,6 @@
 #include "render.h"
+
+#include "Camera.h"
 #include "model.h"
 #include "tgaimage.h"
 #include "message.h"
@@ -7,152 +9,14 @@ using namespace tinyGL;
 using namespace glm;
 using namespace std;
 
-CCamera* g_Camera = nullptr;
-
-GLFWwindow* CRender::s_pWindow = nullptr;
-
-mat4 CCamera::GetProjectionMatrix() const
-{
-	return perspective(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
-}
-
-mat4 CCamera::GetViewMatrix() const
-{
-	return lookAt(m_center, m_eye, m_up);
-}
-
-mat4 CCamera::GetViewMatrixNoTranslate() const
-{
-	return lookAt(vec3(0, 0, 0), GetDirection(), m_up);
-}
-
-vec3 CCamera::GetDirection() const
-{
-	return normalize(m_eye - m_center);	
-}
-
-vec3 CCamera::GetPosition() const
-{
-	return m_center;
-}
-
-glm::mat4 CCamera::UpdateRotation()
-{
-	glm::mat4 rot_mat = glm::identity<mat4>();
-
-	double x_pos, y_pos;
-	glfwGetCursorPos(CRender::s_pWindow, &x_pos, &y_pos);
-	
-	double delta_x = x_pos - m_cursorX, delta_y = y_pos - m_cursorY;
-	m_cursorX = x_pos; m_cursorY = y_pos;
-
-	rot_mat = glm::rotate(rot_mat, (float)-delta_x * 0.02f, vec3(0.0, 1.0, 0.0));
-
-	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
-	vec3 right = cross(dir, g_Camera->m_up);
-	rot_mat = glm::rotate(rot_mat, (float)-delta_y * 0.02f, normalize(right));
-
-	return rot_mat;
-}
-
-void CCamera::Update()
-{
-	glm::mat4 transform_mat = glm::identity<mat4>();
-
-	if (m_updateRotation)
-	{
-		transform_mat = UpdateRotation();
-	}
-
-	//update translate
-	transform_mat[3][0] = m_moveVec.x;
-	transform_mat[3][1] = m_moveVec.y;
-	transform_mat[3][2] = m_moveVec.z;
-
-	m_eye = vec3(transform_mat * vec4(m_eye, 1));
-	m_center = vec3(transform_mat * vec4(m_center, 1));
-
-	m_moveVec = vec3(0, 0, 0);
-}
-
-void CCamera::InitControl()
-{
-	CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_PRESS, MoveForward);
-	CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_PRESS, MoveBackward);
-	CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_PRESS, MoveLeft);
-	CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_PRESS, MoveRight);
-	CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_REPEAT, MoveForward);
-	CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_REPEAT, MoveBackward);
-	CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_REPEAT, MoveLeft);
-	CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_REPEAT, MoveRight);
-
-	CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, RotateStart);
-	CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, RotateEnd);
-}
-
-void CCamera::MoveForward()
-{
-	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
-	g_Camera->m_moveVec += dir * 0.1f;
-}
-
-void CCamera::MoveBackward()
-{
-	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
-	g_Camera->m_moveVec -= dir * 0.1f;
-}
-
-void CCamera::MoveLeft()
-{
-	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
-	vec3 right = cross(dir, g_Camera->m_up);
-
-	g_Camera->m_moveVec -= right * 0.1f;
-}
-
-void CCamera::MoveRight()
-{
-	vec3 dir = g_Camera->m_eye - g_Camera->m_center;
-	vec3 right = cross(dir, g_Camera->m_up);
-
-	g_Camera->m_moveVec += right * 0.1f;
-}
-
-void CCamera::RotateStart()
-{
-	glfwGetCursorPos(CRender::s_pWindow, &g_Camera->m_cursorX, &g_Camera->m_cursorX);
-	g_Camera->m_updateRotation = true;
-}
-
-void CCamera::RotateEnd()
-{
-	g_Camera->m_updateRotation = false;
-}
-
-
 int CRender::Init()
 {
 	InitRender();
 	InitCameraControl();
 
-	std::vector<std::string> tex_path_vec = {
-		"../../../../resource/sky_box/dark_sky/darkskies_bk.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_dn.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_ft.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_lf.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_rt.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_up.tga",
-	};
-	std::vector<unsigned int> tex_type_vec = {
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-	};
-	m_SkyBox.Init(tex_path_vec, tex_type_vec);
-
+	// ³õÊ¼»¯Ìì¿ÕºÐ
+	m_SkyBox.Init();
+	radians(100.f);
 	//init show map
 	glGenFramebuffers(1, &m_FrameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
@@ -219,17 +83,16 @@ int CRender::InitRender()
 
 int CRender::InitCameraControl()
 {
-	SScreenInfo screen_info(glm::radians(45.0f), 1024.0f / 768.0f, 0.1f, 500.0f);
-	g_Camera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), screen_info);
+	mainCamera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 
-	g_Camera->InitControl();
+	mainCamera->InitControl();
 	return 0;
 }
 
 int CRender::Update()
 {
 	//update camera
-	g_Camera->Update();		
+	mainCamera->Update();		
 
 	// Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -297,8 +160,8 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 
 void CRender::RenderSkyBox()
 {
-	mat4 projection = g_Camera->GetProjectionMatrix();
-	mat4 mvp = projection * g_Camera->GetViewMatrixNoTranslate(); //
+	mat4 projection = mainCamera->GetProjectionMatrix();
+	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
 	m_SkyBox.Render(mvp);
 }
 
@@ -349,8 +212,8 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glUseProgram(render_info._program_id);
 
 	mat4 Model = mat4(1.0f);
-	mat4 projection = g_Camera->GetProjectionMatrix();
-	mat4 mvp = projection * g_Camera->GetViewMatrix() * Model; //
+	mat4 projection = mainCamera->GetProjectionMatrix();
+	mat4 mvp = projection * mainCamera->GetViewMatrix() * Model; //
 	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 
@@ -358,7 +221,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glUniform1f(light_shininess_id, render_info._material._shininess);
 
 	GLuint cam_pos_id = glGetUniformLocation(render_info._program_id, "cam_pos");
-	glUniform3fv(cam_pos_id, 1, &g_Camera->GetPosition()[0]);
+	glUniform3fv(cam_pos_id, 1, &mainCamera->GetPosition()[0]);
 
 	GLuint light_dir_id = glGetUniformLocation(render_info._program_id, "light_dir");
 	glUniform3fv(light_dir_id, 1, &m_LightDir[0]);

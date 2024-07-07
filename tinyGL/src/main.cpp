@@ -10,6 +10,7 @@ using namespace tinyGL;
 
 int main()
 {
+	// 构建渲并初始化染类
 	CRender* render = new CRender;
 	render->Init();
 

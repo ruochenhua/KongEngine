@@ -30,8 +30,7 @@ struct SSkyBoxMesh {
 class CSkyBox
 {
 public:
-	void Init(const std::vector<std::string>& tex_path_vec,
-		const std::vector<unsigned int>& tex_type_vec);
+	void Init();
 
 	void Render(const glm::mat4& mvp);
 
