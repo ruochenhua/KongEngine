@@ -194,13 +194,22 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		-1.0f, -1.0f, -1.0f,  // B
 	};
 
-	glGenVertexArrays(1, &_render_info._vertex_array_id);
-	glBindVertexArray(_render_info._vertex_array_id);
+	glGenVertexArrays(1, &_render_info.vertexArrayId);
+	glBindVertexArray(_render_info.vertexArrayId);
 
-	glGenBuffers(1, &_render_info._vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, _render_info._vertex_buffer);
+	glGenBuffers(1, &_render_info.vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertexBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
-
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertexBuffer);
+	glVertexAttribPointer(
+		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
 	// 	glGenBuffers(1, &_render_info._texture_buffer);
 	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
 	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
@@ -240,21 +249,10 @@ void CSkyBox::Render(const glm::mat4& mvp)
 
 	auto& mesh_info = m_BoxMesh._render_info;
 	glUseProgram(mesh_info._program_id);
-
+	glBindVertexArray(mesh_info.vertexArrayId);
 	GLuint matrix_id = glGetUniformLocation(mesh_info._program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh_info._vertex_buffer);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh._cube_map_tex._CubeMapID);
 
@@ -271,7 +269,6 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	// 	);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-	glDisableVertexAttribArray(0);
-	//	glDisableVertexAttribArray(1);
+	glBindVertexArray(GL_NONE);
 }
 }

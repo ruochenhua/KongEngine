@@ -44,8 +44,8 @@ namespace tinyGL
 
 		//shadow map
 		GLuint m_FrameBuffer;
-		GLuint m_ShadowMapProgramID;
-		GLuint m_DepthTexture;
+		GLuint m_ShadowMapProgramID;	// 包含阴影贴图的shader
+		GLuint m_DepthTexture;			// 深度贴图
 		GLuint m_DepthMatrixID;
 		glm::mat4 m_DepthMVP;
 

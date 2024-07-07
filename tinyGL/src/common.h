@@ -13,25 +13,28 @@
 
 namespace tinyGL
 {
-class TGAImage;
+	class TGAImage;
 
-struct SMaterial
-{
-	float _shininess = 0.8f;
-};
+	struct SMaterial
+	{
+		float _shininess = 0.8f;
+	};
 
-struct SRenderInfo
-{
-	GLuint _vertex_buffer = 0;
-	GLuint _vertex_array_id = 0;
+	// 渲染信息
+	struct SRenderInfo
+	{
+		// vertex buffer id
+		GLuint vertexBuffer = 0;
+		// vao
+		GLuint vertexArrayId = 0;
+		GLuint _texture_buffer = 0;
 
-	GLuint _texture_buffer = 0;
+		GLuint _normal_buffer = 0;
 
-	GLuint _normal_buffer = 0;
-
-	SMaterial _material;
-	GLuint _program_id = 0;
-	unsigned _vertex_size = 0;
-	TGAImage* _texture_img = nullptr;
-};
+		SMaterial _material;
+		// 该渲染单位的shader程序
+		GLuint _program_id = 0;
+		unsigned _vertex_size = 0;
+		TGAImage* _texture_img = nullptr;
+	};
 }
