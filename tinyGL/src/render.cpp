@@ -186,69 +186,6 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	}
 
 	glBindVertexArray(GL_NONE);
-	/*
-	 *
-	mat4 Model = mat4(1.0f);
-	mat4 projection = mainCamera->GetProjectionMatrix();
-	mat4 mvp = projection * mainCamera->GetViewMatrix() * Model; //
-	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
-	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
-
-	GLuint light_shininess_id = glGetUniformLocation(render_info._program_id, "shininess");
-	glUniform1f(light_shininess_id, render_info._material._shininess);
-
-	GLuint cam_pos_id = glGetUniformLocation(render_info._program_id, "cam_pos");
-	glUniform3fv(cam_pos_id, 1, &mainCamera->GetPosition()[0]);
-
-	GLuint light_dir_id = glGetUniformLocation(render_info._program_id, "light_dir");
-	glUniform3fv(light_dir_id, 1, &m_LightDir[0]);
-	
-	GLuint light_color_id = glGetUniformLocation(render_info._program_id, "light_color");
-	glUniform3fv(light_color_id, 1, &m_LightColor[0]);
-
-	//use shadow map
-	mat4 bias_mat(
-		0.5, 0.0, 0.0, 0.0,
-		0.0, 0.5, 0.0, 0.0,
-		0.0, 0.0, 0.5, 0.0,
-		0.5, 0.5, 0.5, 1.0
-	);
-
-	mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
-
-	GLuint depth_bias_id = glGetUniformLocation(render_info._program_id, "depth_bias_mvp");
-	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
-	
-	TGAImage* texture_img = render_info._texture_img;
-	assert(texture_img);
-	
-	GLuint texture_id;
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-
-	int tex_width = texture_img->get_width();
-	int tex_height = texture_img->get_height();
-	unsigned char* tex_data = texture_img->buffer();
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);	
-	GLuint sm_id = glGetUniformLocation(render_info._program_id, "shadowmap_id");
-	glUniform1i(sm_id, m_DepthTexture);
-
-	//texture buffer
-	
-
-	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
-	 * 
-	 */
 	
 	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	info._vertex_size = vertices.size();
@@ -310,7 +247,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glCullFace(GL_BACK);
 
 	glUseProgram(render_info._program_id);
-	glBindVertexArray(render_info.vertexArrayId);
+	glBindVertexArray(render_info.vertexArrayId);	// ∞Û∂®VAO
 	
 	mat4 Model = mat4(1.0f);
 	mat4 projection = mainCamera->GetProjectionMatrix();
@@ -366,7 +303,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-	glBindVertexArray(GL_NONE);
+	glBindVertexArray(GL_NONE);	// Ω‚∞ÛVAO
 }
 
 GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)

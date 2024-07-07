@@ -249,7 +249,7 @@ void CSkyBox::Render(const glm::mat4& mvp)
 
 	auto& mesh_info = m_BoxMesh._render_info;
 	glUseProgram(mesh_info._program_id);
-	glBindVertexArray(mesh_info.vertexArrayId);
+	glBindVertexArray(mesh_info.vertexArrayId);	// 绑定VAO
 	GLuint matrix_id = glGetUniformLocation(mesh_info._program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 	
@@ -269,6 +269,6 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	// 	);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-	glBindVertexArray(GL_NONE);
+	glBindVertexArray(GL_NONE);	// 解绑VAO
 }
 }
