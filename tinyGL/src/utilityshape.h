@@ -7,7 +7,7 @@ class CUtilityBox : public CRenderObj
 {
 public:
 	virtual std::vector<float> GetVertices() const override;
-	std::vector<int> GetIndices() const;
+	virtual std::vector<unsigned int> GetIndices() const override;
 
 private:
 	static std::vector<float> s_vBoxVertices;

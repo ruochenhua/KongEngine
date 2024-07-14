@@ -45,7 +45,7 @@ std::vector<float> CUtilityBox::GetVertices() const
 	return s_vBoxVertices;
 }
 
-std::vector<int> CUtilityBox::GetIndices() const
+std::vector<unsigned int> CUtilityBox::GetIndices() const
 {
-	return std::vector<int>();
+	return std::vector<unsigned int>();
 }

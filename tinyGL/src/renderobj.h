@@ -10,6 +10,7 @@ public:
 	virtual std::vector<float> GetVertices() const;
 	virtual std::vector<float> GetTextureCoords() const;
 	virtual std::vector<float> GetNormals() const;
+	virtual std::vector<unsigned int> GetIndices() const;
 	virtual TGAImage* GetTextureImage() const;
 
 protected:

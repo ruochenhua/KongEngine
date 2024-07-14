@@ -44,3 +44,9 @@ TGAImage* CRenderObj::GetTextureImage() const
 {
 	return m_pDiffuseTex;
 }
+
+std::vector<unsigned int> CRenderObj::GetIndices() const
+{
+	return m_vIndex;
+}
+

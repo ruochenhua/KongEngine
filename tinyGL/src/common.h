@@ -23,8 +23,10 @@ namespace tinyGL
 	// ‰÷»æ–≈œ¢
 	struct SRenderInfo
 	{
-		// vertex buffer id
+		// vertex buffer id(vbo)
 		GLuint vertexBuffer = 0;
+		// ibo
+		GLuint indexBuffer = 0;
 		// vao
 		GLuint vertexArrayId = 0;
 		GLuint _texture_buffer = 0;
@@ -36,5 +38,6 @@ namespace tinyGL
 		GLuint _program_id = 0;
 		unsigned _vertex_size = 0;
 		TGAImage* _texture_img = nullptr;
+		unsigned _indices_count = 0;
 	};
 }

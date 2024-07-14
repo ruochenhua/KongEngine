@@ -148,7 +148,7 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 		(void*)0            // array buffer offset
 	);
 	glEnableVertexAttribArray(0);
-
+	
 	//normal buffer
 	std::vector<float> normals = model->GetNormals();
 	glGenBuffers(1, &info._normal_buffer);
@@ -184,11 +184,16 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 		);
 		glEnableVertexAttribArray(2);
 	}
-
+	// index buffer
+	std::vector<unsigned int> indices = model->GetIndices();
+	glGenBuffers(1, &info.indexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info.indexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
 	glBindVertexArray(GL_NONE);
 	
 	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	info._vertex_size = vertices.size();
+	info._indices_count = indices.size();
 	info._texture_img = model->GetTextureImage();
 
 	m_vRenderInfo.push_back(info);
@@ -302,7 +307,10 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glUniform1i(sm_id, m_DepthTexture);
 	
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	// glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.indexBuffer);
+	glDrawElements(GL_TRIANGLES, render_info._indices_count, GL_UNSIGNED_INT, 0);
+
 	glBindVertexArray(GL_NONE);	// Ω‚∞ÛVAO
 }
 
