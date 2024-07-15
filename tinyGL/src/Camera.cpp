@@ -1,13 +1,14 @@
 ﻿#include "Camera.h"
 
 #include <GLFW/glfw3.h>
+
+#include "Engine.h"
+#include "message.h"
 // #include "message.h"
 
 using namespace tinyGL;
 using namespace glm;
 using namespace std;
-
-GLFWwindow* CRender::s_pWindow = nullptr;
 
 mat4 CCamera::GetProjectionMatrix() const
 {
@@ -38,23 +39,51 @@ glm::mat4 CCamera::UpdateRotation()
 {
 	glm::mat4 rot_mat = glm::identity<mat4>();
 
-	double x_pos, y_pos;
-	glfwGetCursorPos(CRender::s_pWindow, &x_pos, &y_pos);
-	
-	double delta_x = x_pos - m_cursorX, delta_y = y_pos - m_cursorY;
-	m_cursorX = x_pos; m_cursorY = y_pos;
-
-	rot_mat = glm::rotate(rot_mat, (float)-delta_x * 0.02f, vec3(0.0, 1.0, 0.0));
-
-	vec3 dir = m_eye - m_center;
-	vec3 right = cross(dir, m_up);
-	rot_mat = glm::rotate(rot_mat, (float)-delta_y * 0.02f, normalize(right));
+	// double x_pos, y_pos;
+	// glfwGetCursorPos(CRender::s_pWindow, &x_pos, &y_pos);
+	//
+	// double delta_x = x_pos - m_cursorX, delta_y = y_pos - m_cursorY;
+	// m_cursorX = x_pos; m_cursorY = y_pos;
+	//
+	// rot_mat = glm::rotate(rot_mat, (float)-delta_x * 0.02f, vec3(0.0, 1.0, 0.0));
+	//
+	// vec3 dir = m_eye - m_center;
+	// vec3 right = cross(dir, m_up);
+	// rot_mat = glm::rotate(rot_mat, (float)-delta_y * 0.02f, normalize(right));
 
 	return rot_mat;
 }
 
 void CCamera::Update()
 {
+	auto render_window = Engine::GetEngine().GetRenderWindow();
+	if(glfwGetKey(render_window, GLFW_KEY_W) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_W) == GLFW_REPEAT)
+	{
+		MoveForward();
+	}
+
+	if(glfwGetKey(render_window, GLFW_KEY_A) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_A) == GLFW_REPEAT)
+	{
+		MoveLeft();
+	}
+
+	if(glfwGetKey(render_window, GLFW_KEY_S) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_S) == GLFW_REPEAT)
+	{
+		MoveBackward();
+	}
+
+	if(glfwGetKey(render_window, GLFW_KEY_D) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_D) == GLFW_REPEAT)
+	{
+		MoveRight();
+	}
+
+	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, RotateStart);
+	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, RotateEnd);
+	
 	glm::mat4 transform_mat = glm::identity<mat4>();
 
 	if (m_updateRotation)
@@ -118,8 +147,8 @@ void CCamera::MoveRight()
 
 void CCamera::RotateStart()
 {
-	glfwGetCursorPos(CRender::s_pWindow, &m_cursorX, &m_cursorX);
-	m_updateRotation = true;
+	// glfwGetCursorPos(CRender::s_pWindow, &m_cursorX, &m_cursorX);
+	// m_updateRotation = true;
 }
 
 void CCamera::RotateEnd()

@@ -11,7 +11,7 @@ namespace tinyGL
 	class CRender
 	{
 	public:
-		static GLFWwindow* s_pWindow;
+		GLFWwindow* render_window;
 		static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 	public:
@@ -28,7 +28,7 @@ namespace tinyGL
 
 	private:
 		int InitRender();
-		int InitCameraControl();
+		int InitCamera();
 
 		void RenderSkyBox();
 		void RenderShadowMap(const SRenderInfo& render_info);

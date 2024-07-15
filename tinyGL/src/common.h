@@ -40,4 +40,9 @@ namespace tinyGL
 		TGAImage* _texture_img = nullptr;
 		unsigned _indices_count = 0;
 	};
+
+	// inline static GLFWwindow* GetWindowPtr()
+	// {
+	// 	return g_render_window;
+	// }
 }

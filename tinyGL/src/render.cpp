@@ -1,6 +1,7 @@
 #include "render.h"
 
 #include "Camera.h"
+#include "Engine.h"
 #include "model.h"
 #include "tgaimage.h"
 #include "message.h"
@@ -11,8 +12,8 @@ using namespace std;
 
 int CRender::Init()
 {
-	InitRender();
-	InitCameraControl();
+	render_window = Engine::GetEngine().GetRenderWindow();
+	InitCamera();
 
 	// 初始化天空盒
 	m_SkyBox.Init();
@@ -42,48 +43,48 @@ int CRender::Init()
 	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 	return 0;
 }
+//
+// int CRender::InitRender()
+// {
+// 	glewExperimental = true;
+// 	if (!glfwInit())
+// 	{
+// 		fprintf(stderr, "Failed to initialize GLFW\n");
+// 		return -1;
+// 	}
+// 	// 初始化opengl
+// 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+// 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+// 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
+//
+// 	// Open a window and create its OpenGL context
+// 	// (In the accompanying source code, this variable is global for simplicity)
+// 	g_render_window = glfwCreateWindow(1024, 768, "tinyGL", NULL, NULL);
+// 	if (g_render_window == NULL) {
+// 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
+// 		glfwTerminate();
+// 		return -1;
+// 	}
+// 	//set keyboard and mouse call back
+// 	glfwSetKeyCallback(g_render_window, CMessage::KeyCallback);
+// 	glfwSetMouseButtonCallback(g_render_window, CMessage::MouseButtonCallback);
+//
+// 	glfwMakeContextCurrent(g_render_window); // Initialize GLEW
+// 	glewExperimental = true; // Needed in core profile
+// 	if (glewInit() != GLEW_OK) {
+// 		fprintf(stderr, "Failed to initialize GLEW\n");
+// 		return -1;
+// 	}
+//
+// 	// Ensure we can capture the escape key being pressed below
+// 	glfwSetInputMode(g_render_window, GLFW_STICKY_KEYS, GL_TRUE);
+//
+// 	return 0;
+// }
 
-int CRender::InitRender()
-{
-	glewExperimental = true;
-	if (!glfwInit())
-	{
-		fprintf(stderr, "Failed to initialize GLFW\n");
-		return -1;
-	}
-	// 初始化opengl
-	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
-
-	// Open a window and create its OpenGL context
-	// (In the accompanying source code, this variable is global for simplicity)
-	s_pWindow = glfwCreateWindow(1024, 768, "tinyGL", NULL, NULL);
-	if (s_pWindow == NULL) {
-		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
-		glfwTerminate();
-		return -1;
-	}
-	//set keyboard and mouse call back
-	glfwSetKeyCallback(s_pWindow, CMessage::KeyCallback);
-	glfwSetMouseButtonCallback(s_pWindow, CMessage::MouseButtonCallback);
-
-	glfwMakeContextCurrent(s_pWindow); // Initialize GLEW
-	glewExperimental = true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		return -1;
-	}
-
-	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(s_pWindow, GLFW_STICKY_KEYS, GL_TRUE);
-
-	return 0;
-}
-
-int CRender::InitCameraControl()
+int CRender::InitCamera()
 {
 	mainCamera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 
@@ -119,7 +120,7 @@ int CRender::Update()
 	
 
 	// Swap buffers
-	glfwSwapBuffers(s_pWindow);
+	glfwSwapBuffers(render_window);
 	glfwPollEvents();
 	return 1;
 }
