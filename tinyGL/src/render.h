@@ -22,7 +22,7 @@ namespace tinyGL
 		{ }
 
 		int Init();
-		int Update();
+		int Update(double delta);
 
 		SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
 

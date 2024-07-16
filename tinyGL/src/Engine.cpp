@@ -37,13 +37,12 @@ Engine::Engine()
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(render_window, GLFW_STICKY_KEYS, GL_TRUE);
-
 }
 
 
 GLFWwindow* Engine::GetRenderWindow()
 {
-    return render_window;
+    return g_engine.render_window;
 }
 
 Engine Engine::GetEngine()

@@ -24,13 +24,13 @@ namespace tinyGL
     {
     public:
         CCamera(const vec3& center, const vec3& eye, const vec3& up)
-            : m_center(center), m_eye(eye), m_up(up), m_moveVec(vec3(0, 0, 0))
+            : m_center(center), m_front(normalize(eye - center)), m_up(up), m_moveVec(vec3(0, 0, 0))
             , m_updateRotation(false), m_cursorX(0.0), m_cursorY(0.0)
         {
             
         }
 
-        void Update();
+        void Update(double delta);
 
         mat4 GetProjectionMatrix() const;
         mat4 GetViewMatrix() const;
@@ -49,16 +49,19 @@ namespace tinyGL
         void RotateEnd();
 
     private:
-        mat4 UpdateRotation();
+        void UpdateRotation(double delta);
         bool m_updateRotation;
-        double m_cursorX, m_cursorY;
+        double m_cursorX = 512.0;
+        double m_cursorY = 384.0;
 
         vec3 m_center;
-        vec3 m_eye;
+        vec3 m_front;
         vec3 m_up;
 
         vec3 m_moveVec;
-        vec3 m_rotateVec;
+
+        float m_yaw = 0.0;
+        float m_pitch = 0.0;
 
         SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 500.0f);
     };

@@ -12,7 +12,7 @@ using namespace std;
 
 int CRender::Init()
 {
-	render_window = Engine::GetEngine().GetRenderWindow();
+	render_window = Engine::GetRenderWindow();
 	InitCamera();
 
 	// 初始化天空盒
@@ -43,46 +43,6 @@ int CRender::Init()
 	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 	return 0;
 }
-//
-// int CRender::InitRender()
-// {
-// 	glewExperimental = true;
-// 	if (!glfwInit())
-// 	{
-// 		fprintf(stderr, "Failed to initialize GLFW\n");
-// 		return -1;
-// 	}
-// 	// 初始化opengl
-// 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-// 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-// 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
-//
-// 	// Open a window and create its OpenGL context
-// 	// (In the accompanying source code, this variable is global for simplicity)
-// 	g_render_window = glfwCreateWindow(1024, 768, "tinyGL", NULL, NULL);
-// 	if (g_render_window == NULL) {
-// 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
-// 		glfwTerminate();
-// 		return -1;
-// 	}
-// 	//set keyboard and mouse call back
-// 	glfwSetKeyCallback(g_render_window, CMessage::KeyCallback);
-// 	glfwSetMouseButtonCallback(g_render_window, CMessage::MouseButtonCallback);
-//
-// 	glfwMakeContextCurrent(g_render_window); // Initialize GLEW
-// 	glewExperimental = true; // Needed in core profile
-// 	if (glewInit() != GLEW_OK) {
-// 		fprintf(stderr, "Failed to initialize GLEW\n");
-// 		return -1;
-// 	}
-//
-// 	// Ensure we can capture the escape key being pressed below
-// 	glfwSetInputMode(g_render_window, GLFW_STICKY_KEYS, GL_TRUE);
-//
-// 	return 0;
-// }
 
 int CRender::InitCamera()
 {
@@ -92,10 +52,10 @@ int CRender::InitCamera()
 	return 0;
 }
 
-int CRender::Update()
+int CRender::Update(double delta)
 {
 	//update camera
-	mainCamera->Update();		
+	mainCamera->Update(delta);		
 
 	// Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -118,7 +78,6 @@ int CRender::Update()
 		RenderModel(render_info);
 	}
 	
-
 	// Swap buffers
 	glfwSwapBuffers(render_window);
 	glfwPollEvents();

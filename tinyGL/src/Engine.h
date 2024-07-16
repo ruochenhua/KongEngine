@@ -7,9 +7,10 @@ namespace tinyGL
     {
     public:
         Engine();
-        GLFWwindow* GetRenderWindow();
+        // GLFWwindow* GetRenderWindow();
         
         static Engine GetEngine();
+        static GLFWwindow* GetRenderWindow();
     private:
         
         GLFWwindow* render_window = nullptr;

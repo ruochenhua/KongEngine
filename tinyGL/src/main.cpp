@@ -29,14 +29,18 @@ int main()
 	render->AddModel(test_model, shader_path);
 
 	auto body_manager = new Tap::CBodyManager();
-	auto render_window = Engine::GetEngine().GetRenderWindow();
+	auto render_window = Engine::GetRenderWindow();
+	float current_time, new_time;
+	current_time = new_time = glfwGetTime();
 	while (!glfwWindowShouldClose(render_window))
 	{
 		if(glfwGetKey(render_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(render_window, true);
 		}
-		render->Update();
+		render->Update(new_time - current_time);
+		current_time = new_time;
+		new_time = glfwGetTime();	
 	}
 	return 0;
 }
