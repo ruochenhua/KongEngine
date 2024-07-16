@@ -23,32 +23,37 @@ void main(){
 
 	vec3 ambient = ka * light_color;
 
-	//diffuse
+	//diffuse 分量计算
 	float ln = max(0.0, dot(light_dir, normal_world));
 
 	vec3 diffuse = kd * light_color * ln;
 
-	//specular
+	//specular 分量计算
 	vec3 v = normalize(cam_pos - in_pos);
 	vec3 h = normalize(light_dir + v);
+	
+	vec3 reflect_dir = reflect(-light_dir, normal_world);
+	float spec = pow(max(0.0, dot(v, reflect_dir)), 256);
+	vec3 specular = ks * spec * light_color;
 
-	vec3 specular = vec3(0, 0, 0);
-	bool back = (dot(v, normal_world) > 0) && (dot(light_dir, normal_world) > 0);
-	if(back)
-	{
-		vec3 t = normalize(cross(normal_world, v));
-		float a = dot(light_dir, t);
-		float b = dot(v, t);
-		float c = sqrt(1-pow(a, 2.0)) * sqrt(1-pow(b, 2.0)) - a*b;
-		float brdf = ks*pow(c, shininess);
+	// vec3 specular = vec3(0, 0, 0);
+	// bool back = (dot(v, normal_world) > 0) && (dot(light_dir, normal_world) > 0);
+	// if(back)
+	// {
+	// 	vec3 t = normalize(cross(normal_world, v));
+	// 	float a = dot(light_dir, t);
+	// 	float b = dot(v, t);
+	// 	float c = sqrt(1-pow(a, 2.0)) * sqrt(1-pow(b, 2.0)) - a*b;
+	// 	float brdf = ks*pow(c, shininess);
 
-		specular = brdf * light_color * ln;
-	}
+	// 	specular = brdf * light_color * ln;
+	// }
 
-	color = texture(texture_sampler, uv).rgb;
+	
+	color = (diffuse + specular) * texture(texture_sampler, uv).rgb;
 
 	//shadow
-	float visibility = texture( shadowMap, vec3(ShadowCoord.xy, (ShadowCoord.z)/ShadowCoord.w) );
-	color += ambient + diffuse;// + specular;
-	color *= visibility;
+	// float visibility = texture( shadowMap, vec3(ShadowCoord.xy, (ShadowCoord.z)/ShadowCoord.w) );
+	// color += ambient + diffuse;// + specular;
+	// color *= visibility;
 }

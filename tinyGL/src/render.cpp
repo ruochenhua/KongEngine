@@ -54,9 +54,10 @@ int CRender::InitCamera()
 
 int CRender::Update(double delta)
 {
+	UpdateLightDir(delta);
 	//update camera
 	mainCamera->Update(delta);		
-
+	
 	// Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -244,7 +245,16 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 
 	GLuint depth_bias_id = glGetUniformLocation(render_info._program_id, "depth_bias_mvp");
 	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
-		
+
+	GLuint model_mat_id = glGetUniformLocation(render_info._program_id, "normal_model_mat");
+
+	/*
+	 * 法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」。
+	 * 它使用了一些线性代数的操作来移除对法向量错误缩放的影响。
+	 */
+	mat3 normal_model_mat = transpose(inverse(Model));
+	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
+	
 	TGAImage* texture_img = render_info._texture_img;
 	assert(texture_img);
 
@@ -273,6 +283,22 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 
 	glBindVertexArray(GL_NONE);	// 解绑VAO
 }
+
+void CRender::UpdateLightDir(float delta)
+{
+	// 光照变化
+	double light_speed = 30.0;
+
+	light_yaw += light_speed*delta;
+	
+	vec3 front;
+	front.x = cos(glm::radians(light_yaw)) * cos(glm::radians(light_pitch));
+	front.y = sin(glm::radians(light_pitch));
+	front.z = sin(glm::radians(light_yaw)) * cos(glm::radians(light_pitch));
+
+	m_LightDir = normalize(front);
+}
+
 
 GLuint CRender::LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
 {

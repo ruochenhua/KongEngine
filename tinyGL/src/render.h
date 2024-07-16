@@ -17,8 +17,8 @@ namespace tinyGL
 	public:
 		CRender()
 			: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
-			, m_LightColor(0.8, 0.8, 0.8)
-			, m_LightPos(5, 5, 0)
+			, m_LightColor(0, 1, 1)
+			, m_LightPos(5, 5, 5)
 		{ }
 
 		int Init();
@@ -34,6 +34,8 @@ namespace tinyGL
 		void RenderShadowMap(const SRenderInfo& render_info);
 		void RenderModel(const SRenderInfo& render_info) const;
 
+		void UpdateLightDir(float delta);
+		
 	private:
 		std::vector<SRenderInfo> m_vRenderInfo;
 		CSkyBox m_SkyBox;
@@ -50,5 +52,8 @@ namespace tinyGL
 		glm::mat4 m_DepthMVP;
 
 		CCamera* mainCamera = nullptr;
+
+		double light_yaw = 0.0;
+		double light_pitch = -45.0;
 	};
 }

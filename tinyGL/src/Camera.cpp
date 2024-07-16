@@ -38,7 +38,6 @@ vec3 CCamera::GetPosition() const
 
 void CCamera::UpdateRotation(double delta)
 {
-	glm::mat4 rot_mat = glm::identity<mat4>();
 	auto window = Engine::GetRenderWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);
@@ -49,12 +48,16 @@ void CCamera::UpdateRotation(double delta)
 	m_cursorX = x_pos;
 	m_cursorY = y_pos;
 
+	if (!m_updateRotation)
+	{
+		return;
+	}
 	m_yaw -= delta_x*delta;
 	m_pitch += delta_y*delta;
 
 	m_pitch = clamp(m_pitch, -89.f, 89.f);
-	printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);
-	printf("pitch value %f, ypos %f, delta %f\n", m_pitch, y_pos, delta_y);
+	// printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);
+	// printf("pitch value %f, ypos %f, delta %f\n", m_pitch, y_pos, delta_y);
 	
 	vec3 front;
 	front.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
@@ -62,7 +65,8 @@ void CCamera::UpdateRotation(double delta)
 	front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
 
 	m_front = normalize(front);
-	//
+	
+	// glm::mat4 rot_mat = glm::identity<mat4>();
 	// rot_mat = glm::rotate(rot_mat, (float)(-delta_x * delta), vec3(0.0, 1.0, 0.0));
 	//
 	// vec3 dir = m_front;
@@ -72,12 +76,11 @@ void CCamera::UpdateRotation(double delta)
 
 void CCamera::Update(double delta)
 {
-	if (m_updateRotation)
-	{
-		UpdateRotation(delta);
-	}
-	
+	UpdateRotation(delta);
 	auto render_window = Engine::GetRenderWindow();
+	double xpos, ypos;
+	// glfwGetCursorPos(render_window, &xpos, &ypos);
+	// printf("pitch xpos %f, ypos %f, delta %f\n", (float)xpos, (float)ypos, (float)delta);
 	if(glfwGetKey(render_window, GLFW_KEY_W) == GLFW_PRESS
 		|| glfwGetKey(render_window, GLFW_KEY_W) == GLFW_REPEAT)
 	{
@@ -166,11 +169,12 @@ void CCamera::MoveRight()
 
 void CCamera::RotateStart()
 {
-	if(m_updateRotation)
-		return;
-	
-	auto window = Engine::GetRenderWindow();
-	glfwGetCursorPos(window, &m_cursorX, &m_cursorY);
+	// if(m_updateRotation)
+	// 	return;
+	//
+	// auto window = Engine::GetRenderWindow();
+	// glfwGetCursorPos(window, &m_cursorX, &m_cursorY);
+	// glfwGetCursorPos(window, &m_cursorX, &m_cursorY);
 	m_updateRotation = true;
 }
 
