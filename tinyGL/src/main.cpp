@@ -18,15 +18,15 @@ int main()
 	CRender* render = new CRender;
 	render->Init();
 	
-	 string model_path = "../../../../resource/diablo3_pose/diablo3_pose.obj";
-	 string diffuse_tex_path = "../../../../resource/diablo3_pose/diablo3_pose_diffuse.tga";
-	 CModel* test_model = new CModel(model_path, diffuse_tex_path);
+	string model_path = "../../../../resource/diablo3_pose/diablo3_pose.obj";
+	string diffuse_tex_path = "../../../../resource/diablo3_pose/diablo3_pose_diffuse.tga";
+	CModel* test_model = new CModel(model_path, diffuse_tex_path);
 	
-	 string shader_path[] = {
-	 	"../../../../resource/shader/vertex.shader", "../../../../resource/shader/fragment.shader"
-	 };
-	render->AddModel(test_model, shader_path);
-	 render->AddRenderInfo(test_model->GetRenderInfo(), shader_path);
+	string shader_path[] = {
+		"../../../../resource/shader/vertex.shader", "../../../../resource/shader/fragment.shader"
+	};
+	// render->AddModel(test_model, shader_path);
+	render->AddRenderInfo(test_model->GetRenderInfo(), shader_path);
 	
 	CUtilityBox* test_box = new CUtilityBox;
 	string box_shader[] = {
