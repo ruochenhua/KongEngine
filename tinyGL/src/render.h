@@ -25,7 +25,8 @@ namespace tinyGL
 		int Update(double delta);
 
 		SRenderInfo AddModel(CModel* model, const std::string shader_paths[2]);
-
+		void AddRenderInfo(SRenderInfo render_info, const std::string shader_paths[2]);
+		
 	private:
 		int InitRender();
 		int InitCamera();

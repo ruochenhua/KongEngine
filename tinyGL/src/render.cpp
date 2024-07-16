@@ -161,6 +161,13 @@ SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
 	return info;
 }
 
+void CRender::AddRenderInfo(SRenderInfo render_info, const std::string shader_paths[2])
+{
+	render_info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
+	m_vRenderInfo.push_back(render_info);
+}
+
+
 void CRender::RenderSkyBox()
 {
 	mat4 projection = mainCamera->GetProjectionMatrix();
@@ -256,31 +263,39 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
 	
 	TGAImage* texture_img = render_info._texture_img;
-	assert(texture_img);
+	if(texture_img)
+	{
+		// FIXME: 不用每次都生成吧
+		GLuint texture_id;
+		glGenTextures(1, &texture_id);
+		glBindTexture(GL_TEXTURE_2D, texture_id);
 
-	// FIXME: 不用每次都生成吧
-	GLuint texture_id;
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
+		int tex_width = texture_img->get_width();
+		int tex_height = texture_img->get_height();
+		unsigned char* tex_data = texture_img->buffer();
 
-	int tex_width = texture_img->get_width();
-	int tex_height = texture_img->get_height();
-	unsigned char* tex_data = texture_img->buffer();
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);	
-	GLuint sm_id = glGetUniformLocation(render_info._program_id, "shadowmap_id");
-	glUniform1i(sm_id, m_DepthTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
 	
+		GLuint sm_id = glGetUniformLocation(render_info._program_id, "shadowmap_id");
+		glUniform1i(sm_id, m_DepthTexture);
+	}
 	// Draw the triangle !
-	// glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.indexBuffer);
-	glDrawElements(GL_TRIANGLES, render_info._indices_count, GL_UNSIGNED_INT, 0);
-
+	// if no ido, use draw array
+	if(render_info.indexBuffer == GL_NONE)
+	{
+		glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	}
+	else
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.indexBuffer);
+		glDrawElements(GL_TRIANGLES, render_info._indices_count, GL_UNSIGNED_INT, 0);
+	}
+	
 	glBindVertexArray(GL_NONE);	// 解绑VAO
 }
 

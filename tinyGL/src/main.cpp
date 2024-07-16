@@ -5,6 +5,7 @@
 #include "Engine.h"
 
 #include "TapBodyManager.h"
+#include "utilityshape.h"
 using namespace glm;
 using namespace std;
 using namespace tinyGL;
@@ -16,18 +17,24 @@ int main()
 	// 构建渲并初始化染类
 	CRender* render = new CRender;
 	render->Init();
-
-	CModel* test_model = new CModel;
-	string model_path = "../../../../resource/diablo3_pose/diablo3_pose.obj";
-	string diffuse_tex_path = "../../../../resource/diablo3_pose/diablo3_pose_diffuse.tga";
-	test_model->ImportObj(model_path, diffuse_tex_path);
-
-	string shader_path[] = {
-		"../../../../resource/shader/vertex.shader", "../../../../resource/shader/fragment.shader"
+	
+	 string model_path = "../../../../resource/diablo3_pose/diablo3_pose.obj";
+	 string diffuse_tex_path = "../../../../resource/diablo3_pose/diablo3_pose_diffuse.tga";
+	 CModel* test_model = new CModel(model_path, diffuse_tex_path);
+	
+	 string shader_path[] = {
+	 	"../../../../resource/shader/vertex.shader", "../../../../resource/shader/fragment.shader"
+	 };
+	render->AddModel(test_model, shader_path);
+	 render->AddRenderInfo(test_model->GetRenderInfo(), shader_path);
+	
+	CUtilityBox* test_box = new CUtilityBox;
+	string box_shader[] = {
+		"../../../../resource/shader/utilitybox.vert", "../../../../resource/shader/utilitybox.frag"
 	};
 
-	render->AddModel(test_model, shader_path);
-
+	render->AddRenderInfo(test_box->GetRenderInfo(), box_shader);
+	
 	auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();
 	float current_time, new_time;

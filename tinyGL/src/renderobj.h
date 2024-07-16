@@ -13,7 +13,11 @@ public:
 	virtual std::vector<unsigned int> GetIndices() const;
 	virtual TGAImage* GetTextureImage() const;
 
+	SRenderInfo GetRenderInfo() {return m_RenderInfo;}
+	
 protected:
+	virtual void GenerateRenderInfo() = 0;
+	
 	std::vector<glm::vec3> m_vVertex;
 	std::vector<glm::vec3> m_vNormal;
 	std::vector<glm::vec2> m_vTexCoord;
