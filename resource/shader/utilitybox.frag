@@ -13,5 +13,5 @@ uniform vec3 cam_pos;
 
 void main()
 {
-    color = out_normal;
+    color = out_pos;
 }
