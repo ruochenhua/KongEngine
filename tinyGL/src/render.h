@@ -16,7 +16,7 @@ namespace tinyGL
 
 	public:
 		CRender()
-			: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
+			: m_LightDir(glm::normalize(glm::vec3(-1, 1, 0)))
 			, m_LightColor(1, 1, 1)
 			, m_LightPos(5, 5, 5)
 		{ }
@@ -55,6 +55,6 @@ namespace tinyGL
 		CCamera* mainCamera = nullptr;
 
 		double light_yaw = 0.0;
-		double light_pitch = -45.0;
+		double light_pitch = 45.0;
 	};
 }

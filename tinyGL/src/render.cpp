@@ -64,10 +64,10 @@ int CRender::Update(double delta)
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 	glViewport(0, 0, 1024, 1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
-	for (auto& render_info : m_vRenderInfo)
-	{
-		RenderShadowMap(render_info);
-	}
+	// for (auto& render_info : m_vRenderInfo)
+	// {
+	// 	RenderShadowMap(render_info);
+	// }
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll	
@@ -312,6 +312,7 @@ void CRender::UpdateLightDir(float delta)
 	front.z = sin(glm::radians(light_yaw)) * cos(glm::radians(light_pitch));
 
 	m_LightDir = normalize(front);
+	// printf("--- light dir %f %f %f\n", m_LightDir.x, m_LightDir.y, m_LightDir.z);
 }
 
 
