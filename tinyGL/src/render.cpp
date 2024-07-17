@@ -46,7 +46,7 @@ int CRender::Init()
 
 int CRender::InitCamera()
 {
-	mainCamera = new CCamera(vec3(0.0f, 0.0f, -4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+	mainCamera = new CCamera(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 
 	mainCamera->InitControl();
 	return 0;
@@ -288,7 +288,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	// if no ido, use draw array
 	if(render_info.indexBuffer == GL_NONE)
 	{
-		glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+		glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / render_info._stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 	}
 	else
 	{

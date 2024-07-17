@@ -17,7 +17,7 @@ namespace tinyGL
 	public:
 		CRender()
 			: m_LightDir(glm::normalize(glm::vec3(-1, -1, 0)))
-			, m_LightColor(0, 1, 1)
+			, m_LightColor(1, 1, 1)
 			, m_LightPos(5, 5, 5)
 		{ }
 

@@ -37,6 +37,7 @@ namespace tinyGL
 		// 该渲染单位的shader程序
 		GLuint _program_id = 0;
 		unsigned _vertex_size = 0;
+		unsigned _stride_count = 1;
 		TGAImage* _texture_img = nullptr;
 		unsigned _indices_count = 0;
 	};

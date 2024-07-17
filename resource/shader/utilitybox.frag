@@ -1,9 +1,7 @@
 #version 330 core
 
-in vec2 uv;
-in vec3 normal_world;
-in vec3 in_pos;
-in vec4 ShadowCoord;
+in vec3 out_pos;
+in vec3 out_normal;
 
 out vec3 color;
 
@@ -15,5 +13,5 @@ uniform vec3 cam_pos;
 
 void main()
 {
-    color = in_pos;
+    color = out_normal;
 }

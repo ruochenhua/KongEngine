@@ -41,7 +41,7 @@ void CCamera::UpdateRotation(double delta)
 	auto window = Engine::GetRenderWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);
-	
+	double rot_speed = 5.0;
 	double delta_x = x_pos - m_cursorX;
 	float delta_y = y_pos - m_cursorY;
 	
@@ -52,8 +52,9 @@ void CCamera::UpdateRotation(double delta)
 	{
 		return;
 	}
-	m_yaw -= delta_x*delta;
-	m_pitch += delta_y*delta;
+	
+	m_yaw -= delta_x*delta*rot_speed;
+	m_pitch += delta_y*delta*rot_speed;
 
 	m_pitch = clamp(m_pitch, -89.f, 89.f);
 	// printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);

@@ -95,7 +95,7 @@ void CModel::GenerateRenderInfo()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
 	
 	glVertexAttribPointer(
-		2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		1,                  // attribute 2. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized
@@ -114,7 +114,7 @@ void CModel::GenerateRenderInfo()
 	
 		glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo._texture_buffer);
 		glVertexAttribPointer(
-			1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+			2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 			2,                  // size
 			GL_FLOAT,           // type
 			GL_FALSE,           // normalized?
