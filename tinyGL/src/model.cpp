@@ -122,6 +122,18 @@ void CModel::GenerateRenderInfo()
 			(void*)0            // array buffer offset
 		);
 		glEnableVertexAttribArray(2);
+		
+		glGenTextures(1, &m_RenderInfo.texture_id);
+		// glActiveTexture(GL_TEXTURE0);	//如果只有一个texture的话可以不写，多个texture传入shader的话就要设置不同的activate texture
+		glBindTexture(GL_TEXTURE_2D, m_RenderInfo.texture_id);
+
+		int tex_width = tex_img->get_width();
+		int tex_height = tex_img->get_height();
+		unsigned char* tex_data = tex_img->buffer();
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
 	// index buffer
 	std::vector<unsigned int> indices = GetIndices();
@@ -134,5 +146,4 @@ void CModel::GenerateRenderInfo()
 	m_RenderInfo._vertex_size = vertices.size();
 	m_RenderInfo._indices_count = indices.size();
 	m_RenderInfo._texture_img = GetTextureImage();
-	
 }

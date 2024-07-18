@@ -85,82 +85,6 @@ int CRender::Update(double delta)
 	return 1;
 }
 
-SRenderInfo CRender::AddModel(CModel* model, const std::string shader_paths[2])
-{
-	std::vector<float> vertices = model->GetVertices();
-	SRenderInfo info;
-
-	glGenVertexArrays(1, &info.vertexArrayId);
-	glBindVertexArray(info.vertexArrayId);
-
-	//init vertex buffer
-	glGenBuffers(1, &info.vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, info.vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-
-	//vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER,  info.vertexBuffer);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-	glEnableVertexAttribArray(0);
-	
-	//normal buffer
-	std::vector<float> normals = model->GetNormals();
-	glGenBuffers(1, &info._normal_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, info._normal_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
-	
-	glVertexAttribPointer(
-		2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-	glEnableVertexAttribArray(1);
-	
-	TGAImage* tex_img = model->GetTextureImage();
-	if (tex_img)
-	{
-		std::vector<float> tex_coords = model->GetTextureCoords();
-		glGenBuffers(1, &info._texture_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, info._texture_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
-	
-		glBindBuffer(GL_ARRAY_BUFFER, info._texture_buffer);
-		glVertexAttribPointer(
-			1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-			2,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
-		glEnableVertexAttribArray(2);
-	}
-	// index buffer
-	std::vector<unsigned int> indices = model->GetIndices();
-	glGenBuffers(1, &info.indexBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info.indexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
-	glBindVertexArray(GL_NONE);
-	
-	info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
-	info._vertex_size = vertices.size();
-	info._indices_count = indices.size();
-	info._texture_img = model->GetTextureImage();
-
-	m_vRenderInfo.push_back(info);
-	return info;
-}
-
 void CRender::AddRenderInfo(SRenderInfo render_info, const std::string shader_paths[2])
 {
 	render_info._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
@@ -262,28 +186,6 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	mat3 normal_model_mat = transpose(inverse(Model));
 	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
 	
-	TGAImage* texture_img = render_info._texture_img;
-	if(texture_img)
-	{
-		// FIXME: 不用每次都生成吧
-		GLuint texture_id;
-		glGenTextures(1, &texture_id);
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-
-		int tex_width = texture_img->get_width();
-		int tex_height = texture_img->get_height();
-		unsigned char* tex_data = texture_img->buffer();
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
-	
-		GLuint sm_id = glGetUniformLocation(render_info._program_id, "shadowmap_id");
-		glUniform1i(sm_id, m_DepthTexture);
-	}
 	// Draw the triangle !
 	// if no ido, use draw array
 	if(render_info.indexBuffer == GL_NONE)

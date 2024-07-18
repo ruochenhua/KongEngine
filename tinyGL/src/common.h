@@ -39,6 +39,7 @@ namespace tinyGL
 		unsigned _vertex_size = 0;
 		unsigned _stride_count = 1;
 		TGAImage* _texture_img = nullptr;
+		GLuint texture_id = 0;
 		unsigned _indices_count = 0;
 	};
 
