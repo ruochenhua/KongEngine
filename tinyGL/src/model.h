@@ -15,7 +15,6 @@ public:
 	// 	TGAImage* GetTextureImage() const;
 
 private:
-	int ImportObj(const std::string& model_path, const std::string& diffuse_tex_path);
 	// 	std::vector<glm::vec3> m_vVertex;
 	// 	std::vector<glm::vec3> m_vNormal;
 	// 	std::vector<glm::vec2> m_vTexCoord;

@@ -14,5 +14,10 @@ public:
 private:
 	static std::vector<float> s_vBoxVertices;
 	static std::vector<int> s_vBoxIndices;
+
+	std::string texture_path;
+	std::string specular_map_path;
+
+	TGAImage* specular_map_image = nullptr;
 };
 }

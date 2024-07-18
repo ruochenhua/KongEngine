@@ -48,6 +48,12 @@ std::vector<float> CUtilityBox::s_vBoxVertices = {
 CUtilityBox::CUtilityBox()
 {
 	GenerateRenderInfo();
+	// 这里先写死texture和specular map
+	texture_path = RESOURCE_PATH + "crater/crater_diffuse.png";
+	specular_map_path = RESOURCE_PATH + "crater/crater_specular_map.png";
+
+	m_pDiffuseTex = LoadTexture(texture_path);
+	specular_map_image = LoadTexture(specular_map_path);
 }
 
 
@@ -94,6 +100,9 @@ void CUtilityBox::GenerateRenderInfo()
 		(void*)(3*sizeof(float))            // array buffer offset
 	);
 	glEnableVertexAttribArray(1);
+
+	// 绑定diffuse texture和specular map texture
+	
 	
 	glBindVertexArray(GL_NONE);
 	

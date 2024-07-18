@@ -32,8 +32,7 @@ void main(){
 	vec3 v = normalize(cam_pos - in_pos);
 	vec3 h = normalize(light_dir + v);
 	
-	vec3 reflect_dir = reflect(-light_dir, normal_world);
-	float spec = pow(max(0.0, dot(v, reflect_dir)), 256);
+	float spec = pow(max(0.0, dot(normal_world, h)), 32);
 	vec3 specular = ks * spec * light_color;
 
 	// vec3 specular = vec3(0, 0, 0);

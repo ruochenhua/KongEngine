@@ -27,5 +27,8 @@ protected:
 	std::vector<unsigned int> m_vIndex;
 
 	SRenderInfo m_RenderInfo;
+
+	int ImportObj(const std::string& model_path);
+	TGAImage* LoadTexture(const std::string& texture_path);
 };
 }
