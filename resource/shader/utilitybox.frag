@@ -16,7 +16,7 @@ void main()
     float ka = 0.1;
     float kd = 1.0;
     float ks = 0.5;
-    vec3 box_color = vec3(1.0f, 0.5f, 0.31f);
+    vec3 box_color = vec3(1.0, 0.5, 0.31);
 
 	vec3 ambient = ka * light_color;
 
@@ -30,7 +30,10 @@ void main()
 	vec3 h = normalize(light_dir + v);
 	
 	vec3 reflect_dir = reflect(-light_dir, out_normal);
-	float spec = pow(max(dot(v, reflect_dir), 0.0), 32);
+	float spec = pow(max(dot(h, out_normal), 0.0), 256);
+    // phong
+    // float spec = pow(max(dot(v, reflect_dir), 0.0), 32);
+    
 	vec3 specular = ks * spec * light_color;
 
 	// vec3 specular = vec3(0, 0, 0);

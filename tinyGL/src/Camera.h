@@ -63,7 +63,7 @@ namespace tinyGL
         float m_yaw = 0.0;
         float m_pitch = 0.0;
         float rotate_speed = 20.f;
-        float move_speed = 50.f
+        float move_speed = 50.f;
 
         SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 500.0f);
     };
