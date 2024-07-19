@@ -7,7 +7,7 @@ using namespace tinyGL;
 CModel::CModel(const std::string& model_path, const std::string& diffuse_tex_path)
 {
 	ImportObj(model_path);
-	m_pDiffuseTex = LoadTexture(diffuse_tex_path);
+	m_RenderInfo.diffuse_tex_id = LoadTexture(diffuse_tex_path);
 	GenerateRenderInfo();
 }
 
@@ -50,9 +50,8 @@ void CModel::GenerateRenderInfo()
 		(void*)0            // array buffer offset
 	);
 	glEnableVertexAttribArray(1);
-	
-	TGAImage* tex_img = GetTextureImage();
-	if (tex_img)
+		
+	if (m_RenderInfo.diffuse_tex_id)
 	{
 		std::vector<float> tex_coords = GetTextureCoords();
 		glGenBuffers(1, &m_RenderInfo._texture_buffer);
@@ -70,17 +69,8 @@ void CModel::GenerateRenderInfo()
 		);
 		glEnableVertexAttribArray(2);
 		
-		glGenTextures(1, &m_RenderInfo.diffuse_tex_id);
-		// glActiveTexture(GL_TEXTURE0);	//Èç¹ûÖ»ÓÐÒ»¸ötextureµÄ»°¿ÉÒÔ²»Ð´£¬¶à¸ötexture´«ÈëshaderµÄ»°¾ÍÒªÉèÖÃ²»Í¬µÄactivate texture
-		glBindTexture(GL_TEXTURE_2D, m_RenderInfo.diffuse_tex_id);
-
-		int tex_width = tex_img->get_width();
-		int tex_height = tex_img->get_height();
-		unsigned char* tex_data = tex_img->buffer();
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		// glActiveTexture(GL_TEXTURE0);	//ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ò»ï¿½ï¿½textureï¿½Ä»ï¿½ï¿½ï¿½ï¿½Ô²ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½textureï¿½ï¿½ï¿½ï¿½shaderï¿½Ä»ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Ã²ï¿½Í¬ï¿½ï¿½activate texture
+		glBindTexture(GL_TEXTURE_2D, m_RenderInfo.diffuse_tex_id);		
 	}
 	// index buffer
 	std::vector<unsigned int> indices = GetIndices();

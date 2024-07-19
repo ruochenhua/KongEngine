@@ -1,6 +1,7 @@
 #include "renderobj.h"
 #include "OBJ_Loader.h"
 #include "tgaimage.h"
+#include "stb_image.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -44,11 +45,6 @@ std::vector<float> CRenderObj::GetNormals() const
 	return normals;
 }
 
-TGAImage* CRenderObj::GetTextureImage() const
-{
-	return m_pDiffuseTex;
-}
-
 int CRenderObj::ImportObj(const std::string& model_path)
 {
 	objl::Loader obj_loader;
@@ -89,16 +85,48 @@ int CRenderObj::ImportObj(const std::string& model_path)
 	return 0;
 }
 
-TGAImage* CRenderObj::LoadTexture(const std::string& texture_path)
+GLuint CRenderObj::LoadTexture(const std::string& texture_path)
 {
-	if (!texture_path.empty())
+	GLuint texture_id = GL_NONE;
+	if (texture_path.empty())
 	{
-		auto tex_image = new TGAImage;
-		tex_image->read_tga_file(texture_path.c_str());
-		return tex_image;
+		return texture_id;		
 	}
 
-	return nullptr;
+	int width, height, nr_component;
+	auto data = stbi_load(texture_path.c_str(), &width, &height, nr_component, 0);
+	assert(data);
+	
+	GLenum format = GL_BGR;
+	switch(nr_component)
+	{
+	case 1:
+		format = GL_RED;
+		break;
+	case 3:
+		format = GL_RGB;
+		break;
+	case 4:
+		format = GL_RGBA;
+		break;
+	}
+	
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// release memory
+	stbi_image_free(data);
+	// auto tex_image = new TGAImage;
+	// tex_image->read_tga_file(texture_path.c_str());
+	
+
+	return texture_id;
 }
 
 std::vector<unsigned int> CRenderObj::GetIndices() const

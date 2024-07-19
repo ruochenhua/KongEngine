@@ -49,14 +49,12 @@ std::vector<float> CUtilityBox::s_vBoxVertices = {
 CUtilityBox::CUtilityBox()
 {
 	GenerateRenderInfo();
-	// ������д��texture��specular map
+	// load diffuse texture and specular map
 	texture_path = RESOURCE_PATH + "crater/crater_diffuse.png";
 	specular_map_path = RESOURCE_PATH + "crater/crater_specular_map.png";
 
-	m_pDiffuseTex = LoadTexture(texture_path);
-	specular_map_image = LoadTexture(specular_map_path);
-	// texture resource error
-	assert(m_pDiffuseTex && specular_map_image);
+	m_RenderInfo.diffuse_tex_id = LoadTexture(texture_path);
+	m_RenderInfo.specular_map_tex_id = LoadTexture(specular_map_path);		
 }
 
 
@@ -105,7 +103,10 @@ void CUtilityBox::GenerateRenderInfo()
 	glEnableVertexAttribArray(1);
 
 	// ��diffuse texture��specular map texture
-	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(1, m_RenderInfo.diffuse_tex_id);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(1, m_RenderInfo.specular_map_tex_id);
 	
 	glBindVertexArray(GL_NONE);
 	
