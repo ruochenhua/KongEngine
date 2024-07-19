@@ -15,13 +15,13 @@ int CRender::Init()
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
 
-	// ³õÊ¼»¯Ìì¿ÕºÐ
+	// ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Õºï¿½
 	m_SkyBox.Init();
 	//init show map
 	glGenFramebuffers(1, &m_FrameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 
-	// ? Éî¶ÈÌùÍ¼Ïà¹Ø
+	// ? ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½
 	glGenTextures(1, &m_DepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -31,12 +31,12 @@ int CRender::Init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthTexture, 0);
-	// Çå¿Õbuffer
+	// ï¿½ï¿½ï¿½buffer
 	glDrawBuffer(GL_NONE);
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		return -1;
 
-	// ¼ÓÔØshader£¬±àÒë²¢¹¹½¨¶ÔÓ¦µÄ³ÌÐò
+	// ï¿½ï¿½ï¿½ï¿½shaderï¿½ï¿½ï¿½ï¿½ï¿½ë²¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ä³ï¿½ï¿½ï¿½
 	m_ShadowMapProgramID = LoadShaders("../../../../resource/shader/shadowmap_vert.shader",
 		"../../../../resource/shader/shadowmap_frag.shader");
 
@@ -104,7 +104,7 @@ void CRender::RenderShadowMap(const SRenderInfo& render_info)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK); // Cull back-facing triangles -> draw only front-facing triangles
 
-	// Ê¹ÓÃÒõÓ°ÌùÍ¼µÄshader
+	// Ê¹ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Í¼ï¿½ï¿½shader
 	glUseProgram(m_ShadowMapProgramID);	
 
 	// Compute the MVP matrix from the light's point of view
@@ -144,7 +144,7 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glCullFace(GL_BACK);
 
 	glUseProgram(render_info._program_id);
-	glBindVertexArray(render_info.vertexArrayId);	// °ó¶¨VAO
+	glBindVertexArray(render_info.vertexArrayId);	// ï¿½ï¿½VAO
 	
 	mat4 Model = mat4(1.0f);
 	mat4 projection = mainCamera->GetProjectionMatrix();
@@ -180,30 +180,41 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	GLuint model_mat_id = glGetUniformLocation(render_info._program_id, "normal_model_mat");
 
 	/*
-	 * ·¨Ïß¾ØÕó±»¶¨ÒåÎª¡¸Ä£ÐÍ¾ØÕó×óÉÏ½Ç3x3²¿·ÖµÄÄæ¾ØÕóµÄ×ªÖÃ¾ØÕó¡¹¡£
-	 * ËüÊ¹ÓÃÁËÒ»Ð©ÏßÐÔ´úÊýµÄ²Ù×÷À´ÒÆ³ý¶Ô·¨ÏòÁ¿´íÎóËõ·ÅµÄÓ°Ïì¡£
+	 * ï¿½ï¿½ï¿½ß¾ï¿½ï¿½ó±»¶ï¿½ï¿½ï¿½Îªï¿½ï¿½Ä£ï¿½Í¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï½ï¿½3x3ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Ã¾ï¿½ï¿½ó¡¹¡ï¿½
+	 * ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½Ò»Ð©ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½Ô·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Åµï¿½Ó°ï¿½ì¡£
 	 */
 	mat3 normal_model_mat = transpose(inverse(Model));
 	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
 	
+	if(render_info.diffuse_tex_id)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, render_info.diffuse_tex_id);
+	}
+
+	if(render_info.diffuse_tex_id)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, render_info.specular_map_tex_id);
+	}
+
 	// Draw the triangle !
-	// if no ido, use draw array
+	// if no index, use draw array
 	if(render_info.indexBuffer == GL_NONE)
 	{
 		glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / render_info._stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 	}
 	else
-	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.indexBuffer);
+	{		
 		glDrawElements(GL_TRIANGLES, render_info._indices_count, GL_UNSIGNED_INT, 0);
 	}
 	
-	glBindVertexArray(GL_NONE);	// ½â°óVAO
+	glBindVertexArray(GL_NONE);	// ï¿½ï¿½ï¿½VAO
 }
 
 void CRender::UpdateLightDir(float delta)
 {
-	// ¹âÕÕ±ä»¯
+	// ï¿½ï¿½ï¿½Õ±ä»¯
 	double light_speed = 30.0;
 
 	light_yaw += light_speed*delta;

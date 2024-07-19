@@ -87,7 +87,7 @@ void CUtilityBox::GenerateRenderInfo()
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized?
-		6*sizeof(float),	// stride
+		8*sizeof(float),	// stride
 		(void*)0            // array buffer offset
 	);
 	glEnableVertexAttribArray(0);
@@ -97,16 +97,20 @@ void CUtilityBox::GenerateRenderInfo()
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized
-		6*sizeof(float),                  // stride
+		8*sizeof(float),                  // stride
 		(void*)(3*sizeof(float))            // array buffer offset
 	);
 	glEnableVertexAttribArray(1);
 
-	// ��diffuse texture��specular map texture
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(1, m_RenderInfo.diffuse_tex_id);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(1, m_RenderInfo.specular_map_tex_id);
+	glVertexAttribPointer(
+	2,                  // attribute 2. 
+	2,                  // size
+	GL_FLOAT,           // type
+	GL_FALSE,           // normalized
+	8*sizeof(float),                  // stride
+	(void*)(6*sizeof(float))            // array buffer offset
+	);
+	glEnableVertexAttribArray(2);
 	
 	glBindVertexArray(GL_NONE);
 	

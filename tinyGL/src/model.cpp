@@ -77,6 +77,7 @@ void CModel::GenerateRenderInfo()
 	glGenBuffers(1, &m_RenderInfo.indexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderInfo.indexBuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
+	
 	glBindVertexArray(GL_NONE);
 	
 	// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);

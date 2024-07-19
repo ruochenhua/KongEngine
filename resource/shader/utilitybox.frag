@@ -2,6 +2,7 @@
 
 in vec3 out_pos;
 in vec3 out_normal;
+in vec2 out_texcoord;
 
 out vec3 color;
 
@@ -10,6 +11,9 @@ uniform vec3 light_color;
 uniform vec3 light_dir;
 
 uniform vec3 cam_pos;
+
+uniform sampler2D diffuse_texture;
+uniform sampler2D specular_map_texture;
 
 void main()
 {
@@ -50,5 +54,6 @@ void main()
 	// }
 
 	
-	color = (diffuse + specular) * box_color;
+	//color = vec3(out_texcoord, 1.0);// (diffuse + specular) * box_color;
+	color = texture(diffuse_texture, out_texcoord).rgb;
 }
