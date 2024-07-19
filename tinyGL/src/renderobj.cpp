@@ -1,7 +1,10 @@
 #include "renderobj.h"
 #include "OBJ_Loader.h"
 #include "tgaimage.h"
+
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
 
 using namespace tinyGL;
 using namespace glm;
@@ -94,7 +97,7 @@ GLuint CRenderObj::LoadTexture(const std::string& texture_path)
 	}
 
 	int width, height, nr_component;
-	auto data = stbi_load(texture_path.c_str(), &width, &height, nr_component, 0);
+	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data);
 	
 	GLenum format = GL_BGR;
@@ -108,6 +111,8 @@ GLuint CRenderObj::LoadTexture(const std::string& texture_path)
 		break;
 	case 4:
 		format = GL_RGBA;
+		break;
+	default:
 		break;
 	}
 	
