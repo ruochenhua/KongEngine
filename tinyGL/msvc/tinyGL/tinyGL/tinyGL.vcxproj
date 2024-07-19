@@ -147,6 +147,7 @@
     <ClInclude Include="..\..\..\src\render.h" />
     <ClInclude Include="..\..\..\src\renderobj.h" />
     <ClInclude Include="..\..\..\src\skybox.h" />
+    <ClInclude Include="..\..\..\src\stb_image.h" />
     <ClInclude Include="..\..\..\src\tgaimage.h" />
     <ClInclude Include="..\..\..\src\utilityshape.h" />
   </ItemGroup>

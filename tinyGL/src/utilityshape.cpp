@@ -56,7 +56,7 @@ CUtilityBox::CUtilityBox()
 	m_pDiffuseTex = LoadTexture(texture_path);
 	specular_map_image = LoadTexture(specular_map_path);
 	// texture resource error
-	assert(m_pDiffuseTex || specular_map_image);
+	assert(m_pDiffuseTex && specular_map_image);
 }
 
 
