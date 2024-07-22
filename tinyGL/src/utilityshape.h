@@ -18,6 +18,5 @@ private:
 	std::string texture_path;
 	std::string specular_map_path;
 
-	TGAImage* specular_map_image = nullptr;
 };
 }

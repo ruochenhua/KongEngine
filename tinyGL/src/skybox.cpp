@@ -8,7 +8,7 @@ namespace tinyGL
 void SCubeMapTexture::Bind(GLenum texture_unit)
 {
 	glActiveTexture(texture_unit);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, _CubeMapID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 }
 
 void SCubeMapTexture::Load(const std::vector<std::string>& tex_path_vec, const std::vector<unsigned int>& tex_type_vec)
@@ -17,8 +17,8 @@ void SCubeMapTexture::Load(const std::vector<std::string>& tex_path_vec, const s
 	assert(tex_type_vec.size() == 6);
 
 	//create texture
-	glGenTextures(1, &_CubeMapID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, _CubeMapID);
+	glGenTextures(1, &cube_map_id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 
 
 	for (int i = 0; i < 6; ++i)
@@ -26,7 +26,7 @@ void SCubeMapTexture::Load(const std::vector<std::string>& tex_path_vec, const s
 		auto tex_img = new TGAImage;
 		assert(tex_img->read_tga_file(tex_path_vec[i].c_str()));
 
-		_aTextureImg[i] = tex_img;
+		texture_img[i] = tex_img;
 
 		//filter
 		int tex_width = tex_img->get_width();
@@ -53,8 +53,8 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	const std::vector<unsigned int>& tex_type_vec)
 {
 	//create box mesh
-	_vertices.clear();
-	_vertices = {
+	vertices.clear();
+	vertices = {
 		-0.5f, -0.5f, 0.5f,
 		0.5f, -0.5f, 0.5f,
 		0.5f, 0.5f, 0.5f,
@@ -144,8 +144,8 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 	};
 
 		// 指定包围盒的顶点属性 位置
-	_vGeoBB.clear();
-	_vGeoBB = {
+	v_geo_bb.clear();
+	v_geo_bb = {
 		// 背面
 		-1.0f, 1.0f, -1.0f,		// A
 		-1.0f, -1.0f, -1.0f,	// B
@@ -195,14 +195,14 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		-1.0f, -1.0f, -1.0f,  // B
 	};
 
-	glGenVertexArrays(1, &_render_info.vertex_array_id);
-	glBindVertexArray(_render_info.vertex_array_id);
+	glGenVertexArrays(1, &render_info.vertex_array_id);
+	glBindVertexArray(render_info.vertex_array_id);
 
-	glGenBuffers(1, &_render_info.vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &render_info.vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -215,10 +215,10 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
 	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
 
-	_render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
-	_render_info.vertex_size = _vertices.size();
+	render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	render_info.vertex_size = vertices.size();
 
-	_cube_map_tex.Load(tex_path_vec, tex_type_vec);
+	cube_map_tex.Load(tex_path_vec, tex_type_vec);
 }
 
 void CSkyBox::Init()
@@ -248,14 +248,14 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 
-	auto& mesh_info = m_BoxMesh._render_info;
+	auto& mesh_info = m_BoxMesh.render_info;
 	glUseProgram(mesh_info.program_id);
 	glBindVertexArray(mesh_info.vertex_array_id);	// 绑定VAO
 	GLuint matrix_id = glGetUniformLocation(mesh_info.program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh._cube_map_tex._CubeMapID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh.cube_map_tex.cube_map_id);
 
 	glUniform1i(glGetUniformLocation(mesh_info.program_id, "skybox"), 0);
 	// 	glEnableVertexAttribArray(1);

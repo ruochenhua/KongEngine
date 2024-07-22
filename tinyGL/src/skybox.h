@@ -2,14 +2,16 @@
 #include "common.h"
 namespace tinyGL
 {
-struct SCubeMapTexture {
+	class TGAImage;
+
+	struct SCubeMapTexture {
 	void Bind(GLenum texture_unit);
 	void Load(const std::vector<std::string>& tex_path_vec,
 		const std::vector<unsigned int>& tex_type_vec);
 	//天空盒的贴图
 	//GLuint _aTextureID[6];
-	GLuint _CubeMapID;
-	TGAImage* _aTextureImg[6];
+	GLuint cube_map_id;
+	TGAImage* texture_img[6];
 };
 
 struct SSkyBoxMesh {
@@ -17,14 +19,14 @@ struct SSkyBoxMesh {
 		const std::vector<unsigned int>& tex_type_vec);
 
 	//盒子的mesh
-	std::vector<GLfloat> _vertices;
-	std::vector<GLfloat> _texcoords;
+	std::vector<GLfloat> vertices;
+	std::vector<GLfloat> texcoords;
 
-	std::vector<GLfloat> _vGeoBB;
+	std::vector<GLfloat> v_geo_bb;
 
-	SRenderInfo _render_info;
+	SRenderInfo render_info;
 
-	SCubeMapTexture _cube_map_tex;
+	SCubeMapTexture cube_map_tex;
 };
 
 class CSkyBox
