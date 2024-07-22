@@ -7,7 +7,9 @@ class TGAImage;
 class CModel : public CRenderObj
 {
 public:
-	CModel(const std::string& model_path, const std::string& diffuse_tex_path);
+	CModel(const string& model_path,
+		const string& diffuse_tex_path,
+		const vector<string>& shader_path_list);
 	
 private:
 	virtual void GenerateRenderInfo() override;

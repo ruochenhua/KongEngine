@@ -20,20 +20,21 @@ int main()
 	
 	string model_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose.obj";
 	string diffuse_tex_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose_diffuse.tga";
-	CModel* test_model = new CModel(model_path, diffuse_tex_path);
-	
-	string shader_path[] = {
+	vector<string> shader_path = {
 		RESOURCE_PATH + "shader/vertex.shader", RESOURCE_PATH + "shader/fragment.shader"
 	};
-	// render->AddModel(test_model, shader_path);
-	render->AddRenderInfo(test_model->GetRenderInfo(), shader_path);
+	CModel* test_model = new CModel(model_path, diffuse_tex_path, shader_path);
 	
-	CUtilityBox* test_box = new CUtilityBox;
-	string box_shader[] = {
+	
+	// render->AddModel(test_model, shader_path);
+	render->AddRenderInfo(test_model->GetRenderInfo());
+	vector <string> box_shader[] = {
 		RESOURCE_PATH + "shader/utilitybox.vert", RESOURCE_PATH + "shader/utilitybox.frag"
 	};
 
-	render->AddRenderInfo(test_box->GetRenderInfo(), box_shader);
+	CUtilityBox* test_box = new CUtilityBox(box_shader);
+	
+	render->AddRenderInfo(test_box->GetRenderInfo());
 	
 	auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();

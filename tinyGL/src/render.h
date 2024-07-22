@@ -12,7 +12,6 @@ namespace tinyGL
 	{
 	public:
 		GLFWwindow* render_window;
-		static GLuint LoadShaders(const std::string& vs, const std::string& fs);
 
 	public:
 		CRender()
@@ -24,7 +23,7 @@ namespace tinyGL
 		int Init();
 		int Update(double delta);
 
-		void AddRenderInfo(SRenderInfo render_info, const std::string shader_paths[2]);
+		void AddRenderInfo(SRenderInfo render_info);
 		
 	private:
 		int InitRender();
@@ -46,8 +45,8 @@ namespace tinyGL
 
 		//shadow map
 		GLuint m_FrameBuffer;
-		GLuint m_ShadowMapProgramID;	// °üº¬ÒõÓ°ÌùÍ¼µÄshader
-		GLuint m_DepthTexture;			// Éî¶ÈÌùÍ¼
+		GLuint m_ShadowMapProgramID;	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Í¼ï¿½ï¿½shader
+		GLuint m_DepthTexture;			// ï¿½ï¿½ï¿½ï¿½ï¿½Í¼
 		GLuint m_DepthMatrixID;
 		glm::mat4 m_DepthMVP;
 

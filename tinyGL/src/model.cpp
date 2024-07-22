@@ -4,7 +4,8 @@
 using namespace glm;
 using namespace tinyGL;
 
-CModel::CModel(const std::string& model_path, const std::string& diffuse_tex_path)
+CModel::CModel(const string& model_path, const string& diffuse_tex_path, const vector<string>& shader_path_list)
+	:CRenderObj(shader_path_list)
 {
 	ImportObj(model_path);
 	m_RenderInfo.diffuse_tex_id = LoadTexture(diffuse_tex_path);

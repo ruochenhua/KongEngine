@@ -46,15 +46,17 @@ std::vector<float> CUtilityBox::s_vBoxVertices = {
     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 };
 
-CUtilityBox::CUtilityBox()
+CUtilityBox::CUtilityBox(const vector<string>& shader_path_list)
+	: CRenderObj(shader_path_list)
 {
-	GenerateRenderInfo();
 	// load diffuse texture and specular map
 	texture_path = RESOURCE_PATH + "crater/crater_diffuse.png";
 	specular_map_path = RESOURCE_PATH + "crater/crater_specular_map.png";
 
 	m_RenderInfo.diffuse_tex_id = LoadTexture(texture_path);
 	m_RenderInfo.specular_map_tex_id = LoadTexture(specular_map_path);		
+
+	GenerateRenderInfo();
 }
 
 
@@ -116,4 +118,9 @@ void CUtilityBox::GenerateRenderInfo()
 	
 	m_RenderInfo._vertex_size = vertices.size();
 	m_RenderInfo._stride_count = 6;
+
+	glUseProgram(m_RenderInfo._program_id);
+	glUniform1i(glGetUniformLocation(m_RenderInfo._program_id, "diffuse_texture"), 0);
+	glUniform1i(glGetUniformLocation(m_RenderInfo._program_id, "specular_map_texture"), 1);
+	
 }

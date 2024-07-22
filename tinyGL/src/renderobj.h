@@ -7,6 +7,7 @@ class TGAImage;
 class CRenderObj
 {
 public:
+	CRenderObj(const vector<string>& shader_path_list);	
 	virtual std::vector<float> GetVertices() const;
 	virtual std::vector<float> GetTextureCoords() const;
 	virtual std::vector<float> GetNormals() const;
