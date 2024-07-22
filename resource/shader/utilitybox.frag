@@ -19,7 +19,7 @@ void main()
 {
     float ka = 0.1;
     float kd = 1.0;
-    float ks = 0.5;
+    float ks = 3.0;
     vec3 box_color = vec3(1.0, 0.5, 0.31);
 
 	vec3 ambient = ka * light_color;
@@ -31,11 +31,11 @@ void main()
 
 	//specular 分量计算
 	vec3 v = normalize(cam_pos - out_pos);
-	vec3 h = normalize(light_dir + v);
+	vec3 h = normalize(light_dir + v);	
 	
-	vec3 reflect_dir = reflect(-light_dir, out_normal);
 	float spec = pow(max(dot(h, out_normal), 0.0), 256);
     // phong
+	// vec3 reflect_dir = reflect(-light_dir, out_normal);
     // float spec = pow(max(dot(v, reflect_dir), 0.0), 32);
     
 	vec3 specular = ks * spec * light_color;
@@ -55,5 +55,7 @@ void main()
 
 	
 	//color = vec3(out_texcoord, 1.0);// (diffuse + specular) * box_color;
-	color = texture(diffuse_texture, out_texcoord).rgb;
+	diffuse_color = diffuse * texture(diffuse_texture, out_texcoord).rgb;
+	specular_color = specular * texture(specular_map_texture, out_texcoord).rgb;
+	color = diffuse_color +specular_color;
 }
