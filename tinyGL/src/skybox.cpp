@@ -195,14 +195,14 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		-1.0f, -1.0f, -1.0f,  // B
 	};
 
-	glGenVertexArrays(1, &_render_info.vertexArrayId);
-	glBindVertexArray(_render_info.vertexArrayId);
+	glGenVertexArrays(1, &_render_info.vertex_array_id);
+	glBindVertexArray(_render_info.vertex_array_id);
 
-	glGenBuffers(1, &_render_info.vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertexBuffer);
+	glGenBuffers(1, &_render_info.vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _render_info.vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -215,8 +215,8 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
 	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
 
-	_render_info._program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
-	_render_info._vertex_size = _vertices.size();
+	_render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	_render_info.vertex_size = _vertices.size();
 
 	_cube_map_tex.Load(tex_path_vec, tex_type_vec);
 }
@@ -249,15 +249,15 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	glDisable(GL_DEPTH_TEST);
 
 	auto& mesh_info = m_BoxMesh._render_info;
-	glUseProgram(mesh_info._program_id);
-	glBindVertexArray(mesh_info.vertexArrayId);	// 绑定VAO
-	GLuint matrix_id = glGetUniformLocation(mesh_info._program_id, "MVP");
+	glUseProgram(mesh_info.program_id);
+	glBindVertexArray(mesh_info.vertex_array_id);	// 绑定VAO
+	GLuint matrix_id = glGetUniformLocation(mesh_info.program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh._cube_map_tex._CubeMapID);
 
-	glUniform1i(glGetUniformLocation(mesh_info._program_id, "skybox"), 0);
+	glUniform1i(glGetUniformLocation(mesh_info.program_id, "skybox"), 0);
 	// 	glEnableVertexAttribArray(1);
 	// 	glBindBuffer(GL_ARRAY_BUFFER, mesh_info._texture_buffer);
 	// 	glVertexAttribPointer(
@@ -269,7 +269,7 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	// 		(void*)0            // array buffer offset
 	// 	);
 
-	glDrawArrays(GL_TRIANGLES, 0, mesh_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, mesh_info.vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(GL_NONE);	// 解绑VAO
 }
 }

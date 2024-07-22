@@ -5,10 +5,22 @@
 #include "utilityshape.h"
 using namespace tinyGL;
 
-vector<SRenderInfo> SceneLoader::LoadScene(const string& file_path)
+string ToResourcePath(const string& in_path)
+{
+    return RESOURCE_PATH + in_path;
+}
+
+string GetResourcePathFromSubstr(const c4::csubstr& in_substr)
+{
+    string std_substr(in_substr.data(), in_substr.len);
+    return ToResourcePath(std_substr);
+}
+
+
+vector<SRenderInfo> CSceneLoader::LoadScene(const string& file_path)
 {
     std::string yaml_content;
-    std::ifstream yaml_stream(file_path, std::ios::in);
+    std::ifstream yaml_stream(ToResourcePath(file_path), std::ios::in);
     if (yaml_stream.is_open()) {
         std::stringstream sstr;
         sstr << yaml_stream.rdbuf();
@@ -28,10 +40,10 @@ vector<SRenderInfo> SceneLoader::LoadScene(const string& file_path)
             {
                 auto vs_path = child["shader_path"]["vs"].val();
                 auto fs_path = child["shader_path"]["fs"].val();
-                string vs_path_string(vs_path.data(), vs_path.len);
-                string fs_path_string(fs_path.data(), fs_path.len);
+                string vs_path_string = GetResourcePathFromSubstr(vs_path);
+                string fs_path_string = GetResourcePathFromSubstr(fs_path);
 
-                CUtilityBox* test_box = new CUtilityBox({RESOURCE_PATH+vs_path_string, RESOURCE_PATH+fs_path_string});
+                CUtilityBox* test_box = new CUtilityBox({vs_path_string, fs_path_string});
                 render_infos.push_back(test_box->GetRenderInfo());
             }
         }
@@ -39,3 +51,4 @@ vector<SRenderInfo> SceneLoader::LoadScene(const string& file_path)
 
     return render_infos;
 }
+

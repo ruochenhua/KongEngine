@@ -14,7 +14,7 @@ CRenderObj::CRenderObj(const vector<string>& shader_path_list)
 	// shader list
 	// 0:vs, 1:fs, ...
 	// todo: dict in yaml
-	m_RenderInfo._program_id = Shader::LoadShaders(shader_path_list[0], shader_path_list[1]);
+	m_RenderInfo.program_id = Shader::LoadShaders(shader_path_list[0], shader_path_list[1]);
 }
 
 std::vector<float> CRenderObj::GetVertices() const

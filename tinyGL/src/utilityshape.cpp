@@ -74,16 +74,16 @@ void CUtilityBox::GenerateRenderInfo()
 {
 	std::vector<float> vertices = GetVertices();
 
-	glGenVertexArrays(1, &m_RenderInfo.vertexArrayId);
-	glBindVertexArray(m_RenderInfo.vertexArrayId);
+	glGenVertexArrays(1, &m_RenderInfo.vertex_array_id);
+	glBindVertexArray(m_RenderInfo.vertex_array_id);
 
 	//init vertex buffer
-	glGenBuffers(1, &m_RenderInfo.vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.vertexBuffer);
+	glGenBuffers(1, &m_RenderInfo.vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 
 	//vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER,  m_RenderInfo.vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER,  m_RenderInfo.vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0.
 		3,                  // size
@@ -116,11 +116,11 @@ void CUtilityBox::GenerateRenderInfo()
 	
 	glBindVertexArray(GL_NONE);
 	
-	m_RenderInfo._vertex_size = vertices.size();
-	m_RenderInfo._stride_count = 6;
+	m_RenderInfo.vertex_size = vertices.size();
+	m_RenderInfo.stride_count = 6;
 
-	glUseProgram(m_RenderInfo._program_id);
-	glUniform1i(glGetUniformLocation(m_RenderInfo._program_id, "diffuse_texture"), 0);
-	glUniform1i(glGetUniformLocation(m_RenderInfo._program_id, "specular_map_texture"), 1);
+	glUseProgram(m_RenderInfo.program_id);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "diffuse_texture"), 0);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "specular_map_texture"), 1);
 	
 }

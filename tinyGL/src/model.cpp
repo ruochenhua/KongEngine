@@ -16,16 +16,16 @@ void CModel::GenerateRenderInfo()
 {
 	std::vector<float> vertices = GetVertices();
 
-	glGenVertexArrays(1, &m_RenderInfo.vertexArrayId);
-	glBindVertexArray(m_RenderInfo.vertexArrayId);
+	glGenVertexArrays(1, &m_RenderInfo.vertex_array_id);
+	glBindVertexArray(m_RenderInfo.vertex_array_id);
 
 	//init vertex buffer
-	glGenBuffers(1, &m_RenderInfo.vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.vertexBuffer);
+	glGenBuffers(1, &m_RenderInfo.vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 
 	//vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER,  m_RenderInfo.vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER,  m_RenderInfo.vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -38,8 +38,8 @@ void CModel::GenerateRenderInfo()
 	
 	//normal buffer
 	std::vector<float> normals = GetNormals();
-	glGenBuffers(1, &m_RenderInfo._normal_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo._normal_buffer);
+	glGenBuffers(1, &m_RenderInfo.normal_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.normal_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
 	
 	glVertexAttribPointer(
@@ -55,11 +55,11 @@ void CModel::GenerateRenderInfo()
 	if (m_RenderInfo.diffuse_tex_id)
 	{
 		std::vector<float> tex_coords = GetTextureCoords();
-		glGenBuffers(1, &m_RenderInfo._texture_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo._texture_buffer);
+		glGenBuffers(1, &m_RenderInfo.texture_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.texture_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
 	
-		glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo._texture_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m_RenderInfo.texture_buffer);
 		glVertexAttribPointer(
 			2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 			2,                  // size
@@ -75,13 +75,13 @@ void CModel::GenerateRenderInfo()
 	}
 	// index buffer
 	std::vector<unsigned int> indices = GetIndices();
-	glGenBuffers(1, &m_RenderInfo.indexBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderInfo.indexBuffer);
+	glGenBuffers(1, &m_RenderInfo.index_buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderInfo.index_buffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
 	
 	glBindVertexArray(GL_NONE);
 	
 	// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
-	m_RenderInfo._vertex_size = vertices.size();
-	m_RenderInfo._indices_count = indices.size();
+	m_RenderInfo.vertex_size = vertices.size();
+	m_RenderInfo.indices_count = indices.size();
 }

@@ -3,26 +3,34 @@
 
 namespace tinyGL
 {
-class TGAImage;
-class CRenderObj
+
+class SceneObject
+{
+public:
+	glm::vec3 location;
+	glm::vec3 rotation;
+	glm::vec3 scale;
+};
+	
+class CRenderObj : public SceneObject
 {
 public:
 	CRenderObj(const vector<string>& shader_path_list);	
-	virtual std::vector<float> GetVertices() const;
-	virtual std::vector<float> GetTextureCoords() const;
-	virtual std::vector<float> GetNormals() const;
-	virtual std::vector<unsigned int> GetIndices() const;
+	virtual vector<float> GetVertices() const;
+	virtual vector<float> GetTextureCoords() const;
+	virtual vector<float> GetNormals() const;
+	virtual vector<unsigned int> GetIndices() const;
 
 	SRenderInfo GetRenderInfo() {return m_RenderInfo;}
 	
 protected:
 	virtual void GenerateRenderInfo() = 0;
 	
-	std::vector<glm::vec3> m_vVertex;
-	std::vector<glm::vec3> m_vNormal;
-	std::vector<glm::vec2> m_vTexCoord;
+	vector<glm::vec3> m_vVertex;
+	vector<glm::vec3> m_vNormal;
+	vector<glm::vec2> m_vTexCoord;
 
-	std::vector<unsigned int> m_vIndex;
+	vector<unsigned int> m_vIndex;
 
 	SRenderInfo m_RenderInfo;
 

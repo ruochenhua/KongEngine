@@ -119,7 +119,7 @@ void CRender::RenderShadowMap(const SRenderInfo& render_info)
 
 	// 1rst attribute buffer : vertices
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
 	glVertexAttribPointer(
 		0,  // The attribute we want to configure
 		3,                  // size
@@ -129,7 +129,7 @@ void CRender::RenderShadowMap(const SRenderInfo& render_info)
 		(void*)0            // array buffer offset
 	);	
 
-	glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 
 	glDisableVertexAttribArray(0);
 }
@@ -142,25 +142,25 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	glUseProgram(render_info._program_id);
-	glBindVertexArray(render_info.vertexArrayId);	// ��VAO
+	glUseProgram(render_info.program_id);
+	glBindVertexArray(render_info.vertex_array_id);	// ��VAO
 	
 	mat4 Model = mat4(1.0f);
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrix() * Model; //
-	GLuint matrix_id = glGetUniformLocation(render_info._program_id, "MVP");
+	GLuint matrix_id = glGetUniformLocation(render_info.program_id, "MVP");
 	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 
-	GLuint light_shininess_id = glGetUniformLocation(render_info._program_id, "shininess");
-	glUniform1f(light_shininess_id, render_info._material._shininess);
+	GLuint light_shininess_id = glGetUniformLocation(render_info.program_id, "shininess");
+	glUniform1f(light_shininess_id, render_info.material.shininess);
 
-	GLuint cam_pos_id = glGetUniformLocation(render_info._program_id, "cam_pos");
+	GLuint cam_pos_id = glGetUniformLocation(render_info.program_id, "cam_pos");
 	glUniform3fv(cam_pos_id, 1, &mainCamera->GetPosition()[0]);
 
-	GLuint light_dir_id = glGetUniformLocation(render_info._program_id, "light_dir");
+	GLuint light_dir_id = glGetUniformLocation(render_info.program_id, "light_dir");
 	glUniform3fv(light_dir_id, 1, &m_LightDir[0]);
 	
-	GLuint light_color_id = glGetUniformLocation(render_info._program_id, "light_color");
+	GLuint light_color_id = glGetUniformLocation(render_info.program_id, "light_color");
 	glUniform3fv(light_color_id, 1, &m_LightColor[0]);
 
 	//use shadow map
@@ -173,10 +173,10 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 
 	mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
 
-	GLuint depth_bias_id = glGetUniformLocation(render_info._program_id, "depth_bias_mvp");
+	GLuint depth_bias_id = glGetUniformLocation(render_info.program_id, "depth_bias_mvp");
 	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
 
-	GLuint model_mat_id = glGetUniformLocation(render_info._program_id, "normal_model_mat");
+	GLuint model_mat_id = glGetUniformLocation(render_info.program_id, "normal_model_mat");
 
 	/*
 	 * ���߾��󱻶���Ϊ��ģ�;������Ͻ�3x3���ֵ�������ת�þ��󡹡�
@@ -199,13 +199,13 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 
 	// Draw the triangle !
 	// if no index, use draw array
-	if(render_info.indexBuffer == GL_NONE)
+	if(render_info.index_buffer == GL_NONE)
 	{
-		glDrawArrays(GL_TRIANGLES, 0, render_info._vertex_size / render_info._stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 	}
 	else
 	{		
-		glDrawElements(GL_TRIANGLES, render_info._indices_count, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
 	}
 	
 	glBindVertexArray(GL_NONE);	// ���VAO

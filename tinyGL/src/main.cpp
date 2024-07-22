@@ -37,14 +37,14 @@ int main()
 	//
 	// render->AddRenderInfo(test_box->GetRenderInfo());
 
-	vector<SRenderInfo> render_infos = SceneLoader::LoadScene(RESOURCE_PATH+"scene/hello.yaml");
+	vector<SRenderInfo> render_infos = CSceneLoader::LoadScene("scene/hello.yaml");
 	for(auto& render_info : render_infos)
 	{
 		render->AddRenderInfo(render_info);
 	}
 	
 	
-	auto body_manager = new Tap::CBodyManager();
+	// auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();
 	float current_time, new_time;
 	current_time = new_time = glfwGetTime();

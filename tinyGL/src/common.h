@@ -13,33 +13,31 @@
 using namespace std;
 namespace tinyGL
 {
-	class TGAImage;
-
 	struct SMaterial
 	{
-		float _shininess = 0.8f;
+		float shininess = 0.8f;
 	};
 
-	// ��Ⱦ��Ϣ
+	// 渲染信息
 	struct SRenderInfo
 	{
 		// vertex buffer id(vbo)
-		GLuint vertexBuffer = 0;
+		GLuint vertex_buffer = 0;
 		// ibo
-		GLuint indexBuffer = 0;
+		GLuint index_buffer = 0;
 		// vao
-		GLuint vertexArrayId = 0;
-		GLuint _texture_buffer = 0;
+		GLuint vertex_array_id = 0;
+		GLuint texture_buffer = 0;
 
-		GLuint _normal_buffer = 0;
+		GLuint normal_buffer = 0;
 
-		SMaterial _material;
-		// ����Ⱦ��λ��shader����
-		GLuint _program_id = 0;
-		unsigned _vertex_size = 0;
-		unsigned _stride_count = 1;
-		unsigned _indices_count = 0;
-		// ��ͼid
+		SMaterial material;
+		// shader program
+		GLuint program_id = 0;
+		unsigned vertex_size = 0;
+		unsigned stride_count = 1;
+		unsigned indices_count = 0;
+		// texture id
 		GLuint diffuse_tex_id = 0;
 		GLuint specular_map_tex_id = 0;
 	};
