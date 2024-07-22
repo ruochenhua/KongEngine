@@ -3,6 +3,7 @@
 #include "model.h"
 #include "message.h"
 #include "Engine.h"
+#include "Scene.h"
 
 #include "TapBodyManager.h"
 #include "utilityshape.h"
@@ -18,23 +19,30 @@ int main()
 	CRender* render = new CRender;
 	render->Init();
 	
-	string model_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose.obj";
-	string diffuse_tex_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose_diffuse.tga";
-	vector<string> shader_path = {
-		RESOURCE_PATH + "shader/vertex.shader", RESOURCE_PATH + "shader/fragment.shader"
-	};
-	CModel* test_model = new CModel(model_path, diffuse_tex_path, shader_path);
-	
-	
-	// render->AddModel(test_model, shader_path);
-	render->AddRenderInfo(test_model->GetRenderInfo());
-	vector <string> box_shader = {
-		RESOURCE_PATH + "shader/utilitybox.vert", RESOURCE_PATH + "shader/utilitybox.frag"
-	};
+	// string model_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose.obj";
+	// string diffuse_tex_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose_diffuse.tga";
+	// vector<string> shader_path = {
+	// 	RESOURCE_PATH + "shader/vertex.shader", RESOURCE_PATH + "shader/fragment.shader"
+	// };
+	// CModel* test_model = new CModel(model_path, diffuse_tex_path, shader_path);
+	//
+	//
+	// // render->AddModel(test_model, shader_path);
+	// render->AddRenderInfo(test_model->GetRenderInfo());
+	// vector <string> box_shader = {
+	// 	RESOURCE_PATH + "shader/utilitybox.vert", RESOURCE_PATH + "shader/utilitybox.frag"
+	// };
+	//
+	// CUtilityBox* test_box = new CUtilityBox(box_shader);
+	//
+	// render->AddRenderInfo(test_box->GetRenderInfo());
 
-	CUtilityBox* test_box = new CUtilityBox(box_shader);
+	vector<SRenderInfo> render_infos = SceneLoader::LoadScene(RESOURCE_PATH+"scene/hello.yaml");
+	for(auto& render_info : render_infos)
+	{
+		render->AddRenderInfo(render_info);
+	}
 	
-	render->AddRenderInfo(test_box->GetRenderInfo());
 	
 	auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();

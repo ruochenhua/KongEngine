@@ -55,7 +55,7 @@ void main()
 
 	
 	//color = vec3(out_texcoord, 1.0);// (diffuse + specular) * box_color;
-	diffuse_color = diffuse * texture(diffuse_texture, out_texcoord).rgb;
-	specular_color = specular * texture(specular_map_texture, out_texcoord).rgb;
+	vec3 diffuse_color = diffuse * texture(diffuse_texture, out_texcoord).rgb;
+	vec3 specular_color = specular * texture(specular_map_texture, out_texcoord).rgb;
 	color = diffuse_color +specular_color;
 }

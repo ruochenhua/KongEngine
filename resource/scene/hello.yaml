@@ -1,0 +1,5 @@
+scene:
+  - object: box
+    shader_path:
+      vs: shader/utilitybox.vert
+      fs: shader/utilitybox.frag
