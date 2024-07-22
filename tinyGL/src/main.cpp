@@ -28,7 +28,7 @@ int main()
 	
 	// render->AddModel(test_model, shader_path);
 	render->AddRenderInfo(test_model->GetRenderInfo());
-	vector <string> box_shader[] = {
+	vector <string> box_shader = {
 		RESOURCE_PATH + "shader/utilitybox.vert", RESOURCE_PATH + "shader/utilitybox.frag"
 	};
 

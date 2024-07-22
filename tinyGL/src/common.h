@@ -10,7 +10,7 @@
 #include "GLFW/glfw3.h"
 #include "GLM/glm.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
-
+using namespace std;
 namespace tinyGL
 {
 	class TGAImage;
@@ -20,7 +20,7 @@ namespace tinyGL
 		float _shininess = 0.8f;
 	};
 
-	// äÖÈ¾ÐÅÏ¢
+	// ï¿½ï¿½È¾ï¿½ï¿½Ï¢
 	struct SRenderInfo
 	{
 		// vertex buffer id(vbo)
@@ -34,12 +34,12 @@ namespace tinyGL
 		GLuint _normal_buffer = 0;
 
 		SMaterial _material;
-		// ¸ÃäÖÈ¾µ¥Î»µÄshader³ÌÐò
+		// ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½Î»ï¿½ï¿½shaderï¿½ï¿½ï¿½ï¿½
 		GLuint _program_id = 0;
 		unsigned _vertex_size = 0;
 		unsigned _stride_count = 1;
 		unsigned _indices_count = 0;
-		// ÌùÍ¼id
+		// ï¿½ï¿½Í¼id
 		GLuint diffuse_tex_id = 0;
 		GLuint specular_map_tex_id = 0;
 	};

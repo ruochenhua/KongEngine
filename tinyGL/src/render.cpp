@@ -37,8 +37,8 @@ int CRender::Init()
 		return -1;
 
 	// ����shader�����벢������Ӧ�ĳ���
-	m_ShadowMapProgramID = LoadShaders("../../../../resource/shader/shadowmap_vert.shader",
-		"../../../../resource/shader/shadowmap_frag.shader");
+	// m_ShadowMapProgramID = LoadShaders("../../../../resource/shader/shadowmap_vert.shader",
+	// 	"../../../../resource/shader/shadowmap_frag.shader");
 
 	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 	return 0;

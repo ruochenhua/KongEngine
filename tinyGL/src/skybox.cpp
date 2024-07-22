@@ -1,6 +1,7 @@
 #include "skybox.h"
 #include "tgaimage.h"
 #include "render.h"
+#include "shader.h"
 
 namespace tinyGL
 {
@@ -214,7 +215,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
 	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
 
-	_render_info._program_id = CRender::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	_render_info._program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
 	_render_info._vertex_size = _vertices.size();
 
 	_cube_map_tex.Load(tex_path_vec, tex_type_vec);
