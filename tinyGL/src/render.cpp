@@ -79,15 +79,98 @@ int CRender::Update(double delta)
 		RenderModel(render_info);
 	}
 	
+	return 1;
+}
+
+void CRender::PostUpdate()
+{
 	// Swap buffers
 	glfwSwapBuffers(render_window);
 	glfwPollEvents();
-	return 1;
 }
 
 void CRender::AddRenderInfo(SRenderInfo render_info)
 {	
 	m_vRenderInfo.push_back(render_info);
+}
+
+void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
+{
+	const SRenderInfo& render_info = render_obj->GetRenderInfo();
+	
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	glUseProgram(render_info.program_id);
+	glBindVertexArray(render_info.vertex_array_id);	// ��VAO
+	
+	mat4 Model = render_obj->GetModelMatrix();
+	mat4 projection = mainCamera->GetProjectionMatrix();
+	mat4 mvp = projection * mainCamera->GetViewMatrix() * Model; //
+	GLuint matrix_id = glGetUniformLocation(render_info.program_id, "MVP");
+	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
+
+	GLuint light_shininess_id = glGetUniformLocation(render_info.program_id, "shininess");
+	glUniform1f(light_shininess_id, render_info.material.shininess);
+
+	GLuint cam_pos_id = glGetUniformLocation(render_info.program_id, "cam_pos");
+	glUniform3fv(cam_pos_id, 1, &mainCamera->GetPosition()[0]);
+
+	GLuint light_dir_id = glGetUniformLocation(render_info.program_id, "light_dir");
+	glUniform3fv(light_dir_id, 1, &m_LightDir[0]);
+	
+	GLuint light_color_id = glGetUniformLocation(render_info.program_id, "light_color");
+	glUniform3fv(light_color_id, 1, &m_LightColor[0]);
+
+	//use shadow map
+	mat4 bias_mat(
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	);
+
+	mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
+
+	GLuint depth_bias_id = glGetUniformLocation(render_info.program_id, "depth_bias_mvp");
+	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
+
+	GLuint model_mat_id = glGetUniformLocation(render_info.program_id, "normal_model_mat");
+
+	/*
+	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
+	Normal = mat3(transpose(inverse(model))) * aNormal;
+	 */
+	mat3 normal_model_mat = transpose(inverse(Model));
+	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
+	
+	if(render_info.diffuse_tex_id)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, render_info.diffuse_tex_id);
+	}
+
+	if(render_info.specular_map_tex_id)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, render_info.specular_map_tex_id);
+	}
+
+	// Draw the triangle !
+	// if no index, use draw array
+	if(render_info.index_buffer == GL_NONE)
+	{
+		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+	}
+	else
+	{		
+		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+	}
+	
+	glBindVertexArray(GL_NONE);	// ���VAO
 }
 
 
@@ -179,8 +262,8 @@ void CRender::RenderModel(const SRenderInfo& render_info) const
 	GLuint model_mat_id = glGetUniformLocation(render_info.program_id, "normal_model_mat");
 
 	/*
-	 * ���߾��󱻶���Ϊ��ģ�;������Ͻ�3x3���ֵ�������ת�þ��󡹡�
-	 * ��ʹ����һЩ���Դ����Ĳ������Ƴ��Է������������ŵ�Ӱ�졣
+	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
+	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
 	mat3 normal_model_mat = transpose(inverse(Model));
 	glUniformMatrix3fv(model_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);

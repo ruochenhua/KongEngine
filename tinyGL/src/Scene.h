@@ -3,10 +3,11 @@
 
 namespace tinyGL
 {
+    class CRenderObj;
     class CSceneLoader
     {
     public:
-        static vector<SRenderInfo> LoadScene(const string& file_path);
+        static vector<shared_ptr<CRenderObj>> LoadScene(const string& file_path);
 
     };
 }

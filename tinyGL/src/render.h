@@ -5,6 +5,7 @@
 
 namespace tinyGL
 {
+	class CRenderObj;
 	class CModel;
 	class CCamera;
 
@@ -12,8 +13,6 @@ namespace tinyGL
 	{
 	public:
 		GLFWwindow* render_window;
-
-	public:
 		CRender()
 			: m_LightDir(glm::normalize(glm::vec3(-1, 1, 0)))
 			, m_LightColor(1, 1, 1)
@@ -22,8 +21,11 @@ namespace tinyGL
 
 		int Init();
 		int Update(double delta);
+		void PostUpdate();
 
 		void AddRenderInfo(SRenderInfo render_info);
+
+		void RenderSceneObject(shared_ptr<CRenderObj> render_obj);
 		
 	private:
 		int InitRender();

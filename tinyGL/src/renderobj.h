@@ -7,9 +7,10 @@ namespace tinyGL
 class SceneObject
 {
 public:
-	glm::vec3 location;
-	glm::vec3 rotation;
-	glm::vec3 scale;
+	glm::mat4 GetModelMatrix() const;
+	glm::vec3 location = glm::vec3(0,0,0);
+	glm::vec3 rotation = glm::vec3(0,0,0);
+	glm::vec3 scale = glm::vec3(1,1,1);
 };
 	
 class CRenderObj : public SceneObject

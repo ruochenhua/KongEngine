@@ -3,11 +3,23 @@
 #include "tgaimage.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include "stb_image.h"
 #include "shader.h"
 
 using namespace tinyGL;
 using namespace glm;
+
+mat4 SceneObject::GetModelMatrix() const
+{
+	mat4 model = mat4(1.0);
+	model = translate(model, location);
+	model *= eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+	model = glm::scale(model, scale);
+	return model;
+}
 
 CRenderObj::CRenderObj(const vector<string>& shader_path_list)
 {

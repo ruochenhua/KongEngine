@@ -37,12 +37,12 @@ int main()
 	//
 	// render->AddRenderInfo(test_box->GetRenderInfo());
 
-	vector<SRenderInfo> render_infos = CSceneLoader::LoadScene("scene/hello.yaml");
-	for(auto& render_info : render_infos)
-	{
-		render->AddRenderInfo(render_info);
-	}
-	
+	vector<shared_ptr<CRenderObj>> render_objs = CSceneLoader::LoadScene("scene/hello.yaml");
+	// for(auto& render_info : render_objs)
+	// {
+	// 	render->AddRenderInfo(render_info->GetRenderInfo());
+	// }
+	//
 	
 	// auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();
@@ -55,6 +55,11 @@ int main()
 			glfwSetWindowShouldClose(render_window, true);
 		}
 		render->Update(new_time - current_time);
+		for(auto& render_obj : render_objs)
+		{
+			render->RenderSceneObject(render_obj);			
+		}
+		render->PostUpdate();
 		current_time = new_time;
 		new_time = glfwGetTime();	
 	}
