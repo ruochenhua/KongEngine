@@ -6,6 +6,7 @@
 #include "model.h"
 #include "tgaimage.h"
 #include "message.h"
+#include "shader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -105,48 +106,35 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	mat4 view_mat = mainCamera->GetViewMatrix();
 	mat4 projection_mat = mainCamera->GetProjectionMatrix();
 	// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-	GLuint model_mat_id = glGetUniformLocation(render_info.program_id, "model");
-	glUniformMatrix4fv(model_mat_id, 1, GL_FALSE, &model_mat[0][0]);
-
-	GLuint view_mat_id = glGetUniformLocation(render_info.program_id, "view");
-	glUniformMatrix4fv(view_mat_id, 1, GL_FALSE, &view_mat[0][0]);
-
-	GLuint proj_mat_id = glGetUniformLocation(render_info.program_id, "proj");
-	glUniformMatrix4fv(proj_mat_id, 1, GL_FALSE, &projection_mat[0][0]);
+	GLuint shader_id = render_info.program_id;
+	Shader::SetMat4(shader_id, "model", model_mat);
+	Shader::SetMat4(shader_id, "view", view_mat);
+	Shader::SetMat4(shader_id, "proj", projection_mat);
+	Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
+	Shader::SetVec3(shader_id, "light_dir", scene_lights[0]->rotation);
+	Shader::SetVec3(shader_id, "light_color", scene_lights[0]->light_color);
 	
-	GLuint light_shininess_id = glGetUniformLocation(render_info.program_id, "shininess");
-	glUniform1f(light_shininess_id, render_info.material.shininess);
 
-	GLuint cam_pos_id = glGetUniformLocation(render_info.program_id, "cam_pos");
-	glUniform3fv(cam_pos_id, 1, &mainCamera->GetPosition()[0]);
-
-	GLuint light_dir_id = glGetUniformLocation(render_info.program_id, "light_dir");
-	glUniform3fv(light_dir_id, 1, &scene_lights[0]->rotation[0]);
-	
-	GLuint light_color_id = glGetUniformLocation(render_info.program_id, "light_color");
-	glUniform3fv(light_color_id, 1, &scene_lights[0]->light_color[0]);
-
-	//use shadow map
-	mat4 bias_mat(
-		0.5, 0.0, 0.0, 0.0,
-		0.0, 0.5, 0.0, 0.0,
-		0.0, 0.0, 0.5, 0.0,
-		0.5, 0.5, 0.5, 1.0
-	);
-
-	mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
-
-	GLuint depth_bias_id = glGetUniformLocation(render_info.program_id, "depth_bias_mvp");
-	glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
+	// //use shadow map
+	// mat4 bias_mat(
+	// 	0.5, 0.0, 0.0, 0.0,
+	// 	0.0, 0.5, 0.0, 0.0,
+	// 	0.0, 0.0, 0.5, 0.0,
+	// 	0.5, 0.5, 0.5, 1.0
+	// );
+	//
+	// mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
+	//
+	// GLuint depth_bias_id = glGetUniformLocation(render_info.program_id, "depth_bias_mvp");
+	// glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
 
 
 	/*
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
-	GLuint normal_mat_id = glGetUniformLocation(render_info.program_id, "normal_model_mat");
 	mat3 normal_model_mat = transpose(inverse(model_mat));
-	glUniformMatrix3fv(normal_mat_id, 1, GL_FALSE, &normal_model_mat[0][0]);
+	Shader::SetMat3(shader_id, "normal_model_mat", normal_model_mat);
 	
 	if(render_info.diffuse_tex_id)
 	{
