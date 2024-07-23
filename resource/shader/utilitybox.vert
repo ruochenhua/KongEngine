@@ -10,16 +10,20 @@ out vec3 out_normal;
 out vec2 out_texcoord;
 //out vec4 ShadowCoord;
 
-uniform mat4 MVP;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 proj;
+
 uniform mat4 depth_bias_mvp;
 uniform mat3 normal_model_mat;
 
 
 void main(){
-	gl_Position = MVP * vec4(in_pos, 1.0); 	
+	gl_Position = proj * view * model * vec4(in_pos, 1.0); 	
     // out_pos = gl_Position.xyz;
-    out_pos = in_pos;
-    out_normal = in_normal;
+    out_pos = (model * vec4(in_pos, 1.0)).xyz;
+	//out_pos = in_pos;
+    out_normal = normal_model_mat * in_normal;
 	out_texcoord = in_texcoord;
 	// uv = vertexTextureCoord;	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题

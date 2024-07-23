@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\Camera.cpp" />
     <ClCompile Include="..\..\..\src\Engine.cpp" />
+    <ClCompile Include="..\..\..\src\light.cpp" />
     <ClCompile Include="..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\src\model.cpp" />
@@ -143,6 +144,7 @@
     <ClInclude Include="..\..\..\src\Camera.h" />
     <ClInclude Include="..\..\..\src\common.h" />
     <ClInclude Include="..\..\..\src\Engine.h" />
+    <ClCompile Include="..\..\..\src\light.h" />
     <ClInclude Include="..\..\..\src\message.h" />
     <ClInclude Include="..\..\..\src\model.h" />
     <ClInclude Include="..\..\..\src\render.h" />

@@ -1,6 +1,5 @@
 //tiny openGL project
 #include "render.h"
-#include "model.h"
 #include "message.h"
 #include "Engine.h"
 #include "Scene.h"
@@ -28,25 +27,14 @@ int main()
 	//
 	//
 	// // render->AddModel(test_model, shader_path);
-	// render->AddRenderInfo(test_model->GetRenderInfo());
-	// vector <string> box_shader = {
-	// 	RESOURCE_PATH + "shader/utilitybox.vert", RESOURCE_PATH + "shader/utilitybox.frag"
-	// };
-	//
-	// CUtilityBox* test_box = new CUtilityBox(box_shader);
-	//
-	// render->AddRenderInfo(test_box->GetRenderInfo());
-
-	vector<shared_ptr<CRenderObj>> render_objs = CSceneLoader::LoadScene("scene/hello.json");
-	// for(auto& render_info : render_objs)
-	// {
-	// 	render->AddRenderInfo(render_info->GetRenderInfo());
-	// }
-	//
+	vector<shared_ptr<CRenderObj>> render_objs;
+	vector<shared_ptr<Light>> lights;
+	CSceneLoader::LoadScene("scene/hello.json", render_objs, lights);
+	render->InitLights(lights);
 	
 	// auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();
-	float current_time, new_time;
+	double current_time, new_time;
 	current_time = new_time = glfwGetTime();
 	while (!glfwWindowShouldClose(render_window))
 	{

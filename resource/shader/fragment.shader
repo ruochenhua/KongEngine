@@ -2,7 +2,7 @@
 
 in vec2 uv;
 in vec3 normal_world;
-in vec3 in_pos;
+in vec3 out_pos;
 in vec4 ShadowCoord;
 
 out vec3 color;
@@ -29,7 +29,7 @@ void main(){
 	vec3 diffuse = kd * light_color * ln;
 
 	//specular 分量计算
-	vec3 v = normalize(cam_pos - in_pos);
+	vec3 v = normalize(cam_pos - out_pos);
 	vec3 h = normalize(light_dir + v);
 	
 	float spec = pow(max(0.0, dot(normal_world, h)), 32);

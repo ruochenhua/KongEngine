@@ -3,11 +3,14 @@
 
 namespace tinyGL
 {
+    class Light;
     class CRenderObj;
     class CSceneLoader
     {
     public:
-        static vector<shared_ptr<CRenderObj>> LoadScene(const string& file_path);
+        static bool LoadScene(const string& file_path,
+            vector<shared_ptr<CRenderObj>>& render_objs,
+            vector<shared_ptr<Light>>& lights);
 
     };
 }
