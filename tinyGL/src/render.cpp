@@ -131,7 +131,7 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 			if(point_light_count < 4)
 			{
 				stringstream point_light_name;
-				point_light_name <<  "point_light[" << point_light_count << "]";
+				point_light_name <<  "point_lights[" << point_light_count << "]";
 				Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->rotation);
 				Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
 				++point_light_count;

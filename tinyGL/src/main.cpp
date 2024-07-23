@@ -18,15 +18,6 @@ int main()
 	CRender* render = new CRender;
 	render->Init();
 	
-	// string model_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose.obj";
-	// string diffuse_tex_path = RESOURCE_PATH + "diablo3_pose/diablo3_pose_diffuse.tga";
-	// vector<string> shader_path = {
-	// 	RESOURCE_PATH + "shader/vertex.shader", RESOURCE_PATH + "shader/fragment.shader"
-	// };
-	// CModel* test_model = new CModel(model_path, diffuse_tex_path, shader_path);
-	//
-	//
-	// // render->AddModel(test_model, shader_path);
 	vector<shared_ptr<CRenderObj>> render_objs;
 	vector<shared_ptr<Light>> lights;
 	CSceneLoader::LoadScene("scene/hello.json", render_objs, lights);

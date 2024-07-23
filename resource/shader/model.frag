@@ -25,7 +25,7 @@ uniform sampler2DShadow shadowMap;
 
 uniform float shininess;
 uniform DirectionalLight directional_light;
-uniform PointLight point_light[POINT_LIGHT_MAX];
+uniform PointLight point_lights[POINT_LIGHT_MAX];
 uniform int point_light_count;
 // uniform vec3 light_color;
 // uniform vec3 light_dir;

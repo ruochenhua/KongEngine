@@ -9,7 +9,7 @@
 		"transform": {
 		  "location": [
 			0,
-			0,
+			1,
 			0
 		  ],
 		  "rotation": [
@@ -27,8 +27,8 @@
 	  {
 		"object": "model",
 		"shader_path": {
-		  "vs": "shader/vertex.shader",
-		  "fs": "shader/fragment.shader"
+		  "vs": "shader/model.vert",
+		  "fs": "shader/model.frag"
 		},
 		"model_path": "diablo3_pose/diablo3_pose.obj",
 		"diffuse_tex_path": "diablo3_pose/diablo3_pose_diffuse.tga",
@@ -68,7 +68,7 @@
 	  {
 		"object": "point_light",
 		"light_color": [
-		  0.5,
+		  1,
 		  0,
 		  0
 		],
