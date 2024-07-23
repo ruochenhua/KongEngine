@@ -54,12 +54,27 @@
 		"object": "directional_light",
 		"light_color": [
 		  0.1,
-		  0.1,
+		  0.15,
 		  0.1
 		],
 		"transform": {
 		  "rotation": [
 			-45,
+			20,
+			0
+		  ]
+		}
+	  },
+	  {
+		"object": "point_light",
+		"light_color": [
+		  0.5,
+		  0,
+		  0
+		],
+		"transform": {
+		  "location": [
+			0,
 			0,
 			0
 		  ]

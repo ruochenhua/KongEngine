@@ -111,10 +111,39 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	Shader::SetMat4(shader_id, "view", view_mat);
 	Shader::SetMat4(shader_id, "proj", projection_mat);
 	Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
-	Shader::SetVec3(shader_id, "light_dir", scene_lights[0]->rotation);
-	Shader::SetVec3(shader_id, "light_color", scene_lights[0]->light_color);
-	
 
+	bool has_dir_light = false;	// cannot have more than 1 dir light 
+	int point_light_count = 0;	// point light count, max 4 
+	for(auto light : scene_lights)
+	{
+		ELightType light_type = light->GetLightType();
+		switch (light_type)
+		{
+		case ELightType::directional_light:
+			if(!has_dir_light)
+			{
+				Shader::SetVec3(shader_id, "directional_light.light_dir", light->rotation);
+				Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
+				has_dir_light = true;
+			}
+			break;
+		case ELightType::point_light:
+			if(point_light_count < 4)
+			{
+				stringstream point_light_name;
+				point_light_name <<  "point_light[" << point_light_count << "]";
+				Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->rotation);
+				Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
+				++point_light_count;
+			}
+			break;
+		case ELightType::spot_light:
+		default:
+			break;
+		}
+	}
+	
+	Shader::SetInt(shader_id, "point_light_count", point_light_count);
 	// //use shadow map
 	// mat4 bias_mat(
 	// 	0.5, 0.0, 0.0, 0.0,

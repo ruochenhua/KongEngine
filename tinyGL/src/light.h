@@ -37,4 +37,15 @@ namespace tinyGL
             
         }
     };
+
+    // point light
+    class PointLight : public Light
+    {
+    public:
+        PointLight()
+            : Light(ELightType::point_light)
+        {
+            
+        }
+    };
 }

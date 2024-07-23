@@ -96,6 +96,14 @@ bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<CRenderO
             
             lights.push_back(new_light);
         }
+        else if(child["object"] == "point_light")
+        {
+            auto new_light = make_shared<PointLight>();
+            new_light->light_color = ParseVec3(child["light_color"]);
+            ParseTransform(child, new_light);
+
+            lights.push_back(new_light);
+        }
     }
     
     return true;

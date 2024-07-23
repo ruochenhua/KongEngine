@@ -1,4 +1,17 @@
 #version 330 core
+struct DirectionalLight
+{
+	vec3 light_dir;
+	vec3 light_color;
+};
+
+struct PointLight
+{
+	vec3 light_pos;
+	vec3 light_color;
+};
+
+#define POINT_LIGHT_MAX 4
 
 in vec3 out_pos;
 in vec3 out_normal;
@@ -7,8 +20,12 @@ in vec2 out_texcoord;
 out vec3 color;
 
 uniform float shininess;
-uniform vec3 light_color;
-uniform vec3 light_dir;
+uniform DirectionalLight directional_light;
+uniform PointLight point_light[POINT_LIGHT_MAX];
+uniform int point_light_count;
+
+// uniform vec3 light_color;
+// uniform vec3 light_dir;
 
 uniform vec3 cam_pos;
 
@@ -19,8 +36,11 @@ void main()
 {
     float ka = 0.1;
     float kd = 1.0;
-    float ks = 3.0;
+    float ks = 1.0;
     vec3 box_color = vec3(1.0, 0.5, 0.31);
+
+	vec3 light_color = directional_light.light_color;
+	vec3 light_dir = directional_light.light_dir;
 
 	vec3 ambient = ka * light_color;
 
