@@ -37,7 +37,5 @@ protected:
 
 	// import obj model
 	int ImportObj(const std::string& model_path);
-	// load image file and create texture 
-	GLuint LoadTexture(const std::string& texture_path);
 };
 }

@@ -1,5 +1,6 @@
 #include "render.h"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "Camera.h"
 #include "Engine.h"
 #include "light.h"
@@ -7,6 +8,7 @@
 #include "tgaimage.h"
 #include "message.h"
 #include "shader.h"
+#include "stb_image.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -40,6 +42,10 @@ int CRender::Init()
 	// 	"../../../../resource/shader/shadowmap_frag.shader");
 
 	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
+
+	// load null texture
+	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
+	null_tex_id = CRender::LoadTexture(null_tex_path);
 	return 0;
 }
 
@@ -165,18 +171,14 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	mat3 normal_model_mat = transpose(inverse(model_mat));
 	Shader::SetMat3(shader_id, "normal_model_mat", normal_model_mat);
 	
-	if(render_info.diffuse_tex_id)
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, render_info.diffuse_tex_id);
-	}
+	glActiveTexture(GL_TEXTURE0);
+	GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
-	if(render_info.specular_map_tex_id)
-	{
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, render_info.specular_map_tex_id);
-	}
-
+	glActiveTexture(GL_TEXTURE1);
+	GLuint specular_map_id = render_info.specular_map_tex_id != 0 ? render_info.specular_map_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, specular_map_id);
+	
 	// Draw the triangle !
 	// if no index, use draw array
 	if(render_info.index_buffer == GL_NONE)
@@ -189,6 +191,53 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	}
 	
 	glBindVertexArray(GL_NONE);	// 解绑VAO
+}
+
+GLuint CRender::LoadTexture(const std::string& texture_path)
+{
+	GLuint texture_id = GL_NONE;
+	if (texture_path.empty())
+	{
+		return texture_id;		
+	}
+
+	int width, height, nr_component;
+	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
+	assert(data);
+
+	GLenum format = GL_BGR;
+	switch(nr_component)
+	{
+	case 1:
+		format = GL_RED;
+		break;
+	case 3:
+		format = GL_RGB;
+		break;
+	case 4:
+		format = GL_RGBA;
+		break;
+	default:
+		break;
+	}
+
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// release memory
+	stbi_image_free(data);
+	// auto tex_image = new TGAImage;
+	// tex_image->read_tga_file(texture_path.c_str());
+
+
+	return texture_id;
 }
 
 

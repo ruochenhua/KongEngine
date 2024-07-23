@@ -23,6 +23,9 @@ namespace tinyGL
 
 		void RenderSceneObject(shared_ptr<CRenderObj> render_obj);
 		
+		// load image file and create texture 
+		static GLuint LoadTexture(const std::string& texture_path);
+		
 	private:
 		int InitRender();
 		int InitCamera();
@@ -34,10 +37,11 @@ namespace tinyGL
 	private:
 		CSkyBox m_SkyBox;
 		//shadow map
-		GLuint m_FrameBuffer;
-		GLuint m_ShadowMapProgramID;	// ������Ӱ��ͼ��shader
-		GLuint m_DepthTexture;			// �����ͼ
-		GLuint m_DepthMatrixID;
+		GLuint m_FrameBuffer		= GL_NONE;
+		GLuint m_ShadowMapProgramID = GL_NONE;	// ������Ӱ��ͼ��shader
+		GLuint m_DepthTexture		= GL_NONE;			// �����ͼ
+		GLuint m_DepthMatrixID		= GL_NONE;
+		GLuint null_tex_id			= GL_NONE;
 		glm::mat4 m_DepthMVP;
 
 		CCamera* mainCamera = nullptr;

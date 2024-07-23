@@ -1,4 +1,6 @@
 #include "model.h"
+
+#include "render.h"
 #include "tgaimage.h"
 
 using namespace glm;
@@ -8,7 +10,7 @@ CModel::CModel(const string& model_path, const string& diffuse_tex_path, const v
 	:CRenderObj(shader_path_list)
 {
 	ImportObj(model_path);
-	m_RenderInfo.diffuse_tex_id = LoadTexture(diffuse_tex_path);
+	m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(diffuse_tex_path);
 	GenerateRenderInfo();
 }
 

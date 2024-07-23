@@ -1,5 +1,7 @@
 #include "utilityshape.h"
 
+#include "render.h"
+
 using namespace tinyGL;
 std::vector<float> CUtilityBox::s_vBoxVertices = {	
 	// positions          // normals           // texture coords
@@ -53,8 +55,8 @@ CUtilityBox::CUtilityBox(const vector<string>& shader_path_list)
 	texture_path = RESOURCE_PATH + "crater/crater_diffuse.png";
 	specular_map_path = RESOURCE_PATH + "crater/crater_specular_map.png";
 
-	m_RenderInfo.diffuse_tex_id = LoadTexture(texture_path);
-	m_RenderInfo.specular_map_tex_id = LoadTexture(specular_map_path);		
+	m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(texture_path);
+	m_RenderInfo.specular_map_tex_id = CRender::LoadTexture(specular_map_path);		
 
 	GenerateRenderInfo();
 }

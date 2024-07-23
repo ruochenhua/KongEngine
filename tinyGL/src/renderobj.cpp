@@ -2,11 +2,9 @@
 #include "OBJ_Loader.h"
 #include "tgaimage.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include "stb_image.h"
 #include "shader.h"
 
 using namespace tinyGL;
@@ -108,52 +106,6 @@ int CRenderObj::ImportObj(const std::string& model_path)
 	return 0;
 }
 
-GLuint CRenderObj::LoadTexture(const std::string& texture_path)
-{
-	GLuint texture_id = GL_NONE;
-	if (texture_path.empty())
-	{
-		return texture_id;		
-	}
-
-	int width, height, nr_component;
-	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
-	assert(data);
-	
-	GLenum format = GL_BGR;
-	switch(nr_component)
-	{
-	case 1:
-		format = GL_RED;
-		break;
-	case 3:
-		format = GL_RGB;
-		break;
-	case 4:
-		format = GL_RGBA;
-		break;
-	default:
-		break;
-	}
-	
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// release memory
-	stbi_image_free(data);
-	// auto tex_image = new TGAImage;
-	// tex_image->read_tga_file(texture_path.c_str());
-	
-
-	return texture_id;
-}
 
 std::vector<unsigned int> CRenderObj::GetIndices() const
 {
