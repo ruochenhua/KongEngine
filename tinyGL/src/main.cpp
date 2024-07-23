@@ -37,7 +37,7 @@ int main()
 	//
 	// render->AddRenderInfo(test_box->GetRenderInfo());
 
-	vector<shared_ptr<CRenderObj>> render_objs = CSceneLoader::LoadScene("scene/hello.yaml");
+	vector<shared_ptr<CRenderObj>> render_objs = CSceneLoader::LoadScene("scene/hello.json");
 	// for(auto& render_info : render_objs)
 	// {
 	// 	render->AddRenderInfo(render_info->GetRenderInfo());

@@ -1,0 +1,28 @@
+{
+	"scene": [
+		{
+			"object": "box",
+			"shader_path": {
+				"vs": "shader/utilitybox.vert",
+				"fs": "shader/utilitybox.frag"
+			},
+			"transform": {
+				"location": [
+					0.0,
+					5.0,
+					0.0
+				],
+				"rotation": [
+					0.0,
+					0.0,
+					0.0
+				],
+				"scale": [
+					1.0,
+					1.0,
+					1.0
+				]
+			}
+		}
+	]
+}
