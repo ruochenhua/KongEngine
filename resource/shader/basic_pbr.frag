@@ -25,6 +25,7 @@ uniform PointLight point_lights[POINT_LIGHT_MAX];
 uniform int point_light_count;
 
 uniform vec3 cam_pos;
+uniform vec3 obj_color;
 
 uniform sampler2D diffuse_texture;
 uniform sampler2D specular_map_texture;
@@ -32,7 +33,6 @@ uniform sampler2D specular_map_texture;
 float ka = 0.2;
 float kd = 0.5;
 float ks = 1;
-vec3 basic_color = vec3(0.4, 0.3, 0.1);
 
 // calculate color causes by directional light
 vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
@@ -55,7 +55,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 	}
 	else
 	{
-		diffuse_color = diffuse * basic_color;
+		diffuse_color = diffuse * obj_color;
 	}
 	 
 	
@@ -72,7 +72,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 	}
 	else
 	{
-		spec_basic_color = basic_color;
+		spec_basic_color = obj_color;
 	}
 
 	vec3 specular_color = specular * spec_basic_color;
@@ -100,7 +100,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 	}
 	else
 	{
-		diffuse_color = diffuse * basic_color;
+		diffuse_color = diffuse * obj_color;
 	}
 	 	
 	// specular light
@@ -115,7 +115,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 	}
 	else
 	{
-		spec_basic_color = basic_color;
+		spec_basic_color = obj_color;
 	}
 	vec3 specular_color = specular * spec_basic_color;
 
@@ -127,9 +127,6 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 
 void main()
 {
-    // float ka = 0.1;
-    // float kd = 1.0;
-    // float ks = 1.0;    
 	vec3 view = normalize(cam_pos - out_pos);
 	
 	vec3 dir_light_color = CalcDirLight(directional_light, out_normal, view);
@@ -138,30 +135,7 @@ void main()
 	{
 		point_light_color += CalcPointLight(point_lights[i], out_normal, view, out_pos);
 	}
-	// vec3 light_color = directional_light.light_color;
-	// vec3 light_dir = directional_light.light_dir;
 
-	// vec3 ambient = ka * light_color;
-
-	// //diffuse 分量计算
-	// float ln = max(0.0, dot(light_dir, out_normal));
-
-	// vec3 diffuse = kd * light_color * ln;
-
-	// //specular 分量计算
-	// vec3 v = normalize(cam_pos - out_pos);
-	// vec3 h = normalize(light_dir + v);	
-	
-	// float spec = pow(max(dot(h, out_normal), 0.0), 256);
-    // // phong
-	// // vec3 reflect_dir = reflect(-light_dir, out_normal);
-    // // float spec = pow(max(dot(v, reflect_dir), 0.0), 32);
-    
-	// vec3 specular = ks * spec * light_color;
-	
-	//color = vec3(out_texcoord, 1.0);// (diffuse + specular) * box_color;
-	// vec3 diffuse_color = diffuse * texture(diffuse_texture, out_texcoord).rgb;
-	// vec3 specular_color = specular * texture(specular_map_texture, out_texcoord).rgb;
 	color = dir_light_color + point_light_color;
-	// color = point_light_color;
+
 }

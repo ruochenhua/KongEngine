@@ -40,6 +40,8 @@ namespace tinyGL
 		// texture id
 		GLuint diffuse_tex_id = 0;
 		GLuint specular_map_tex_id = 0;
+
+		glm::vec3 color = glm::vec3(0);
 	};
 
 	// 渲染资源描述
@@ -61,6 +63,7 @@ namespace tinyGL
 		map<ETextureType, string> texture_paths;
 
 		string model_path;
+		glm::vec3 color = glm::vec3(0);
 	};
 	
 	const string RESOURCE_PATH = "../../../../resource/";

@@ -6,6 +6,7 @@
 		  "vs": "shader/basic_pbr.vert",
 		  "fs": "shader/basic_pbr.frag"
 		},
+		"color": [0.6, 0.6, 0.3],
 		"transform": {
 		  "location": [
 			0,
@@ -84,7 +85,7 @@
 		"object": "directional_light",
 		"light_color": [
 		  0.1,
-		  0.15,
+		  0.1,
 		  0.1
 		],
 		"transform": {

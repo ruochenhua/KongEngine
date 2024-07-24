@@ -39,6 +39,8 @@ CRenderObj::CRenderObj(const SRenderResourceDesc& render_resource_desc)
 	{
 		m_RenderInfo.specular_map_tex_id = CRender::LoadTexture(specular_map_path_iter->second);
 	}
+
+	m_RenderInfo.color = render_resource_desc.color;
 }
 
 std::vector<float> CRenderObj::GetVertices() const

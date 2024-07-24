@@ -85,6 +85,11 @@ SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
                 ToResourcePath(texture_json["specular_map"]));   
         }
     }
+
+    if(!in_json["color"].is_null())
+    {
+        render_resource_desc.color = ParseVec3(in_json["color"]);
+    }
     
     return render_resource_desc;
 }

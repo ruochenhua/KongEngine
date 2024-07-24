@@ -80,7 +80,8 @@ int CRender::Update(double delta)
 	// }
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	//opengl32.dll	
+	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
 	RenderSkyBox();
@@ -117,7 +118,7 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	Shader::SetMat4(shader_id, "view", view_mat);
 	Shader::SetMat4(shader_id, "proj", projection_mat);
 	Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
-
+	Shader::SetVec3(shader_id, "obj_color", render_info.color);
 	bool has_dir_light = false;	// cannot have more than 1 dir light 
 	int point_light_count = 0;	// point light count, max 4 
 	for(auto light : scene_lights)
