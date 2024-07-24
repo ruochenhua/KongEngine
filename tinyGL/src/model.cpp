@@ -6,11 +6,10 @@
 using namespace glm;
 using namespace tinyGL;
 
-CModel::CModel(const string& model_path, const string& diffuse_tex_path, const vector<string>& shader_path_list)
-	:CRenderObj(shader_path_list)
+CModel::CModel(const SRenderResourceDesc& render_resource_desc)
+	:CRenderObj(render_resource_desc)
 {
-	ImportObj(model_path);
-	m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(diffuse_tex_path);
+	ImportObj(render_resource_desc.model_path);
 	GenerateRenderInfo();
 }
 

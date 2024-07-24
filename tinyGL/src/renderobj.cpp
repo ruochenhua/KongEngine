@@ -5,6 +5,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/euler_angles.hpp>
+
+#include "render.h"
 #include "shader.h"
 
 using namespace tinyGL;
@@ -19,12 +21,24 @@ mat4 SceneObject::GetModelMatrix() const
 	return model;
 }
 
-CRenderObj::CRenderObj(const vector<string>& shader_path_list)
+CRenderObj::CRenderObj(const SRenderResourceDesc& render_resource_desc)
 {
-	// shader list
-	// 0:vs, 1:fs, ...
-	// todo: dict in yaml
-	m_RenderInfo.program_id = Shader::LoadShaders(shader_path_list[0], shader_path_list[1]);
+	// compile shader map
+	m_RenderInfo.program_id = Shader::LoadShaders(render_resource_desc.shader_paths);
+
+	// load texture map
+	const auto& texture_paths = render_resource_desc.texture_paths;
+	auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
+	if(diffuse_path_iter != texture_paths.end())
+	{
+		m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(diffuse_path_iter->second);
+	}
+
+	auto specular_map_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular_map);
+	if(specular_map_path_iter != texture_paths.end())
+	{
+		m_RenderInfo.specular_map_tex_id = CRender::LoadTexture(specular_map_path_iter->second);
+	}
 }
 
 std::vector<float> CRenderObj::GetVertices() const
@@ -47,7 +61,7 @@ std::vector<float> CRenderObj::GetTextureCoords() const
 	for (size_t i = 0; i < m_vVertex.size(); ++i)
 	{
 		tex_coords[2 * i] = m_vTexCoord[i].x;
-		tex_coords[2 * i + 1] = 1.0 - m_vTexCoord[i].y;	//to opengl, invert y coord
+		tex_coords[2 * i + 1] = 1.0f - m_vTexCoord[i].y;	//to opengl, invert y coord
 	}
 
 	return tex_coords;
@@ -110,5 +124,10 @@ int CRenderObj::ImportObj(const std::string& model_path)
 std::vector<unsigned int> CRenderObj::GetIndices() const
 {
 	return m_vIndex;
+}
+
+void CRenderObj::LoadRenderResource(const SRenderResourceDesc& render_res_desc)
+{
+	
 }
 

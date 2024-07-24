@@ -214,8 +214,12 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	// 	glGenBuffers(1, &_render_info._texture_buffer);
 	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
 	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
-
-	render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	map<SRenderResourceDesc::EShaderType, string> skybox_shader = {
+		{SRenderResourceDesc::EShaderType::vs, "../../../../resource/shader/skybox_vert.shader"},
+		{SRenderResourceDesc::EShaderType::fs, "../../../../resource/shader/skybox_frag.shader"}
+	};
+	//render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	render_info.program_id = Shader::LoadShaders(skybox_shader);
 	render_info.vertex_size = vertices.size();
 
 	cube_map_tex.Load(tex_path_vec, tex_type_vec);

@@ -17,11 +17,13 @@ namespace tinyGL
     public:
         Light(ELightType in_type)
             : light_type(in_type)
-        {}
+        {
+            
+        }
         
         glm::vec3 light_color = glm::vec3(0);
         
-        ELightType GetLightType() const;
+        ELightType GetLightType() const { return light_type; }
     private:
         ELightType light_type;
     };

@@ -19,15 +19,12 @@ uniform mat3 normal_model_mat;
 
 
 void main(){
-	gl_Position = proj * view * model * vec4(in_pos, 1.0); 	
-    // out_pos = gl_Position.xyz;
-    out_pos = (model * vec4(in_pos, 1.0)).xyz;
-	//out_pos = in_pos;
-    out_normal = normal_model_mat * in_normal;
-	out_texcoord = in_texcoord;
-	// uv = vertexTextureCoord;	
+	gl_Position = proj * view * model * vec4(in_pos, 1.0); 	    
+    out_pos = (model * vec4(in_pos, 1.0)).xyz;	
+	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
-	// normal_world = normal_model_mat * vertexNormal_modelspace;
+    out_normal = normal_model_mat * in_normal;
+	out_texcoord = in_texcoord;	
 		
 	//ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);
 }

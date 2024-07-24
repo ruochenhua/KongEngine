@@ -11,6 +11,8 @@ namespace tinyGL
         
         static Engine GetEngine();
         static GLFWwindow* GetRenderWindow();
+
+        static string ReadFile(const string& file_path);
     private:
         
         GLFWwindow* render_window = nullptr;

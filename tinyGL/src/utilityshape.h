@@ -6,7 +6,7 @@ namespace tinyGL
 class CUtilityBox : public CRenderObj
 {
 public:
-	CUtilityBox(const vector<string>& shader_path_list);
+	CUtilityBox(const SRenderResourceDesc& render_resource_desc);
 	virtual std::vector<float> GetVertices() const override;
 	virtual std::vector<unsigned int> GetIndices() const override;
 

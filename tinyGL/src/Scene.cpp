@@ -1,11 +1,11 @@
 #include "Scene.h"
-
+#include "Engine.h"
+#include "light.h"
+#include "model.h"
 #include "utilityshape.h"
 
 #include <nlohmann/json.hpp>
 
-#include "light.h"
-#include "model.h"
 using json = nlohmann::json;
 
 using namespace tinyGL;
@@ -46,44 +46,72 @@ void ParseTransform(nlohmann::basic_json<> in_json, shared_ptr<SceneObject> scen
     }
 }
 
+SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
+{
+    SRenderResourceDesc render_resource_desc;
+    if(!in_json["shader_path"].is_null())
+    {
+        auto shader_json = in_json["shader_path"];
+        if(!shader_json["vs"].is_null())
+        {
+            render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::vs,
+                ToResourcePath(shader_json["vs"]));
+        }
+
+        if(!shader_json["fs"].is_null())
+        {
+            render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::fs,
+                ToResourcePath(shader_json["fs"]));
+        }
+    }
+
+    if(!in_json["model_path"].is_null())
+    {
+        render_resource_desc.model_path = ToResourcePath(in_json["model_path"]);
+    }
+
+    if(!in_json["texture_path"].is_null())
+    {
+        auto texture_json = in_json["texture_path"];
+        if(!texture_json["diffuse"].is_null())
+        {
+            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::diffuse,
+                ToResourcePath(texture_json["diffuse"]));        
+        }
+
+        if(!texture_json["specular_map"].is_null())
+        {
+            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::specular_map,
+                ToResourcePath(texture_json["specular_map"]));   
+        }
+    }
+    
+    return render_resource_desc;
+}
 
 bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<CRenderObj>>& render_objs,
     vector<shared_ptr<Light>>& lights)
 {
-    std::string yaml_content;
-    std::ifstream yaml_stream(ToResourcePath(file_path), std::ios::in);
-    if (yaml_stream.is_open()) {
-        std::stringstream sstr;
-        sstr << yaml_stream.rdbuf();
-        yaml_content = sstr.str();
-        yaml_stream.close();
-    }
-    
+    std::string yaml_content = Engine::ReadFile(ToResourcePath(file_path));
+       
     json data = json::parse(yaml_content);
     auto scene = data["scene"];
     for(auto& child : scene)
     {
         if(child["object"] == "box")
         {
-            string vs_path_string = ToResourcePath(child["shader_path"]["vs"]);
-            string fs_path_string = ToResourcePath(child["shader_path"]["fs"]);
+            SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(child);
 
-            vector<string> shader_path = {vs_path_string, fs_path_string};
-            auto new_box = make_shared<CUtilityBox>(shader_path);
-            
+            auto new_box = make_shared<CUtilityBox>(render_resource_desc);
             ParseTransform(child, new_box);
             
             render_objs.push_back(new_box);
         }
         else if(child["object"] == "model")
         {
-            string vs_path_string = ToResourcePath(child["shader_path"]["vs"]);
-            string fs_path_string = ToResourcePath(child["shader_path"]["fs"]);
-
-            vector<string> shader_path = {vs_path_string, fs_path_string};
-            string model_path = ToResourcePath(child["model_path"]);
-            string diffuse_tex_path = ToResourcePath(child["diffuse_tex_path"]);
-            auto new_model = make_shared<CModel>(model_path, diffuse_tex_path, shader_path);
+            SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(child);
+            
+            auto new_model = make_shared<CModel>(render_resource_desc);
             ParseTransform(child, new_model);
             
             render_objs.push_back(new_model);

@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <map>
 #include <sstream>
 
 #include "GL/glew.h"
@@ -28,7 +29,6 @@ namespace tinyGL
 		// vao
 		GLuint vertex_array_id = 0;
 		GLuint texture_buffer = 0;
-
 		GLuint normal_buffer = 0;
 
 		SMaterial material;
@@ -42,7 +42,28 @@ namespace tinyGL
 		GLuint specular_map_tex_id = 0;
 	};
 
-	const std::string RESOURCE_PATH = "../../../../resource/";
+	// 渲染资源描述
+	struct SRenderResourceDesc
+	{
+		enum EShaderType
+		{
+			vs = GL_VERTEX_SHADER,		// vertex shader
+			fs = GL_FRAGMENT_SHADER,	// fragment shader
+		};
+
+		enum ETextureType
+		{
+			diffuse = 0,
+			specular_map
+		};
+		
+		map<EShaderType, string> shader_paths;
+		map<ETextureType, string> texture_paths;
+
+		string model_path;
+	};
+	
+	const string RESOURCE_PATH = "../../../../resource/";
 
 	// inline static GLFWwindow* GetWindowPtr()
 	// {

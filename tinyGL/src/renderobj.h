@@ -16,14 +16,14 @@ public:
 class CRenderObj : public SceneObject
 {
 public:
-	CRenderObj(const vector<string>& shader_path_list);	
+	CRenderObj(const SRenderResourceDesc& render_resource_desc);	
 	virtual vector<float> GetVertices() const;
 	virtual vector<float> GetTextureCoords() const;
 	virtual vector<float> GetNormals() const;
 	virtual vector<unsigned int> GetIndices() const;
 
 	SRenderInfo GetRenderInfo() {return m_RenderInfo;}
-	
+	void LoadRenderResource(const SRenderResourceDesc& render_res_desc);
 protected:
 	virtual void GenerateRenderInfo() = 0;
 	
