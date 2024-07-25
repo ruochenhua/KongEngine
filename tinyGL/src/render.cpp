@@ -21,8 +21,8 @@ int CRender::Init()
 
 	m_SkyBox.Init();
 	//init show map
-	glGenFramebuffers(1, &m_FrameBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+	//glGenFramebuffers(1, &m_FrameBuffer);
+	//glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 	
 	glGenTextures(1, &m_DepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
@@ -32,16 +32,16 @@ int CRender::Init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthTexture, 0);
+	// glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthTexture, 0);
 	// buffer
-	glDrawBuffer(GL_NONE);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		return -1;
-	
+	// glDrawBuffer(GL_NONE);
+	// if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	// 	return -1;
+	//
 	// m_ShadowMapProgramID = LoadShaders("../../../../resource/shader/shadowmap_vert.shader",
 	// 	"../../../../resource/shader/shadowmap_frag.shader");
 
-	m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
+	//m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
@@ -71,26 +71,26 @@ int CRender::Update(double delta)
 	// Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-	glViewport(0, 0, 1024, 1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-
-	// for (auto& render_info : m_vRenderInfo)
-	// {
-	// 	RenderShadowMap(render_info);
-	// }
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+	// glViewport(0, 0, 1024, 1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+	//
+	// // for (auto& render_info : m_vRenderInfo)
+	// // {
+	// // 	RenderShadowMap(render_info);
+	// // }
+	//
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-
+	
 	RenderSkyBox();
-
 	return 1;
 }
 
 void CRender::PostUpdate()
 {
+	
 	// Swap buffers
 	glfwSwapBuffers(render_window);
 	glfwPollEvents();

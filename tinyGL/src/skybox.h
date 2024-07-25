@@ -8,8 +8,7 @@ namespace tinyGL
 	void Bind(GLenum texture_unit);
 	void Load(const std::vector<std::string>& tex_path_vec,
 		const std::vector<unsigned int>& tex_type_vec);
-	//天空盒的贴图
-	//GLuint _aTextureID[6];
+
 	GLuint cube_map_id;
 	TGAImage* texture_img[6];
 };
@@ -17,8 +16,7 @@ namespace tinyGL
 struct SSkyBoxMesh {
 	void Init(const std::vector<std::string>& tex_path_vec,
 		const std::vector<unsigned int>& tex_type_vec);
-
-	//盒子的mesh
+	
 	std::vector<GLfloat> vertices;
 	std::vector<GLfloat> texcoords;
 
@@ -39,7 +37,6 @@ public:
 private:
 	//SSkyBoxTech m_Tech;
 	SSkyBoxMesh m_BoxMesh;
-	//天空盒的shader
 	GLuint m_programID;
 };
 }

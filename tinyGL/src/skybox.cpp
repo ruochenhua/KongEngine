@@ -39,7 +39,7 @@ void SCubeMapTexture::Load(const std::vector<std::string>& tex_path_vec, const s
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		// glGenerateMipmap(GL_TEXTURE_2D);
 
 
 		// 		//create buffer
@@ -53,146 +53,48 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	const std::vector<unsigned int>& tex_type_vec)
 {
 	//create box mesh
-	vertices.clear();
 	vertices = {
-		-0.5f, -0.5f, 0.5f,
-		0.5f, -0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-		-0.5f, 0.5f, 0.5f,
-		-0.5f, -0.5f, 0.5f,
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, 0.5f, -0.5f,
-		0.5f, 0.5f, -0.5f,
-		0.5f, 0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
 
-		-0.5f, 0.5f, 0.5f,
-		-0.5f, 0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, 0.5f,
-		-0.5f, 0.5f, 0.5f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
 
-		0.5f, -0.5f, -0.5f,
-		0.5f, 0.5f, -0.5f,
-		0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-		0.5f, -0.5f, 0.5f,
-		0.5f, -0.5f, -0.5f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
 
-		0.5f, 0.5f, -0.5f,
-		-0.5f, 0.5f, -0.5f,
-		-0.5f, 0.5f, 0.5f,
-		-0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, -0.5f,
+		1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
 
-		-0.5f, -0.5f, 0.5f,
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, 0.5f,
-		-0.5f, -0.5f, 0.5f,
-	};
-
-	// 	_texcoords.clear();
-	// 	_texcoords = {
-	// 		0.0f, 0.0f,	// A
-	// 		1.0f, 0.0f,	// B
-	// 		1.0f, 1.0f,	// C
-	// 		1.0f, 1.0f,	// C
-	// 		0.0f, 1.0f,	// D
-	// 		0.0f, 0.0f,	// A
-	// 
-	// 		0.0f, 0.0f,	// E
-	// 		0.0, 1.0f,   // H
-	// 		1.0f, 1.0f,	// G
-	// 		1.0f, 1.0f,	// G
-	// 		1.0f, 0.0f,	// F
-	// 		0.0f, 0.0f,	// E
-	// 
-	// 		0.0f, 1.0f,	// D
-	// 		1.0, 1.0f,   // H
-	// 		1.0f, 0.0f,	// E
-	// 		1.0f, 0.0f,	// E
-	// 		0.0f, 0.0f,	// A
-	// 		0.0f, 1.0f,	// D
-	// 
-	// 		1.0f, 0.0f,	// F
-	// 		1.0f, 1.0f,	// G
-	// 		0.0f, 1.0f,	// C
-	// 		0.0f, 1.0f,	// C
-	// 		0.0f, 0.0f,	// B
-	// 		1.0f, 0.0f,	// F
-	// 
-	// 		1.0f, 1.0f,	// G
-	// 		0.0, 1.0f,   // H
-	// 		0.0f, 0.0f,	// D
-	// 		0.0f, 0.0f,	// D
-	// 		1.0f, 0.0f,	// C
-	// 		1.0f, 1.0f,	// G
-	// 
-	// 		0.0f, 0.0f,	// A
-	// 		0.0f, 1.0f,// E
-	// 		1.0f, 1.0f,	// F
-	// 		1.0f, 1.0f,	// F
-	// 		1.0f, 0.0f,	// B
-	// 		0.0f, 0.0f,	// A
-	// 	};
-
-		// 指定包围盒的顶点属性 位置
-	v_geo_bb.clear();
-	v_geo_bb = {
-		// 背面
-		-1.0f, 1.0f, -1.0f,		// A
-		-1.0f, -1.0f, -1.0f,	// B
-		1.0f, -1.0f, -1.0f,		// C
-		1.0f, -1.0f, -1.0f,		// C
-		1.0f, 1.0f, -1.0f,		// D
-		-1.0f, 1.0f, -1.0f,		// A
-
-		// 左侧面
-		-1.0f, -1.0f, 1.0f,		// E
-		-1.0f, -1.0f, -1.0f,	// B
-		-1.0f, 1.0f, -1.0f,		// A
-		-1.0f, 1.0f, -1.0f,		// A
-		-1.0f, 1.0f, 1.0f,		// F
-		-1.0f, -1.0f, 1.0f,		// E
-
-		// 右侧面
-		1.0f, -1.0f, -1.0f,		// C
-		1.0f, -1.0f, 1.0f,		// G
-		1.0f, 1.0f, 1.0f,		// H
-		1.0f, 1.0f, 1.0f,		// H
-		1.0f, 1.0f, -1.0f,		// D
-		1.0f, -1.0f, -1.0f,		// C
-
-		// 正面
-		-1.0f, -1.0f, 1.0f,  // E
-		-1.0f, 1.0f, 1.0f,  // F
-		1.0f, 1.0f, 1.0f,  // H
-		1.0f, 1.0f, 1.0f,  // H
-		1.0f, -1.0f, 1.0f,  // G
-		-1.0f, -1.0f, 1.0f,  // E
-
-		// 顶面
-		-1.0f, 1.0f, -1.0f,  // A
-		1.0f, 1.0f, -1.0f,  // D
-		1.0f, 1.0f, 1.0f,  // H
-		1.0f, 1.0f, 1.0f,  // H
-		-1.0f, 1.0f, 1.0f,  // F
-		-1.0f, 1.0f, -1.0f,  // A
-
-		// 底面
-		-1.0f, -1.0f, -1.0f,  // B
-		-1.0f, -1.0f, 1.0f,   // E
-		1.0f, -1.0f, 1.0f,    // G
-		1.0f, -1.0f, 1.0f,    // G
-		1.0f, -1.0f, -1.0f,   // C
-		-1.0f, -1.0f, -1.0f,  // B
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 	};
 
 	glGenVertexArrays(1, &render_info.vertex_array_id);
@@ -202,7 +104,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
+	// glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -211,14 +113,12 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		0,                  // stride
 		(void*)0            // array buffer offset
 	);
-	// 	glGenBuffers(1, &_render_info._texture_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, _render_info._texture_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*_vertices.size(), &_vertices[0], GL_STATIC_DRAW);
+	
 	map<SRenderResourceDesc::EShaderType, string> skybox_shader = {
 		{SRenderResourceDesc::EShaderType::vs, "../../../../resource/shader/skybox_vert.shader"},
 		{SRenderResourceDesc::EShaderType::fs, "../../../../resource/shader/skybox_frag.shader"}
 	};
-	//render_info.program_id = Shader::LoadShaders("../../../../resource/shader/skybox_vert.shader", "../../../../resource/shader/skybox_frag.shader");
+	
 	render_info.program_id = Shader::LoadShaders(skybox_shader);
 	render_info.vertex_size = vertices.size();
 
@@ -251,27 +151,18 @@ void CSkyBox::Render(const glm::mat4& mvp)
 {
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-
+	
 	auto& mesh_info = m_BoxMesh.render_info;
 	glUseProgram(mesh_info.program_id);
 	glBindVertexArray(mesh_info.vertex_array_id);	// 绑定VAO
-	GLuint matrix_id = glGetUniformLocation(mesh_info.program_id, "MVP");
-	glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
+	Shader::SetMat4(mesh_info.program_id, "MVP", mvp);
+	// GLuint matrix_id = glGetUniformLocation(mesh_info.program_id, "MVP");
+	// glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh.cube_map_tex.cube_map_id);
 
 	glUniform1i(glGetUniformLocation(mesh_info.program_id, "skybox"), 0);
-	// 	glEnableVertexAttribArray(1);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, mesh_info._texture_buffer);
-	// 	glVertexAttribPointer(
-	// 		1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-	// 		2,                  // size
-	// 		GL_FLOAT,           // type
-	// 		GL_FALSE,           // normalized?
-	// 		0,                  // stride
-	// 		(void*)0            // array buffer offset
-	// 	);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh_info.vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(GL_NONE);	// 解绑VAO
