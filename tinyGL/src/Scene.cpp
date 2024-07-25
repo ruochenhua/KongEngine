@@ -79,16 +79,41 @@ SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
                 ToResourcePath(texture_json["diffuse"]));        
         }
 
-        if(!texture_json["specular_map"].is_null())
+        if(!texture_json["specular"].is_null())
         {
-            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::specular_map,
-                ToResourcePath(texture_json["specular_map"]));   
+            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::specular,
+                ToResourcePath(texture_json["specular"]));   
+        }
+        
+        if(!texture_json["normal"].is_null())
+        {
+            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::normal,
+                ToResourcePath(texture_json["normal"]));   
         }
     }
 
-    if(!in_json["color"].is_null())
+    if(!in_json["material"].is_null())
     {
-        render_resource_desc.color = ParseVec3(in_json["color"]);
+        auto material_json = in_json["material"];
+        if(!material_json["albedo"].is_null())
+        {
+            render_resource_desc.material.albedo = ParseVec3(material_json["albedo"]);    
+        }
+
+        if(!material_json["metallic"].is_null())
+        {
+            render_resource_desc.material.metallic = material_json["metallic"];    
+        }
+
+        if(!material_json["roughness"].is_null())
+        {
+            render_resource_desc.material.roughness = material_json["roughness"];    
+        }
+
+        if(!material_json["ao"].is_null())
+        {
+            render_resource_desc.material.ao = material_json["ao"];    
+        }
     }
     
     return render_resource_desc;

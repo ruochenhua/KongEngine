@@ -34,13 +34,19 @@ CRenderObj::CRenderObj(const SRenderResourceDesc& render_resource_desc)
 		m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(diffuse_path_iter->second);
 	}
 
-	auto specular_map_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular_map);
-	if(specular_map_path_iter != texture_paths.end())
+	auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
+	if(specular_path_iter != texture_paths.end())
 	{
-		m_RenderInfo.specular_map_tex_id = CRender::LoadTexture(specular_map_path_iter->second);
+		m_RenderInfo.specular_tex_id = CRender::LoadTexture(specular_path_iter->second);
 	}
 
-	m_RenderInfo.color = render_resource_desc.color;
+	auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
+	if(normal_path_iter != texture_paths.end())
+	{
+		m_RenderInfo.normal_tex_id = CRender::LoadTexture(normal_path_iter->second);
+	}
+	
+	m_RenderInfo.material = render_resource_desc.material;
 }
 
 std::vector<float> CRenderObj::GetVertices() const

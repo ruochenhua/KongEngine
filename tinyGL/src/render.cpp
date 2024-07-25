@@ -118,7 +118,14 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	Shader::SetMat4(shader_id, "view", view_mat);
 	Shader::SetMat4(shader_id, "proj", projection_mat);
 	Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
-	Shader::SetVec3(shader_id, "obj_color", render_info.color);
+
+	// 材质属性
+	Shader::SetVec3(shader_id, "albedo", render_info.material.albedo);
+	Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
+	Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
+	Shader::SetFloat(shader_id, "ao", render_info.material.ao);
+	
+	
 	bool has_dir_light = false;	// cannot have more than 1 dir light 
 	int point_light_count = 0;	// point light count, max 4 
 	for(auto light : scene_lights)
@@ -139,7 +146,7 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 			{
 				stringstream point_light_name;
 				point_light_name <<  "point_lights[" << point_light_count << "]";
-				Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->rotation);
+				Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
 				Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
 				++point_light_count;
 			}
@@ -177,8 +184,13 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
 	glActiveTexture(GL_TEXTURE1);
-	GLuint specular_map_id = render_info.specular_map_tex_id != 0 ? render_info.specular_map_tex_id : null_tex_id;
+	GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, specular_map_id);
+
+	glActiveTexture(GL_TEXTURE2);
+	GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, normal_map_id);
+	
 	
 	// Draw the triangle !
 	// if no index, use draw array
@@ -244,6 +256,7 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 
 void CRender::RenderSkyBox()
 {
+	return;
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
 	m_SkyBox.Render(mvp);

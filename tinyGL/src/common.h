@@ -16,7 +16,10 @@ namespace tinyGL
 {
 	struct SMaterial
 	{
-		float shininess = 0.8f;
+		glm::vec3 albedo = glm::vec3(0.f); 	
+		float metallic = 0.5f;
+		float roughness = 0.5;
+		float ao = 0.3f;
 	};
 
 	// 渲染信息
@@ -38,10 +41,10 @@ namespace tinyGL
 		unsigned stride_count = 1;
 		unsigned indices_count = 0;
 		// texture id
+		// todo: 总不能一个一个加吧，要支持类型映射
 		GLuint diffuse_tex_id = 0;
-		GLuint specular_map_tex_id = 0;
-
-		glm::vec3 color = glm::vec3(0);
+		GLuint specular_tex_id = 0;
+		GLuint normal_tex_id = 0;
 	};
 
 	// 渲染资源描述
@@ -56,14 +59,19 @@ namespace tinyGL
 		enum ETextureType
 		{
 			diffuse = 0,
-			specular_map
+			specular,
+			normal,
+			metallic,
+			roughness,
+			ambient_occlusion,
+			glow,
 		};
 		
 		map<EShaderType, string> shader_paths;
 		map<ETextureType, string> texture_paths;
 
 		string model_path;
-		glm::vec3 color = glm::vec3(0);
+		SMaterial material;
 	};
 	
 	const string RESOURCE_PATH = "../../../../resource/";

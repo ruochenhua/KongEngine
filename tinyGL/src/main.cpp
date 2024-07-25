@@ -20,7 +20,7 @@ int main()
 	
 	vector<shared_ptr<CRenderObj>> render_objs;
 	vector<shared_ptr<Light>> lights;
-	CSceneLoader::LoadScene("scene/hello.json", render_objs, lights);
+	CSceneLoader::LoadScene("scene/hello_brdf.json", render_objs, lights);
 	render->InitLights(lights);
 	
 	// auto body_manager = new Tap::CBodyManager();

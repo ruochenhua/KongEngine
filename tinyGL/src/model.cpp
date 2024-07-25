@@ -71,7 +71,6 @@ void CModel::GenerateRenderInfo()
 		);
 		glEnableVertexAttribArray(2);
 		
-		// glActiveTexture(GL_TEXTURE0);	//���ֻ��һ��texture�Ļ����Բ�д�����texture����shader�Ļ���Ҫ���ò�ͬ��activate texture
 		glBindTexture(GL_TEXTURE_2D, m_RenderInfo.diffuse_tex_id);		
 	}
 	// index buffer
@@ -85,4 +84,9 @@ void CModel::GenerateRenderInfo()
 	// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
 	m_RenderInfo.vertex_size = vertices.size();
 	m_RenderInfo.indices_count = indices.size();
+
+	glUseProgram(m_RenderInfo.program_id);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "diffuse_texture"), 0);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "specular_texture"), 1);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "normal_texture"), 2);
 }

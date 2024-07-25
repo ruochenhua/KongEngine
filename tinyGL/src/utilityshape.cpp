@@ -123,6 +123,6 @@ void CUtilityBox::GenerateRenderInfo()
 
 	glUseProgram(m_RenderInfo.program_id);
 	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "diffuse_texture"), 0);
-	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "specular_map_texture"), 1);
-	
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "specular_texture"), 1);
+	glUniform1i(glGetUniformLocation(m_RenderInfo.program_id, "normal_texture"), 2);
 }

@@ -3,11 +3,14 @@
 	  {
 		"object": "box",
 		"shader_path": {
-		  "vs": "shader/basic_pbr.vert",
-		  "fs": "shader/basic_pbr.frag"
+		  "vs": "shader/brdf.vert",
+		  "fs": "shader/brdf.frag"
 		},
 		"material": {
-			"albedo": [0.6, 0.6, 0.3]
+			"albedo": [0.6, 0.6, 0.3],
+			"metallic": 0.9,
+			"roughness": 0.0,
+			"ao": 1
 		},
 		"transform": {
 		  "location": [
@@ -30,12 +33,17 @@
 	  {
 		"object": "box",
 		"shader_path": {
-		  "vs": "shader/basic_pbr.vert",
-		  "fs": "shader/basic_pbr.frag"
+		  "vs": "shader/brdf.vert",
+		  "fs": "shader/brdf.frag"
 		},
 		"texture_path": {
 		  "diffuse": "crater/crater_diffuse.png",
 		  "specular": "crater/crater_specular_map.png"
+		},
+		"material": {
+			"metallic": 0.8,
+			"roughness": 0.1,
+			"ao": 1
 		},
 		"transform": {
 		  "location": [
@@ -58,12 +66,18 @@
 	  {
 		"object": "model",
 		"shader_path": {
-		  "vs": "shader/basic_pbr.vert",
-		  "fs": "shader/basic_pbr.frag"
+		  "vs": "shader/brdf.vert",
+		  "fs": "shader/brdf.frag"
 		},
 		"model_path": "diablo3_pose/diablo3_pose.obj",
 		"texture_path": {
-		  "diffuse": "diablo3_pose/diablo3_pose_diffuse.tga"
+			"diffuse": "diablo3_pose/diablo3_pose_diffuse.tga",
+			"normal": "diablo3_pose/diablo3_pose_nm.tga"
+		},
+		"material": {
+			"metallic": 0.9,
+			"roughness": 0.1,
+			"ao": 1
 		},
 		"transform": {
 		  "location": [
@@ -73,8 +87,8 @@
 		  ],
 		  "rotation": [
 			0,
-			20,
-			30
+			45,
+			0
 		  ],
 		  "scale": [
 			1,
@@ -86,9 +100,9 @@
 	  {
 		"object": "directional_light",
 		"light_color": [
-		  0.1,
-		  0.1,
-		  0.1
+		  0.5,
+		  0.5,
+		  0.5
 		],
 		"transform": {
 		  "rotation": [
@@ -101,7 +115,7 @@
 	  {
 		"object": "point_light",
 		"light_color": [
-		  0.8,
+		  3,
 		  0,
 		  0
 		],
@@ -110,6 +124,21 @@
 			0,
 			0,
 			0
+		  ]
+		}
+	  },
+		{
+		"object": "point_light",
+		"light_color": [
+		  0,
+		  3,
+		  0
+		],
+		"transform": {
+		  "location": [
+			0,
+			2,
+			-1
 		  ]
 		}
 	  }
