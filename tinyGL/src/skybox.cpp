@@ -1,6 +1,7 @@
 #include "skybox.h"
 #include "tgaimage.h"
 #include "render.h"
+#include "Scene.h"
 #include "shader.h"
 
 namespace tinyGL
@@ -115,8 +116,8 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 	);
 	
 	map<SRenderResourceDesc::EShaderType, string> skybox_shader = {
-		{SRenderResourceDesc::EShaderType::vs, "../../../../resource/shader/skybox_vert.shader"},
-		{SRenderResourceDesc::EShaderType::fs, "../../../../resource/shader/skybox_frag.shader"}
+		{SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox_vert.shader")},
+		{SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox_frag.shader")}
 	};
 	
 	render_info.program_id = Shader::LoadShaders(skybox_shader);
@@ -128,12 +129,12 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 void CSkyBox::Init()
 {
 	std::vector<std::string> tex_path_vec = {
-		"../../../../resource/sky_box/dark_sky/darkskies_bk.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_dn.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_ft.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_lf.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_rt.tga",
-		"../../../../resource/sky_box/dark_sky/darkskies_up.tga",
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_bk.tga"),
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_dn.tga"),
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_ft.tga"),
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_lf.tga"),
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_rt.tga"),
+		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_up.tga"),
 	};
 	std::vector<unsigned int> tex_type_vec = {
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,

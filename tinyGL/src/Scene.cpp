@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 using namespace tinyGL;
 
-string ToResourcePath(const string& in_path)
+string CSceneLoader::ToResourcePath(const string& in_path)
 {
     return RESOURCE_PATH + in_path;
 }
@@ -55,19 +55,19 @@ SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
         if(!shader_json["vs"].is_null())
         {
             render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::vs,
-                ToResourcePath(shader_json["vs"]));
+                CSceneLoader::ToResourcePath(shader_json["vs"]));
         }
 
         if(!shader_json["fs"].is_null())
         {
             render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::fs,
-                ToResourcePath(shader_json["fs"]));
+                CSceneLoader::ToResourcePath(shader_json["fs"]));
         }
     }
 
     if(!in_json["model_path"].is_null())
     {
-        render_resource_desc.model_path = ToResourcePath(in_json["model_path"]);
+        render_resource_desc.model_path = CSceneLoader::ToResourcePath(in_json["model_path"]);
     }
 
     if(!in_json["texture_path"].is_null())
@@ -76,19 +76,19 @@ SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
         if(!texture_json["diffuse"].is_null())
         {
             render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::diffuse,
-                ToResourcePath(texture_json["diffuse"]));        
+                CSceneLoader::ToResourcePath(texture_json["diffuse"]));        
         }
 
         if(!texture_json["specular"].is_null())
         {
             render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::specular,
-                ToResourcePath(texture_json["specular"]));   
+                CSceneLoader::ToResourcePath(texture_json["specular"]));   
         }
         
         if(!texture_json["normal"].is_null())
         {
             render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::normal,
-                ToResourcePath(texture_json["normal"]));   
+                CSceneLoader::ToResourcePath(texture_json["normal"]));   
         }
     }
 

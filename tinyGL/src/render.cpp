@@ -19,7 +19,7 @@ int CRender::Init()
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
 
-	m_SkyBox.Init();
+	// m_SkyBox.Init();
 	//init show map
 	//glGenFramebuffers(1, &m_FrameBuffer);
 	//glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
@@ -84,7 +84,7 @@ int CRender::Update(double delta)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
-	RenderSkyBox();
+	//RenderSkyBox();
 	return 1;
 }
 
@@ -256,7 +256,6 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 
 void CRender::RenderSkyBox()
 {
-	return;
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
 	m_SkyBox.Render(mvp);

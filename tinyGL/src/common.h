@@ -1,4 +1,5 @@
 #pragma once
+#include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -7,7 +8,6 @@
 #include <map>
 #include <sstream>
 
-#include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "GLM/glm.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
@@ -74,7 +74,7 @@ namespace tinyGL
 		SMaterial material;
 	};
 	
-	const string RESOURCE_PATH = "../../../../resource/";
+	const string RESOURCE_PATH = "../resource/";
 
 	// inline static GLFWwindow* GetWindowPtr()
 	// {

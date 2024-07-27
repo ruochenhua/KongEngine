@@ -6,7 +6,6 @@ static Engine g_engine;
 Engine::Engine()
 {
     // 构建窗口
-    glewExperimental = true;
     if (!glfwInit())
     {
         fprintf(stderr, "Failed to initialize GLFW\n");
@@ -29,9 +28,9 @@ Engine::Engine()
     }
 
     glfwMakeContextCurrent(render_window); // Initialize GLEW
-    glewExperimental = true; // Needed in core profile
-    if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "Failed to initialize GLEW\n");
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        fprintf(stderr, "Failed to initialize GLAD\n");
         assert(0);
     }
 

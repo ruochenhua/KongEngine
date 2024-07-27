@@ -12,3 +12,4 @@
 *.lastbuildstate
 *.user
 /build
+/project_build

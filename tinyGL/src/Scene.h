@@ -12,5 +12,7 @@ namespace tinyGL
             vector<shared_ptr<CRenderObj>>& render_objs,
             vector<shared_ptr<Light>>& lights);
 
+        static string ToResourcePath(const string& file_path);
+
     };
 }

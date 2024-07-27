@@ -8,3 +8,8 @@
 
 场景的描述目前计划是基于yaml实现。
 目前计划是尽量实现支持多平台（后续接入DXR的话这个feature就只在windows上支持）
+
+## 构建
+*原msvc文件下的sln已经废弃不再使用*
+
+项目使用cmake进行构建，在工程主目录下，运行build.bat文件（目前只支持Windows），会在**project_build**目录下生成对应的sln工程，在里面找到TinyGL项目编译运行即可。

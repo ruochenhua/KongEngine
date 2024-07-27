@@ -4,7 +4,6 @@
 #include "Engine.h"
 #include "Scene.h"
 
-#include "TapBodyManager.h"
 #include "utilityshape.h"
 using namespace glm;
 using namespace std;
