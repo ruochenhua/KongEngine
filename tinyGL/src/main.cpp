@@ -1,10 +1,14 @@
 //tiny openGL project
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 #include "render.h"
 #include "message.h"
 #include "Engine.h"
 #include "Scene.h"
 
 #include "utilityshape.h"
+#include "imgui.h"
 using namespace glm;
 using namespace std;
 using namespace tinyGL;
@@ -28,6 +32,16 @@ int main()
 	current_time = new_time = glfwGetTime();
 	while (!glfwWindowShouldClose(render_window))
 	{
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::ShowDemoWindow(); // Show demo window! :)
+		// Rendering
+		// render your GUI
+		ImGui::Begin("Demo window");
+		ImGui::Button("Hello!");
+		ImGui::End();
+		
 		if(glfwGetKey(render_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(render_window, true);
@@ -37,9 +51,22 @@ int main()
 		{
 			render->RenderSceneObject(render_obj);			
 		}
+
+		// (Your code clears your framebuffer, renders your other stuff etc.)
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		// (Your code calls glfwSwapBuffers() etc.)
+		
 		render->PostUpdate();
 		current_time = new_time;
-		new_time = glfwGetTime();	
+		new_time = glfwGetTime();
+
+
+
 	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	return 0;
 }

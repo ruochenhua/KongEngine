@@ -15,6 +15,20 @@ set(JSON_LOADER_DIR ${3RD_PARTY_DIR}/nlohmann)
 # set(OBJ_LOADER_DIR ${3RD_PARTY_DIR}/objloader)
 set(GLAD_DIR ${3RD_PARTY_DIR}/glad)
 set(ASSIMP_DIR ${3RD_PARTY_DIR}/assimp)
+set(IMGUI_DIR ${3RD_PARTY_DIR}/imgui)
+file(GLOB IMGUI_SRC ${IMGUI_DIR}/*.cpp)
+file(GLOB IMGUI_BACKEND_SRC ${IMGUI_DIR}/backends/*.cpp)
+# set(IMGUI_SRC
+# ${IMGUI_DIR}/imgui.cpp
+# ${IMGUI_DIR}/imgui_demo.cpp
+# ${IMGUI_DIR}/imgui_draw.cpp
+# ${IMGUI_DIR}/imgui_widgets.cpp
+# ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+# ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+# # ${IMGUI_DIR}/backends/imgui_widgets.cpp
+
+# )
+
 # build glfw
 add_subdirectory(${GLFW_DIR})
 
@@ -34,7 +48,9 @@ file(GLOB MAIN_HEAD ${SRC_DIR}/*.h)
 
 file(GLOB_RECURSE 3RD_PARTY_SRC &)
 
-add_executable(TinyGL ${MAIN_HEAD} ${MAIN_SRC} )
+add_executable(TinyGL ${MAIN_HEAD} ${MAIN_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND_SRC})
+target_include_directories(TinyGL PRIVATE ${IMGUI_DIR})
+target_include_directories(TinyGL PRIVATE ${IMGUI_DIR}/backends)
 
 # link library
 target_link_libraries(TinyGL OpenGL::GL)
