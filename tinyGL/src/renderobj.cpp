@@ -1,6 +1,5 @@
 #include "renderobj.h"
-#include "OBJ_Loader.h"
-#include "tgaimage.h"
+//#include "OBJ_Loader.h"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -8,6 +7,9 @@
 
 #include "render.h"
 #include "shader.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 using namespace tinyGL;
 using namespace glm;
@@ -90,42 +92,109 @@ std::vector<float> CRenderObj::GetNormals() const
 
 int CRenderObj::ImportObj(const std::string& model_path)
 {
-	objl::Loader obj_loader;
-
-	bool loadout = obj_loader.LoadFile(model_path);
-	if (!loadout)
-		return -1;
-
-	auto load_meshes = obj_loader.LoadedMeshes;
-	auto load_vertices = obj_loader.LoadedVertices;
-	auto load_materials = obj_loader.LoadedMaterials;
-
-	m_vIndex = obj_loader.LoadedIndices;
-
-	size_t vertex_count = load_vertices.size();
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(model_path,
+		aiProcess_CalcTangentSpace|
+		aiProcess_Triangulate|
+		aiProcess_JoinIdenticalVertices|
+		aiProcess_SortByPType);
 
 	m_vVertex.clear();
-	m_vVertex.resize(vertex_count);
-
 	m_vTexCoord.clear();
-	m_vTexCoord.resize(vertex_count);
-
 	m_vNormal.clear();
-	m_vNormal.resize(vertex_count);
+	ProcessAssimpNode(scene->mRootNode, scene);
+	//
+	// objl::Loader obj_loader;
+	//
+	// bool loadout = obj_loader.LoadFile(model_path);
+	// if (!loadout)
+	// 	return -1;
+	//
+	// auto load_meshes = obj_loader.LoadedMeshes;
+	// auto load_vertices = obj_loader.LoadedVertices;
+	// auto load_materials = obj_loader.LoadedMaterials;
+	//
+	// m_vIndex = obj_loader.LoadedIndices;
+	//
+	// size_t vertex_count = load_vertices.size();
+	//
+	// m_vVertex.clear();
+	// m_vVertex.resize(vertex_count);
+	//
+	// m_vTexCoord.clear();
+	// m_vTexCoord.resize(vertex_count);
+	//
+	// m_vNormal.clear();
+	// m_vNormal.resize(vertex_count);
+	//
+	// for (size_t i = 0; i < m_vVertex.size(); ++i)
+	// {
+	// 	auto &pos = load_vertices[i].Position;
+	// 	m_vVertex[i] = vec3(pos.X, pos.Y, pos.Z);
+	//
+	// 	auto tex_coord = load_vertices[i].TextureCoordinate;
+	// 	m_vTexCoord[i] = vec2(tex_coord.X, tex_coord.Y);
+	//
+	// 	auto normal = load_vertices[i].Normal;
+	// 	m_vNormal[i] = vec3(normal.X, normal.Y, normal.Z);
+	// }
+	//
+	return 0;
+}
 
-	for (size_t i = 0; i < m_vVertex.size(); ++i)
+void CRenderObj::ProcessAssimpNode(aiNode* model_node, const aiScene* scene)
+{
+	// process node mesh
+	for(unsigned i = 0; i < model_node->mNumMeshes; ++i)
 	{
-		auto &pos = load_vertices[i].Position;
-		m_vVertex[i] = vec3(pos.X, pos.Y, pos.Z);
-
-		auto tex_coord = load_vertices[i].TextureCoordinate;
-		m_vTexCoord[i] = vec2(tex_coord.X, tex_coord.Y);
-
-		auto normal = load_vertices[i].Normal;
-		m_vNormal[i] = vec3(normal.X, normal.Y, normal.Z);
+		aiMesh* mesh = scene->mMeshes[model_node->mMeshes[i]];
+		ProcessAssimpMesh(mesh, scene);
 	}
 
-	return 0;
+	// process child node
+	for(unsigned int i = 0; i < model_node->mNumChildren; ++i)
+	{
+		ProcessAssimpNode(model_node->mChildren[i], scene);
+	}
+}
+
+void CRenderObj::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
+{
+	// assimp允许一个模型顶点有8组纹理坐标，暂时我们只关心第一组
+	bool has_uv = mesh->mTextureCoords[0];
+	for(unsigned int i = 0; i < mesh->mNumVertices; ++i)
+	{
+		const auto& vert = mesh->mVertices[i];
+		glm::vec3 vertex = vec3(vert.x, vert.y, vert.z);
+		m_vVertex.push_back(vertex);
+
+		const auto& norm = mesh->mNormals[i];
+		glm::vec3 normal = vec3(norm.x, norm.y, norm.z);
+		m_vNormal.push_back(normal);
+
+		if(has_uv)
+		{
+			const auto& tex_uv = mesh->mTextureCoords[0][i];
+			glm::vec2 uv = vec2(tex_uv.x, tex_uv.y);
+			m_vTexCoord.push_back(uv);
+		}
+		else
+		{
+			m_vTexCoord.push_back(vec2(0.f));
+		}
+	}
+
+	for(unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		aiFace face = mesh->mFaces[i];
+		for(unsigned int j = 0; j < face.mNumIndices; ++j)
+		{
+			m_vIndex.push_back(face.mIndices[j]);
+		}
+	}
+
+	
+	
 }
 
 

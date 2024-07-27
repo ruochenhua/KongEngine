@@ -1,6 +1,10 @@
 #pragma once
 #include "common.h"
 
+struct aiMesh;
+struct aiScene;
+struct aiNode;
+
 namespace tinyGL
 {
 
@@ -37,5 +41,7 @@ protected:
 
 	// import obj model
 	int ImportObj(const std::string& model_path);
+	void ProcessAssimpNode(aiNode* model_node, const aiScene* scene);
+	void ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene);
 };
 }
