@@ -13,3 +13,4 @@
 *.user
 /build
 /project_build
+/resource/.idea
