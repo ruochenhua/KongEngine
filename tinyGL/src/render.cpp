@@ -70,19 +70,9 @@ int CRender::Update(double delta)
 	
 	// Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-	// glViewport(0, 0, 1024, 1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-	//
-	// // for (auto& render_info : m_vRenderInfo)
-	// // {
-	// // 	RenderShadowMap(render_info);
-	// // }
-	//
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-	glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
 	//RenderSkyBox();
 

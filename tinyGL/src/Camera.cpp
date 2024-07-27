@@ -76,9 +76,10 @@ void CCamera::UpdateRotation(double delta)
 
 void CCamera::Update(double delta)
 {
+	m_screenInfo._aspect_ratio = Engine::GetEngine().GetAspectRatio();
 	UpdateRotation(delta);
 	auto render_window = Engine::GetRenderWindow();
-	double xpos, ypos;
+	// double xpos, ypos;
 	// glfwGetCursorPos(render_window, &xpos, &ypos);
 	// printf("pitch xpos %f, ypos %f, delta %f\n", (float)xpos, (float)ypos, (float)delta);
 	if(glfwGetKey(render_window, GLFW_KEY_W) == GLFW_PRESS

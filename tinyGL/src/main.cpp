@@ -60,9 +60,6 @@ int main()
 		render->PostUpdate();
 		current_time = new_time;
 		new_time = glfwGetTime();
-
-
-
 	}
 
 	ImGui_ImplOpenGL3_Shutdown();

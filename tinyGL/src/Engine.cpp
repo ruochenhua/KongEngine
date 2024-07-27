@@ -6,6 +6,13 @@
 
 using namespace tinyGL;
 static Engine g_engine;
+void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    g_engine.SetWidthHeight(width, height);
+    //glfwSetWindowSize(window, width, height);
+    //glfwSetWindowAspectRatio(window, width, height);
+}
 
 Engine::Engine()
 {
@@ -24,7 +31,8 @@ Engine::Engine()
 	
     // Open a window and create its OpenGL context
     // (In the accompanying source code, this variable is global for simplicity)
-    render_window = glfwCreateWindow(1024, 768, "tinyGL", nullptr, nullptr);
+    render_window = glfwCreateWindow((int)window_width, (int)window_height, "tinyGL", nullptr, nullptr);
+    window_aspect_ratio = window_width/window_height;
     if (render_window == nullptr) {
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
         glfwTerminate();
@@ -40,7 +48,7 @@ Engine::Engine()
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(render_window, GLFW_STICKY_KEYS, GL_TRUE);
-
+    glfwSetFramebufferSizeCallback(render_window, framebuffer_resize_callback);
     // 初始化imgui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -78,6 +86,13 @@ string Engine::ReadFile(const string& file_path)
     }
 
     return file_content;
+}
+
+void Engine::SetWidthHeight(float width, float height)
+{
+    window_width = width;
+    window_height = height;
+    window_aspect_ratio = width/height;
 }
 
 Engine Engine::GetEngine()
