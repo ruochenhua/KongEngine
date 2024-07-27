@@ -120,7 +120,7 @@ void SSkyBoxMesh::Init(const std::vector<std::string>& tex_path_vec,
 		{SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox_frag.shader")}
 	};
 	
-	render_info.program_id = Shader::LoadShaders(skybox_shader);
+	shader_id = Shader::LoadShaders(skybox_shader);
 	render_info.vertex_size = vertices.size();
 
 	cube_map_tex.Load(tex_path_vec, tex_type_vec);
@@ -154,16 +154,16 @@ void CSkyBox::Render(const glm::mat4& mvp)
 	glDisable(GL_DEPTH_TEST);
 	
 	auto& mesh_info = m_BoxMesh.render_info;
-	glUseProgram(mesh_info.program_id);
+	glUseProgram(m_BoxMesh.shader_id);
 	glBindVertexArray(mesh_info.vertex_array_id);	// 绑定VAO
-	Shader::SetMat4(mesh_info.program_id, "MVP", mvp);
+	Shader::SetMat4(m_BoxMesh.shader_id, "MVP", mvp);
 	// GLuint matrix_id = glGetUniformLocation(mesh_info.program_id, "MVP");
 	// glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mvp[0][0]);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_BoxMesh.cube_map_tex.cube_map_id);
 
-	glUniform1i(glGetUniformLocation(mesh_info.program_id, "skybox"), 0);
+	glUniform1i(glGetUniformLocation(m_BoxMesh.shader_id, "skybox"), 0);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh_info.vertex_size / 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(GL_NONE);	// 解绑VAO

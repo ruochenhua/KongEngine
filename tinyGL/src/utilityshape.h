@@ -7,8 +7,8 @@ class CUtilityBox : public CRenderObj
 {
 public:
 	CUtilityBox(const SRenderResourceDesc& render_resource_desc);
-	virtual std::vector<float> GetVertices() const override;
-	virtual std::vector<unsigned int> GetIndices() const override;
+	virtual std::vector<float> GetVertices() const;
+	virtual std::vector<unsigned int> GetIndices() const;
 
 	virtual void GenerateRenderInfo() override;
 private:

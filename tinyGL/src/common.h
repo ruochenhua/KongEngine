@@ -33,10 +33,11 @@ namespace tinyGL
 		GLuint vertex_array_id = 0;
 		GLuint texture_buffer = 0;
 		GLuint normal_buffer = 0;
-
+		GLuint tangent_buffer = 0;
+		GLuint bitangent_buffer = 0;
+		
 		SMaterial material;
 		// shader program
-		GLuint program_id = 0;
 		unsigned vertex_size = 0;
 		unsigned stride_count = 1;
 		unsigned indices_count = 0;
@@ -45,6 +46,7 @@ namespace tinyGL
 		GLuint diffuse_tex_id = 0;
 		GLuint specular_tex_id = 0;
 		GLuint normal_tex_id = 0;
+		GLuint tangent_tex_id = 0;
 	};
 
 	// 渲染资源描述
@@ -61,6 +63,7 @@ namespace tinyGL
 			diffuse = 0,
 			specular,
 			normal,
+			tangent,
 			metallic,
 			roughness,
 			ambient_occlusion,

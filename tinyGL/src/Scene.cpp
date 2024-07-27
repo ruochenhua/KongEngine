@@ -90,6 +90,12 @@ SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
             render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::normal,
                 CSceneLoader::ToResourcePath(texture_json["normal"]));   
         }
+        
+        if(!texture_json["tangent"].is_null())
+        {
+            render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::tangent,
+                CSceneLoader::ToResourcePath(texture_json["tangent"]));   
+        }
     }
 
     if(!in_json["material"].is_null())

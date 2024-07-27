@@ -23,7 +23,7 @@ struct SSkyBoxMesh {
 	std::vector<GLfloat> v_geo_bb;
 
 	SRenderInfo render_info;
-
+	GLuint shader_id = 0;
 	SCubeMapTexture cube_map_tex;
 };
 

@@ -75,6 +75,7 @@
 			"normal": "diablo3_pose/diablo3_pose_nm.tga"
 		},
 		"material": {
+			"albedo": [1, 1, 0.3],
 			"metallic": 0.9,
 			"roughness": 0.1,
 			"ao": 1
@@ -100,9 +101,9 @@
 	  {
 		"object": "directional_light",
 		"light_color": [
-		  0.5,
-		  0.5,
-		  0.5
+		  1,
+		  1,
+		  1
 		],
 		"transform": {
 		  "rotation": [
