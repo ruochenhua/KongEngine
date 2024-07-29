@@ -7,12 +7,19 @@
 #include "model.h"
 #include "tgaimage.h"
 #include "message.h"
+#include "Scene.h"
 #include "shader.h"
 #include "stb_image.h"
 
 using namespace tinyGL;
 using namespace glm;
 using namespace std;
+
+CRender* g_render = new CRender;
+CRender* CRender::GetRender()
+{
+	return g_render;
+}
 
 int CRender::Init()
 {
@@ -55,11 +62,6 @@ int CRender::InitCamera()
 
 	mainCamera->InitControl();
 	return 0;
-}
-
-void CRender::InitLights(const vector<shared_ptr<Light>>& lights)
-{
-	scene_lights = lights;
 }
 
 int CRender::Update(double delta)
@@ -120,7 +122,8 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 		Shader::SetFloat(shader_id, "ao", render_info.material.ao);
 		
 		bool has_dir_light = false;	// cannot have more than 1 dir light 
-		int point_light_count = 0;	// point light count, max 4 
+		int point_light_count = 0;	// point light count, max 4
+		auto scene_lights = CScene::GetScene()->GetSceneLights();
 		for(auto light : scene_lights)
 		{
 			ELightType light_type = light->GetLightType();

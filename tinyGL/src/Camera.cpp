@@ -1,5 +1,6 @@
 ﻿#include "Camera.h"
 
+#include <imgui.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
@@ -106,14 +107,18 @@ void CCamera::Update(double delta)
 		MoveRight();
 	}
 
-	if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	ImGuiIO& io = ImGui::GetIO();
+	if(!io.WantCaptureMouse)
 	{
-		RotateStart();
-	}
+		if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		{
+			RotateStart();
+		}
 
-	if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-	{
-		RotateEnd();
+		if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+		{
+			RotateEnd();
+		}
 	}
 	
 	//update translate

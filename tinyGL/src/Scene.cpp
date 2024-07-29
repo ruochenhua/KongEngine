@@ -9,6 +9,7 @@
 using json = nlohmann::json;
 
 using namespace tinyGL;
+CScene* g_scene = new CScene;
 
 string CSceneLoader::ToResourcePath(const string& in_path)
 {
@@ -172,3 +173,37 @@ bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<CRenderO
     
     return true;
 }
+
+CScene* CScene::GetScene()
+{
+    return g_scene;
+}
+
+void CScene::LoadScene(const string& file_path)
+{
+    for(auto render_obj : render_objs)
+    {
+        render_obj.reset();
+    }
+    
+    for(auto scene_light : lights)
+    {
+        scene_light.reset();
+    }
+
+    render_objs.clear();
+    lights.clear();
+    
+    CSceneLoader::LoadScene(file_path, render_objs, lights);
+}
+
+const vector<shared_ptr<CRenderObj>>& CScene::GetSceneRenderObjects() const
+{
+    return render_objs;
+}
+
+const vector<shared_ptr<Light>>& CScene::GetSceneLights() const
+{
+    return lights;
+}
+

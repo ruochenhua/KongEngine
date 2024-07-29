@@ -1,9 +1,5 @@
 #include "Engine.h"
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-
 using namespace tinyGL;
 static Engine g_engine;
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
@@ -49,19 +45,6 @@ Engine::Engine()
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(render_window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetFramebufferSizeCallback(render_window, framebuffer_resize_callback);
-    // 初始化imgui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    
-    ImGui::StyleColorsDark();
-
-    // 初始化imgui后端
-    ImGui_ImplGlfw_InitForOpenGL(render_window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-    ImGui_ImplOpenGL3_Init();
 }
 
 

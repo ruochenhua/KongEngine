@@ -13,11 +13,12 @@ namespace tinyGL
 	class CRender
 	{
 	public:
+		static CRender* GetRender();
+		
 		GLFWwindow* render_window;
 		CRender(){ }
 
 		int Init();
-		void InitLights(const vector<shared_ptr<Light>>& lights);
 		int Update(double delta);
 		void PostUpdate();
 
@@ -48,7 +49,5 @@ namespace tinyGL
 
 		double light_yaw = 0.0;
 		double light_pitch = 45.0;
-
-		vector<shared_ptr<Light>> scene_lights;
 	};
 }
