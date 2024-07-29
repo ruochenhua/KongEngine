@@ -3,8 +3,8 @@
 	  {
 		"object": "model",
 		"shader_path": {
-		  "vs": "shader/brdf_normalmap.vert",
-		  "fs": "shader/brdf_normalmap.frag"
+		  "vs": "shader/brdf.vert",
+		  "fs": "shader/brdf.frag"
 		},
 		"model_path": "nanosuit/nanosuit.obj",
 		"material": {
@@ -41,7 +41,7 @@
 		  "location": [
 			0,
 			1,
-			1
+			2
 		  ]
 		}
 	  },
@@ -55,8 +55,8 @@
 		"transform": {
 		  "location": [
 			0,
-			3,
-			-1
+			1,
+			3
 		  ]
 		}
 	  }

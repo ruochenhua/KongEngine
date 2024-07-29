@@ -62,16 +62,16 @@ vec3 GetNormal()
 	return frag_normal;
 }
 
-vec3 GetSpecular()
-{
-	float texture_size = textureSize(specular_texture, 0).x;
-	if(texture_size > 1.0)
-	{
-		return texture(specular_texture, frag_uv).rgb;
-	}
-
-	return vec3(1);
-}
+//vec3 GetSpecular()
+//{
+//	float texture_size = textureSize(specular_texture, 0).x;
+//	if(texture_size > 1.0)
+//	{
+//		return texture(specular_texture, frag_uv).rgb;
+//	}
+//
+//	return vec3(1);
+//}
 
 // 完整的Cook-Torrance specular BRDF: DFG / 4*dot(N,V)*dot(N,L)
 
@@ -136,12 +136,12 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
 	vec3 obj_albedo = GetAlbedo();
 	F0 = mix(F0, obj_albedo, metallic);
 
-	//vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
-	vec3 F = FresnelSchlick(clamp(dot(h, light_dir), 0.0, 1.0), F0);
+	vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
+	//vec3 F = FresnelSchlick(clamp(dot(h, light_dir), 0.0, 1.0), F0);
 
 	vec3 numerator = NDF*G*F;
 	float demoninator = 4.0 * max(dot(normal, view), 0.0) * max(dot(normal, light_dir), 0.0) + 0.0001; //加一个小数避免处于0的情况出现
-	vec3 specualr = numerator / demoninator * GetSpecular();
+	vec3 specualr = numerator / demoninator;
 	// KS就是菲涅尔的值
 	vec3 KS = F;
 	// 根据能量守恒定律，KS+KD不大于1
@@ -190,7 +190,7 @@ void main()
 	}
 
 	vec3 ambient = vec3(0.03)*GetAlbedo()*ao;
-	vec3 color = ambient + dir_light_color + point_light_color;
+	vec3 color = ambient+ dir_light_color + point_light_color;
 	// 伽马校正（Reinhard）
 	color = color / (color + vec3(1.0));
 	color = pow(color, vec3(1.0/2.2));

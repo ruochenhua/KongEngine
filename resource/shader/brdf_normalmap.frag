@@ -139,12 +139,12 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
     vec3 obj_albedo = GetAlbedo();
     F0 = mix(F0, obj_albedo, metallic);
 
-    //vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
-    vec3 F = FresnelSchlick(clamp(dot(h, light_dir), 0.0, 1.0), F0);
+    vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
+    //vec3 F = FresnelSchlick(clamp(dot(h, light_dir), 0.0, 1.0), F0);
 
     vec3 numerator = NDF*G*F;
     float demoninator = 4.0 * max(dot(normal, view), 0.0) * max(dot(normal, light_dir), 0.0) + 0.0001; //加一个小数避免处于0的情况出现
-    vec3 specualr = numerator / demoninator;// * GetSpecular();
+    vec3 specualr = numerator / demoninator;
     // KS就是菲涅尔的值
     vec3 KS = F;
     // 根据能量守恒定律，KS+KD不大于1
@@ -167,14 +167,15 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
     return CalcLight(light_color, light_dir, normal, view);
 }
 
-vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_pos)
+vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
 {
     vec3 light_color = point_light.light_color;
-    vec3 light_dir = normalize(point_light.light_pos - frag_pos);
+    vec3 light_dir = normalize(point_light.light_pos - in_frag_pos);
 
     vec3 point_light_color = CalcLight(light_color, light_dir, normal, view);
 
-    float distance = length(point_light.light_pos - frag_pos);
+    float distance = length(point_light.light_pos - in_frag_pos);
+    
     float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
     return point_light_color * attenuation;
 }

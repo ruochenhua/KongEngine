@@ -24,6 +24,7 @@ namespace tinyGL
         glm::vec3 light_color = glm::vec3(0);
         
         ELightType GetLightType() const { return light_type; }
+        virtual glm::vec3 GetLightDir() const = 0;
     private:
         ELightType light_type;
     };
@@ -37,6 +38,8 @@ namespace tinyGL
         {
             
         }
+
+        glm::vec3 GetLightDir() const override;
     };
 
     // point light
@@ -48,5 +51,6 @@ namespace tinyGL
         {
             
         }
+        glm::vec3 GetLightDir() const override;
     };
 }

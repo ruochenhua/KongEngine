@@ -132,7 +132,7 @@ void CRender::RenderSceneObject(shared_ptr<CRenderObj> render_obj)
 			case ELightType::directional_light:
 				if(!has_dir_light)
 				{
-					Shader::SetVec3(shader_id, "directional_light.light_dir", light->rotation);
+					Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
 					Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
 					has_dir_light = true;
 				}

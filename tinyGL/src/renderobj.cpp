@@ -104,8 +104,13 @@ int CRenderObj::ImportObj(const std::string& model_path)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(model_path,
-		aiProcess_CalcTangentSpace|
-		aiProcess_Triangulate
+		aiProcess_CalcTangentSpace
+		|aiProcess_Triangulate
+		|aiProcess_OptimizeMeshes
+		|aiProcess_GenNormals
+		|aiProcess_OptimizeGraph
+		|aiProcess_JoinIdenticalVertices
+		|aiProcess_FlipUVs
 		);
 
 	mesh_list.clear();

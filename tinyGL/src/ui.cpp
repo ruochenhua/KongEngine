@@ -64,9 +64,14 @@ void CUIManager::DescribeUIContent()
 	// render your GUI
 	ImGui::Begin("Demo window");
 	// Select an item type
-	const char* scene_items[] = {"hello", "hello_brdf", "hello_assimp"};
+	const char* scene_items[] = {
+		"hello",
+		"hello_brdf",
+		"hello_assimp",
+		"hello_normal_map"
+	};
 
-	static int item_type = 0;
+	static int item_type = 3;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
