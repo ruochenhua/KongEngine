@@ -39,11 +39,9 @@ int main()
 
 		ui_manager->PreRenderUpdate();
 		render->Update(new_time - current_time);
-		auto render_objs = CScene::GetScene()->GetSceneRenderObjects();
-		for(auto& render_obj : render_objs)
-		{
-			render->RenderSceneObject(render_obj);			
-		}
+
+		render->RenderShadowMap();			
+		render->RenderSceneObject();			
 		
 		ui_manager->PostRenderUpdate();
 		render->PostUpdate();

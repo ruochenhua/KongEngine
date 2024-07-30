@@ -62,9 +62,9 @@
 		{
 			"object": "directional_light",
 			"light_color": [
-				1,
-				1,
-				1
+				10,
+				10,
+				10
 			],
 			"transform": {
 				"rotation": [

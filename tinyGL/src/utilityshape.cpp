@@ -156,4 +156,6 @@ void CUtilityBox::GenerateRenderInfo()
 	glUniform1i(glGetUniformLocation(shader_id, "diffuse_texture"), 0);
 	glUniform1i(glGetUniformLocation(shader_id, "specular_texture"), 1);
 	glUniform1i(glGetUniformLocation(shader_id, "normal_texture"), 2);
+	glUniform1i(glGetUniformLocation(shader_id, "tangent_texture"), 3);
+	glUniform1i(glGetUniformLocation(shader_id, "shadow_map"), 4);
 }

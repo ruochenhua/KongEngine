@@ -11,11 +11,12 @@ glm::vec3 DirectionalLight::GetLightDir() const
     * y = sin(yaw)*cos(pitch)
     * z = sin(pitch)
      */
-    vec3 dir;
-    dir.x = cos(rotation.z) * cos(rotation.y);
-    dir.y = sin(rotation.z) * cos(rotation.y);
-    dir.z = sin(rotation.y);
-    return normalize(dir);
+    // vec3 dir;
+    // dir.x = cos(rotation.z) * cos(rotation.y);
+    // dir.y = sin(rotation.z) * cos(rotation.y);
+    // dir.z = sin(rotation.y);
+    // return normalize(dir);
+    return normalize(rotation);
 }
 
 vec3 PointLight::GetLightDir() const

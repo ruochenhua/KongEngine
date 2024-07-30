@@ -22,7 +22,9 @@ namespace tinyGL
 		int Update(double delta);
 		void PostUpdate();
 
-		void RenderSceneObject(shared_ptr<CRenderObj> render_obj);
+		void RenderSceneObject();
+		// todo:整合一下吧这两个
+		void RenderShadowMap();
 		
 		// load image file and create texture 
 		static GLuint LoadTexture(const std::string& texture_path);
@@ -31,19 +33,20 @@ namespace tinyGL
 		int InitRender();
 		int InitCamera();
 		void RenderSkyBox();
-		void RenderShadowMap(const SRenderInfo& render_info);
-
+		void RenderScene() const;
+		
 		//void UpdateLightDir(float delta);
 		
 	private:
 		CSkyBox m_SkyBox;
 		//shadow map
-		GLuint m_FrameBuffer		= GL_NONE;
+		GLuint m_ShadowMapFBO		= GL_NONE;
 		GLuint m_ShadowMapProgramID = GL_NONE;	// ������Ӱ��ͼ��shader
 		GLuint m_DepthTexture		= GL_NONE;			// �����ͼ
 		GLuint m_DepthMatrixID		= GL_NONE;
 		GLuint null_tex_id			= GL_NONE;
 		glm::mat4 m_DepthMVP;
+		glm::mat4 light_space_mat;
 
 		CCamera* mainCamera = nullptr;
 
