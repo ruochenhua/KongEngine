@@ -75,7 +75,7 @@
 			"transform": {
 				"rotation": [
 					1,
-					1,
+					-1,
 					1
 				]
 			}

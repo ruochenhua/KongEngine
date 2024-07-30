@@ -128,22 +128,22 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
+vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
-    vec3 h = normalize(light_dir + view);
+    vec3 h = normalize(to_light_dir + view);
     vec3 radiance = light_color;
 
     float NDF = DistributionGGX(normal, h, roughness);
-    float G = GeometrySmith(normal, view, light_dir, roughness);
+    float G = GeometrySmith(normal, view, to_light_dir, roughness);
     vec3 F0 = vec3(0.04);
     vec3 obj_albedo = GetAlbedo();
     F0 = mix(F0, obj_albedo, metallic);
 
     vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
-    //vec3 F = FresnelSchlick(clamp(dot(h, light_dir), 0.0, 1.0), F0);
+    //vec3 F = FresnelSchlick(clamp(dot(h, to_light_dir), 0.0, 1.0), F0);
 
     vec3 numerator = NDF*G*F;
-    float demoninator = 4.0 * max(dot(normal, view), 0.0) * max(dot(normal, light_dir), 0.0) + 0.0001; //加一个小数避免处于0的情况出现
+    float demoninator = 4.0 * max(dot(normal, view), 0.0) * max(dot(normal, to_light_dir), 0.0) + 0.0001; //加一个小数避免处于0的情况出现
     vec3 specualr = numerator / demoninator;
     // KS就是菲涅尔的值
     vec3 KS = F;
@@ -152,7 +152,7 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
     // 非金属材质才有漫反射量，这里乘以一下(1-metallic)
     KD *= 1.0 - metallic;
     // 取在观测方向上的一个分量
-    float NdotL = max(dot(normal, light_dir), 0.0);
+    float NdotL = max(dot(normal, to_light_dir), 0.0);
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     return (KD*obj_albedo / PI + specualr)*radiance*NdotL;
@@ -162,9 +162,9 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
 vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 {
     vec3 light_color = dir_light.light_color;
-    vec3 light_dir = dir_light.light_dir;
+    vec3 to_light_dir = -dir_light.light_dir;
 
-    return CalcLight(light_color, light_dir, normal, view);
+    return CalcLight(light_color, to_light_dir, normal, view);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)

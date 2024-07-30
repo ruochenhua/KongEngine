@@ -41,10 +41,15 @@ namespace tinyGL
 		CSkyBox m_SkyBox;
 		//shadow map
 		GLuint m_ShadowMapFBO		= GL_NONE;
-		GLuint m_ShadowMapProgramID = GL_NONE;	// ������Ӱ��ͼ��shader
-		GLuint m_DepthTexture		= GL_NONE;			// �����ͼ
+		GLuint m_ShadowMapProgramID = GL_NONE;	
+		GLuint m_DepthTexture		= GL_NONE;			
 		GLuint m_DepthMatrixID		= GL_NONE;
 		GLuint null_tex_id			= GL_NONE;
+		// debug
+		GLuint m_ShadowMapDebugShaderId = GL_NONE;
+		GLuint m_QuadVAO = GL_NONE;
+		GLuint m_QuadVBO = GL_NONE;
+		
 		glm::mat4 m_DepthMVP;
 		glm::mat4 light_space_mat;
 

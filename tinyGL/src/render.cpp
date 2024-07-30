@@ -15,6 +15,8 @@ using namespace tinyGL;
 using namespace glm;
 using namespace std;
 
+#define SHADOWMAP_DEBUG 0
+
 CRender* g_render = new CRender;
 CRender* CRender::GetRender()
 {
@@ -57,6 +59,14 @@ int CRender::Init()
 	};
 	m_ShadowMapProgramID = Shader::LoadShaders(shader_paths);
 
+	map<SRenderResourceDesc::EShaderType, string> debug_shader_paths = {
+		{SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.vert")},
+		{SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.frag")}
+	};
+	m_ShadowMapDebugShaderId = Shader::LoadShaders(debug_shader_paths);
+	glUseProgram(m_ShadowMapDebugShaderId);
+	Shader::SetInt(m_ShadowMapDebugShaderId, "depthMap", 0);
+	
 	//m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
 
 	// load null texture
@@ -80,7 +90,6 @@ int CRender::Update(double delta)
 	mainCamera->Update(delta);		
 	
 	// Clear the screen
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
@@ -97,7 +106,7 @@ int CRender::Update(double delta)
 
 void CRender::PostUpdate()
 {
-	
+
 	// Swap buffers
 	glfwSwapBuffers(render_window);
 	glfwPollEvents();
@@ -105,12 +114,15 @@ void CRender::PostUpdate()
 
 void CRender::RenderSceneObject()
 {
+#if SHADOWMAP_DEBUG
+#else
 	float width = Engine::GetEngine().GetWindowWidth();
 	float height = Engine::GetEngine().GetWindowHeight();
 	glViewport(0,0,width, height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
 	RenderScene();
+#endif
 }
 
 GLuint CRender::LoadTexture(const std::string& texture_path)
@@ -290,8 +302,8 @@ void CRender::RenderShadowMap()
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	// shadow and matrices
-	GLfloat near_plane = 1.f;
-	GLfloat far_plane = 20.f;
+	GLfloat near_plane = 1.0f;
+	GLfloat far_plane = 40.f;
 	// 光线投影采用正交投影矩阵
 	mat4 light_proj = ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
 	vec3 light_dir = vec3(1, -1, 0);	// 默认写一个
@@ -305,7 +317,7 @@ void CRender::RenderShadowMap()
 		}
 	}
 
-	vec3 light_pos = light_dir * -10.f;
+	vec3 light_pos = light_dir * -5.f;
 	mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
 	light_space_mat = light_proj * light_view;
 
@@ -340,6 +352,42 @@ void CRender::RenderShadowMap()
 	}
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+
+#if SHADOWMAP_DEBUG
+	glUseProgram(m_ShadowMapDebugShaderId);
+	Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", near_plane);
+	Shader::SetFloat(m_ShadowMapDebugShaderId, "far_plane", far_plane);
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+
+	// renderQuad() renders a 1x1 XY quad in NDC
+	// -----------------------------------------
+	if (m_QuadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &m_QuadVAO);
+		glGenBuffers(1, &m_QuadVBO);
+		glBindVertexArray(m_QuadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_QuadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(m_QuadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+#endif
+	
 }
 
 // void CRender::UpdateLightDir(float delta)

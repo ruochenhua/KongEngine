@@ -34,13 +34,13 @@ float ka = 0.2;
 float kd = 0.5;
 float ks = 1;
 
-vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
+vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
 	// ambient light
 	vec3 ambient = ka * light_color;
 
 	// diffuse light
-	float ln = max(0, dot(light_dir, normal));
+	float ln = max(0, dot(to_light_dir, normal));
 
 	vec3 diffuse = kd* light_color * ln;
 	vec3 diffuse_color = vec3(0);
@@ -56,7 +56,7 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
 
 
 	// specular light
-	vec3 h = normalize(light_dir + view);
+	vec3 h = normalize(to_light_dir + view);
 	float spec = pow(max(dot(h, normal), 0), 256);
 	vec3 specular = ks * spec * light_color;
 
@@ -80,9 +80,9 @@ vec3 CalcLight(vec3 light_color, vec3 light_dir, vec3 normal, vec3 view)
 vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 {
 	vec3 light_color = dir_light.light_color;
-	vec3 light_dir = dir_light.light_dir;
+	vec3 to_light_dir = -dir_light.light_dir;
 
-	return CalcLight(light_color, light_dir, normal, view);
+	return CalcLight(light_color, to_light_dir, normal, view);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_pos)
