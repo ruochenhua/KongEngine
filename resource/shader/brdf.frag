@@ -49,30 +49,6 @@ vec3 GetAlbedo()
 	return albedo;
 }
 
-vec3 GetNormal()
-{
-	float texture_size = textureSize(normal_texture, 0).x;
-	if(texture_size > 1.0)
-	{
-		vec3 texture_normal = texture(normal_texture, frag_uv).rgb;
-		// 从[0,1]映射到[-1,1]
-		return normalize(texture_normal*2.0 - 1.0);
-	}
-
-	return frag_normal;
-}
-
-//vec3 GetSpecular()
-//{
-//	float texture_size = textureSize(specular_texture, 0).x;
-//	if(texture_size > 1.0)
-//	{
-//		return texture(specular_texture, frag_uv).rgb;
-//	}
-//
-//	return vec3(1);
-//}
-
 // 完整的Cook-Torrance specular BRDF: DFG / 4*dot(N,V)*dot(N,L)
 
 // 菲涅尔方程F
@@ -164,14 +140,14 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 	return CalcLight(light_color, light_dir, normal, view);
 }
 
-vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_pos)
+vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
 {
 	vec3 light_color = point_light.light_color;
-	vec3 light_dir = normalize(point_light.light_pos - frag_pos);
+	vec3 light_dir = normalize(point_light.light_pos - in_frag_pos);
 
 	vec3 point_light_color = CalcLight(light_color, light_dir, normal, view);
 
-	float distance = length(point_light.light_pos - frag_pos);
+	float distance = length(point_light.light_pos - in_frag_pos);
 	float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
 	return point_light_color * attenuation;
 }
@@ -180,13 +156,12 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 void main()
 {
 	vec3 view = normalize(cam_pos - frag_pos);
-	vec3 obj_normal = GetNormal();
 
-	vec3 dir_light_color = CalcDirLight(directional_light, obj_normal, view);
+	vec3 dir_light_color = CalcDirLight(directional_light, frag_normal, view);
 	vec3 point_light_color = vec3(0,0,0);
 	for(int i = 0; i < point_light_count; ++i)
 	{
-		point_light_color += CalcPointLight(point_lights[i], obj_normal, view, frag_pos);
+		point_light_color += CalcPointLight(point_lights[i], frag_normal, view, frag_pos);
 	}
 
 	vec3 ambient = vec3(0.03)*GetAlbedo()*ao;
