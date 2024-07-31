@@ -1,4 +1,5 @@
 #pragma once
+#include <imgui.h>
 
 namespace tinyGL
 {
@@ -9,11 +10,12 @@ namespace tinyGL
         static CUIManager* GetUIManager();
         
         void Init();
-        void PreRenderUpdate();
+        void PreRenderUpdate(double delta);
         void PostRenderUpdate();
         void Destroy();
 
     private:
-        void DescribeUIContent();
+        void DescribeUIContent(double delta);
+        ImVec4 GetFrameRateColor(int framerate);
     };
 }

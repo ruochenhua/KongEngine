@@ -37,8 +37,9 @@ int main()
 			glfwSetWindowShouldClose(render_window, true);
 		}
 
-		ui_manager->PreRenderUpdate();
-		render->Update(new_time - current_time);
+		double delta = new_time - current_time;
+		ui_manager->PreRenderUpdate(delta);
+		render->Update(delta);
 
 		render->RenderShadowMap();			
 		render->RenderSceneObject();			

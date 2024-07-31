@@ -32,13 +32,13 @@ void CUIManager::Init()
 	ImGui_ImplOpenGL3_Init();
 }
 
-void CUIManager::PreRenderUpdate()
+void CUIManager::PreRenderUpdate(double delta)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	
-	DescribeUIContent();
+	DescribeUIContent(delta);
 }
 
 void CUIManager::PostRenderUpdate()
@@ -56,13 +56,16 @@ void CUIManager::Destroy()
 	ImGui::DestroyContext();
 }
 
-void CUIManager::DescribeUIContent()
+void CUIManager::DescribeUIContent(double delta)
 {
 	// ImGui::ShowDemoWindow(); // Show demo window! :)
 
 	// Rendering
 	// render your GUI
-	ImGui::Begin("Demo window");
+	ImGui::Begin("Main");
+	int frame_rate = static_cast<int>(round(1.0/delta));
+	ImVec4 frame_rate_color = GetFrameRateColor(frame_rate);
+	ImGui::TextColored(frame_rate_color, "frame_rate: %d", frame_rate);
 	// Select an item type
 	const char* scene_items[] = {
 		"hello",
@@ -86,4 +89,34 @@ void CUIManager::DescribeUIContent()
 	}
 	
 	ImGui::End();
+}
+
+ImVec4 CUIManager::GetFrameRateColor(int framerate)
+{
+	if(framerate > 120)
+	{
+		// very very smooth
+		return ImVec4(0.f, 0.f, 1.0f, 1.0f);
+	}
+
+	if(framerate > 60)
+	{
+		// very smooth
+		return ImVec4(0.f, 1.f, 1.0f, 1.0f);
+	}
+
+	if(framerate > 30)
+	{
+		// quite smooth
+		return ImVec4(0.f, 1.f, 0.0f, 1.0f);
+	}
+
+	if(framerate > 15)
+	{
+		// laggy
+		return ImVec4(1.f, 1.f, 1.0f, 1.0f);
+	}
+	
+	// terrible
+	return ImVec4(1.f, 0.f, 1.0f, 1.0f);
 }
