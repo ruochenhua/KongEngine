@@ -34,11 +34,13 @@ int CRender::Init()
 	
 	glGenTextures(1, &m_DepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, shadowmap_width, shadowmap_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ShadowMapFBO, 0);
@@ -112,6 +114,7 @@ void CRender::PostUpdate()
 
 void CRender::RenderSceneObject()
 {
+	glCullFace(GL_BACK);
 #if SHADOWMAP_DEBUG
 #else
 	float width = Engine::GetEngine().GetWindowWidth();
@@ -283,14 +286,18 @@ void CRender::RenderScene() const
 
 void CRender::RenderShadowMap()
 {
-	glViewport(0,0,1024,1024);
+	// shadowmap 需要正面剔除，避免阴影悬浮
+	// todo: 处理内部有开口模型或者平面该如何处理？
+	// note: 剔除front好像shadow bias不填阴影效果也比较正常？
+	glCullFace(GL_FRONT);
+	glViewport(0,0,shadowmap_width, shadowmap_height);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	// shadow and matrices
 	GLfloat near_plane = 1.0f;
 	GLfloat far_plane = 40.f;
 	// 光线投影采用正交投影矩阵
-	mat4 light_proj = ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+	mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, near_plane, far_plane);
 	vec3 light_dir = vec3(1, -1, 0);	// 默认写一个
 	auto scene_lights = CScene::GetScene()->GetSceneLights();
 	for(auto slight : scene_lights)
@@ -338,6 +345,7 @@ void CRender::RenderShadowMap()
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 
+	glCullFace(GL_BACK);
 #if SHADOWMAP_DEBUG
 	glUseProgram(m_ShadowMapDebugShaderId);
 	Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", near_plane);

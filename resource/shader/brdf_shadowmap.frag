@@ -73,12 +73,27 @@ float ShadowCalculation(vec4 pos_light_space, vec3 to_light_dir)
     // 转换到-1,1的范围，再转到0,1的范围
     vec3 proj_coords = pos_light_space.xyz / pos_light_space.w;
     proj_coords = proj_coords* 0.5 + 0.5;
+    // 超出阴影贴图范围，就只返回0
+    if(proj_coords.z > 1.0)
+        return 0.0;
 
-    float closet_depth = texture(shadow_map, proj_coords.xy).r;
+//    float closet_depth = texture(shadow_map, proj_coords.xy).r;
     float current_depth = proj_coords.z;
-    float bias = max(0.05 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
-    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
-
+    float bias = max(0.0001 * (1.0 - dot(frag_normal, to_light_dir)), 0.0001);
+//    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
+    // 采用pcf柔和阴影锯齿边界
+    // todo: 更多优化方法
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadow_map, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texelSize).r;
+            shadow += (current_depth - bias) > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
     return shadow;
 }
 // 完整的Cook-Torrance specular BRDF: DFG / 4*dot(N,V)*dot(N,L)
@@ -171,6 +186,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 
     float shadow = ShadowCalculation(frag_pos_lightspace, to_light_dir);
     return CalcLight(light_color, to_light_dir, normal, view)  * (1.0 - shadow);
+    //return vec3(shadow);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
