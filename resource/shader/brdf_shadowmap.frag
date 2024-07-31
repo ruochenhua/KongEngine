@@ -68,7 +68,7 @@ vec3 GetNormal()
 }
 
 // 计算阴影
-float ShadowCalculation(vec4 pos_light_space)
+float ShadowCalculation(vec4 pos_light_space, vec3 to_light_dir)
 {
     // 转换到-1,1的范围，再转到0,1的范围
     vec3 proj_coords = pos_light_space.xyz / pos_light_space.w;
@@ -76,7 +76,8 @@ float ShadowCalculation(vec4 pos_light_space)
 
     float closet_depth = texture(shadow_map, proj_coords.xy).r;
     float current_depth = proj_coords.z;
-    float shadow = current_depth > closet_depth ? 1.0 : 0.0;
+    float bias = max(0.05 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
+    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -168,7 +169,8 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
     vec3 light_color = dir_light.light_color;
     vec3 to_light_dir = -dir_light.light_dir;
 
-    return CalcLight(light_color, to_light_dir, normal, view);
+    float shadow = ShadowCalculation(frag_pos_lightspace, to_light_dir);
+    return CalcLight(light_color, to_light_dir, normal, view)  * (1.0 - shadow);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
@@ -196,10 +198,9 @@ void main()
         point_light_color += CalcPointLight(point_lights[i], obj_normal, view, frag_pos);
     }
 
-    float shadow = ShadowCalculation(frag_pos_lightspace);
 
     vec3 ambient = vec3(0.03)*GetAlbedo()*ao;
-    vec3 color = ambient + (dir_light_color + point_light_color) * (1.0 - shadow);
+    vec3 color = ambient + (dir_light_color + point_light_color);
     // 伽马校正（Reinhard）
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));

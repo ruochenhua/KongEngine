@@ -67,8 +67,6 @@ int CRender::Init()
 	glUseProgram(m_ShadowMapDebugShaderId);
 	Shader::SetInt(m_ShadowMapDebugShaderId, "depthMap", 0);
 	
-	//m_DepthMatrixID = glGetUniformLocation(m_ShadowMapProgramID, "depth_mvp");
-
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 	null_tex_id = CRender::LoadTexture(null_tex_path);
@@ -241,19 +239,6 @@ void CRender::RenderScene() const
 		
 			Shader::SetInt(shader_id, "point_light_count", point_light_count);
 			Shader::SetMat4(shader_id, "light_space_mat", light_space_mat);
-			// //use shadow map
-			// mat4 bias_mat(
-			// 	0.5, 0.0, 0.0, 0.0,
-			// 	0.0, 0.5, 0.0, 0.0,
-			// 	0.0, 0.0, 0.5, 0.0,
-			// 	0.5, 0.5, 0.5, 1.0
-			// );
-			//
-			// mat4 depth_bias_mvp = bias_mat * m_DepthMVP;
-			//
-			// GLuint depth_bias_id = glGetUniformLocation(render_info.program_id, "depth_bias_mvp");
-			// glUniformMatrix4fv(depth_bias_id, 1, GL_FALSE, &depth_bias_mvp[0][0]);
-
 
 			/*
 			法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
