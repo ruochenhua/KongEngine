@@ -46,11 +46,12 @@ namespace tinyGL
     class PointLight : public Light
     {
     public:
-        PointLight()
-            : Light(ELightType::point_light)
-        {
-            
-        }
+        PointLight();
+
         glm::vec3 GetLightDir() const override;
+
+    private:
+        GLuint depth_cubemap = GL_NONE;
+        GLuint depth_map_fbo = GL_NONE;
     };
 }

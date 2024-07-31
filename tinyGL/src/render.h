@@ -43,7 +43,7 @@ namespace tinyGL
 		GLuint m_ShadowMapFBO		= GL_NONE;
 		GLuint m_ShadowMapProgramID = GL_NONE;	
 		GLuint m_DepthTexture		= GL_NONE;			
-		GLuint m_DepthMatrixID		= GL_NONE;
+
 		GLuint null_tex_id			= GL_NONE;
 		int shadowmap_width = 2048;
 		int shadowmap_height = 2048;
@@ -52,12 +52,8 @@ namespace tinyGL
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
 		
-		glm::mat4 m_DepthMVP;
 		glm::mat4 light_space_mat;
 
 		CCamera* mainCamera = nullptr;
-
-		double light_yaw = 0.0;
-		double light_pitch = 45.0;
 	};
 }

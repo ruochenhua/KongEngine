@@ -78,7 +78,8 @@ namespace tinyGL
 	};
 	
 	const string RESOURCE_PATH = "../resource/";
-
+	const float SHADOW_WITH = 2048.f;
+	const float SHADOW_HEIGHT = 2048.f;
 	// inline static GLFWwindow* GetWindowPtr()
 	// {
 	// 	return g_render_window;
