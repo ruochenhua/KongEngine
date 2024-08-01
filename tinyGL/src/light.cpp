@@ -111,6 +111,7 @@ void DirectionalLight::RenderShadowMap()
     }
 	
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+
 }
 
 PointLight::PointLight()
@@ -126,19 +127,27 @@ PointLight::PointLight()
     {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
             SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     }
+    
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    map<SRenderResourceDesc::EShaderType, string> shader_paths = {
+        {SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.vert")},
+        {SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.frag")},
+        {SRenderResourceDesc::EShaderType::gs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.geom")}
+    };
+    shadowmap_shader_id = Shader::LoadShaders(shader_paths);
 }
 
 
@@ -150,4 +159,59 @@ vec3 PointLight::GetLightDir() const
 
 void PointLight::RenderShadowMap()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+    glClear(GL_DEPTH_BUFFER_BIT);
+   
+    // 点光源的阴影贴图
+    GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+    mat4 shadow_proj = perspective(radians(90.f), aspect, near_plane, far_plane);
+
+    // 方向可以固定是朝向六个方向
+    vector<mat4> shadow_transforms;
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(1,0,0), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(-1,0,0), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,1,0), vec3(0,0,1)));
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,-1,0), vec3(0,0,-1)));
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,0,1), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,0,-1), vec3(0,-1,0)));
+
+    
+    glUseProgram(shadowmap_shader_id);
+    Shader::SetFloat(shadowmap_shader_id, "far_plane", far_plane);
+    for(int i = 0; i < 6; ++i)
+    {
+        stringstream shadow_matrices_stream;
+        shadow_matrices_stream <<  "shadow_matrices[" << i << "]";
+        Shader::SetMat4(shadowmap_shader_id, shadow_matrices_stream.str(), shadow_transforms[i]);
+    }
+    Shader::SetVec3(shadowmap_shader_id, "light_pos", location);
+    // RenderScene();
+
+    auto render_objs = CScene::GetScene()->GetSceneRenderObjects();
+    for(auto render_obj : render_objs)
+    {
+        for(auto& mesh : render_obj->mesh_list)
+        {
+            const SRenderInfo& render_info = mesh.GetRenderInfo();
+            glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+		
+            mat4 model_mat = render_obj->GetModelMatrix();
+            // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
+			
+            Shader::SetMat4(shadowmap_shader_id, "model", model_mat);
+            // Draw the triangle !
+            // if no index, use draw array
+            if(render_info.index_buffer == GL_NONE)
+            {
+                glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+            }
+            else
+            {		
+                glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+            }
+        }
+        glBindVertexArray(GL_NONE);	// 解绑VAO
+    }
+	
+    glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }

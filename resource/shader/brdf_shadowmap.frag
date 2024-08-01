@@ -39,6 +39,8 @@ uniform sampler2D specular_texture;
 uniform sampler2D normal_texture;
 uniform sampler2D tangent_texture;
 uniform sampler2D shadow_map;
+uniform samplerCube shadow_map_pointlight;
+
 
 vec3 GetAlbedo()
 {
@@ -68,7 +70,7 @@ vec3 GetNormal()
 }
 
 // 计算阴影
-float ShadowCalculation(vec4 pos_light_space, vec3 to_light_dir)
+float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir)
 {
     // 转换到-1,1的范围，再转到0,1的范围
     vec3 proj_coords = pos_light_space.xyz / pos_light_space.w;
@@ -95,6 +97,24 @@ float ShadowCalculation(vec4 pos_light_space, vec3 to_light_dir)
     }
     shadow /= 9.0;
     return shadow;
+}
+
+float ShadowCalculation_pointlight(vec3 in_frag_pos, vec3 light_pos)
+{
+    vec3 frag_to_light = in_frag_pos - light_pos;
+    // 立方体贴图采样
+    float close_depth = texture(shadow_map_pointlight, frag_to_light).r;
+    // 从0-1映射到0-farplane
+    float far_plane = 30.f;
+    close_depth *= far_plane;
+    // 这里计算的是真实光源到像素点世界位置的距离
+    float current_depth = length(frag_to_light);
+    float bias = 0.0001;
+    // 进行比较，如果贴图上的距离比真实距离小，则代表在阴影当中
+    float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
+    
+    return shadow;
+
 }
 // 完整的Cook-Torrance specular BRDF: DFG / 4*dot(N,V)*dot(N,L)
 
@@ -184,7 +204,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
     vec3 light_color = dir_light.light_color;
     vec3 to_light_dir = -dir_light.light_dir;
 
-    float shadow = ShadowCalculation(frag_pos_lightspace, to_light_dir);
+    float shadow = ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir);
     return CalcLight(light_color, to_light_dir, normal, view)  * (1.0 - shadow);
     //return vec3(shadow);
 }
@@ -196,10 +216,10 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag
 
     vec3 point_light_color = CalcLight(light_color, to_light_dir, normal, view);
 
+    float shadow = ShadowCalculation_pointlight(frag_pos, point_light.light_pos);
     float distance = length(point_light.light_pos - in_frag_pos);
-    
     float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
-    return point_light_color * attenuation;
+    return point_light_color * attenuation * (1.0 - shadow);
 }
 
 void main()

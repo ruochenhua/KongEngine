@@ -38,7 +38,7 @@ int CRender::Init()
 	
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
-	null_tex_id = CRender::LoadTexture(null_tex_path);
+	null_tex_id = LoadTexture(null_tex_path);
 	return 0;
 }
 
@@ -201,7 +201,7 @@ void CRender::RenderScene() const
 
 			
 			bool has_dir_light = false;	// cannot have more than 1 dir light
-			DirectionalLight* dir_light = nullptr;
+			
 			int point_light_count = 0;	// point light count, max 4
 			auto scene_lights = CScene::GetScene()->GetSceneLights();
 			for(auto light : scene_lights)
@@ -215,11 +215,10 @@ void CRender::RenderScene() const
 						Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
 						Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
 						has_dir_light = true;
-						dir_light = static_cast<DirectionalLight*>(light.get());
 						
 						Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
 						glActiveTexture(GL_TEXTURE4);
-						glBindTexture(GL_TEXTURE_2D, dir_light->shadowmap_texture);
+						glBindTexture(GL_TEXTURE_2D, light->shadowmap_texture);
 					}
 					break;
 				case ELightType::point_light:
@@ -229,6 +228,10 @@ void CRender::RenderScene() const
 						point_light_name <<  "point_lights[" << point_light_count << "]";
 						Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
 						Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
+						// 先支持一个点光源的阴影贴图
+						glActiveTexture(GL_TEXTURE5);
+						glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadowmap_texture);
+						
 						++point_light_count;
 					}
 					break;

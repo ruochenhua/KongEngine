@@ -1,0 +1,89 @@
+{
+	"scene": [
+	  {
+		"object": "model",
+		"shader_path": {
+		  "vs": "shader/brdf_shadowmap.vert",
+		  "fs": "shader/brdf_shadowmap.frag"
+		},
+		"model_path": "nanosuit/nanosuit.obj",
+		"material": {
+			"metallic": 0.9,
+			"roughness": 0.1,
+			"ao": 1
+		},
+		"transform": {
+		  "location": [
+			5,
+			-0.5,
+			0
+		  ],
+			"scale": [
+			0.3,
+			0.3,
+			0.3
+		  ]
+		}
+	  },
+		{
+		"object": "box",
+		"shader_path": {
+		  "vs": "shader/brdf_shadowmap.vert",
+		  "fs": "shader/brdf_shadowmap.frag"
+		},
+		"material": {
+			"albedo": [0.6, 0.6, 0.0],
+			"metallic": 0.5,
+			"roughness": 0.3,
+			"ao": 1
+		},
+		"transform": {
+		  "location": [
+			0,
+			0,
+			0
+		  ]
+		}
+	  },
+		{
+		"object": "box",
+		"shader_path": {
+		  "vs": "shader/brdf_shadowmap.vert",
+		  "fs": "shader/brdf_shadowmap.frag"
+		},
+		"material": {
+			"albedo": [0.6, 0.3, 0.6],
+			"metallic": 0.9,
+			"roughness": 0.1,
+			"ao": 1
+		},
+		"transform": {
+		  "location": [
+			0,
+			-1,
+			0
+		  ],
+		  "scale": [
+			200,
+			1,
+			200
+		  ]
+		}
+	  },
+		{
+			"object": "point_light",
+			"light_color": [
+				30,
+				30,
+				30
+			],
+			"transform": {
+				"location": [
+					2.5,
+					1,
+					0	
+				]
+			}
+		}
+	]
+  }

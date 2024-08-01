@@ -58,6 +58,7 @@ namespace tinyGL
 		{
 			vs = GL_VERTEX_SHADER,		// vertex shader
 			fs = GL_FRAGMENT_SHADER,	// fragment shader
+			gs = GL_GEOMETRY_SHADER,	// geometry shader
 		};
 
 		enum ETextureType

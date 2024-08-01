@@ -72,10 +72,11 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_brdf",
 		"hello_assimp",
 		"hello_normal_map",
-		"hello_shadow"
+		"hello_shadow_directionallight",
+		"hello_shadow_pointlight"
 	};
 
-	static int item_type = 4;
+	static int item_type = 5;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
