@@ -15,16 +15,25 @@ namespace tinyGL
     class Light : public SceneObject
     {
     public:
-        Light(ELightType in_type)
-            : light_type(in_type)
-        {
-            
-        }
+        Light(ELightType in_type);
+
         
         glm::vec3 light_color = glm::vec3(0);
         
         ELightType GetLightType() const { return light_type; }
         virtual glm::vec3 GetLightDir() const = 0;
+        
+        
+        GLuint shadowmap_texture;
+        
+        glm::mat4 light_space_mat;
+        
+        virtual void RenderShadowMap() = 0;
+    protected:
+        GLfloat near_plane;
+        GLfloat far_plane;
+        GLuint shadowmap_fbo;
+        GLuint shadowmap_shader_id;
     private:
         ELightType light_type;
     };
@@ -33,13 +42,10 @@ namespace tinyGL
     class DirectionalLight : public Light
     {
     public:
-        DirectionalLight()
-            : Light(ELightType::directional_light)
-        {
-            
-        }
+        DirectionalLight();
 
         glm::vec3 GetLightDir() const override;
+        void RenderShadowMap() override;
     };
 
     // point light
@@ -49,9 +55,7 @@ namespace tinyGL
         PointLight();
 
         glm::vec3 GetLightDir() const override;
-
-    private:
-        GLuint depth_cubemap = GL_NONE;
-        GLuint depth_map_fbo = GL_NONE;
+        void RenderShadowMap() override;
+    
     };
 }

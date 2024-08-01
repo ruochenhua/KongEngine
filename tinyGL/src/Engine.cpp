@@ -27,8 +27,8 @@ Engine::Engine()
 	
     // Open a window and create its OpenGL context
     // (In the accompanying source code, this variable is global for simplicity)
-    render_window = glfwCreateWindow((int)window_width, (int)window_height, "tinyGL", nullptr, nullptr);
-    window_aspect_ratio = window_width/window_height;
+    render_window = glfwCreateWindow(window_width, window_height, "tinyGL", nullptr, nullptr);
+    window_aspect_ratio = (float)window_width/window_height;
     if (render_window == nullptr) {
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
         glfwTerminate();
@@ -71,11 +71,11 @@ string Engine::ReadFile(const string& file_path)
     return file_content;
 }
 
-void Engine::SetWidthHeight(float width, float height)
+void Engine::SetWidthHeight(int width, int height)
 {
     window_width = width;
     window_height = height;
-    window_aspect_ratio = width/height;
+    window_aspect_ratio = (float)width / height;
 }
 
 Engine Engine::GetEngine()

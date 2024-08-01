@@ -15,7 +15,6 @@ using namespace tinyGL;
 using namespace glm;
 using namespace std;
 
-#define SHADOWMAP_DEBUG 0
 
 CRender* g_render = new CRender;
 CRender* CRender::GetRender()
@@ -27,47 +26,15 @@ int CRender::Init()
 {
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
-
+	
 	// m_SkyBox.Init();
-	// init shadow map
-	glGenFramebuffers(1, &m_ShadowMapFBO);
-	
-	glGenTextures(1, &m_DepthTexture);
-	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, shadowmap_width, shadowmap_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ShadowMapFBO, 0);
-	
-	// 我们需要的只是在从光的透视图下渲染场景的时候深度信息，所以颜色缓冲没有用。
-	// 然而，不包含颜色缓冲的帧缓冲对象是不完整的，所以我们需要显式告诉OpenGL我们不适用任何颜色数据进行渲染。
-	// 我们通过将调用glDrawBuffer和glReadBuffer把读和绘制缓冲设置为GL_NONE来做这件事。
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	
-	// if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	// 	return -1;
-	//
-	map<SRenderResourceDesc::EShaderType, string> shader_paths = {
-		{SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap.vert")},
-		{SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap.frag")}
-	};
-	m_ShadowMapProgramID = Shader::LoadShaders(shader_paths);
-
 	map<SRenderResourceDesc::EShaderType, string> debug_shader_paths = {
 		{SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.vert")},
 		{SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.frag")}
 	};
 	m_ShadowMapDebugShaderId = Shader::LoadShaders(debug_shader_paths);
 	glUseProgram(m_ShadowMapDebugShaderId);
-	Shader::SetInt(m_ShadowMapDebugShaderId, "depthMap", 0);
+	Shader::SetInt(m_ShadowMapDebugShaderId, "shadow_map", 0);
 	
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
@@ -117,11 +84,11 @@ void CRender::RenderSceneObject()
 	glCullFace(GL_BACK);
 #if SHADOWMAP_DEBUG
 #else
-	float width = Engine::GetEngine().GetWindowWidth();
-	float height = Engine::GetEngine().GetWindowHeight();
+	int width = Engine::GetEngine().GetWindowWidth();
+	int height = Engine::GetEngine().GetWindowHeight();
 	glViewport(0,0,width, height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+	//glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
 	RenderScene();
 #endif
 }
@@ -207,41 +174,7 @@ void CRender::RenderScene() const
 			Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
 			Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
 			Shader::SetFloat(shader_id, "ao", render_info.material.ao);
-			
-			bool has_dir_light = false;	// cannot have more than 1 dir light 
-			int point_light_count = 0;	// point light count, max 4
-			auto scene_lights = CScene::GetScene()->GetSceneLights();
-			for(auto light : scene_lights)
-			{
-				ELightType light_type = light->GetLightType();
-				switch (light_type)
-				{
-				case ELightType::directional_light:
-					if(!has_dir_light)
-					{
-						Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
-						Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
-						has_dir_light = true;
-					}
-					break;
-				case ELightType::point_light:
-					if(point_light_count < 4)
-					{
-						stringstream point_light_name;
-						point_light_name <<  "point_lights[" << point_light_count << "]";
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
-						++point_light_count;
-					}
-					break;
-				case ELightType::spot_light:
-				default:
-					break;
-				}
-			}
-		
-			Shader::SetInt(shader_id, "point_light_count", point_light_count);
-			Shader::SetMat4(shader_id, "light_space_mat", light_space_mat);
+
 
 			/*
 			法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
@@ -266,9 +199,47 @@ void CRender::RenderScene() const
 			GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
 			glBindTexture(GL_TEXTURE_2D, tangent_map_id);
 
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+			
+			bool has_dir_light = false;	// cannot have more than 1 dir light
+			DirectionalLight* dir_light = nullptr;
+			int point_light_count = 0;	// point light count, max 4
+			auto scene_lights = CScene::GetScene()->GetSceneLights();
+			for(auto light : scene_lights)
+			{
+				ELightType light_type = light->GetLightType();
+				switch (light_type)
+				{
+				case ELightType::directional_light:
+					if(!has_dir_light)
+					{
+						Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
+						Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
+						has_dir_light = true;
+						dir_light = static_cast<DirectionalLight*>(light.get());
+						
+						Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
+						glActiveTexture(GL_TEXTURE4);
+						glBindTexture(GL_TEXTURE_2D, dir_light->shadowmap_texture);
+					}
+					break;
+				case ELightType::point_light:
+					if(point_light_count < 4)
+					{
+						stringstream point_light_name;
+						point_light_name <<  "point_lights[" << point_light_count << "]";
+						Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
+						Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
+						++point_light_count;
+					}
+					break;
+				case ELightType::spot_light:
+				default:
+					break;
+				}
+			}
 		
+			Shader::SetInt(shader_id, "point_light_count", point_light_count);
+			
 			// Draw the triangle !
 			// if no index, use draw array
 			if(render_info.index_buffer == GL_NONE)
@@ -290,69 +261,39 @@ void CRender::RenderShadowMap()
 	// todo: 处理内部有开口模型或者平面该如何处理？
 	// note: 剔除front好像shadow bias不填阴影效果也比较正常？
 	glCullFace(GL_FRONT);
-	glViewport(0,0,shadowmap_width, shadowmap_height);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	// shadow and matrices
-	GLfloat near_plane = 1.0f;
-	GLfloat far_plane = 40.f;
-	// 光线投影采用正交投影矩阵
-	mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, near_plane, far_plane);
-	vec3 light_dir = vec3(1, -1, 0);	// 默认写一个
+	glViewport(0,0, SHADOW_WIDTH, SHADOW_HEIGHT);
 	auto scene_lights = CScene::GetScene()->GetSceneLights();
-	for(auto slight : scene_lights)
+	for(auto light : scene_lights)
 	{
-		if(slight->GetLightType() == ELightType::directional_light)
+		light->RenderShadowMap();
+	}
+
+#if SHADOWMAP_DEBUG
+	glCullFace(GL_BACK);
+	// 先只画平行光的
+	DirectionalLight* dir_light = nullptr;
+	for(auto light : scene_lights)
+	{
+		if(light->GetLightType() == ELightType::directional_light)
 		{
-			light_dir = slight->GetLightDir();
+			dir_light = static_cast<DirectionalLight*>(light.get());
 			break;
 		}
 	}
 
-	vec3 light_pos = light_dir * -5.f;
-	mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
-	light_space_mat = light_proj * light_view;
-
-	glUseProgram(m_ShadowMapProgramID);
-	Shader::SetMat4(m_ShadowMapProgramID, "light_space_mat", light_space_mat);
-	// RenderScene();
-
-	auto render_objs = CScene::GetScene()->GetSceneRenderObjects();
-	for(auto render_obj : render_objs)
-	{
-		for(auto& mesh : render_obj->mesh_list)
-		{
-			const SRenderInfo& render_info = mesh.GetRenderInfo();
-			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-		
-			mat4 model_mat = render_obj->GetModelMatrix();
-			// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-			
-			Shader::SetMat4(m_ShadowMapProgramID, "model", model_mat);
-			// Draw the triangle !
-			// if no index, use draw array
-			if(render_info.index_buffer == GL_NONE)
-			{
-				glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-			}
-			else
-			{		
-				glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-			}
-		}
-		glBindVertexArray(GL_NONE);	// 解绑VAO
-	}
+	if(!dir_light)
+		return;
 	
-	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-
-	glCullFace(GL_BACK);
-#if SHADOWMAP_DEBUG
+	int width = Engine::GetEngine().GetWindowWidth();
+	int height = Engine::GetEngine().GetWindowHeight();
+	glViewport(0,0,width, height);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(m_ShadowMapDebugShaderId);
-	Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", near_plane);
-	Shader::SetFloat(m_ShadowMapDebugShaderId, "far_plane", far_plane);
+	// Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", dir_light->near_plane);
+	// Shader::SetFloat(m_ShadowMapDebugShaderId, "far_plane", dir_light->far_plane);
 	glActiveTexture(GL_TEXTURE0);
 
-	glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+	glBindTexture(GL_TEXTURE_2D, dir_light->m_DepthTexture);
 
 	// renderQuad() renders a 1x1 XY quad in NDC
 	// -----------------------------------------

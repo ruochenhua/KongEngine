@@ -12,6 +12,8 @@
 #include "GLM/glm.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
 using namespace std;
+
+#define SHADOWMAP_DEBUG 0
 namespace tinyGL
 {
 	struct SMaterial
@@ -78,8 +80,8 @@ namespace tinyGL
 	};
 	
 	const string RESOURCE_PATH = "../resource/";
-	const float SHADOW_WITH = 2048.f;
-	const float SHADOW_HEIGHT = 2048.f;
+	const int SHADOW_WIDTH = 2048;
+	const int SHADOW_HEIGHT = 2048;
 	// inline static GLFWwindow* GetWindowPtr()
 	// {
 	// 	return g_render_window;

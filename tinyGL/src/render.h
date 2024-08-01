@@ -39,14 +39,9 @@ namespace tinyGL
 		
 	private:
 		CSkyBox m_SkyBox;
-		//shadow map
-		GLuint m_ShadowMapFBO		= GL_NONE;
-		GLuint m_ShadowMapProgramID = GL_NONE;	
-		GLuint m_DepthTexture		= GL_NONE;			
 
 		GLuint null_tex_id			= GL_NONE;
-		int shadowmap_width = 2048;
-		int shadowmap_height = 2048;
+		
 		// debug
 		GLuint m_ShadowMapDebugShaderId = GL_NONE;
 		GLuint m_QuadVAO = GL_NONE;
