@@ -3,8 +3,8 @@
 		{
 		"object": "box",
 		"shader_path": {
-		  "vs": "shader/brdf.vert",
-		  "fs": "shader/brdf.frag"
+		  "vs": "shader/brdf_instancing.vert",
+		  "fs": "shader/brdf_instancing.frag"
 		},
 		"texture_path": {
 		  "diffuse": "crater/crater_diffuse.png",
@@ -16,7 +16,7 @@
 			"ao": 1
 		},
 		"instancing":{
-			"count" : 5000,
+			"count" : 2000,
 			"location": {
 				"min" : [-100, -100, -100],
 				"max" : [ 100,  100,  100]

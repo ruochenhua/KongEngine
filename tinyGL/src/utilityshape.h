@@ -21,5 +21,6 @@ namespace tinyGL
 		std::string specular_map_path;
 
 		std::vector<glm::mat4> instancing_model_mat;
+		SRenderResourceDesc box_render_resource_desc;
 	};
 }

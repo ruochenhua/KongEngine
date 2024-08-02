@@ -37,6 +37,7 @@ namespace tinyGL
 		GLuint normal_buffer = 0;
 		GLuint tangent_buffer = 0;
 		GLuint bitangent_buffer = 0;
+		GLuint instance_buffer = 0;
 		
 		SMaterial material;
 		// shader program

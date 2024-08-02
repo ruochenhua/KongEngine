@@ -16,6 +16,8 @@ namespace tinyGL
 		glm::vec3 rotation_max	= glm::vec3(0.0);
 		glm::vec3 scale_min		= glm::vec3(0.0);
 		glm::vec3 scale_max		= glm::vec3(0.0);
+
+		GLuint instance_buffer = GL_NONE;
 	};
 	
 	class SceneObject
