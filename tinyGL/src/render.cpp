@@ -161,7 +161,7 @@ void CRender::RenderScene() const
 		GLuint shader_id = render_obj->GetShaderId();
 
 		glUseProgram(shader_id);
-		unsigned mesh_count = 0;
+		unsigned mesh_idx = 0;
 		for(auto& mesh : render_obj->mesh_list)
 		{
 			const SRenderInfo& render_info = mesh.GetRenderInfo();
@@ -169,10 +169,12 @@ void CRender::RenderScene() const
 			
 			mat4 model_mat;
 			if(render_obj->instancing_info.count == 0)
+			{
 				model_mat = render_obj->GetModelMatrix();
+			}
 			else
 			{
-				model_mat = render_obj->GetInstancingModelMat(mesh_count);
+				model_mat = render_obj->GetInstancingModelMat(mesh_idx);
 			}
 			mat4 view_mat = mainCamera->GetViewMatrix();
 			mat4 projection_mat = mainCamera->GetProjectionMatrix();
@@ -278,7 +280,7 @@ void CRender::RenderScene() const
 			{		
 				glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
 			}
-			mesh_count++;
+			mesh_idx++;
 		
 		}
 		glBindVertexArray(GL_NONE);	// 解绑VAO

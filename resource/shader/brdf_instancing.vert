@@ -24,7 +24,7 @@ void main(){
     frag_pos = (instance_model_mat * vec4(in_pos, 1.0)).xyz;
 	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
-    frag_normal = normalize(normal_model_mat * in_normal);
+    frag_normal = normalize(mat3(transpose(inverse(instance_model_mat))) * in_normal);
 	frag_uv = in_texcoord;
 		
 	//ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);
