@@ -99,8 +99,6 @@ std::vector<unsigned int> CUtilityBox::GetIndices() const
 
 void CUtilityBox::GenerateRenderInfo()
 {
-	
-	
 	std::vector<float> vertices = GetVertices();
 	auto& mesh = mesh_list[0];
 	auto& render_info = mesh.m_RenderInfo;
@@ -159,4 +157,25 @@ void CUtilityBox::GenerateRenderInfo()
 	glUniform1i(glGetUniformLocation(shader_id, "tangent_texture"), 3);
 	glUniform1i(glGetUniformLocation(shader_id, "shadow_map"), 4);
 	glUniform1i(glGetUniformLocation(shader_id, "shadow_map_pointlight"), 5);
+}
+
+void CUtilityBox::InitInstancingData()
+{
+	unsigned count = instancing_info.count;
+	instancing_model_mat.resize(count);
+
+	for(unsigned i = 0; i < count; ++i)
+	{
+		instancing_model_mat[i] = GenInstanceModelMatrix();	
+	}
+}
+
+const mat4& CUtilityBox::GetInstancingModelMat(unsigned idx) const
+{
+	if(idx >= instancing_model_mat.size())
+	{
+		return mat4(1.0);
+	}
+
+	return instancing_model_mat[idx];
 }

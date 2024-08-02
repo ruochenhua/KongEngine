@@ -11,6 +11,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "glm/gtc/random.hpp"
+
 using namespace tinyGL;
 using namespace glm;
 
@@ -21,6 +23,27 @@ mat4 SceneObject::GetModelMatrix() const
 	model *= eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
 	model = glm::scale(model, scale);
 	return model;
+}
+
+glm::mat4 SceneObject::GenInstanceModelMatrix() const
+{
+	mat4 model = mat4(1.0);
+
+	vec3 ins_location, ins_rotation, ins_scale;
+	ins_location = glm::linearRand(instancing_info.location_min, instancing_info.location_max);
+	ins_rotation = glm::linearRand(instancing_info.rotation_min, instancing_info.rotation_max);
+	ins_scale	 = glm::linearRand(instancing_info.scale_min, instancing_info.scale_max);
+
+	model = translate(model, ins_location);
+	model *= eulerAngleXYZ(ins_rotation.x, ins_rotation.y, ins_rotation.z);
+	model = glm::scale(model, ins_scale);
+	
+	return model;
+}
+
+const mat4& SceneObject::GetInstancingModelMat(unsigned idx) const
+{
+	return mat4(1);
 }
 
 CRenderObj::CRenderObj(const SRenderResourceDesc& render_resource_desc)

@@ -158,100 +158,200 @@ void CRender::RenderScene() const
 		{
 			const SRenderInfo& render_info = mesh.GetRenderInfo();
 			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-		
-			mat4 model_mat = render_obj->GetModelMatrix();
-			mat4 view_mat = mainCamera->GetViewMatrix();
-			mat4 projection_mat = mainCamera->GetProjectionMatrix();
-			// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-			
-			Shader::SetMat4(shader_id, "model", model_mat);
-			Shader::SetMat4(shader_id, "view", view_mat);
-			Shader::SetMat4(shader_id, "proj", projection_mat);
-			Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
 
-			// 材质属性
-			Shader::SetVec3(shader_id, "albedo", render_info.material.albedo);
-			Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
-			Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
-			Shader::SetFloat(shader_id, "ao", render_info.material.ao);
-
-
-			/*
-			法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
-			Normal = mat3(transpose(inverse(model))) * aNormal;
-			 */
-			mat3 normal_model_mat = transpose(inverse(model_mat));
-			Shader::SetMat3(shader_id, "normal_model_mat", normal_model_mat);
-		
-			glActiveTexture(GL_TEXTURE0);
-			GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
-
-			glActiveTexture(GL_TEXTURE1);
-			GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, specular_map_id);
-
-			glActiveTexture(GL_TEXTURE2);
-			GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, normal_map_id);
-
-			glActiveTexture(GL_TEXTURE3);
-			GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, tangent_map_id);
-
-			
-			bool has_dir_light = false;	// cannot have more than 1 dir light
-			
-			int point_light_count = 0;	// point light count, max 4
-			auto scene_lights = CScene::GetScene()->GetSceneLights();
-			for(auto light : scene_lights)
+			if(render_obj->instancing_info.count > 0)
 			{
-				ELightType light_type = light->GetLightType();
-				switch (light_type)
+				for(unsigned instance_idx = 0; instance_idx < render_obj->instancing_info.count; instance_idx++)
 				{
-				case ELightType::directional_light:
-					if(!has_dir_light)
+					mat4 model_mat = render_obj->GetInstancingModelMat(instance_idx);
+					mat4 view_mat = mainCamera->GetViewMatrix();
+					mat4 projection_mat = mainCamera->GetProjectionMatrix();
+					// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
+				
+					Shader::SetMat4(shader_id, "model", model_mat);
+					Shader::SetMat4(shader_id, "view", view_mat);
+					Shader::SetMat4(shader_id, "proj", projection_mat);
+					Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
+
+					// 材质属性
+					Shader::SetVec3(shader_id, "albedo", render_info.material.albedo);
+					Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
+					Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
+					Shader::SetFloat(shader_id, "ao", render_info.material.ao);
+					
+					/*
+					法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
+					Normal = mat3(transpose(inverse(model))) * aNormal;
+					 */
+					mat3 normal_model_mat = transpose(inverse(model_mat));
+					Shader::SetMat3(shader_id, "normal_model_mat", normal_model_mat);
+			
+					glActiveTexture(GL_TEXTURE0);
+					GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+					glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
+
+					glActiveTexture(GL_TEXTURE1);
+					GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
+					glBindTexture(GL_TEXTURE_2D, specular_map_id);
+
+					glActiveTexture(GL_TEXTURE2);
+					GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+					glBindTexture(GL_TEXTURE_2D, normal_map_id);
+
+					glActiveTexture(GL_TEXTURE3);
+					GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
+					glBindTexture(GL_TEXTURE_2D, tangent_map_id);
+
+				
+					bool has_dir_light = false;	// cannot have more than 1 dir light
+				
+					int point_light_count = 0;	// point light count, max 4
+					auto scene_lights = CScene::GetScene()->GetSceneLights();
+					for(auto light : scene_lights)
 					{
-						Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
-						Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
-						has_dir_light = true;
-						
-						Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
-						glActiveTexture(GL_TEXTURE4);
-						glBindTexture(GL_TEXTURE_2D, light->shadowmap_texture);
+						ELightType light_type = light->GetLightType();
+						switch (light_type)
+						{
+						case ELightType::directional_light:
+							if(!has_dir_light)
+							{
+								Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
+								Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
+								has_dir_light = true;
+							
+								Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
+								glActiveTexture(GL_TEXTURE4);
+								glBindTexture(GL_TEXTURE_2D, light->shadowmap_texture);
+							}
+							break;
+						case ELightType::point_light:
+							if(point_light_count < 4)
+							{
+								stringstream point_light_name;
+								point_light_name <<  "point_lights[" << point_light_count << "]";
+								Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
+								Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
+								// 先支持一个点光源的阴影贴图
+								glActiveTexture(GL_TEXTURE5);
+								glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadowmap_texture);
+							
+								++point_light_count;
+							}
+							break;
+						default:
+							break;
+						}
 					}
-					break;
-				case ELightType::point_light:
-					if(point_light_count < 4)
+			
+					Shader::SetInt(shader_id, "point_light_count", point_light_count);
+				
+					// if no index, use draw array
+					if(render_info.index_buffer == GL_NONE)
 					{
-						stringstream point_light_name;
-						point_light_name <<  "point_lights[" << point_light_count << "]";
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
-						// 先支持一个点光源的阴影贴图
-						glActiveTexture(GL_TEXTURE5);
-						glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadowmap_texture);
-						
-						++point_light_count;
+						glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
 					}
-					break;
-				case ELightType::spot_light:
-				default:
-					break;
+					else
+					{		
+						glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+					}
 				}
 			}
-		
-			Shader::SetInt(shader_id, "point_light_count", point_light_count);
-			
-			// Draw the triangle !
-			// if no index, use draw array
-			if(render_info.index_buffer == GL_NONE)
-			{
-				glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-			}
 			else
-			{		
-				glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+			{
+				mat4 model_mat = render_obj->GetModelMatrix();
+				mat4 view_mat = mainCamera->GetViewMatrix();
+				mat4 projection_mat = mainCamera->GetProjectionMatrix();
+				// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
+			
+				Shader::SetMat4(shader_id, "model", model_mat);
+				Shader::SetMat4(shader_id, "view", view_mat);
+				Shader::SetMat4(shader_id, "proj", projection_mat);
+				Shader::SetVec3(shader_id, "cam_pos", mainCamera->GetPosition());
+
+				// 材质属性
+				Shader::SetVec3(shader_id, "albedo", render_info.material.albedo);
+				Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
+				Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
+				Shader::SetFloat(shader_id, "ao", render_info.material.ao);
+
+
+				/*
+				法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
+				Normal = mat3(transpose(inverse(model))) * aNormal;
+				 */
+				mat3 normal_model_mat = transpose(inverse(model_mat));
+				Shader::SetMat3(shader_id, "normal_model_mat", normal_model_mat);
+		
+				glActiveTexture(GL_TEXTURE0);
+				GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+				glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
+
+				glActiveTexture(GL_TEXTURE1);
+				GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
+				glBindTexture(GL_TEXTURE_2D, specular_map_id);
+
+				glActiveTexture(GL_TEXTURE2);
+				GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+				glBindTexture(GL_TEXTURE_2D, normal_map_id);
+
+				glActiveTexture(GL_TEXTURE3);
+				GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
+				glBindTexture(GL_TEXTURE_2D, tangent_map_id);
+
+			
+				bool has_dir_light = false;	// cannot have more than 1 dir light
+			
+				int point_light_count = 0;	// point light count, max 4
+				auto scene_lights = CScene::GetScene()->GetSceneLights();
+				for(auto light : scene_lights)
+				{
+					ELightType light_type = light->GetLightType();
+					switch (light_type)
+					{
+					case ELightType::directional_light:
+						if(!has_dir_light)
+						{
+							Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
+							Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
+							has_dir_light = true;
+						
+							Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
+							glActiveTexture(GL_TEXTURE4);
+							glBindTexture(GL_TEXTURE_2D, light->shadowmap_texture);
+						}
+						break;
+					case ELightType::point_light:
+						if(point_light_count < 4)
+						{
+							stringstream point_light_name;
+							point_light_name <<  "point_lights[" << point_light_count << "]";
+							Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
+							Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
+							// 先支持一个点光源的阴影贴图
+							glActiveTexture(GL_TEXTURE5);
+							glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadowmap_texture);
+						
+							++point_light_count;
+						}
+						break;
+					case ELightType::spot_light:
+					default:
+						break;
+					}
+				}
+		
+				Shader::SetInt(shader_id, "point_light_count", point_light_count);
+			
+				// Draw the triangle !
+				// if no index, use draw array
+				if(render_info.index_buffer == GL_NONE)
+				{
+					glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+				}
+				else
+				{		
+					glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+				}
 			}
 		}
 		glBindVertexArray(GL_NONE);	// 解绑VAO

@@ -47,6 +47,37 @@ void ParseTransform(nlohmann::basic_json<> in_json, shared_ptr<SceneObject> scen
     }
 }
 
+void ParseInstancing(nlohmann::basic_json<> in_json, shared_ptr<SceneObject> scene_object)
+{
+    if(in_json["instancing"].is_null())
+    {
+        return;
+    }
+
+    auto& instancing_info = scene_object->instancing_info;
+
+    auto instancing = in_json["instancing"];
+    instancing_info.count = instancing["count"];
+    
+    if(!instancing["location"].is_null())
+    {
+        instancing_info.location_min = ParseVec3(instancing["location"]["min"]);
+        instancing_info.location_max = ParseVec3(instancing["location"]["max"]);
+    }
+
+    if(!instancing["rotation"].is_null())
+    {
+        instancing_info.rotation_min = ParseVec3(instancing["rotation"]["min"]);
+        instancing_info.rotation_max = ParseVec3(instancing["rotation"]["max"]);
+    }
+
+    if(!instancing["scale"].is_null())
+    {
+        instancing_info.scale_min = ParseVec3(instancing["scale"]["min"]);
+        instancing_info.scale_max = ParseVec3(instancing["scale"]["max"]);
+    }
+}
+
 SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
 {
     SRenderResourceDesc render_resource_desc;
@@ -141,7 +172,8 @@ bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<CRenderO
 
             auto new_box = make_shared<CUtilityBox>(render_resource_desc);
             ParseTransform(child, new_box);
-            
+            ParseInstancing(child, new_box);        // 暂时就box支持json导入instancing，单纯看下效果
+            new_box->InitInstancingData();             // 初始化一下instancing的数据
             render_objs.push_back(new_box);
         }
         else if(child["object"] == "model")

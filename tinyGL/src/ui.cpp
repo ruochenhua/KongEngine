@@ -73,10 +73,11 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_assimp",
 		"hello_normal_map",
 		"hello_shadow_directionallight",
-		"hello_shadow_pointlight"
+		"hello_shadow_pointlight",
+		"hello_instancing"
 	};
 
-	static int item_type = 5;
+	static int item_type = 6;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
@@ -115,9 +116,9 @@ ImVec4 CUIManager::GetFrameRateColor(int framerate)
 	if(framerate > 15)
 	{
 		// laggy
-		return ImVec4(1.f, 1.f, 1.0f, 1.0f);
+		return ImVec4(1.f, 1.f, 0.0f, 1.0f);
 	}
 	
 	// terrible
-	return ImVec4(1.f, 0.f, 1.0f, 1.0f);
+	return ImVec4(1.f, 0.f, 0.0f, 1.0f);
 }
