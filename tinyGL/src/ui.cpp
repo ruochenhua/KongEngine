@@ -3,6 +3,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "Actor.h"
 #include "Engine.h"
 #include "Scene.h"
 using namespace tinyGL;
@@ -58,7 +59,7 @@ void CUIManager::Destroy()
 
 void CUIManager::DescribeUIContent(double delta)
 {
-	// ImGui::ShowDemoWindow(); // Show demo window! :)
+	//ImGui::ShowDemoWindow(); // Show demo window! :)
 
 	// Rendering
 	// render your GUI
@@ -88,6 +89,53 @@ void CUIManager::DescribeUIContent(double delta)
 		scene_name = "scene/" + scene_name + ".json";
 		
 		CScene::GetScene()->LoadScene(scene_name);
+	}
+
+	if(ImGui::TreeNode("scene"))
+	{
+		auto actors = CScene::GetActors();
+		unsigned actor_count = actors.size();
+
+		for(auto actor : actors)
+		{
+			ImGui::PushID(actor->name.c_str());
+			if(ImGui::TreeNode("","%s", actor->name.c_str()))
+			{
+				auto transform_comp = actor->GetComponent<CTransformComponent>();
+				if(!transform_comp.expired())
+				{
+					auto trans_ptr = transform_comp.lock();
+					if(ImGui::TreeNode("", "transform:"))
+					{
+						if(ImGui::TreeNode("","location:"))
+						{
+							ImGui::DragFloat("lx", &trans_ptr->location.x, 0.02f);
+							ImGui::DragFloat("ly", &trans_ptr->location.y, 0.02f);
+							ImGui::DragFloat("lz", &trans_ptr->location.z, 0.02f);
+							ImGui::TreePop();
+						}
+						if(ImGui::TreeNode("","rotation:"))
+						{
+							ImGui::DragFloat("rx", &trans_ptr->rotation.x, 0.02f);
+							ImGui::DragFloat("ry", &trans_ptr->rotation.y, 0.02f);
+							ImGui::DragFloat("rz", &trans_ptr->rotation.z, 0.02f);
+							ImGui::TreePop();
+						}
+						if(ImGui::TreeNode("","scale:"))
+						{
+							ImGui::DragFloat("sx", &trans_ptr->scale.x, 0.02f, 0.01f);
+							ImGui::DragFloat("sy", &trans_ptr->scale.y, 0.02f, 0.01f);
+							ImGui::DragFloat("sz", &trans_ptr->scale.z, 0.02f, 0.01f);
+							ImGui::TreePop();
+						}
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+		ImGui::TreePop();
 	}
 	
 	ImGui::End();
