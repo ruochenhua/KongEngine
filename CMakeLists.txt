@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(TinyGL)
 
+set(CMAKE_CXX_EXTENSIONS 11)
+
 find_package(OpenGL REQUIRED)
 set(SRC_DIR tinyGL/src)
 set(3RD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
@@ -12,22 +14,13 @@ set(GLEW_DIR ${3RD_PARTY_DIR}/glew)
 set(GLFW_DIR ${3RD_PARTY_DIR}/glfw)
 set(GLM_DIR ${3RD_PARTY_DIR}/glm)
 set(JSON_LOADER_DIR ${3RD_PARTY_DIR}/nlohmann)
+set(YAML_DIR ${3RD_PARTY_DIR}/yaml)
 # set(OBJ_LOADER_DIR ${3RD_PARTY_DIR}/objloader)
 set(GLAD_DIR ${3RD_PARTY_DIR}/glad)
 set(ASSIMP_DIR ${3RD_PARTY_DIR}/assimp)
 set(IMGUI_DIR ${3RD_PARTY_DIR}/imgui)
 file(GLOB IMGUI_SRC ${IMGUI_DIR}/*.cpp)
 file(GLOB IMGUI_BACKEND_SRC ${IMGUI_DIR}/backends/*.cpp)
-# set(IMGUI_SRC
-# ${IMGUI_DIR}/imgui.cpp
-# ${IMGUI_DIR}/imgui_demo.cpp
-# ${IMGUI_DIR}/imgui_draw.cpp
-# ${IMGUI_DIR}/imgui_widgets.cpp
-# ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
-# ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-# # ${IMGUI_DIR}/backends/imgui_widgets.cpp
-
-# )
 
 # build glfw
 add_subdirectory(${GLFW_DIR})
@@ -40,6 +33,9 @@ add_subdirectory(${GLAD_DIR})
 
 # build assimp
 add_subdirectory(${ASSIMP_DIR})
+
+# build yaml
+add_subdirectory(${YAML_DIR})
 
 include_directories(${3RD_PARTY_DIR} ${OBJ_LOADER_DIR})
 include_directories(tinyGL/src)
@@ -58,3 +54,4 @@ target_link_libraries(TinyGL glfw)
 target_link_libraries(TinyGL glm_static)
 target_link_libraries(TinyGL glad)
 target_link_libraries(TinyGL assimp)
+target_link_libraries(TinyGL yaml-cpp)

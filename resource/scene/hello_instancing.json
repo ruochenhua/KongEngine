@@ -1,50 +1,64 @@
 {
 	"scene": [
 		{
-		"object": "box",
-		"shader_path": {
-		  "vs": "shader/brdf_instancing.vert",
-		  "fs": "shader/brdf_instancing.frag"
+			"actor": "box1",
+			"component" : [
+				{
+					"type": "box",
+					"shader_path": {
+						"vs": "shader/brdf_instancing.vert",
+						"fs": "shader/brdf_instancing.frag"
+					},
+					"texture_path": {
+						"diffuse": "crater/crater_diffuse.png",
+						"specular": "crater/crater_specular_map.png"
+					},
+					"material": {
+						"metallic": 0.8,
+						"roughness": 0.1,
+						"ao": 1
+					}
+				},
+				{
+					"type" : "transform",
+					"instancing":{
+						"count" : 100000,
+						"location": {
+							"min" : [-300, -300, -300],
+							"max" : [ 300,  300,  300]
+						},
+						"scale" : {
+							"min" : [0.7, 0.7, 0.7],
+							"max" : [1.3, 1.3, 1.3]
+						},
+						"rotation" : {
+							"min" : [-90, -90, -90],
+							"max" : [ 90,  90,  90]
+						}
+					}
+				}
+			]
 		},
-		"texture_path": {
-		  "diffuse": "crater/crater_diffuse.png",
-		  "specular": "crater/crater_specular_map.png"
-		},
-		"material": {
-			"metallic": 0.8,
-			"roughness": 0.1,
-			"ao": 1
-		},
-		"instancing":{
-			"count" : 100000,
-			"location": {
-				"min" : [-300, -300, -300],
-				"max" : [ 300,  300,  300]
-			},
-			"scale" : {
-				"min" : [0.7, 0.7, 0.7],
-				"max" : [1.3, 1.3, 1.3]
-			},
-			"rotation" : {
-				"min" : [-90, -90, -90],
-				"max" : [ 90,  90,  90]
-			}
-		}
-	  },
 		{
-			"object": "directional_light",
-			"light_color": [
-				10,
-				10,
-				10
-			],
-			"transform": {
-				"rotation": [
-					1,
-					-1,
-					0.5
-				]
-			}
+			"actor": "directional_light",
+			"component": [
+				{
+					"type": "directional_light",
+					"light_color": [
+						10,
+						10,
+						10
+					]
+				},
+				{
+					"type": "transform",
+					"rotation": [
+						1,
+						-1,
+						1
+					]
+				}
+			]
 		}
 	]
   }

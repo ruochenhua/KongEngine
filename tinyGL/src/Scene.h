@@ -1,16 +1,19 @@
 #pragma once
-#include "common.h"
+#include "Common.h"
 
 namespace tinyGL
 {
-    class Light;
-    class CRenderObj;
+    class AActor;
+}
+
+namespace tinyGL
+{
+    class CLightComponent;
+    class CMeshComponent;
     class CSceneLoader
     {
     public:
-        static bool LoadScene(const string& file_path,
-            vector<shared_ptr<CRenderObj>>& render_objs,
-            vector<shared_ptr<Light>>& lights);
+        static bool LoadScene(const string& file_path, vector<shared_ptr<AActor>>& scene_actors);
 
         static string ToResourcePath(const string& file_path);
 
@@ -20,12 +23,14 @@ namespace tinyGL
     {
     public:
         static CScene* GetScene();
-
+        static vector<shared_ptr<AActor>> GetActors();
+        static vector<weak_ptr<CMeshComponent>> GetMeshes();
+        
         void LoadScene(const string& file_path);
-        const vector<shared_ptr<CRenderObj>>& GetSceneRenderObjects() const;
-        const vector<shared_ptr<Light>>& GetSceneLights() const;
+        vector<shared_ptr<AActor>> GetSceneActors_Implement();
+        vector<weak_ptr<CMeshComponent>> GetSceneMeshes_Implement();
     private:
-        vector<shared_ptr<CRenderObj>> render_objs;
-        vector<shared_ptr<Light>> lights;
+        vector<shared_ptr<AActor>> scene_actors;
+        vector<weak_ptr<CMeshComponent>> scene_meshes;
     };
 }

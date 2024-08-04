@@ -178,7 +178,7 @@ void main()
 	}
 
 	vec3 ambient = vec3(0.03)*GetAlbedo()*ao;
-	vec3 color = ambient+ dir_light_color + point_light_color;
+	vec3 color = ambient + dir_light_color + point_light_color;
 	// 伽马校正（Reinhard）
 	color = color / (color + vec3(1.0));
 	color = pow(color, vec3(1.0/2.2));

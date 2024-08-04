@@ -1,9 +1,11 @@
 #include "render.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "Camera.h"
+#include "Actor.h"
+#include "CameraComponent.h"
 #include "Engine.h"
-#include "light.h"
+#include "LightComponent.h"
+#include "MeshComponent.h"
 #include "model.h"
 #include "tgaimage.h"
 #include "message.h"
@@ -62,13 +64,15 @@ int CRender::Update(double delta)
 	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
 	//RenderSkyBox();
-
+	CollectLightInfo();
+	
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	
+	RenderShadowMap();			
+	RenderSceneObject();	
 	return 1;
 }
 
@@ -155,10 +159,29 @@ void CRender::RenderSkyBox()
 
 void CRender::RenderScene() const
 {
-	auto render_objs = CScene::GetScene()->GetSceneRenderObjects();
-	for(auto render_obj : render_objs)
+	auto actors = CScene::GetActors();
+
+	for(auto actor : actors)
 	{
+		auto mesh_component = actor->GetComponent<CMeshComponent>();
+		if(mesh_component.expired())
+		{
+			continue;
+		}
+
+		auto render_obj = mesh_component.lock();
 		GLuint shader_id = render_obj->GetShaderId();
+
+		CTransformComponent* transform_component_ptr = nullptr;
+		auto tranform_component = actor->GetComponent<CTransformComponent>();
+		if(!tranform_component.expired())
+		{
+			transform_component_ptr = tranform_component.lock().get();
+		}
+		if(!transform_component_ptr)
+		{
+			continue;
+		}
 
 		glUseProgram(shader_id);
 		unsigned mesh_idx = 0;
@@ -168,14 +191,16 @@ void CRender::RenderScene() const
 			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 			
 			mat4 model_mat;
-			if(render_obj->instancing_info.count == 0)
+
+			if(transform_component_ptr->instancing_info.count == 0)
 			{
-				model_mat = render_obj->GetModelMatrix();
+				model_mat = actor->GetModelMatrix();
 			}
 			else
 			{
-				model_mat = render_obj->GetInstancingModelMat(mesh_idx);
+				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
 			}
+			
 			mat4 view_mat = mainCamera->GetViewMatrix();
 			mat4 projection_mat = mainCamera->GetProjectionMatrix();
 			// mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
@@ -190,7 +215,6 @@ void CRender::RenderScene() const
 			Shader::SetFloat(shader_id, "metallic", render_info.material.metallic);
 			Shader::SetFloat(shader_id, "roughness", render_info.material.roughness);
 			Shader::SetFloat(shader_id, "ao", render_info.material.ao);
-
 
 			/*
 			法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
@@ -214,47 +238,35 @@ void CRender::RenderScene() const
 			glActiveTexture(GL_TEXTURE3);
 			GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
 			glBindTexture(GL_TEXTURE_2D, tangent_map_id);
-
-		
-			bool has_dir_light = false;	// cannot have more than 1 dir light
-		
+			
 			int point_light_count = 0;	// point light count, max 4
-			auto scene_lights = CScene::GetScene()->GetSceneLights();
-			for(auto light : scene_lights)
+
+			if(!scene_dirlight.expired())
 			{
-				ELightType light_type = light->GetLightType();
-				switch (light_type)
+				Shader::SetVec3(shader_id, "directional_light.light_dir", scene_dirlight.lock()->GetLightDir());
+				Shader::SetVec3(shader_id, "directional_light.light_color", scene_dirlight.lock()->light_color);
+					
+				Shader::SetMat4(shader_id, "light_space_mat", scene_dirlight.lock()->light_space_mat);
+				glActiveTexture(GL_TEXTURE4);
+				glBindTexture(GL_TEXTURE_2D, scene_dirlight.lock()->shadowmap_texture);
+			}
+			
+			for(auto light : scene_pointlights)
+			{
+				if(light.expired())
 				{
-				case ELightType::directional_light:
-					if(!has_dir_light)
-					{
-						Shader::SetVec3(shader_id, "directional_light.light_dir", light->GetLightDir());
-						Shader::SetVec3(shader_id, "directional_light.light_color", light->light_color);
-						has_dir_light = true;
-					
-						Shader::SetMat4(shader_id, "light_space_mat", light->light_space_mat);
-						glActiveTexture(GL_TEXTURE4);
-						glBindTexture(GL_TEXTURE_2D, light->shadowmap_texture);
-					}
-					break;
-				case ELightType::point_light:
-					if(point_light_count < 4)
-					{
-						stringstream point_light_name;
-						point_light_name <<  "point_lights[" << point_light_count << "]";
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light->location);
-						Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light->light_color);
-						// 先支持一个点光源的阴影贴图
-						glActiveTexture(GL_TEXTURE5);
-						glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadowmap_texture);
-					
-						++point_light_count;
-					}
-					break;
-				case ELightType::spot_light:
-				default:
-					break;
+					continue;
 				}
+				
+				stringstream point_light_name;
+				point_light_name <<  "point_lights[" << point_light_count << "]";
+				Shader::SetVec3(shader_id, point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
+				Shader::SetVec3(shader_id, point_light_name.str() + ".light_color", light.lock()->light_color);
+				// 先支持一个点光源的阴影贴图
+				glActiveTexture(GL_TEXTURE5);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->shadowmap_texture);
+			
+				++point_light_count;
 			}
 	
 			Shader::SetInt(shader_id, "point_light_count", point_light_count);
@@ -264,17 +276,18 @@ void CRender::RenderScene() const
 			
 			if(render_info.index_buffer == GL_NONE)
 			{
-				if(render_obj->instancing_info.count > 0)
+				if(transform_component_ptr->instancing_info.count > 0)
 				{
 					// Starting from vertex 0; 3 vertices total -> 1 triangle
-					glDrawArraysInstanced(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count, render_obj->instancing_info.count);
+					glDrawArraysInstanced(GL_TRIANGLES, 0,
+						render_info.vertex_size / render_info.stride_count,
+						transform_component_ptr->instancing_info.count);
 				}
 				else
 				{
 					// Starting from vertex 0; 3 vertices total -> 1 triangle
 					glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
 				}
-					
 			}
 			else
 			{		
@@ -287,6 +300,53 @@ void CRender::RenderScene() const
 	}
 }
 
+void CRender::CollectLightInfo()
+{
+	// todo: scene重新加载的时候处理一次就好
+	scene_dirlight.reset();
+	scene_pointlights.clear();
+	
+	auto actors = CScene::GetActors();
+	for(auto actor: actors)
+	{
+		auto light_component = actor->GetComponent<CLightComponent>();
+		if(light_component.expired())
+		{
+			continue;
+		}
+
+		// light需要tranform信息，没有就跳过
+		auto transform_component = actor->GetComponent<CTransformComponent>();
+		if(transform_component.expired())
+		{
+			continue;
+		}
+		
+		auto light_sharedptr = light_component.lock();
+		if(scene_dirlight.expired())
+		{
+			auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_sharedptr);
+			if(dir_light)
+			{
+				dir_light->SetLightDir(normalize(transform_component.lock()->rotation));
+				scene_dirlight = dir_light;
+				
+				continue;
+			}
+		}
+
+		if(scene_pointlights.size() < 4)
+		{
+			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_sharedptr);
+			if(point_light)
+			{
+				point_light->SetLightLocation(transform_component.lock()->location);
+				scene_pointlights.push_back(point_light);
+			}
+		}
+	}
+}
+
 void CRender::RenderShadowMap()
 {
 	// shadowmap 需要正面剔除，避免阴影悬浮
@@ -294,10 +354,19 @@ void CRender::RenderShadowMap()
 	// note: 剔除front好像shadow bias不填阴影效果也比较正常？
 	glCullFace(GL_FRONT);
 	glViewport(0,0, SHADOW_WIDTH, SHADOW_HEIGHT);
-	auto scene_lights = CScene::GetScene()->GetSceneLights();
-	for(auto light : scene_lights)
+
+	// auto scene_lights = CScene::GetScene()->GetSceneLights();
+	if(!scene_dirlight.expired())
 	{
-		light->RenderShadowMap();
+		scene_dirlight.lock()->RenderShadowMap();
+	}
+	
+	for(auto light : scene_pointlights)
+	{
+		if(!light.expired())
+		{
+			light.lock()->RenderShadowMap();
+		}
 	}
 
 #if SHADOWMAP_DEBUG

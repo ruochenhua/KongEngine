@@ -19,17 +19,11 @@ int main()
 	render->Init();
 	auto ui_manager = CUIManager::GetUIManager();
 	ui_manager->Init();
-
-	// auto scene = CScene::GetScene();
-	//
-	// vector<shared_ptr<CRenderObj>> render_objs;
-	// vector<shared_ptr<Light>> lights;
-	// CSceneLoader::LoadScene("scene/hello_assimp.json", render_objs, lights);
 	
 	// auto body_manager = new Tap::CBodyManager();
 	auto render_window = Engine::GetRenderWindow();
-	double current_time, new_time;
-	current_time = new_time = glfwGetTime();
+	double current_time = glfwGetTime();
+	double new_time = current_time;
 	while (!glfwWindowShouldClose(render_window))
 	{
 		if(glfwGetKey(render_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -41,8 +35,7 @@ int main()
 		ui_manager->PreRenderUpdate(delta);
 		render->Update(delta);
 
-		render->RenderShadowMap();			
-		render->RenderSceneObject();			
+		
 		
 		ui_manager->PostRenderUpdate();
 		render->PostUpdate();

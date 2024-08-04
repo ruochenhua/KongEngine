@@ -77,7 +77,7 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_instancing"
 	};
 
-	static int item_type = 6;
+	static int item_type = 0;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 

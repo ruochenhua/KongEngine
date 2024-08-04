@@ -1,13 +1,13 @@
 #pragma once
-#include "renderobj.h"
+#include "MeshComponent.h"
 
 namespace tinyGL
 {
 class TGAImage;
-class CModel : public CRenderObj
+class CModelMeshComponent : public CMeshComponent
 {
 public:
-	CModel(const SRenderResourceDesc& render_resource_desc);
+	CModelMeshComponent(const SRenderResourceDesc& render_resource_desc);
 	
 private:
 	virtual void GenerateRenderInfo() override;

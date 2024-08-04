@@ -49,7 +49,7 @@ std::vector<float> CUtilityBox::s_vBoxVertices = {
 };
 
 CUtilityBox::CUtilityBox(const SRenderResourceDesc& render_resource_desc)
-	: CRenderObj(render_resource_desc)
+	: CMeshComponent(render_resource_desc)
 {
 	CMesh new_mesh;
 	box_render_resource_desc = render_resource_desc;
@@ -156,57 +156,4 @@ void CUtilityBox::GenerateRenderInfo()
 	glUniform1i(glGetUniformLocation(shader_id, "shadow_map_pointlight"), 5);
 	
 	mesh_list.push_back(mesh);
-}
-
-void CUtilityBox::InitInstancingData()
-{
-	unsigned count = instancing_info.count;
-	if(count == 0)
-	{
-		return;
-	}
-		
-	instancing_model_mat.resize(count+1);
-
-	instancing_model_mat[0] = GetModelMatrix();
-	for(unsigned i = 1; i <= count; ++i)
-	{
-		instancing_model_mat[i] = GenInstanceModelMatrix();
-	}
-	
-	glGenBuffers(1, &instancing_info.instance_buffer);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, instancing_info.instance_buffer);
-	glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), &instancing_model_mat[0], GL_STATIC_DRAW);
-
-	const CMesh& mesh = mesh_list[0];
-	auto& render_info = mesh.m_RenderInfo;
-	glBindVertexArray(render_info.vertex_array_id);
-	GLsizei vec4_size = sizeof(glm::vec4);
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)0);
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size));
-	glEnableVertexAttribArray(5);
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*2));
-	glEnableVertexAttribArray(6);
-	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*3));
-
-	glVertexAttribDivisor(3, 1);
-	glVertexAttribDivisor(4, 1);
-	glVertexAttribDivisor(5, 1);
-	glVertexAttribDivisor(6, 1);
-	
-	glBindVertexArray(0);
-
-}
-
-const mat4& CUtilityBox::GetInstancingModelMat(unsigned idx) const
-{
-	if(idx >= instancing_model_mat.size())
-	{
-		return mat4(1.0);
-	}
-
-	return instancing_model_mat[idx];
 }

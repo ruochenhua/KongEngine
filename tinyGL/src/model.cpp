@@ -6,14 +6,14 @@
 using namespace glm;
 using namespace tinyGL;
 
-CModel::CModel(const SRenderResourceDesc& render_resource_desc)
-	:CRenderObj(render_resource_desc)
+CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resource_desc)
+	:CMeshComponent(render_resource_desc)
 {
 	ImportObj(render_resource_desc.model_path);
 	GenerateRenderInfo();
 }
 
-void CModel::GenerateRenderInfo()
+void CModelMeshComponent::GenerateRenderInfo()
 {
 	for(auto& mesh : mesh_list)
 	{

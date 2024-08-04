@@ -1,89 +1,108 @@
 {
 	"scene": [
-	  {
-		"object": "model",
-		"shader_path": {
-		  "vs": "shader/brdf_shadowmap.vert",
-		  "fs": "shader/brdf_shadowmap.frag"
-		},
-		"model_path": "nanosuit/nanosuit.obj",
-		"material": {
-			"metallic": 0.9,
-			"roughness": 0.1,
-			"ao": 1
-		},
-		"transform": {
-		  "location": [
-			5,
-			-0.5,
-			0
-		  ],
-			"scale": [
-			0.3,
-			0.3,
-			0.3
-		  ]
-		}
-	  },
 		{
-		"object": "box",
-		"shader_path": {
-		  "vs": "shader/brdf_shadowmap.vert",
-		  "fs": "shader/brdf_shadowmap.frag"
+			"actor": "model1",
+			"component": [
+				{
+					"type": "mesh",
+					"shader_path": {
+						"vs": "shader/brdf_shadowmap.vert",
+						"fs": "shader/brdf_shadowmap.frag"
+					},
+					"model_path": "nanosuit/nanosuit.obj",
+					"material": {
+						"metallic": 0.9,
+						"roughness": 0.1,
+						"ao": 1
+					}
+				},
+				{
+					"type": "transform",
+					"location": [
+						5,
+						-0.5,
+						0
+					],
+					"scale": [
+						0.3,
+						0.3,
+						0.3
+					]
+				}
+			]
 		},
-		"material": {
-			"albedo": [0.6, 0.6, 0.0],
-			"metallic": 0.5,
-			"roughness": 0.3,
-			"ao": 1
-		},
-		"transform": {
-		  "location": [
-			0,
-			0,
-			0
-		  ]
-		}
-	  },
 		{
-		"object": "box",
-		"shader_path": {
-		  "vs": "shader/brdf_shadowmap.vert",
-		  "fs": "shader/brdf_shadowmap.frag"
+			"actor": "box1",
+			"component": [
+				{
+					"type": "box",
+					"shader_path": {
+						"vs": "shader/brdf_shadowmap.vert",
+						"fs": "shader/brdf_shadowmap.frag"
+					},
+					"material": {
+						"albedo": [0.6, 0.6, 0.0],
+						"metallic": 0.5,
+						"roughness": 0.3,
+						"ao": 1
+					}
+				},
+				{
+					"type": "transform"
+				}
+			]
 		},
-		"material": {
-			"albedo": [0.6, 0.3, 0.6],
-			"metallic": 0.9,
-			"roughness": 0.1,
-			"ao": 1
-		},
-		"transform": {
-		  "location": [
-			0,
-			-1,
-			0
-		  ],
-		  "scale": [
-			200,
-			1,
-			200
-		  ]
-		}
-	  },
 		{
-			"object": "directional_light",
-			"light_color": [
-				10,
-				10,
-				10
-			],
-			"transform": {
-				"rotation": [
-					1,
+			"actor": "floor",
+			"component": [
+				{
+					"type": "box",
+					"shader_path": {
+						"vs": "shader/brdf_shadowmap.vert",
+						"fs": "shader/brdf_shadowmap.frag"
+					},
+					"material": {
+						"albedo": [0.6, 0.3, 0.6],
+						"metallic": 0.9,
+						"roughness": 0.1,
+						"ao": 1
+					}
+				},
+				{
+					"type": "transform",
+					"location": [
+					0,
 					-1,
-					1
-				]
-			}
+					0
+				],
+					"scale": [
+						200,
+						1,
+						200
+					]
+				}
+			]
+		},
+		{
+			"actor": "directional_light",
+			"component": [
+				{
+					"type": "directional_light",
+					"light_color": [
+						10,
+						10,
+						10
+					]
+				},
+				{
+					"type": "transform",
+					"rotation": [
+						1,
+						-1,
+						1
+					]
+				}
+			]
 		}
 	]
   }
