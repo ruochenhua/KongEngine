@@ -4,6 +4,7 @@
 
 #include "Actor.h"
 #include "JsonParser.h"
+#include "YamlParser.h"
 
 using namespace tinyGL;
 CScene* g_scene = new CScene;
@@ -28,7 +29,7 @@ bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<AActor>>
     if(yaml_file != std::string::npos)
     {
         // 格式为yaml，读取yaml文件
-        
+        CYamlParser::ParseYamlFile(scene_file_content, scene_actors);
     }
     
     return true;
