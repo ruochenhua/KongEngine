@@ -4,6 +4,17 @@
 #include "LightComponent.h"
 using namespace tinyGL;
 
+AActor::~AActor()
+{
+    for(auto& component : components)
+    {
+        component.reset();
+    }
+    
+    components.clear();
+    component_cache.clear();
+}
+
 void AActor::AddComponent(std::shared_ptr<CComponent> component)
 {
     components.push_back(component);

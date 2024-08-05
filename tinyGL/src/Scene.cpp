@@ -58,7 +58,7 @@ vector<weak_ptr<CMeshComponent>> CScene::GetSceneMeshes_Implement()
     }
     
     auto actors = g_scene->GetSceneActors_Implement();
-    for(auto actor : actors)
+    for(auto& actor : actors)
     {
         weak_ptr<CMeshComponent> mesh = actor->GetComponent<CMeshComponent>();
         if(mesh.expired())
@@ -79,10 +79,11 @@ vector<shared_ptr<AActor>> CScene::GetSceneActors_Implement()
 
 void CScene::LoadScene(const string& file_path)
 {
-    for(auto actor : scene_actors)
+    for(auto& actor : scene_actors)
     {
         actor.reset();
     }
+    scene_actors.clear();
     
     CSceneLoader::LoadScene(file_path, scene_actors);
     for(auto actor : scene_actors)
