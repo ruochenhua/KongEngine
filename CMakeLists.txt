@@ -39,8 +39,8 @@ add_subdirectory(${YAML_DIR})
 
 include_directories(${3RD_PARTY_DIR} ${OBJ_LOADER_DIR})
 include_directories(tinyGL/src)
-file(GLOB MAIN_SRC ${SRC_DIR}/*.cpp)
-file(GLOB MAIN_HEAD ${SRC_DIR}/*.h)
+file(GLOB_RECURSE MAIN_SRC ${SRC_DIR}/*.cpp)
+file(GLOB_RECURSE MAIN_HEAD ${SRC_DIR}/*.h)
 
 file(GLOB_RECURSE 3RD_PARTY_SRC &)
 

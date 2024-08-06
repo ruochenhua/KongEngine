@@ -2,6 +2,7 @@
 #include "CameraComponent.h"
 #include "Common.h"
 #include "skybox.h"
+#include "Shader/Shader.h"
 
 namespace tinyGL
 {
@@ -15,6 +16,7 @@ namespace tinyGL
 	{
 	public:
 		static CRender* GetRender();
+		static GLuint GetNullTexId();
 		
 		GLFWwindow* render_window;
 		CRender(){ }
@@ -46,7 +48,8 @@ namespace tinyGL
 		GLuint null_tex_id			= GL_NONE;
 		
 		// debug
-		GLuint m_ShadowMapDebugShaderId = GL_NONE;
+		// GLuint m_ShadowMapDebugShaderId = GL_NONE;
+		shared_ptr<Shader> shadowmap_debug_shader;
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
 		
@@ -55,8 +58,9 @@ namespace tinyGL
 		CCamera* mainCamera = nullptr;
 
 		// 场景光源信息
-		std::weak_ptr<CDirectionalLightComponent> scene_dirlight;
+		SSceneRenderInfo scene_render_info;
 		
-		std::vector<std::weak_ptr<CPointLightComponent>> scene_pointlights;
+		// std::weak_ptr<CDirectionalLightComponent> scene_dirlight;
+		// std::vector<std::weak_ptr<CPointLightComponent>> scene_pointlights;
 	};
 }

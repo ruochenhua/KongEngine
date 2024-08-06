@@ -91,13 +91,13 @@ namespace JsonParser
             auto shader_json = in_json["shader_path"];
             if(!shader_json["vs"].is_null())
             {
-                render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::vs,
+                render_resource_desc.shader_paths.emplace(EShaderType::vs,
                     CSceneLoader::ToResourcePath(shader_json["vs"]));
             }
 
             if(!shader_json["fs"].is_null())
             {
-                render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::fs,
+                render_resource_desc.shader_paths.emplace(EShaderType::fs,
                     CSceneLoader::ToResourcePath(shader_json["fs"]));
             }
         }

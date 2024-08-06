@@ -6,7 +6,7 @@
 #include <glm/gtx/euler_angles.hpp>
 
 #include "render.h"
-#include "shader.h"
+#include "Shader/Shader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -25,7 +25,7 @@ mat4 CTransformComponent::GetModelMatrix() const
 	return model;
 }
 
-glm::mat4 CTransformComponent::GenInstanceModelMatrix() const
+mat4 CTransformComponent::GenInstanceModelMatrix() const
 {
 	mat4 model = mat4(1.0);
 
@@ -101,7 +101,18 @@ const mat4& CTransformComponent::GetInstancingModelMat(unsigned idx) const
 CMeshComponent::CMeshComponent(const SRenderResourceDesc& render_resource_desc)
 {
 	// compile shader map
-	shader_id = Shader::LoadShaders(render_resource_desc.shader_paths);
+	shader_data = make_shared<Shader>();
+	shader_data->Init(render_resource_desc.shader_paths);
+}
+
+void CMeshComponent::BeginPlay()
+{
+	CComponent::BeginPlay();
+	// 调用一下shader的初始化
+	for(auto& mesh : mesh_list)
+	{
+		shader_data->SetupData(mesh);	
+	}
 }
 
 std::vector<float> CMesh::GetVertices() const

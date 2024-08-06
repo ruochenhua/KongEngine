@@ -14,7 +14,6 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 
-uniform mat4 depth_bias_mvp;
 uniform mat3 normal_model_mat;
 
 

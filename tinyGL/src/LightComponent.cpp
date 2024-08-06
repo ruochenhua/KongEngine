@@ -2,7 +2,7 @@
 #include "MeshComponent.h"
 #include "Actor.h"
 #include "Scene.h"
-#include "shader.h"
+#include "Shader/Shader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -10,11 +10,11 @@ const float SHADOWMAP_NEAR_PLANE = 1.0f;
 const float SHADOWMAP_FAR_PLANE = 30.0f;
 
 CLightComponent::CLightComponent(ELightType in_type)
-    : shadowmap_fbo(0), shadowmap_texture(0), shadowmap_shader_id(0)
+    : shadowmap_fbo(0), shadowmap_texture(0)
     , near_plane(SHADOWMAP_NEAR_PLANE), far_plane(SHADOWMAP_FAR_PLANE)
     , light_type(in_type)
 {
-    
+    shadowmap_shader = make_shared<Shader>();
 }
 
 CDirectionalLightComponent::CDirectionalLightComponent()
@@ -46,11 +46,11 @@ CDirectionalLightComponent::CDirectionalLightComponent()
     // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     // 	return -1;
     //
-    map<SRenderResourceDesc::EShaderType, string> shader_paths = {
-        {SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap.vert")},
-        {SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap.frag")}
+    map<EShaderType, string> shader_paths = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap.frag")}
     };
-    shadowmap_shader_id = Shader::LoadShaders(shader_paths);
+    shadowmap_shader->Init(shader_paths);
 }
 
 glm::vec3 CDirectionalLightComponent::GetLightDir() const
@@ -81,8 +81,8 @@ void CDirectionalLightComponent::RenderShadowMap()
     mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
     light_space_mat = light_proj * light_view;
 
-    glUseProgram(shadowmap_shader_id);
-    Shader::SetMat4(shadowmap_shader_id, "light_space_mat", light_space_mat);
+    shadowmap_shader->Use();
+    shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
     // RenderScene();
 
     auto actors = CScene::GetActors();
@@ -112,7 +112,7 @@ void CDirectionalLightComponent::RenderShadowMap()
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
 			
-            Shader::SetMat4(shadowmap_shader_id, "model", model_mat);
+            shadowmap_shader->SetMat4("model", model_mat);
             // Draw the triangle !
             // if no index, use draw array
             if(render_info.index_buffer == GL_NONE)
@@ -164,12 +164,12 @@ CPointLightComponent::CPointLightComponent()
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
-    map<SRenderResourceDesc::EShaderType, string> shader_paths = {
-        {SRenderResourceDesc::EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.vert")},
-        {SRenderResourceDesc::EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.frag")},
-        {SRenderResourceDesc::EShaderType::gs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.geom")}
+    map<EShaderType, string> shader_paths = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.frag")},
+        {EShaderType::gs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.geom")}
     };
-    shadowmap_shader_id = Shader::LoadShaders(shader_paths);
+    shadowmap_shader->Init(shader_paths);
 }
 
 
@@ -197,16 +197,15 @@ void CPointLightComponent::RenderShadowMap()
     shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,0,1), vec3(0,-1,0)));
     shadow_transforms.push_back(shadow_proj * lookAt(location, location+vec3(0,0,-1), vec3(0,-1,0)));
 
-    
-    glUseProgram(shadowmap_shader_id);
-    Shader::SetFloat(shadowmap_shader_id, "far_plane", far_plane);
+    shadowmap_shader->Use();
+    shadowmap_shader->SetFloat("far_plane", far_plane);
     for(int i = 0; i < 6; ++i)
     {
         stringstream shadow_matrices_stream;
         shadow_matrices_stream <<  "shadow_matrices[" << i << "]";
-        Shader::SetMat4(shadowmap_shader_id, shadow_matrices_stream.str(), shadow_transforms[i]);
+        shadowmap_shader->SetMat4(shadow_matrices_stream.str(), shadow_transforms[i]);
     }
-    Shader::SetVec3(shadowmap_shader_id, "light_pos", location);
+    shadowmap_shader->SetVec3("light_pos", location);
     // RenderScene();
 
     auto actors = CScene::GetActors();
@@ -236,7 +235,7 @@ void CPointLightComponent::RenderShadowMap()
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
 			
-            Shader::SetMat4(shadowmap_shader_id, "model", model_mat);
+            shadowmap_shader->SetMat4("model", model_mat);
             // Draw the triangle !
             // if no index, use draw array
             if(render_info.index_buffer == GL_NONE)

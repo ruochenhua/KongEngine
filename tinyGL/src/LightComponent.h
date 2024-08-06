@@ -33,7 +33,8 @@ namespace tinyGL
         GLfloat near_plane;
         GLfloat far_plane;
         GLuint shadowmap_fbo;
-        GLuint shadowmap_shader_id;
+        //GLuint shadowmap_shader_id;
+        shared_ptr<Shader> shadowmap_shader;
     private:
         ELightType light_type;
     };

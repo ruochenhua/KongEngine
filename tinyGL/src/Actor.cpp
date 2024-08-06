@@ -38,6 +38,12 @@ glm::mat4 AActor::GetModelMatrix()
 
 void AActor::BeginPlay()
 {
+    // 每个component也调用一下
+    for(auto& component : components)
+    {
+        component->BeginPlay();
+    }
+    
     // 在加载完后需要做一些事情
     // 这里先处理一下instancing的东西，其他的后面再加
     auto transform_comp = GetComponent<CTransformComponent>();

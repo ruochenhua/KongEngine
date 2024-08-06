@@ -7,6 +7,7 @@ namespace tinyGL
     {
     public:
         virtual ~CComponent() = default;
+        virtual void BeginPlay() {}
     };
     
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "Component.h"
+#include "Shader/Shader.h"
 
 struct aiMesh;
 struct aiScene;
@@ -42,46 +43,23 @@ namespace tinyGL
 		std::vector<glm::mat4> instancing_model_mat;
 	};
 
-	class CMesh
-	{
-	public:		
-		vector<float> GetVertices() const;
-		vector<float> GetTextureCoords() const;
-		vector<float> GetNormals() const;
-		vector<unsigned int> GetIndices() const;
-		vector<float> GetTangents() const;
-		vector<float> GetBitangents() const;
 
-		SRenderInfo GetRenderInfo() const { return m_RenderInfo; }
-
-		// virtual void GenerateRenderInfo() = 0;
-		
-		vector<glm::vec3> m_Vertex;
-		vector<glm::vec3> m_Normal;
-		vector<glm::vec2> m_TexCoord;
-		vector<glm::vec3> m_Tangent;
-		vector<glm::vec3> m_Bitangent;
-
-		vector<unsigned int> m_Index;
-
-		SRenderInfo m_RenderInfo;
-
-		string directory;
-	};
 		
 	class CMeshComponent : public CComponent
 	{
 	public:
 		vector<CMesh> mesh_list;
+		shared_ptr<Shader> shader_data;
 		
 		CMeshComponent(const SRenderResourceDesc& render_resource_desc);	
-		GLuint GetShaderId() const {return shader_id;}
-		
+
+		void BeginPlay() override;
 
 	protected:
 		virtual void GenerateRenderInfo() = 0;
-		GLuint shader_id = GL_NONE;
+		//GLuint shader_id = GL_NONE;
 
+		
 		string directory;
 		
 		// import obj model

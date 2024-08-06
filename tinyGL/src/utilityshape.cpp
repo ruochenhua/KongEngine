@@ -51,7 +51,6 @@ std::vector<float> CUtilityBox::s_vBoxVertices = {
 CUtilityBox::CUtilityBox(const SRenderResourceDesc& render_resource_desc)
 	: CMeshComponent(render_resource_desc)
 {
-	CMesh new_mesh;
 	box_render_resource_desc = render_resource_desc;
 	GenerateRenderInfo();
 }
@@ -147,13 +146,13 @@ void CUtilityBox::GenerateRenderInfo()
 	render_info.vertex_size = vertices.size();
 	render_info.stride_count = 8;
 
-	glUseProgram(shader_id);
-	glUniform1i(glGetUniformLocation(shader_id, "diffuse_texture"), 0);
-	glUniform1i(glGetUniformLocation(shader_id, "specular_texture"), 1);
-	glUniform1i(glGetUniformLocation(shader_id, "normal_texture"), 2);
-	glUniform1i(glGetUniformLocation(shader_id, "tangent_texture"), 3);
-	glUniform1i(glGetUniformLocation(shader_id, "shadow_map"), 4);
-	glUniform1i(glGetUniformLocation(shader_id, "shadow_map_pointlight"), 5);
+	shader_data->Use();
+	shader_data->SetInt("diffuse_texture", 0);
+	shader_data->SetInt("specular_texture", 1);
+	shader_data->SetInt("normal_texture", 2);
+	shader_data->SetInt("tangent_texture", 3);
+	shader_data->SetInt("shadow_map", 4);
+	shader_data->SetInt("shadow_map_pointlight", 5);
 	
 	mesh_list.push_back(mesh);
 }

@@ -85,13 +85,13 @@ namespace YamlParser
             auto shader_node = in_node["shader_path"];
             if(shader_node["vs"])
             {
-                render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::vs,
+                render_resource_desc.shader_paths.emplace(EShaderType::vs,
                     CSceneLoader::ToResourcePath(shader_node["vs"].as<string>()));
             }
 
             if(shader_node["fs"])
             {
-                render_resource_desc.shader_paths.emplace(SRenderResourceDesc::EShaderType::fs,
+                render_resource_desc.shader_paths.emplace(EShaderType::fs,
                     CSceneLoader::ToResourcePath(shader_node["fs"].as<string>()));
             }
         }
