@@ -8,11 +8,14 @@ namespace tinyGL
 	public:
 		CUtilityBox(const SRenderResourceDesc& render_resource_desc);
 		virtual std::vector<float> GetVertices() const;
+		
 		virtual std::vector<unsigned int> GetIndices() const;
 
 		void GenerateRenderInfo() override;
 	private:
 		static std::vector<float> s_vBoxVertices;
+		static std::vector<float> s_vBoxNormals;
+		static std::vector<float> s_vBoxTexCoords;
 		static std::vector<int> s_vBoxIndices;
 
 		std::string texture_path;

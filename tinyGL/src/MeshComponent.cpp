@@ -117,41 +117,44 @@ void CMeshComponent::BeginPlay()
 
 std::vector<float> CMesh::GetVertices() const
 {
-	std::vector<float> vertices(m_Vertex.size() * 3);
+	// std::vector<float> vertices(m_Vertex.size() * 3);
+	//
+	// for (size_t i = 0; i < m_Vertex.size(); ++i)
+	// {
+	// 	vertices[3 * i] = m_Vertex[i].x;
+	// 	vertices[3 * i + 1] = m_Vertex[i].y;
+	// 	vertices[3 * i + 2] = m_Vertex[i].z;
+	// }
 
-	for (size_t i = 0; i < m_Vertex.size(); ++i)
-	{
-		vertices[3 * i] = m_Vertex[i].x;
-		vertices[3 * i + 1] = m_Vertex[i].y;
-		vertices[3 * i + 2] = m_Vertex[i].z;
-	}
-
-	return vertices;
+	//return vertices;
+	return m_Vertex;
 }
 
 std::vector<float> CMesh::GetTextureCoords() const
 {
-	std::vector<float> tex_coords(m_TexCoord.size() * 2);
-	for (size_t i = 0; i < m_Vertex.size(); ++i)
-	{
-		tex_coords[2 * i] = m_TexCoord[i].x;
-		tex_coords[2 * i + 1] = 1.0f - m_TexCoord[i].y;	//to opengl, invert y coord
-	}
-
-	return tex_coords;
+	// std::vector<float> tex_coords(m_TexCoord.size() * 2);
+	// for (size_t i = 0; i < m_Vertex.size(); ++i)
+	// {
+	// 	tex_coords[2 * i] = m_TexCoord[i].x;
+	// 	tex_coords[2 * i + 1] = 1.0f - m_TexCoord[i].y;	//to opengl, invert y coord
+	// }
+	//
+	// return tex_coords;
+	return m_TexCoord;
 }
 
 std::vector<float> CMesh::GetNormals() const
 {
-	std::vector<float> normals(m_Normal.size() * 3);
-	for (size_t i = 0; i < m_Normal.size(); ++i)
-	{
-		normals[3 * i] = m_Normal[i].x;
-		normals[3 * i + 1] = m_Normal[i].y;
-		normals[3 * i + 2] = m_Normal[i].z;
-	}
-
-	return normals;
+	// std::vector<float> normals(m_Normal.size() * 3);
+	// for (size_t i = 0; i < m_Normal.size(); ++i)
+	// {
+	// 	normals[3 * i] = m_Normal[i].x;
+	// 	normals[3 * i + 1] = m_Normal[i].y;
+	// 	normals[3 * i + 2] = m_Normal[i].z;
+	// }
+	//
+	// return normals;
+	return m_Normal;
 }
 
 
@@ -162,28 +165,30 @@ vector<unsigned int> CMesh::GetIndices() const
 
 vector<float> CMesh::GetTangents() const
 {
-	std::vector<float> tangents(m_Tangent.size() * 3);
-	for (size_t i = 0; i < m_Tangent.size(); ++i)
-	{
-		tangents[3 * i] = m_Tangent[i].x;
-		tangents[3 * i + 1] = m_Tangent[i].y;
-		tangents[3 * i + 2] = m_Tangent[i].z;
-	}
-
-	return tangents;
+	// std::vector<float> tangents(m_Tangent.size() * 3);
+	// for (size_t i = 0; i < m_Tangent.size(); ++i)
+	// {
+	// 	tangents[3 * i] = m_Tangent[i].x;
+	// 	tangents[3 * i + 1] = m_Tangent[i].y;
+	// 	tangents[3 * i + 2] = m_Tangent[i].z;
+	// }
+	//
+	// return tangents;
+	return m_Tangent;
 }
 
 vector<float> CMesh::GetBitangents() const
 {
-	std::vector<float> bitangents(m_Bitangent.size() * 3);
-	for (size_t i = 0; i < m_Bitangent.size(); ++i)
-	{
-		bitangents[3 * i] = m_Bitangent[i].x;
-		bitangents[3 * i + 1] = m_Bitangent[i].y;
-		bitangents[3 * i + 2] = m_Bitangent[i].z;
-	}
-
-	return bitangents;
+	// std::vector<float> bitangents(m_Bitangent.size() * 3);
+	// for (size_t i = 0; i < m_Bitangent.size(); ++i)
+	// {
+	// 	bitangents[3 * i] = m_Bitangent[i].x;
+	// 	bitangents[3 * i + 1] = m_Bitangent[i].y;
+	// 	bitangents[3 * i + 2] = m_Bitangent[i].z;
+	// }
+	//
+	// return bitangents;
+	return m_Bitangent;
 }
 
 int CMeshComponent::ImportObj(const std::string& model_path)
@@ -234,34 +239,48 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		// 用emplace_back而不是push_back可以避免构造后的拷贝操作
 		const auto& vert = mesh->mVertices[i];
-		new_mesh.m_Vertex.emplace_back(vert.x, vert.y, vert.z);
+		new_mesh.m_Vertex.emplace_back(vert.x);
+		new_mesh.m_Vertex.emplace_back(vert.y);
+		new_mesh.m_Vertex.emplace_back(vert.z);
 
 		const auto& norm = mesh->mNormals[i];
-		new_mesh.m_Normal.emplace_back(norm.x, norm.y, norm.z);
+		new_mesh.m_Normal.emplace_back(norm.x);
+		new_mesh.m_Normal.emplace_back(norm.y);
+		new_mesh.m_Normal.emplace_back(norm.z);
 
 		if(has_uv)
 		{
 			const auto& tex_uv = mesh->mTextureCoords[0][i];
-			new_mesh.m_TexCoord.emplace_back(tex_uv.x, tex_uv.y);
+			new_mesh.m_TexCoord.emplace_back(tex_uv.x);
+			new_mesh.m_TexCoord.emplace_back(tex_uv.y);
 		}
 		else
 		{
+			new_mesh.m_TexCoord.emplace_back(0.0);
 			new_mesh.m_TexCoord.emplace_back(0.0);
 		}
 
 		if(has_tangent)
 		{
 			const auto& tangent = mesh->mTangents[i];
-			new_mesh.m_Tangent.emplace_back(tangent.x, tangent.y, tangent.z);
+			new_mesh.m_Tangent.emplace_back(tangent.x);
+			new_mesh.m_Tangent.emplace_back(tangent.y);
+			new_mesh.m_Tangent.emplace_back(tangent.z);
 
 			const auto& bitangnet = mesh->mBitangents[i];
-			new_mesh.m_Bitangent.emplace_back(bitangnet.x, bitangnet.y, bitangnet.z);
+			new_mesh.m_Bitangent.emplace_back(bitangnet.x);
+			new_mesh.m_Bitangent.emplace_back(bitangnet.y);
+			new_mesh.m_Bitangent.emplace_back(bitangnet.z);
 		}
 		else
 		{
 			// fixme: 这里先塞空值进去，是否可以做判断(用不同的shader？或者shader里面判断tangent的值？)
-			new_mesh.m_Tangent.emplace_back(vec3(0));
-			new_mesh.m_Bitangent.emplace_back(vec3(0));
+			new_mesh.m_Tangent.emplace_back(0);
+			new_mesh.m_Tangent.emplace_back(0);
+			new_mesh.m_Tangent.emplace_back(0);
+			new_mesh.m_Bitangent.emplace_back(0);
+			new_mesh.m_Bitangent.emplace_back(0);
+			new_mesh.m_Bitangent.emplace_back(0);
 		}
 	}
 

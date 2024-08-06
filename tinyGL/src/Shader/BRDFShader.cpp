@@ -61,10 +61,12 @@ void BRDFShader::SetupData(CMesh& mesh)
 	
 	// index buffer
 	std::vector<unsigned int> indices = mesh.GetIndices();
-	glGenBuffers(1, &render_info.index_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.index_buffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
-
+	if(indices.size() > 0)
+	{
+		glGenBuffers(1, &render_info.index_buffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.index_buffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
+	}
 
 	glBindVertexArray(GL_NONE);
 
@@ -142,8 +144,7 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 	if(render_info.index_buffer == GL_NONE)
 	{
 		// Starting from vertex 0; 3 vertices total -> 1 triangle
-		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
-	
+		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size); 	
 	}
 	else
 	{		

@@ -67,11 +67,11 @@ namespace tinyGL
 
         // virtual void GenerateRenderInfo() = 0;
 		
-        std::vector<glm::vec3> m_Vertex;
-        std::vector<glm::vec3> m_Normal;
-        std::vector<glm::vec2> m_TexCoord;
-        std::vector<glm::vec3> m_Tangent;
-        std::vector<glm::vec3> m_Bitangent;
+        std::vector<float> m_Vertex;
+        std::vector<float> m_Normal;
+        std::vector<float> m_TexCoord;
+        std::vector<float> m_Tangent;
+        std::vector<float> m_Bitangent;
 
         std::vector<unsigned int> m_Index;
 
