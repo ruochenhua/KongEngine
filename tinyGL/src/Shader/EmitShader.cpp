@@ -1,4 +1,4 @@
-#include "BRDFShader.h"
+#include "EmitShader.h"
 
 #include "LightComponent.h"
 #include "render.h"
@@ -6,29 +6,23 @@
 using namespace tinyGL;
 using namespace glm;
 using namespace std;
-BRDFShader::BRDFShader()
+EmitShader::EmitShader()
 {
-    shader_path_map.emplace(EShaderType::vs, CSceneLoader::ToResourcePath("shader/brdf.vert"));
-    shader_path_map.emplace(EShaderType::fs, CSceneLoader::ToResourcePath("shader/brdf.frag"));
+    shader_path_map.emplace(EShaderType::vs, CSceneLoader::ToResourcePath("shader/emit.vert"));
+    shader_path_map.emplace(EShaderType::fs, CSceneLoader::ToResourcePath("shader/emit.frag"));
 
     shader_id = Shader::LoadShaders(shader_path_map);
     
     assert(shader_id, "Shader load failed!");
-
-	// 一些shader的数据绑定
-	// ?可能不放这里比较好
-	Use();
-	SetInt("diffuse_texture", 0);
-	SetInt("specular_texture", 1);
 }
 
-BRDFShader::BRDFShader(const SRenderResourceDesc& render_resource_desc)
+EmitShader::EmitShader(const SRenderResourceDesc& render_resource_desc)
 {
-
+	Init(render_resource_desc.shader_paths);
 }
 
 // todo
-void BRDFShader::SetupData(CMesh& mesh)
+void EmitShader::SetupData(CMesh& mesh)
 {
     auto& render_info = mesh.m_RenderInfo;
 	std::vector<float> vertices = mesh.GetVertices();
@@ -53,23 +47,6 @@ void BRDFShader::SetupData(CMesh& mesh)
 	);
 	glEnableVertexAttribArray(0);
 
-	//normal buffer
-	std::vector<float> normals = mesh.GetNormals();
-	glGenBuffers(1, &render_info.normal_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.normal_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
-
-	glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,0, (void*)0);
-	glEnableVertexAttribArray(1);
-
-	// texcoord
-	std::vector<float> tex_coords = mesh.GetTextureCoords();
-	glGenBuffers(1, &render_info.texture_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.texture_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,0,(void*)0);
-	glEnableVertexAttribArray(2);
-	
 	// index buffer
 	std::vector<unsigned int> indices = mesh.GetIndices();
 	if(!indices.empty())
@@ -86,7 +63,7 @@ void BRDFShader::SetupData(CMesh& mesh)
 	render_info.indices_count = indices.size();
 }
 
-void BRDFShader::UpdateRenderData(const CMesh& mesh,
+void EmitShader::UpdateRenderData(const CMesh& mesh,
 			const glm::mat4& actor_model_mat,
 			const SSceneRenderInfo& scene_render_info)
 {
@@ -96,13 +73,9 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 	SetMat4("model", actor_model_mat);
 	SetMat4("view", scene_render_info.camera_view);
 	SetMat4("proj", scene_render_info.camera_proj);
-	SetVec3("cam_pos", scene_render_info.camera_pos);
 
 	// 材质属性
 	SetVec3("albedo", render_info.material.albedo);
-	SetFloat("metallic", render_info.material.metallic);
-	SetFloat("roughness", render_info.material.roughness);
-	SetFloat("ao", render_info.material.ao);
 
 	/*
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
@@ -119,35 +92,9 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 	glActiveTexture(GL_TEXTURE1);
 	GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, specular_map_id);
-
-	if(!scene_render_info.scene_dirlight.expired())
-	{
-		SetVec3("directional_light.light_dir", scene_render_info.scene_dirlight.lock()->GetLightDir());
-		SetVec3("directional_light.light_color", scene_render_info.scene_dirlight.lock()->light_color);
-	}
-	int point_light_count = 0;
-	for(auto light : scene_render_info.scene_pointlights)
-	{
-		if(light.expired())
-		{
-			continue;
-		}
-		
-		stringstream point_light_name;
-		point_light_name <<  "point_lights[" << point_light_count << "]";
-		SetVec3(point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
-		SetVec3(point_light_name.str() + ".light_color", light.lock()->light_color);
-		// 先支持一个点光源的阴影贴图
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->shadowmap_texture);
 	
-		++point_light_count;
-	}
-	SetInt("point_light_count", scene_render_info.scene_pointlights.size());
-
 	// Draw the triangle !
 	// if no index, use draw array
-	
 	if(render_info.index_buffer == GL_NONE)
 	{
 		// Starting from vertex 0; 3 vertices total -> 1 triangle

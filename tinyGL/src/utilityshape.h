@@ -10,8 +10,6 @@ namespace tinyGL
 		virtual std::vector<float> GetVertices() const;
 		
 		virtual std::vector<unsigned int> GetIndices() const;
-
-		void GenerateRenderInfo() override;
 	private:
 		static std::vector<float> s_vBoxVertices;
 		static std::vector<float> s_vBoxNormals;

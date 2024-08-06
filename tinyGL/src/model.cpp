@@ -10,93 +10,10 @@ using namespace tinyGL;
 CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resource_desc)
 	:CMeshComponent(render_resource_desc)
 {
-	shader_data.reset();
-	shader_data = make_shared<BRDFShader>();
 	ImportObj(render_resource_desc.model_path);
-	GenerateRenderInfo();
-}
-
-void CModelMeshComponent::GenerateRenderInfo()
-{
-	//
-	// for(auto& mesh : mesh_list)
-	// {
-	// 	auto& render_info = mesh.m_RenderInfo;
-	// 	std::vector<float> vertices = mesh.GetVertices();
-	//
-	// 	glGenVertexArrays(1, &render_info.vertex_array_id);
-	// 	glBindVertexArray(render_info.vertex_array_id);
-	//
-	// 	//init vertex buffer
-	// 	glGenBuffers(1, &render_info.vertex_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-	//
-	// 	//vertex buffer
-	// 	glBindBuffer(GL_ARRAY_BUFFER,  render_info.vertex_buffer);
-	// 	glVertexAttribPointer(
-	// 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-	// 		3,                  // size
-	// 		GL_FLOAT,           // type
-	// 		GL_FALSE,           // normalized?
-	// 		0,                  // stride
-	// 		(void*)0            // array buffer offset
-	// 	);
-	// 	glEnableVertexAttribArray(0);
-	//
-	// 	//normal buffer
-	// 	std::vector<float> normals = mesh.GetNormals();
-	// 	glGenBuffers(1, &render_info.normal_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, render_info.normal_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
-	//
-	// 	glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,0, (void*)0);
-	// 	glEnableVertexAttribArray(1);
-	//
-	// 	// texcoord
-	// 	std::vector<float> tex_coords = mesh.GetTextureCoords();
-	// 	glGenBuffers(1, &render_info.texture_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, render_info.texture_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
-	// 	glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,0,(void*)0);
-	// 	glEnableVertexAttribArray(2);
-	// 	
-	//
-	// 	// tangent
-	// 	vector<float> tangents = mesh.GetTangents();
-	// 	glGenBuffers(1, &render_info.tangent_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, render_info.tangent_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
-	// 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	// 	glEnableVertexAttribArray(3);
-	//
-	// 	// bitangent
-	// 	vector<float> bitangents = mesh.GetBitangents();
-	// 	glGenBuffers(1, &render_info.bitangent_buffer);
-	// 	glBindBuffer(GL_ARRAY_BUFFER, render_info.bitangent_buffer);
-	// 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
-	// 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	// 	glEnableVertexAttribArray(4);
-	//
-	// 	// index buffer
-	// 	std::vector<unsigned int> indices = mesh.GetIndices();
-	// 	glGenBuffers(1, &render_info.index_buffer);
-	// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_info.index_buffer);
-	// 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
-	//
-	//
-	// 	glBindVertexArray(GL_NONE);
-	//
-	// 	// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
-	// 	render_info.vertex_size = vertices.size();
-	// 	render_info.indices_count = indices.size();
-	//
-	// 	shader_data->Use();
-	// 	shader_data->SetInt("diffuse_texture", 0);
-	// 	shader_data->SetInt("specular_texture", 1);
-	// 	shader_data->SetInt("normal_texture", 2);
-	// 	shader_data->SetInt("tangent_texture", 3);
-	// 	shader_data->SetInt("shadow_map", 4);
-	// 	shader_data->SetInt("shadow_map_pointlight", 5);
-	// }
+	if(render_resource_desc.shader_type.empty())
+	{
+		assert(shader_data.get(), "shader_data not created!");
+		GenerateDefaultRenderInfo();
+	}
 }

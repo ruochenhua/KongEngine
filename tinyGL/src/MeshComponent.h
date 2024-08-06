@@ -54,11 +54,10 @@ namespace tinyGL
 		CMeshComponent(const SRenderResourceDesc& render_resource_desc);	
 
 		void BeginPlay() override;
-
+		
 	protected:
-		virtual void GenerateRenderInfo() = 0;
-		//GLuint shader_id = GL_NONE;
-
+		void InitRenderInfo(const SRenderResourceDesc& render_resource_desc);
+		void GenerateDefaultRenderInfo();
 		
 		string directory;
 		

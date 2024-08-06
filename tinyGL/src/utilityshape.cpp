@@ -143,33 +143,12 @@ vector<float> CUtilityBox::s_vBoxTexCoords = {
 CUtilityBox::CUtilityBox(const SRenderResourceDesc& render_resource_desc)
 	: CMeshComponent(render_resource_desc)
 {
-	shader_data.reset();
-	shader_data = make_shared<BRDFShader>();
-	
 	box_render_resource_desc = render_resource_desc;
 	CMesh mesh;
 	mesh.m_Vertex = s_vBoxVertices;
 	mesh.m_Normal = s_vBoxNormals;
 	mesh.m_TexCoord = s_vBoxTexCoords;
-	mesh_list.push_back(mesh);
-	
-	GenerateRenderInfo();
-}
-
-
-std::vector<float> CUtilityBox::GetVertices() const
-{
-	return s_vBoxVertices;
-}
-
-std::vector<unsigned int> CUtilityBox::GetIndices() const
-{
-	return std::vector<unsigned int>();
-}
-
-void CUtilityBox::GenerateRenderInfo()
-{
-	auto& render_info = mesh_list[0].m_RenderInfo;
+	auto& render_info = mesh.m_RenderInfo;
 	// // load texture map
 	const auto& texture_paths = box_render_resource_desc.texture_paths;
 	auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
@@ -198,4 +177,21 @@ void CUtilityBox::GenerateRenderInfo()
 	
 	render_info.material = box_render_resource_desc.material;
 	
+	mesh_list.push_back(mesh);
+
+	if(box_render_resource_desc.shader_type.empty())
+	{
+		GenerateDefaultRenderInfo();	
+	}
+}
+
+
+std::vector<float> CUtilityBox::GetVertices() const
+{
+	return s_vBoxVertices;
+}
+
+std::vector<unsigned int> CUtilityBox::GetIndices() const
+{
+	return std::vector<unsigned int>();
 }

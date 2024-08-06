@@ -93,7 +93,10 @@ namespace tinyGL
             ambient_occlusion,
             glow,
         };
-		
+
+        // shader类型
+        string shader_type;
+        // 没有shader类型那就直接读取shader文件路径，尽量不要用这个
         map<EShaderType, string> shader_paths;
         map<ETextureType, string> texture_paths;
 

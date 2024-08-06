@@ -86,7 +86,11 @@ namespace JsonParser
     SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
     {
         SRenderResourceDesc render_resource_desc;
-        if(!in_json["shader_path"].is_null())
+        if(!in_json["shader_type"].is_null())
+        {
+            render_resource_desc.shader_type = in_json["shader_type"];
+        }
+        else if(!in_json["shader_path"].is_null())
         {
             auto shader_json = in_json["shader_path"];
             if(!shader_json["vs"].is_null())

@@ -8,8 +8,5 @@ class CModelMeshComponent : public CMeshComponent
 {
 public:
 	CModelMeshComponent(const SRenderResourceDesc& render_resource_desc);
-	
-private:
-	virtual void GenerateRenderInfo() override;
 };
 }

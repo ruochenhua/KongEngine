@@ -47,7 +47,7 @@ namespace YamlParser
             instancing_info.scale_max = ParseVec3(instancing["scale"]["max"].as<vector<float>>());
             instancing_info.scale_min = ParseVec3(instancing["scale"]["min"].as<vector<float>>());
 
-            transform_comp->GenInstanceModelMatrix();
+            // transform_comp->GenInstanceModelMatrix();
         }
     }
 
@@ -80,7 +80,11 @@ namespace YamlParser
     SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
     {
         SRenderResourceDesc render_resource_desc;
-        if(in_node["shader_path"])
+        if(in_node["shader_type"])
+        {
+            render_resource_desc.shader_type = in_node["shader_type"].as<string>();
+        }
+        else if(in_node["shader_path"])
         {
             auto shader_node = in_node["shader_path"];
             if(shader_node["vs"])

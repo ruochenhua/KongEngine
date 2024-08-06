@@ -3,11 +3,11 @@
 
 namespace tinyGL
 {
-    class BRDFShader : public Shader
+    class EmitShader : public Shader
     {
     public:
-        BRDFShader();
-        BRDFShader(const SRenderResourceDesc& render_resource_desc);
+        EmitShader();
+        EmitShader(const SRenderResourceDesc& render_resource_desc);
         void SetupData(CMesh& mesh) override;
         void UpdateRenderData(const CMesh& mesh,
             const glm::mat4& actor_model_mat,

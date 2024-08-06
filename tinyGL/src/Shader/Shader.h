@@ -13,6 +13,8 @@ namespace tinyGL
     class Shader
     {
     public:
+    	Shader() = default;
+    	Shader(const SRenderResourceDesc& render_resource_desc);
 	    virtual ~Shader() = default;
 	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
     	static GLuint LoadShaders(const map<EShaderType, string>& shader_path_map)
@@ -136,8 +138,6 @@ namespace tinyGL
 	    {
 	        glUniformMatrix4fv(glGetUniformLocation(shader_id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	    }
-
-    	Shader() = default;
 
     	void Init(const map<EShaderType, string>& shader_path_cache);
     	// 使用该shader
