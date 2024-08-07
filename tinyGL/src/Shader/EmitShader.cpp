@@ -8,17 +8,6 @@ using namespace glm;
 using namespace std;
 EmitShader::EmitShader()
 {
-    shader_path_map.emplace(EShaderType::vs, CSceneLoader::ToResourcePath("shader/emit.vert"));
-    shader_path_map.emplace(EShaderType::fs, CSceneLoader::ToResourcePath("shader/emit.frag"));
-
-    shader_id = Shader::LoadShaders(shader_path_map);
-    
-    assert(shader_id, "Shader load failed!");
-}
-
-EmitShader::EmitShader(const SRenderResourceDesc& render_resource_desc)
-{
-	Init(render_resource_desc.shader_paths);
 }
 
 // todo
@@ -92,16 +81,15 @@ void EmitShader::UpdateRenderData(const CMesh& mesh,
 	glActiveTexture(GL_TEXTURE1);
 	GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, specular_map_id);
-	
-	// Draw the triangle !
-	// if no index, use draw array
-	if(render_info.index_buffer == GL_NONE)
-	{
-		// Starting from vertex 0; 3 vertices total -> 1 triangle
-		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size); 	
-	}
-	else
-	{		
-		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-	}
+}
+
+void EmitShader::InitDefaultShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/emit.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/emit.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
 }

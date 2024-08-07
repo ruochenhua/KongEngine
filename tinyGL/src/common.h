@@ -19,8 +19,4 @@ namespace tinyGL
 	const string RESOURCE_PATH = "../resource/";
 	const int SHADOW_WIDTH = 2048;
 	const int SHADOW_HEIGHT = 2048;
-	// inline static GLFWwindow* GetWindowPtr()
-	// {
-	// 	return g_render_window;
-	// }
 }

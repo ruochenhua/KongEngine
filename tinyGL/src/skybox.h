@@ -4,15 +4,12 @@
 
 namespace tinyGL
 {
-	class TGAImage;
-
 	struct SCubeMapTexture {
 	void Bind(GLenum texture_unit);
 	void Load(const std::vector<std::string>& tex_path_vec,
 		const std::vector<unsigned int>& tex_type_vec);
 
 	GLuint cube_map_id;
-	TGAImage* texture_img[6];
 };
 
 struct SSkyBoxMesh {

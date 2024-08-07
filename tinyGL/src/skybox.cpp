@@ -1,7 +1,7 @@
 #include "skybox.h"
-#include "tgaimage.h"
 #include "render.h"
 #include "Scene.h"
+#include "stb_image.h"
 #include "Shader/Shader.h"
 
 namespace tinyGL
@@ -24,22 +24,35 @@ void SCubeMapTexture::Load(const std::vector<std::string>& tex_path_vec, const s
 
 	for (int i = 0; i < 6; ++i)
 	{
-		auto tex_img = new TGAImage;
-		assert(tex_img->read_tga_file(tex_path_vec[i].c_str()));
+		stbi_set_flip_vertically_on_load(true);
+		int width, height, nr_component;
+		auto data = stbi_load(tex_path_vec[i].c_str(), &width, &height, &nr_component, 0);
+		assert(data);
 
-		texture_img[i] = tex_img;
-
-		//filter
-		int tex_width = tex_img->get_width();
-		int tex_height = tex_img->get_height();
-		unsigned char* tex_data = tex_img->buffer();
-
-		glTexImage2D(tex_type_vec[i], 0, GL_RGB, tex_width, tex_height, 0, GL_BGR, GL_UNSIGNED_BYTE, (void*)tex_data);
+		GLenum format = GL_BGR;
+		switch(nr_component)
+		{
+		case 1:
+			format = GL_RED;
+			break;
+		case 3:
+			format = GL_RGB;
+			break;
+		case 4:
+			format = GL_RGBA;
+			break;
+		default:
+			break;
+		}
+		
+		glTexImage2D(tex_type_vec[i], 0, format, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		
+		stbi_image_free(data);
 		// glGenerateMipmap(GL_TEXTURE_2D);
 
 

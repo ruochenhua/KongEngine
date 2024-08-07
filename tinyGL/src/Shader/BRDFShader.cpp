@@ -3,31 +3,11 @@
 #include "LightComponent.h"
 #include "render.h"
 #include "Scene.h"
+
 using namespace tinyGL;
 using namespace glm;
 using namespace std;
-BRDFShader::BRDFShader()
-{
-    shader_path_map.emplace(EShaderType::vs, CSceneLoader::ToResourcePath("shader/brdf.vert"));
-    shader_path_map.emplace(EShaderType::fs, CSceneLoader::ToResourcePath("shader/brdf.frag"));
 
-    shader_id = Shader::LoadShaders(shader_path_map);
-    
-    assert(shader_id, "Shader load failed!");
-
-	// 一些shader的数据绑定
-	// ?可能不放这里比较好
-	Use();
-	SetInt("diffuse_texture", 0);
-	SetInt("specular_texture", 1);
-}
-
-BRDFShader::BRDFShader(const SRenderResourceDesc& render_resource_desc)
-{
-
-}
-
-// todo
 void BRDFShader::SetupData(CMesh& mesh)
 {
     auto& render_info = mesh.m_RenderInfo;
@@ -137,24 +117,79 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 		point_light_name <<  "point_lights[" << point_light_count << "]";
 		SetVec3(point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
 		SetVec3(point_light_name.str() + ".light_color", light.lock()->light_color);
-		// 先支持一个点光源的阴影贴图
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->shadowmap_texture);
 	
 		++point_light_count;
 	}
 	SetInt("point_light_count", scene_render_info.scene_pointlights.size());
-
-	// Draw the triangle !
-	// if no index, use draw array
 	
-	if(render_info.index_buffer == GL_NONE)
-	{
-		// Starting from vertex 0; 3 vertices total -> 1 triangle
-		glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size); 	
-	}
-	else
-	{		
-		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-	}
 }
+
+void BRDFShader::InitDefaultShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/brdf.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/brdf.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+
+	// 一些shader的数据绑定
+	// ?可能不放这里比较好
+	Use();
+	SetInt("diffuse_texture", 0);
+	SetInt("specular_texture", 1);
+}
+
+void BRDFShader_NormalMap::SetupData(CMesh& mesh)
+{
+	BRDFShader::SetupData(mesh);
+	auto& render_info = mesh.m_RenderInfo;
+	
+	glBindVertexArray(render_info.vertex_array_id);
+	// tangent
+	std::vector<float> tangents = mesh.GetTangents();
+	glGenBuffers(1, &render_info.tangent_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info.tangent_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+	glEnableVertexAttribArray(3);
+	// bitangent
+	std::vector<float> bitangents = mesh.GetBitangents();
+	glGenBuffers(1, &render_info.bitangent_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, render_info.bitangent_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(4,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+	glEnableVertexAttribArray(4);
+	glBindVertexArray(GL_NONE);
+}
+
+void BRDFShader_NormalMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
+	const SSceneRenderInfo& scene_render_info)
+{
+	BRDFShader::UpdateRenderData(mesh, actor_model_mat, scene_render_info);
+	GLuint null_tex_id = CRender::GetNullTexId();
+	auto& render_info = mesh.m_RenderInfo;
+	// normal map加一个法线贴图的数据
+	glActiveTexture(GL_TEXTURE2);
+	GLuint normal_tex_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, normal_tex_id);
+}
+
+void BRDFShader_NormalMap::InitDefaultShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/brdf_normalmap.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/brdf_normalmap.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+
+	// 一些shader的数据绑定
+	Use();
+	SetInt("diffuse_texture", 0);
+	SetInt("specular_texture", 1);
+	SetInt("normal_texture", 2);
+}
+

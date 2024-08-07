@@ -19,8 +19,6 @@ namespace tinyGL
 		glm::vec3 rotation_max	= glm::vec3(0.0);
 		glm::vec3 scale_min		= glm::vec3(0.0);
 		glm::vec3 scale_max		= glm::vec3(0.0);
-
-		GLuint instance_buffer = GL_NONE;
 	};
 	
 	class CTransformComponent : public CComponent
@@ -42,9 +40,7 @@ namespace tinyGL
 	private:
 		std::vector<glm::mat4> instancing_model_mat;
 	};
-
-
-		
+	
 	class CMeshComponent : public CComponent
 	{
 	public:
@@ -57,7 +53,6 @@ namespace tinyGL
 		
 	protected:
 		void InitRenderInfo(const SRenderResourceDesc& render_resource_desc);
-		void GenerateDefaultRenderInfo();
 		
 		string directory;
 		

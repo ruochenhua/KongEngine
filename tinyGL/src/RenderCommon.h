@@ -45,6 +45,7 @@ namespace tinyGL
         unsigned vertex_size = 0;
         unsigned stride_count = 1;
         unsigned indices_count = 0;
+        unsigned instance_count = 0;
         // texture id
         // todo: 总不能一个一个加吧，要支持类型映射
         GLuint diffuse_tex_id = 0;

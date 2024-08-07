@@ -6,8 +6,8 @@
 namespace tinyGL
 {
 	class AActor;
-
-		
+	class ShaderManager;
+	
 	// shader的主类型，后面每个shader的类型都会建一个类集成Shader类
 	// 每个shader子类对应相同的shader编译文件，所以按理来说是可以每个类型的shader加载一次就行，而不需要每个模型加载一次，性能得以优化
     class Shader
@@ -143,16 +143,30 @@ namespace tinyGL
     	// 使用该shader
     	void Use() const;
     	// 获取这个shader需要的数据，每个shader的需求应该是不一样的所以子类需要实现;
-    	// 可能要从actor获取transform data，或者light里面获取light color之类的，所以先设定是要传入actor的指针
-    	virtual void SetupData(CMesh& mesh) {};
+    	// 父类的这个是为了支持原先的传入shader文件的写法，也就是设置尽量全名的参数传入
+    	virtual void SetupData(CMesh& mesh);
     	virtual void UpdateRenderData(const CMesh& mesh,
     		const glm::mat4& actor_model_mat,
-    		const SSceneRenderInfo& scene_render_info)
-    	{};
+    		const SSceneRenderInfo& scene_render_info);
+    	virtual void InitDefaultShader(){};
     protected:
     	// shader id
     	GLuint shader_id = GL_NONE;
 		// shader file path
     	map<EShaderType, string> shader_path_map;
+
+
     };
+
+	class ShaderManager
+	{
+	public:
+		static shared_ptr<Shader> GetShader(const string& shader_name);
+
+	protected:
+		shared_ptr<Shader> GetShaderFromTypeName(const string& shader_name);
+
+	private:
+		std::map<string, shared_ptr<Shader>> shader_cache;
+	};
 }

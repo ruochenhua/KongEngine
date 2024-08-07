@@ -6,8 +6,6 @@
 #include "Engine.h"
 #include "LightComponent.h"
 #include "MeshComponent.h"
-#include "model.h"
-#include "tgaimage.h"
 #include "message.h"
 #include "Scene.h"
 #include "Shader/Shader.h"
@@ -118,7 +116,7 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 	{
 		return texture_id;		
 	}
-	stbi_set_flip_vertically_on_load(true);
+	// stbi_set_flip_vertically_on_load(true);
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data);
@@ -204,93 +202,18 @@ void CRender::RenderScene() const
 				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
 			}
 
-			auto BRDF_shader = dynamic_pointer_cast<BRDFShader>(shader_data);
-			if(BRDF_shader)
-			{
-				BRDF_shader->UpdateRenderData(mesh, model_mat, scene_render_info);
-				continue;
-			}
-		
-			const SRenderInfo& render_info = mesh.GetRenderInfo();
-			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-			
-			shader_data->SetMat4("model", model_mat);
-			shader_data->SetMat4("view", scene_render_info.camera_view);
-			shader_data->SetMat4("proj", scene_render_info.camera_proj);
-			shader_data->SetVec3("cam_pos", scene_render_info.camera_pos);
-
-			// 材质属性
-			shader_data->SetVec3("albedo", render_info.material.albedo);
-			shader_data->SetFloat("metallic", render_info.material.metallic);
-			shader_data->SetFloat("roughness", render_info.material.roughness);
-			shader_data->SetFloat("ao", render_info.material.ao);
-
-			/*
-			法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
-			Normal = mat3(transpose(inverse(model))) * aNormal;
-			 */
-			mat3 normal_model_mat = transpose(inverse(model_mat));
-			shader_data->SetMat3("normal_model_mat", normal_model_mat);
-	
-			glActiveTexture(GL_TEXTURE0);
-			GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
-
-			glActiveTexture(GL_TEXTURE1);
-			GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, specular_map_id);
-
-			glActiveTexture(GL_TEXTURE2);
-			GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, normal_map_id);
-
-			glActiveTexture(GL_TEXTURE3);
-			GLuint tangent_map_id = render_info.tangent_tex_id != 0 ? render_info.tangent_tex_id : null_tex_id;
-			glBindTexture(GL_TEXTURE_2D, tangent_map_id);
-			
-			int point_light_count = 0;	// point light count, max 4
-
-			if(!scene_render_info.scene_dirlight.expired())
-			{
-				shader_data->SetVec3("directional_light.light_dir", scene_render_info.scene_dirlight.lock()->GetLightDir());
-				shader_data->SetVec3("directional_light.light_color", scene_render_info.scene_dirlight.lock()->light_color);
-					
-				shader_data->SetMat4("light_space_mat", scene_render_info.scene_dirlight.lock()->light_space_mat);
-				glActiveTexture(GL_TEXTURE4);
-				glBindTexture(GL_TEXTURE_2D, scene_render_info.scene_dirlight.lock()->shadowmap_texture);
-			}
-			
-			for(auto light : scene_render_info.scene_pointlights)
-			{
-				if(light.expired())
-				{
-					continue;
-				}
-				
-				stringstream point_light_name;
-				point_light_name <<  "point_lights[" << point_light_count << "]";
-				shader_data->SetVec3(point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
-				shader_data->SetVec3(point_light_name.str() + ".light_color", light.lock()->light_color);
-				// 先支持一个点光源的阴影贴图
-				glActiveTexture(GL_TEXTURE5);
-				glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->shadowmap_texture);
-			
-				++point_light_count;
-			}
-	
-			shader_data->SetInt("point_light_count", point_light_count);
-		
+			shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
 			// Draw the triangle !
 			// if no index, use draw array
-			
+			auto& render_info = mesh.m_RenderInfo;
 			if(render_info.index_buffer == GL_NONE)
 			{
-				if(transform_component_ptr->instancing_info.count > 0)
+				if(render_info.instance_buffer != GL_NONE)
 				{
 					// Starting from vertex 0; 3 vertices total -> 1 triangle
 					glDrawArraysInstanced(GL_TRIANGLES, 0,
 						render_info.vertex_size / render_info.stride_count,
-						transform_component_ptr->instancing_info.count);
+						render_info.instance_count);
 				}
 				else
 				{
@@ -337,7 +260,7 @@ void CRender::CollectLightInfo()
 		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_sharedptr);
 		if(dir_light)
 		{
-			dir_light->SetLightDir(normalize(transform_component.lock()->rotation));
+			dir_light->SetLightDir(transform_component.lock()->rotation);
 			scene_render_info.scene_dirlight = dir_light;
 			continue;
 		}
@@ -385,16 +308,8 @@ void CRender::RenderShadowMap()
 #if SHADOWMAP_DEBUG
 	glCullFace(GL_BACK);
 	// 先只画平行光的
-	DirectionalLight* dir_light = nullptr;
-	for(auto light : scene_lights)
-	{
-		if(light->GetLightType() == ELightType::directional_light)
-		{
-			dir_light = static_cast<DirectionalLight*>(light.get());
-			break;
-		}
-	}
-
+	CDirectionalLightComponent* dir_light = scene_render_info.scene_dirlight.lock().get();
+	
 	if(!dir_light)
 		return;
 	
@@ -402,12 +317,14 @@ void CRender::RenderShadowMap()
 	int height = Engine::GetEngine().GetWindowHeight();
 	glViewport(0,0,width, height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(m_ShadowMapDebugShaderId);
+	shadowmap_debug_shader->Use();
+	// glUseProgram(m_ShadowMapDebugShaderId);
 	// Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", dir_light->near_plane);
 	// Shader::SetFloat(m_ShadowMapDebugShaderId, "far_plane", dir_light->far_plane);
 	glActiveTexture(GL_TEXTURE0);
 
-	glBindTexture(GL_TEXTURE_2D, dir_light->m_DepthTexture);
+	GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+	glBindTexture(GL_TEXTURE_2D, dir_light_shadowmap_id);
 
 	// renderQuad() renders a 1x1 XY quad in NDC
 	// -----------------------------------------

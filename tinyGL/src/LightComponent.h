@@ -4,6 +4,7 @@
 
 namespace tinyGL
 {
+    class ShadowMapShader;
     enum class ELightType
     {
         directional_light = 0,
@@ -16,25 +17,16 @@ namespace tinyGL
     {
     public:
         CLightComponent(ELightType in_type);
-
         
         glm::vec3 light_color = glm::vec3(0);
         
         ELightType GetLightType() const { return light_type; }
         virtual glm::vec3 GetLightDir() const = 0;
         
-        
-        GLuint shadowmap_texture;
-        
-        glm::mat4 light_space_mat;
-        
         virtual void RenderShadowMap() = 0;
+        GLuint GetShadowMapTexture() const;
     protected:
-        GLfloat near_plane;
-        GLfloat far_plane;
-        GLuint shadowmap_fbo;
-        //GLuint shadowmap_shader_id;
-        shared_ptr<Shader> shadowmap_shader;
+        shared_ptr<ShadowMapShader> shadowmap_shader;
     private:
         ELightType light_type;
     };
@@ -47,7 +39,8 @@ namespace tinyGL
 
         glm::vec3 GetLightDir() const override;
         void RenderShadowMap() override;
-        void SetLightDir(const glm::vec3& in_light_dir);
+        void SetLightDir(const glm::vec3& rotation);
+        glm::mat4 light_space_mat;
     private:
         glm::vec3 light_dir;
     };
