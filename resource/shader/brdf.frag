@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 // todo: 支持include，整合到一个地方
 struct DirectionalLight
 {

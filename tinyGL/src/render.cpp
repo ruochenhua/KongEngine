@@ -48,6 +48,15 @@ int CRender::Init()
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 	null_tex_id = LoadTexture(null_tex_path);
+
+	// 创建UBO
+	glGenBuffers(1, &matrix_ubo_idx);
+	glBindBuffer(GL_UNIFORM_BUFFER, matrix_ubo_idx);
+	glBufferData(GL_UNIFORM_BUFFER, 3*sizeof(mat4), NULL, GL_STATIC_DRAW);
+	GLuint binding_point = 0;	// 先默认绑到0
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding_point, matrix_ubo_idx);
+	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
+	
 	return 0;
 }
 
@@ -165,7 +174,9 @@ void CRender::RenderSkyBox()
 void CRender::RenderScene() const
 {
 	auto actors = CScene::GetActors();
-
+	// 这里试着更新UBO里的矩阵数据
+	glBindBuffer(GL_UNIFORM_BUFFER, matrix_ubo_idx);
+		
 	for(auto actor : actors)
 	{
 		auto mesh_component = actor->GetComponent<CMeshComponent>();
@@ -186,6 +197,9 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
+
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), &scene_render_info.camera_view);
+		glBufferSubData(GL_UNIFORM_BUFFER, 2*sizeof(mat4), sizeof(mat4), &scene_render_info.camera_proj);
 		
 		auto& shader_data  = render_obj->shader_data;
 		shader_data->Use();
@@ -202,6 +216,8 @@ void CRender::RenderScene() const
 				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
 			}
 
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
+			
 			shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
 			// Draw the triangle !
 			// if no index, use draw array
@@ -230,6 +246,7 @@ void CRender::RenderScene() const
 		}
 		glBindVertexArray(GL_NONE);	// 解绑VAO
 	}
+	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
 }
 
 void CRender::CollectLightInfo()
@@ -264,7 +281,6 @@ void CRender::CollectLightInfo()
 			scene_render_info.scene_dirlight = dir_light;
 			continue;
 		}
-		
 
 		if(scene_render_info.scene_pointlights.size() < 4)
 		{

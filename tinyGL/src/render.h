@@ -19,7 +19,7 @@ namespace tinyGL
 		static GLuint GetNullTexId();
 		
 		GLFWwindow* render_window;
-		CRender(){ }
+		CRender() = default;
 
 		int Init();
 		int Update(double delta);
@@ -29,7 +29,6 @@ namespace tinyGL
 		static GLuint LoadTexture(const std::string& texture_path);
 		
 	private:
-		int InitRender();
 		int InitCamera();
 		void RenderSkyBox();
 		void RenderScene() const;
@@ -40,7 +39,6 @@ namespace tinyGL
 		// todo:整合一下吧这两个
 		void RenderShadowMap();
 		
-		//void UpdateLightDir(float delta);
 		
 	private:
 		CSkyBox m_SkyBox;
@@ -60,7 +58,13 @@ namespace tinyGL
 		// 场景光源信息
 		SSceneRenderInfo scene_render_info;
 		
-		// std::weak_ptr<CDirectionalLightComponent> scene_dirlight;
-		// std::vector<std::weak_ptr<CPointLightComponent>> scene_pointlights;
+		// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
+		/*
+		 *  mat4 model
+		 *  mat4 view
+		 *  mat4 projection
+		 */
+        
+		GLuint matrix_ubo_idx = GL_NONE;
 	};
 }
