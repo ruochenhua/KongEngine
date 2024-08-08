@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 compatibility
 in vec4 frag_pos;
 
 uniform vec3 light_pos;

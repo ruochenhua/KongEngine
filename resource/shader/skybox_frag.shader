@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 compatibility
 
 in vec3 uv;
 out vec3 color;

@@ -1,18 +1,6 @@
-#version 430 core
-struct DirectionalLight
-{
-	vec4 light_dir;
-	vec4 light_color;
-	mat4 light_space_mat;
-};
-
-struct PointLight
-{
-	vec4 light_pos;
-	vec4 light_color;
-};
-
-#define POINT_LIGHT_MAX 4
+#version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/common/common.glsl" 
 
 in vec3 out_pos;
 in vec3 out_normal;
@@ -42,8 +30,6 @@ uniform sampler2D specular_map_texture;
 float ka = 0.2;
 float kd = 0.5;
 float ks = 1;
-
-
 
 vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {

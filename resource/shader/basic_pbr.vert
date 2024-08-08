@@ -1,4 +1,6 @@
-#version 430 core
+#version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/common/common.glsl" 
 
 layout(location = 0) in vec3 in_pos;
 layout(location = 1) in vec3 in_normal;
@@ -27,7 +29,7 @@ void main(){
 	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
     out_normal = normal_model_mat * in_normal;
-	out_texcoord = in_texcoord;	
-		
+	out_texcoord = in_texcoord;
+    
 	//ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);
 }

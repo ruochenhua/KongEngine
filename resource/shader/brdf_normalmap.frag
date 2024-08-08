@@ -1,27 +1,13 @@
-﻿#version 430 core
-// todo: 支持include，整合到一个地方
-struct DirectionalLight
-{
-	vec4 light_dir;
-	vec4 light_color;
-	mat4 light_space_mat;
-};
+﻿#version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/common/common.glsl" 
 
-struct PointLight
-{
-	vec4 light_pos;
-	vec4 light_color;
-};
-
-#define POINT_LIGHT_MAX 4
 layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 	ivec4 has_dir_light;
     DirectionalLight directional_light;
 	ivec4 point_light_count;
     PointLight point_lights[POINT_LIGHT_MAX];
 } light_info_ubo;
-
-const float PI = 3.14159265359;
 
 out vec4 FragColor;
 

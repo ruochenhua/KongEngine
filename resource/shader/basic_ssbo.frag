@@ -1,4 +1,4 @@
-#version 430 core
+#version 450 compatibility
 in vec3 out_pos;
 out vec4 FragColor;
 

@@ -16,6 +16,85 @@ Shader::Shader(const SRenderResourceDesc& render_resource_desc)
     Init(render_resource_desc.shader_paths);
 }
 
+GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
+{
+    // include 文件名需要以“/”开头，要不然会报错，为什么？？
+    string include_name_str = "/common/common.glsl";
+    string full_path = CSceneLoader::ToResourcePath("/shader"+include_name_str);
+    string include_content_str = Engine::ReadFile(full_path);
+	
+    
+    vector<GLuint> shader_id_list;
+    for(auto& shader_path_pair : shader_path_map)
+    {
+    	auto shader_type = shader_path_pair.first;
+    	auto shader_path = shader_path_pair.second;
+
+    	// EShaderType对照GL_XXXX_SHADER
+    	GLuint shader_id = glCreateShader(shader_type);
+
+    	// Read the Shader code from the file
+    	std::string shader_code = Engine::ReadFile(shader_path);
+
+    	GLint result = GL_FALSE;
+    	int info_log_length;
+
+    	// Compile Shader
+    	printf("Compiling shader : %s\n", shader_path.c_str());
+    	char const * shader_string_ptr = shader_code.c_str();
+    	glShaderSource(shader_id, 1, &shader_string_ptr, NULL);
+    	glNamedStringARB(GL_SHADER_INCLUDE_ARB,
+    		include_name_str.size(),
+    		include_name_str.c_str(),
+    		include_content_str.size(),
+    		include_content_str.c_str());
+    	
+    	glCompileShader(shader_id);
+
+    	// Check Shader
+    	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &result);
+    	glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
+    	if (info_log_length > 0) {
+    		std::vector<char> error_msg(info_log_length + 1);
+    		glGetShaderInfoLog(shader_id, info_log_length, NULL, &error_msg[0]);
+    		printf("%s\n", &error_msg[0]);
+    		assert(0);
+    	}
+		shader_id_list.push_back(shader_id);
+    }
+
+	// Link the program
+	printf("Linking program\n");
+	GLuint prog_id = glCreateProgram();
+    for(auto shader_id : shader_id_list)
+    {
+    	glAttachShader(prog_id, shader_id);
+    }
+	glLinkProgram(prog_id);
+
+    GLint result = GL_FALSE;
+    int info_log_length;
+	// Check the program
+	glGetProgramiv(prog_id, GL_LINK_STATUS, &result);
+	glGetProgramiv(prog_id, GL_INFO_LOG_LENGTH, &info_log_length);
+	if (info_log_length > 0) {
+		std::vector<char> prog_error_msg(info_log_length + 1);
+		glGetProgramInfoLog(prog_id, info_log_length, NULL, &prog_error_msg[0]);
+		printf("%s\n", &prog_error_msg[0]);
+		assert(0);
+	}
+
+    for(auto shader_id : shader_id_list)
+    {
+    	glDetachShader(prog_id, shader_id);
+		glDeleteShader(shader_id);
+    }
+
+	return prog_id;
+}
+
+
+
 void Shader::Init(const map<EShaderType, string>& shader_path_cache)
 {
     shader_id = Shader::LoadShaders(shader_path_cache);
