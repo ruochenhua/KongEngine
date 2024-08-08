@@ -21,7 +21,26 @@ layout(std140, binding=0) uniform UBO {
 } matrix_ubo;
 
 uniform mat3 normal_model_mat;
-uniform mat4 light_space_mat;
+struct DirectionalLight
+{
+	vec4 light_dir;
+	vec4 light_color;
+	mat4 light_space_mat;
+};
+
+struct PointLight
+{
+	vec4 light_pos;
+	vec4 light_color;
+};
+
+#define POINT_LIGHT_MAX 4
+layout(std140, binding=1) uniform LIGHT_INFO_UBO {
+	ivec4 has_dir_light;
+    DirectionalLight directional_light;
+	ivec4 point_light_count;
+    PointLight point_lights[POINT_LIGHT_MAX];
+} light_info_ubo;
 
 
 void main(){
@@ -32,7 +51,7 @@ void main(){
     // 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
     frag_normal = normalize(normal_model_mat * in_normal);
     frag_uv = in_texcoord;
-    frag_pos_lightspace = light_space_mat * vec4(frag_pos, 1.0);
+    frag_pos_lightspace = light_info_ubo.directional_light.light_space_mat * vec4(frag_pos, 1.0);
 
     vec3 tangent = in_tangent;
     

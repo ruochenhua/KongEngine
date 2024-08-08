@@ -147,39 +147,6 @@ void Shader::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_ma
 	glActiveTexture(GL_TEXTURE2);
 	GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_map_id);
-
-	if(!scene_render_info.scene_dirlight.expired())
-	{
-		auto dir_light = scene_render_info.scene_dirlight.lock();
-		SetVec3("directional_light.light_dir", dir_light->GetLightDir());
-		SetVec3("directional_light.light_color", dir_light->light_color);
-		// 支持一个平行光源的阴影贴图
-		glActiveTexture(GL_TEXTURE3);
-		GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
-		SetMat4("light_space_mat", dir_light->light_space_mat);
-		glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
-	}
-	int point_light_count = 0;
-	for(auto light : scene_render_info.scene_pointlights)
-	{
-		if(light.expired())
-		{
-			continue;
-		}
-		
-		stringstream point_light_name;
-		point_light_name <<  "point_lights[" << point_light_count << "]";
-		SetVec3(point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
-		SetVec3(point_light_name.str() + ".light_color", light.lock()->light_color);
-		// 先支持一个点光源的阴影贴图
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
-	
-		++point_light_count;
-	}
-	SetInt("point_light_count", scene_render_info.scene_pointlights.size());
-
-	SetInt("point_light_count", point_light_count);
 }
 
 shared_ptr<Shader> ShaderManager::GetShader(const string& shader_name)

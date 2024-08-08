@@ -1,14 +1,15 @@
 #version 430 core
 struct DirectionalLight
 {
-	vec3 light_dir;
-	vec3 light_color;
+	vec4 light_dir;
+	vec4 light_color;
+	mat4 light_space_mat;
 };
 
 struct PointLight
 {
-	vec3 light_pos;
-	vec3 light_color;
+	vec4 light_pos;
+	vec4 light_color;
 };
 
 #define POINT_LIGHT_MAX 4
@@ -89,20 +90,20 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 // calculate color causes by directional light
 vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 {
-	vec3 light_color = dir_light.light_color;
-	vec3 to_light_dir = -dir_light.light_dir;
+	vec3 light_color = dir_light.light_color.xyz;
+	vec3 to_light_dir = -dir_light.light_dir.xyz;
 
 	return CalcLight(light_color, to_light_dir, normal, view);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_pos)
 {
-	vec3 light_color = point_light.light_color;
-	vec3 light_dir = normalize(point_light.light_pos - frag_pos);
+	vec3 light_color = point_light.light_color.xyz;
+	vec3 light_dir = normalize(point_light.light_pos.xyz - frag_pos);
 
 	vec3 point_light_color = CalcLight(light_color, light_dir, normal, view);
 
-	float distance = length(point_light.light_pos - frag_pos);
+	float distance = length(point_light.light_pos.xyz - frag_pos);
 	float attenuation = 1.0 / (distance + distance);	//衰减和点光源的参数可控，这里先简单弄个
 	return point_light_color * attenuation;
 }

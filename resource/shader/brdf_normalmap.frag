@@ -2,19 +2,24 @@
 // todo: 支持include，整合到一个地方
 struct DirectionalLight
 {
-    vec3 light_dir;
-    vec3 light_color;
+	vec4 light_dir;
+	vec4 light_color;
+	mat4 light_space_mat;
 };
 
 struct PointLight
 {
-    vec3 light_pos;
-    vec3 light_color;
+	vec4 light_pos;
+	vec4 light_color;
 };
-#define POINT_LIGHT_MAX 4
-uniform DirectionalLight directional_light;
-uniform PointLight point_lights[POINT_LIGHT_MAX];
 
+#define POINT_LIGHT_MAX 4
+layout(std140, binding=1) uniform LIGHT_INFO_UBO {
+	ivec4 has_dir_light;
+    DirectionalLight directional_light;
+	ivec4 point_light_count;
+    PointLight point_lights[POINT_LIGHT_MAX];
+} light_info_ubo;
 
 const float PI = 3.14159265359;
 
@@ -31,9 +36,6 @@ layout(std140, binding=0) uniform UBO {
     mat4 projection;
     vec3 cam_pos;
 } matrix_ubo;
-
-
-uniform int point_light_count;
 
 uniform vec3 albedo;    // color
 uniform float metallic;
@@ -167,20 +169,20 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 // calculate color causes by directional light
 vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 {
-    vec3 light_color = dir_light.light_color;
-    vec3 to_light_dir = -dir_light.light_dir;
+    vec3 light_color = dir_light.light_color.xyz;
+    vec3 to_light_dir = -dir_light.light_dir.xyz;
 
     return CalcLight(light_color, to_light_dir, normal, view);
 }
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
 {
-    vec3 light_color = point_light.light_color;
-    vec3 light_dir = normalize(point_light.light_pos - in_frag_pos);
+    vec3 light_color = point_light.light_color.xyz;
+    vec3 light_dir = normalize(point_light.light_pos.xyz - in_frag_pos);
 
     vec3 point_light_color = CalcLight(light_color, light_dir, normal, view);
 
-    float distance = length(point_light.light_pos - in_frag_pos);
+    float distance = length(point_light.light_pos.xyz - in_frag_pos);
     
     float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
     return point_light_color * attenuation;
@@ -191,11 +193,16 @@ void main()
     vec3 view = normalize(matrix_ubo.cam_pos - frag_pos);
     vec3 obj_normal = GetNormal();
 
-    vec3 dir_light_color = CalcDirLight(directional_light, obj_normal, view);
+    vec3 dir_light_color = vec3(0,0,0);
+	if(light_info_ubo.has_dir_light.x > 0)
+	{
+		dir_light_color = CalcDirLight(light_info_ubo.directional_light, obj_normal, view);
+	}
+
     vec3 point_light_color = vec3(0,0,0);
-    for(int i = 0; i < point_light_count; ++i)
+    for(int i = 0; i <  min(light_info_ubo.point_light_count.x,4); ++i)
     {
-        point_light_color += CalcPointLight(point_lights[i], obj_normal, view, frag_pos);
+        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], obj_normal, view, frag_pos);
     }
 
     vec3 ambient = vec3(0.03)*GetAlbedo()*ao;

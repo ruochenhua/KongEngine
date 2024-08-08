@@ -93,30 +93,7 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 
 	glActiveTexture(GL_TEXTURE1);
 	GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
-	glBindTexture(GL_TEXTURE_2D, specular_map_id);
-
-	if(!scene_render_info.scene_dirlight.expired())
-	{
-		SetVec3("directional_light.light_dir", scene_render_info.scene_dirlight.lock()->GetLightDir());
-		SetVec3("directional_light.light_color", scene_render_info.scene_dirlight.lock()->light_color);
-	}
-	int point_light_count = 0;
-	for(auto light : scene_render_info.scene_pointlights)
-	{
-		if(light.expired())
-		{
-			continue;
-		}
-		
-		stringstream point_light_name;
-		point_light_name <<  "point_lights[" << point_light_count << "]";
-		SetVec3(point_light_name.str() + ".light_pos", light.lock()->GetLightLocation());
-		SetVec3(point_light_name.str() + ".light_color", light.lock()->light_color);
-	
-		++point_light_count;
-	}
-	SetInt("point_light_count", scene_render_info.scene_pointlights.size());
-	
+	glBindTexture(GL_TEXTURE_2D, specular_map_id);	
 }
 
 void BRDFShader::InitDefaultShader()
