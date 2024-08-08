@@ -120,4 +120,29 @@ namespace tinyGL
             scene_pointlights.clear();
         }
     };
+
+    struct DirectionalLight
+    {
+        glm::vec4 light_dir;
+        glm::vec4 light_color;
+        glm::mat4 light_space_mat;
+    };
+
+    struct PointLight
+    {
+        glm::vec4 light_pos;
+        glm::vec4 light_color;
+    };
+
+    // 先全部按照vec4对齐，用int和float等等算数据对齐还有问题需要后续解决
+    constexpr unsigned POINT_LIGHT_MAX = 4;
+    struct SceneLightInfo
+    {
+        glm::ivec4 has_dir_light = glm::ivec4(0);;
+        DirectionalLight directional_light;
+        glm::ivec4 point_light_count = glm::ivec4(0);
+        PointLight point_lights[POINT_LIGHT_MAX];
+   
+    };
+
 }

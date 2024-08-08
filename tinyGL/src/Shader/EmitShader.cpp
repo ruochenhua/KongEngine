@@ -58,10 +58,6 @@ void EmitShader::UpdateRenderData(const CMesh& mesh,
 {
 	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-	
-	SetMat4("model", actor_model_mat);
-	SetMat4("view", scene_render_info.camera_view);
-	SetMat4("proj", scene_render_info.camera_proj);
 
 	// 材质属性
 	SetVec3("albedo", render_info.material.albedo);

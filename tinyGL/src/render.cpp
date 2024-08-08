@@ -10,7 +10,6 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
-#include "Shader/BRDFShader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -19,6 +18,28 @@ using namespace std;
 map<string, GLuint> texture_manager;
 
 CRender* g_render = new CRender;
+
+void UBOHelper::Init(GLuint in_binding)
+{
+	binding = in_binding;
+	// 创建UBO
+	glGenBuffers(1, &ubo_idx);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo_idx);
+	glBufferData(GL_UNIFORM_BUFFER, next_offset, NULL, GL_STATIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo_idx);
+	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
+}
+
+void UBOHelper::Bind() const
+{
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo_idx);
+}
+
+void UBOHelper::EndBind() const
+{
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
 CRender* CRender::GetRender()
 {
 	return g_render;
@@ -49,14 +70,7 @@ int CRender::Init()
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 	null_tex_id = LoadTexture(null_tex_path);
 
-	// 创建UBO
-	glGenBuffers(1, &matrix_ubo_idx);
-	glBindBuffer(GL_UNIFORM_BUFFER, matrix_ubo_idx);
-	glBufferData(GL_UNIFORM_BUFFER, 3*sizeof(mat4), NULL, GL_STATIC_DRAW);
-	GLuint binding_point = 0;	// 先默认绑到0
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding_point, matrix_ubo_idx);
-	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
-	
+	InitUBO();
 	return 0;
 }
 
@@ -66,6 +80,26 @@ int CRender::InitCamera()
 
 	mainCamera->InitControl();
 	return 0;
+}
+
+void CRender::InitUBO()
+{
+	// 初始化UBO数据
+	matrix_ubo.AppendData(glm::mat4(), "model");
+	matrix_ubo.AppendData(glm::mat4(), "view");
+	matrix_ubo.AppendData(glm::mat4(), "projection");
+	matrix_ubo.AppendData(glm::vec3(), "cam_pos");
+	matrix_ubo.Init(0);
+
+	scene_light_ubo.AppendData(SceneLightInfo(), "light_info");
+	//scene_light_ubo.AppendData(glm::vec4(), "point_light_location");
+	//scene_light_ubo.AppendData(glm::vec4(), "point_light_color");
+	// scene_light_ubo.AppendData(glm::ivec4(), "point_light_count");
+	// scene_light_ubo.AppendData(PointLight(), "point_light");
+	//
+	// scene_light_ubo.AppendData(glm::vec4(), "point_light.light_pos");
+	// scene_light_ubo.AppendData(glm::vec4(), "point_light.light_color");
+	scene_light_ubo.Init(1);
 }
 
 int CRender::Update(double delta)
@@ -174,8 +208,6 @@ void CRender::RenderSkyBox()
 void CRender::RenderScene() const
 {
 	auto actors = CScene::GetActors();
-	// 这里试着更新UBO里的矩阵数据
-	glBindBuffer(GL_UNIFORM_BUFFER, matrix_ubo_idx);
 		
 	for(auto actor : actors)
 	{
@@ -197,9 +229,12 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
-
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), &scene_render_info.camera_view);
-		glBufferSubData(GL_UNIFORM_BUFFER, 2*sizeof(mat4), sizeof(mat4), &scene_render_info.camera_proj);
+		// 这里试着更新UBO里的矩阵数据
+		matrix_ubo.Bind();
+		matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
+		matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
+		matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
+		matrix_ubo.EndBind();
 		
 		auto& shader_data  = render_obj->shader_data;
 		shader_data->Use();
@@ -216,7 +251,57 @@ void CRender::RenderScene() const
 				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
 			}
 
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
+			// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
+			matrix_ubo.Bind();
+			matrix_ubo.UpdateData(model_mat, "model");
+
+			// 更新光源UBO
+			SceneLightInfo light_info;
+			bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
+			if(has_dir_light)
+			{
+				light_info.has_dir_light = ivec4(1);
+				auto dir_light = scene_render_info.scene_dirlight.lock();
+				light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
+				light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
+				light_info.directional_light.light_space_mat = dir_light->light_space_mat;
+				// 支持一个平行光源的阴影贴图
+				glActiveTexture(GL_TEXTURE3);
+				GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+				glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
+			}
+			else
+			{
+				light_info.has_dir_light = ivec4(0);
+			}
+			
+			int point_light_count = 0;
+			for(auto light : scene_render_info.scene_pointlights)
+			{
+				if(point_light_count > 3)
+				{
+					break;
+				}
+				
+				if(light.expired())
+				{
+					continue;
+				}
+				PointLight point_light;
+				point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
+				point_light.light_color = vec4(light.lock()->light_color, 1.0);
+
+				light_info.point_lights[point_light_count] = point_light; 
+				// 先支持一个点光源的阴影贴图
+				glActiveTexture(GL_TEXTURE4);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
+				
+				++point_light_count;
+			}
+			light_info.point_light_count = ivec4(point_light_count);
+
+			scene_light_ubo.Bind();
+			scene_light_ubo.UpdateData(light_info, "light_info");
 			
 			shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
 			// Draw the triangle !
@@ -246,7 +331,6 @@ void CRender::RenderScene() const
 		}
 		glBindVertexArray(GL_NONE);	// 解绑VAO
 	}
-	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
 }
 
 void CRender::CollectLightInfo()

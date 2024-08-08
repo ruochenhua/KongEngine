@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 struct DirectionalLight
 {
 	vec3 light_dir;
@@ -19,12 +19,20 @@ in vec2 out_texcoord;
 
 out vec3 color;
 
-uniform float shininess;
-uniform DirectionalLight directional_light;
-uniform PointLight point_lights[POINT_LIGHT_MAX];
-uniform int point_light_count;
+layout(std140, binding=0) uniform UBO {
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+    vec3 cam_pos;
+} matrix_ubo;
 
-uniform vec3 cam_pos;
+layout(std140, binding=1) uniform LIGHT_INFO_UBO {
+	ivec4 has_dir_light;
+    DirectionalLight directional_light;
+	ivec4 point_light_count;
+    PointLight point_lights[POINT_LIGHT_MAX];
+} light_info_ubo;
+
 uniform vec3 albedo;
 
 uniform sampler2D diffuse_texture;
@@ -33,6 +41,8 @@ uniform sampler2D specular_map_texture;
 float ka = 0.2;
 float kd = 0.5;
 float ks = 1;
+
+
 
 vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
@@ -100,13 +110,18 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 
 void main()
 {
-	vec3 view = normalize(cam_pos - out_pos);
+	vec3 view = normalize(matrix_ubo.cam_pos - out_pos);
 	
-	vec3 dir_light_color = CalcDirLight(directional_light, out_normal, view);
-	vec3 point_light_color = vec3(0,0,0);
-	for(int i = 0; i < point_light_count; ++i)
+	vec3 dir_light_color = vec3(0,0,0);
+	if(light_info_ubo.has_dir_light.x > 0)
 	{
-		point_light_color += CalcPointLight(point_lights[i], out_normal, view, out_pos);
+		dir_light_color = CalcDirLight(light_info_ubo.directional_light, out_normal, view);
+	}
+
+	vec3 point_light_color = vec3(0,0,0);
+	for(int i = 0; i < min(light_info_ubo.point_light_count.x,4); ++i)
+	{
+		point_light_color += CalcPointLight(light_info_ubo.point_lights[i], out_normal, view, out_pos);
 	}
 
 	color = dir_light_color + point_light_color;

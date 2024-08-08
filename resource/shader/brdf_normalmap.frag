@@ -1,4 +1,4 @@
-﻿#version 330 core
+﻿#version 430 core
 // todo: 支持include，整合到一个地方
 struct DirectionalLight
 {
@@ -11,8 +11,11 @@ struct PointLight
     vec3 light_pos;
     vec3 light_color;
 };
-
 #define POINT_LIGHT_MAX 4
+uniform DirectionalLight directional_light;
+uniform PointLight point_lights[POINT_LIGHT_MAX];
+
+
 const float PI = 3.14159265359;
 
 out vec4 FragColor;
@@ -22,10 +25,14 @@ in vec3 frag_normal;
 in vec2 frag_uv;
 in mat3 TBN;
 
-uniform vec3 cam_pos;
+layout(std140, binding=0) uniform UBO {
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+    vec3 cam_pos;
+} matrix_ubo;
 
-uniform DirectionalLight directional_light;
-uniform PointLight point_lights[POINT_LIGHT_MAX];
+
 uniform int point_light_count;
 
 uniform vec3 albedo;    // color
@@ -181,7 +188,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag
 
 void main()
 {
-    vec3 view = normalize(cam_pos - frag_pos);
+    vec3 view = normalize(matrix_ubo.cam_pos - frag_pos);
     vec3 obj_normal = GetNormal();
 
     vec3 dir_light_color = CalcDirLight(directional_light, obj_normal, view);

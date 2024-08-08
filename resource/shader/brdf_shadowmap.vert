@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 layout(location=0) in vec3 in_pos;
 layout(location=1) in vec3 in_normal;
@@ -13,16 +13,20 @@ out vec2 frag_uv;
 out mat3 TBN;
 out vec4 frag_pos_lightspace;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+layout(std140, binding=0) uniform UBO {
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+    vec3 cam_pos;
+} matrix_ubo;
 
 uniform mat3 normal_model_mat;
 uniform mat4 light_space_mat;
 
 
 void main(){
-    gl_Position = proj * view * model * vec4(in_pos, 1.0);
+    mat4 model = matrix_ubo.model;
+    gl_Position = matrix_ubo.projection * matrix_ubo.view * model * vec4(in_pos, 1.0);
     frag_pos = (model * vec4(in_pos, 1.0)).xyz;
 
     // 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题

@@ -16,11 +16,12 @@ layout(std140, binding=0) uniform UBO {
     mat4 model;
     mat4 view;
     mat4 projection;
-} ubo;
+    vec3 cam_pos;
+} matrix_ubo;
 
 void main(){
-	gl_Position = ubo.projection * ubo.view * ubo.model * vec4(in_pos, 1.0);
-    frag_pos = (ubo.model * vec4(in_pos, 1.0)).xyz;
+	gl_Position = matrix_ubo.projection * matrix_ubo.view * matrix_ubo.model * vec4(in_pos, 1.0);
+    frag_pos = (matrix_ubo.model * vec4(in_pos, 1.0)).xyz;
 	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
     frag_normal = normalize(normal_model_mat * in_normal);

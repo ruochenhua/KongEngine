@@ -121,11 +121,6 @@ void Shader::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_ma
 {
 	auto& render_info = mesh.m_RenderInfo;
     glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-			
-	SetMat4("model", actor_model_mat);
-	SetMat4("view", scene_render_info.camera_view);
-	SetMat4("proj", scene_render_info.camera_proj);
-	SetVec3("cam_pos", scene_render_info.camera_pos);
 
 	// 材质属性
 	SetVec3("albedo", render_info.material.albedo);
