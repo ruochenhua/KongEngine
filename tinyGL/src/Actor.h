@@ -19,6 +19,7 @@ namespace tinyGL
         ~AActor();
         
         void AddComponent(std::shared_ptr<CComponent> component);
+        void Update(float delta);
         
         template<class T>
         weak_ptr<T> GetComponent();

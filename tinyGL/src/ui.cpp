@@ -131,6 +131,23 @@ void CUIManager::DescribeUIContent(double delta)
 						ImGui::TreePop();
 					}
 				}
+
+				auto light_comp = actor->GetComponent<CLightComponent>();
+				if(!light_comp.expired())
+				{
+					auto light_ptr = light_comp.lock();
+					if(ImGui::TreeNode("", "light:"))
+					{
+						if(ImGui::TreeNode("","color:"))
+						{
+							ImGui::DragFloat("color_x", &light_ptr->light_color.x, 0.02f, 0.f);
+							ImGui::DragFloat("color_y", &light_ptr->light_color.y, 0.02f, 0.f);
+							ImGui::DragFloat("color_z", &light_ptr->light_color.z, 0.02f, 0.f);
+							ImGui::TreePop();
+						}
+						ImGui::TreePop();
+					}
+				}
 				ImGui::TreePop();
 			}
 			ImGui::PopID();

@@ -6,6 +6,7 @@
 
 namespace tinyGL
 {
+	class PostprocessShader;
 	class CPointLightComponent;
 	class CDirectionalLightComponent;
 	class CMeshComponent;
@@ -98,11 +99,11 @@ namespace tinyGL
 		shared_ptr<Shader> shadowmap_debug_shader;
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
-		
-		glm::mat4 light_space_mat;
+
+		shared_ptr<PostprocessShader> postprocess_shader;
 
 		CCamera* mainCamera = nullptr;
-
+		
 		// 场景光源信息
 		SSceneRenderInfo scene_render_info;
 		

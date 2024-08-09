@@ -90,7 +90,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 	vec3 point_light_color = CalcLight(light_color, light_dir, normal, view);
 
 	float distance = length(point_light.light_pos.xyz - frag_pos);
-	float attenuation = 1.0 / (distance + distance);	//衰减和点光源的参数可控，这里先简单弄个
+	float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
 	return point_light_color * attenuation;
 }
 

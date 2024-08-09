@@ -5,10 +5,7 @@
 			"component": [
 				{
 					"type": "mesh",
-					"shader_path": {
-						"vs": "shader/brdf_shadowmap.vert",
-						"fs": "shader/brdf_shadowmap.frag"
-					},
+					"shader_type" : "brdf_shadowmap",
 					"model_path": "nanosuit/nanosuit.obj",
 					"material": {
 						"metallic": 0.9,
@@ -36,10 +33,7 @@
 			"component": [
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/brdf_shadowmap.vert",
-						"fs": "shader/brdf_shadowmap.frag"
-					},
+					"shader_type" : "brdf_shadowmap",
 					"material": {
 						"albedo": [0.6, 0.6, 0.0],
 						"metallic": 0.5,
@@ -57,10 +51,7 @@
 			"component": [
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/brdf_shadowmap.vert",
-						"fs": "shader/brdf_shadowmap.frag"
-					},
+					"shader_type" : "brdf_shadowmap",
 					"material": {
 						"albedo": [0.6, 0.3, 0.6],
 						"metallic": 0.9,

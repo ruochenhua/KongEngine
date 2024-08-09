@@ -1,4 +1,6 @@
 #pragma once
+#include <set>
+
 #include "Common.h"
 #include "Engine.h"
 #include "RenderCommon.h"
@@ -19,6 +21,8 @@ namespace tinyGL
 	    virtual ~Shader() = default;
 	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
     	static GLuint LoadShaders(const map<EShaderType, string>& shader_path_map);
+    	static void IncludeShader(const string& include_path);
+    	static std::vector<std::string> FindIncludeFiles(const string& code_content);
     	
     	void SetBool(const std::string &name, bool value)
 	    {         
@@ -103,8 +107,8 @@ namespace tinyGL
 
 	protected:
 		shared_ptr<Shader> GetShaderFromTypeName(const string& shader_name);
-
 	private:
+		
 		std::map<string, shared_ptr<Shader>> shader_cache;
 	};
 }

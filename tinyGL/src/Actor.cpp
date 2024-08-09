@@ -2,6 +2,7 @@
 
 #include "MeshComponent.h"
 #include "LightComponent.h"
+#include "utilityshape.h"
 using namespace tinyGL;
 
 AActor::~AActor()
@@ -18,6 +19,18 @@ AActor::~AActor()
 void AActor::AddComponent(std::shared_ptr<CComponent> component)
 {
     components.push_back(component);
+}
+
+void AActor::Update(float delta)
+{
+    // actor 更新调用
+    // todo：先处理一下点光源和box mesh之间的颜色同步的问题吧，具体其他的还没想好
+    auto point_light_comp = GetComponent<CPointLightComponent>();
+    auto box_comp = GetComponent<CUtilityBox>();
+    if(!point_light_comp.expired() && !box_comp.expired())
+    {
+        box_comp.lock()->mesh_list[0].m_RenderInfo.material.albedo = point_light_comp.lock()->light_color;
+    }
 }
 
 glm::mat4 AActor::GetModelMatrix()

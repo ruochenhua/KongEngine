@@ -28,4 +28,17 @@ namespace tinyGL
         
         virtual void InitDefaultShader() override;
     };
+
+    // brdf_shadowmap 是基于brdf_normalmap的演化
+    class BRDFShader_ShadowMap : public BRDFShader_NormalMap
+    {
+    public:
+        BRDFShader_ShadowMap() = default;
+
+        void SetupData(CMesh& mesh) override;
+        void UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
+            const SSceneRenderInfo& scene_render_info) override;
+        
+        virtual void InitDefaultShader() override;
+    };
 }

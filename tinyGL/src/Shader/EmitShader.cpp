@@ -1,14 +1,11 @@
 #include "EmitShader.h"
 
-#include "LightComponent.h"
 #include "render.h"
 #include "Scene.h"
 using namespace tinyGL;
 using namespace glm;
 using namespace std;
-EmitShader::EmitShader()
-{
-}
+
 
 // todo
 void EmitShader::SetupData(CMesh& mesh)

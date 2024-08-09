@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+#include <regex>
+
 #include "BRDFShader.h"
 #include "EmitShader.h"
 #include "LightComponent.h"
@@ -10,6 +12,7 @@ using namespace tinyGL;
 using namespace glm;
 
 ShaderManager* g_shader_manager = new ShaderManager;
+std::set<string> shader_include_set;
 
 Shader::Shader(const SRenderResourceDesc& render_resource_desc)
 {
@@ -18,12 +21,6 @@ Shader::Shader(const SRenderResourceDesc& render_resource_desc)
 
 GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
 {
-    // include 文件名需要以“/”开头，要不然会报错，为什么？？
-    string include_name_str = "/common/common.glsl";
-    string full_path = CSceneLoader::ToResourcePath("/shader"+include_name_str);
-    string include_content_str = Engine::ReadFile(full_path);
-	
-    
     vector<GLuint> shader_id_list;
     for(auto& shader_path_pair : shader_path_map)
     {
@@ -43,11 +40,11 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
     	printf("Compiling shader : %s\n", shader_path.c_str());
     	char const * shader_string_ptr = shader_code.c_str();
     	glShaderSource(shader_id, 1, &shader_string_ptr, NULL);
-    	glNamedStringARB(GL_SHADER_INCLUDE_ARB,
-    		include_name_str.size(),
-    		include_name_str.c_str(),
-    		include_content_str.size(),
-    		include_content_str.c_str());
+    	vector<string> include_headers = FindIncludeFiles(shader_code);
+    	for(const auto& header : include_headers)
+    	{
+    		IncludeShader(header);
+    	}    	
     	
     	glCompileShader(shader_id);
 
@@ -93,6 +90,43 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
 	return prog_id;
 }
 
+void Shader::IncludeShader(const string& include_path)
+{
+	// already include
+	if(shader_include_set.find(include_path) != shader_include_set.end())
+	{
+		return;
+	}
+	
+	// include 文件名需要以“/”开头，要不然会报错，为什么？？
+	string full_path = CSceneLoader::ToResourcePath("/shader"+include_path);
+	string include_content_str = Engine::ReadFile(full_path);
+	
+	glNamedStringARB(GL_SHADER_INCLUDE_ARB,
+	include_path.size(),
+	include_path.c_str(),
+	include_content_str.size(),
+	include_content_str.c_str());
+}
+
+std::vector<std::string> Shader::FindIncludeFiles(const string& code_content)
+{
+	std::regex includeRegex("#include \"(.+)\"");  // Regex for #include statements
+	std::vector<std::string> includes;  // Vector to store extracted includes
+
+	// Iterate through lines in the code
+	std::istringstream iss(code_content);
+	std::string line;
+	while (std::getline(iss, line)) {
+		std::smatch match;
+		// For each line, try to match the #include regex
+		if (std::regex_search(line, match, includeRegex)) {
+			includes.push_back(match[1]);  // Add matched content to includes
+		}
+	}
+
+	return includes;
+}
 
 
 void Shader::Init(const map<EShaderType, string>& shader_path_cache)
@@ -252,6 +286,13 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 	else if(shader_name == "brdf_normalmap")
 	{
 		auto shader_data = make_shared<BRDFShader_NormalMap>();
+		shader_data->InitDefaultShader();
+		shader_cache.emplace(shader_name, shader_data);
+		return shader_data;
+	}
+	else if(shader_name == "brdf_shadowmap")
+	{
+		auto shader_data = make_shared<BRDFShader_ShadowMap>();
 		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;

@@ -121,19 +121,26 @@ void BRDFShader_NormalMap::SetupData(CMesh& mesh)
 	glBindVertexArray(render_info.vertex_array_id);
 	// tangent
 	std::vector<float> tangents = mesh.GetTangents();
-	glGenBuffers(1, &render_info.tangent_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.tangent_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,0,(void*)0);
-	glEnableVertexAttribArray(3);
+	if(!tangents.empty())
+	{
+		glGenBuffers(1, &render_info.tangent_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, render_info.tangent_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
+		glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+		glEnableVertexAttribArray(3);
+	}
+
 	// bitangent
 	std::vector<float> bitangents = mesh.GetBitangents();
-	glGenBuffers(1, &render_info.bitangent_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.bitangent_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(4,3,GL_FLOAT,GL_FALSE,0,(void*)0);
-	glEnableVertexAttribArray(4);
-	glBindVertexArray(GL_NONE);
+	if(!bitangents.empty())
+	{
+		glGenBuffers(1, &render_info.bitangent_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, render_info.bitangent_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
+		glVertexAttribPointer(4,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+		glEnableVertexAttribArray(4);
+		glBindVertexArray(GL_NONE);
+	}
 }
 
 void BRDFShader_NormalMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
@@ -163,5 +170,68 @@ void BRDFShader_NormalMap::InitDefaultShader()
 	SetInt("diffuse_texture", 0);
 	SetInt("specular_texture", 1);
 	SetInt("normal_texture", 2);
+}
+
+void BRDFShader_ShadowMap::SetupData(CMesh& mesh)
+{
+	BRDFShader_NormalMap::SetupData(mesh);
+}
+
+void BRDFShader_ShadowMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
+	const SSceneRenderInfo& scene_render_info)
+{
+	BRDFShader_NormalMap::UpdateRenderData(mesh, actor_model_mat, scene_render_info);
+	GLuint null_tex_id = CRender::GetNullTexId();
+	
+	// 添加光源的阴影贴图
+	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
+	GLuint dir_light_shadowmap_id = null_tex_id;
+	glActiveTexture(GL_TEXTURE3);
+	if(has_dir_light)
+	{
+		auto dir_light = scene_render_info.scene_dirlight.lock();
+		// 支持一个平行光源的阴影贴图
+		dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+	
+	}
+	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
+	
+	int point_light_count = 0;
+	for(auto light : scene_render_info.scene_pointlights)
+	{
+		if(point_light_count > 3)
+		{
+			break;
+		}
+				
+		if(light.expired())
+		{
+			continue;
+		}
+		// 先支持一个点光源的阴影贴图
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
+		break;		
+		++point_light_count;
+	}
+}
+
+void BRDFShader_ShadowMap::InitDefaultShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/brdf_shadowmap.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/brdf_shadowmap.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+
+	// 一些shader的数据绑定
+	Use();
+	SetInt("diffuse_texture", 0);
+	SetInt("specular_texture", 1);
+	SetInt("normal_texture", 2);
+	SetInt("shadow_map", 3);
+	SetInt("shadow_map_pointlight", 4);
 }
 

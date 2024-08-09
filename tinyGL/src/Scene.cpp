@@ -50,6 +50,14 @@ vector<weak_ptr<CMeshComponent>> CScene::GetMeshes()
     return g_scene->GetSceneMeshes_Implement();
 }
 
+void CScene::UpdateScene(float delta) const
+{
+    for(auto& actor : scene_actors)
+    {
+        actor->Update(delta);
+    }
+}
+
 vector<weak_ptr<CMeshComponent>> CScene::GetSceneMeshes_Implement()
 {
     if(!g_scene->scene_meshes.empty())

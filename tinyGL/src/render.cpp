@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
+#include "Shader/PostprocessShader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -71,6 +72,10 @@ int CRender::Init()
 	null_tex_id = LoadTexture(null_tex_path);
 
 	InitUBO();
+
+	// 后处理shader
+	postprocess_shader = make_shared<PostprocessShader>();
+	postprocess_shader->InitDefaultShader();
 	return 0;
 }
 
@@ -115,11 +120,11 @@ int CRender::Update(double delta)
 	//RenderSkyBox();
 	CollectLightInfo();
 	
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	// glEnable(GL_DEPTH_TEST);
+	// glDepthFunc(GL_LESS);
+	//
+	// glEnable(GL_CULL_FACE);
+	// glCullFace(GL_BACK);
 	RenderShadowMap();			
 	RenderSceneObject();	
 	return 1;
@@ -134,15 +139,27 @@ void CRender::PostUpdate()
 
 void CRender::RenderSceneObject()
 {
+	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 #if SHADOWMAP_DEBUG
 #else
 	int width = Engine::GetEngine().GetWindowWidth();
 	int height = Engine::GetEngine().GetWindowHeight();
+	// glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
+
+	glEnable(GL_DEPTH_TEST);
 	glViewport(0,0,width, height);
+	// 渲染到后处理framebuffer上
+	glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glBindTexture(GL_TEXTURE_2D, m_DepthTexture);
+	
 	RenderScene();
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//
+	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+	//
+	// postprocess_shader->DrawScreenQuad();
 #endif
 }
 
@@ -207,6 +224,13 @@ void CRender::RenderSkyBox()
 
 void CRender::RenderScene() const
 {
+	// 这里试着更新UBO里的矩阵数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
+	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
+	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
+	matrix_ubo.EndBind();
+	
 	auto actors = CScene::GetActors();
 		
 	for(auto actor : actors)
@@ -229,18 +253,14 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
-		// 这里试着更新UBO里的矩阵数据
-		matrix_ubo.Bind();
-		matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
-		matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
-		matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
-		matrix_ubo.EndBind();
+		
 		
 		auto& shader_data  = render_obj->shader_data;
 		shader_data->Use();
 		unsigned mesh_idx = 0;
 		for(auto& mesh : render_obj->mesh_list)
 		{
+			glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
 			mat4 model_mat;
 			if(transform_component_ptr->instancing_info.count == 0)
 			{
@@ -250,11 +270,11 @@ void CRender::RenderScene() const
 			{
 				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
 			}
-
+			
 			// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
 			matrix_ubo.Bind();
 			matrix_ubo.UpdateData(model_mat, "model");
-
+			
 			// 更新光源UBO
 			SceneLightInfo light_info;
 			bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
@@ -265,10 +285,6 @@ void CRender::RenderScene() const
 				light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
 				light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
 				light_info.directional_light.light_space_mat = dir_light->light_space_mat;
-				// 支持一个平行光源的阴影贴图
-				glActiveTexture(GL_TEXTURE3);
-				GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
-				glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
 			}
 			else
 			{
@@ -291,11 +307,7 @@ void CRender::RenderScene() const
 				point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
 				point_light.light_color = vec4(light.lock()->light_color, 1.0);
 
-				light_info.point_lights[point_light_count] = point_light; 
-				// 先支持一个点光源的阴影贴图
-				glActiveTexture(GL_TEXTURE4);
-				glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
-				
+				light_info.point_lights[point_light_count] = point_light; 				
 				++point_light_count;
 			}
 			light_info.point_light_count = ivec4(point_light_count);
@@ -328,8 +340,8 @@ void CRender::RenderScene() const
 			}
 			mesh_idx++;
 		
+			glBindVertexArray(GL_NONE);	// 解绑VAO
 		}
-		glBindVertexArray(GL_NONE);	// 解绑VAO
 	}
 }
 

@@ -16,5 +16,4 @@ struct PointLight
 
 #define POINT_LIGHT_MAX 4
 const float PI = 3.14159265359;
-
-#endif
+#endif  // _COMMON_GLSL_
