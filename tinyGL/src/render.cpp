@@ -120,11 +120,6 @@ int CRender::Update(double delta)
 	//RenderSkyBox();
 	CollectLightInfo();
 	
-	// glEnable(GL_DEPTH_TEST);
-	// glDepthFunc(GL_LESS);
-	//
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
 	RenderShadowMap();			
 	RenderSceneObject();	
 	return 1;
@@ -145,21 +140,21 @@ void CRender::RenderSceneObject()
 #else
 	int width = Engine::GetEngine().GetWindowWidth();
 	int height = Engine::GetEngine().GetWindowHeight();
-	// glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
 
-	glEnable(GL_DEPTH_TEST);
 	glViewport(0,0,width, height);
 	// 渲染到后处理framebuffer上
+	glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
+	
 	glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	RenderScene();
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//
-	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	//
-	// postprocess_shader->DrawScreenQuad();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+	
+	postprocess_shader->DrawScreenQuad();
 #endif
 }
 

@@ -93,15 +93,19 @@ void PostprocessShader::GenerateScreenTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     // depth buffer
-    if(!screen_quad_depth)
+    if(!scene_rbo)
     {
-        glGenTextures(1, &screen_quad_depth);
+        // 注意这里不是glGenTextures，搞错了查了半天
+        glGenRenderbuffers(1, &scene_rbo);
     }
-    glBindRenderbuffer(GL_RENDERBUFFER, screen_quad_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_width, window_height);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene_rbo);
+    
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, window_width, window_height);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_quad_texture, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, screen_quad_depth);
-    
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene_rbo);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+	
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

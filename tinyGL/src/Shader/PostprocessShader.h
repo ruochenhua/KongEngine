@@ -20,7 +20,7 @@ namespace tinyGL
     protected:
         // 渲染到屏幕的texture
         GLuint screen_quad_texture = GL_NONE;
-        GLuint screen_quad_depth = GL_NONE;
+        GLuint scene_rbo = GL_NONE;
         GLuint screen_quad_vao = GL_NONE;
         GLuint screen_quad_vbo = GL_NONE;
 
