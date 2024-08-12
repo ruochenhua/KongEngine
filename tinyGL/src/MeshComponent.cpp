@@ -266,10 +266,12 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 		}
 	}
 
-	auto& mesh_material = new_mesh.m_RenderInfo.material;
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+		auto& mesh_material = new_mesh.m_RenderInfo.material;
+		mesh_material.name = material->GetName().C_Str();
+
 		unsigned base_color_count = material->GetTextureCount(aiTextureType_BASE_COLOR);
 		unsigned diffuse_count = material->GetTextureCount(aiTextureType_DIFFUSE);
 		if(base_color_count > 0)
@@ -290,7 +292,12 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 		aiColor4D base_color;
 		aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
 		mesh_material.albedo = vec3(base_color.r, base_color.g, base_color.b);
-	
+		// 暂时还不支持coat效果，先屏蔽掉对应的mesh
+		if(mesh_material.name == "coat")
+		{
+			return;
+			//mesh_material.albedo = vec3(1,0,0);
+		}
 		unsigned height_count = material->GetTextureCount(aiTextureType_HEIGHT);
 		if(height_count > 0)
 		{
@@ -330,10 +337,10 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 		unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
 		if(clear_coat_count > 0)
 		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
+			// aiString tex_str;
+			// material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
+			// string tex_path = directory + "/" + tex_str.C_Str();
+			// new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
 		}
 		
 		unsigned roughness_count = material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS);

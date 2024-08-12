@@ -24,6 +24,7 @@ namespace tinyGL
         float metallic = 0.5f;
         float roughness = 0.5;
         float ao = 0.3f;
+        string name;
     };
 
     // 渲染信息
