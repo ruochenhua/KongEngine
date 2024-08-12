@@ -51,7 +51,7 @@ namespace tinyGL
 		CMeshComponent(const SRenderResourceDesc& render_resource_desc);	
 		
 		void BeginPlay() override;
-		
+		virtual void Draw() = 0;
 	protected:
 		void InitRenderInfo(const SRenderResourceDesc& render_resource_desc);
 		

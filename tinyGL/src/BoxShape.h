@@ -3,11 +3,11 @@
 
 namespace tinyGL
 {
-	class CUtilityBox : public CMeshComponent
+	class CBoxShape : public CMeshComponent
 	{
 	public:
-		CUtilityBox(const SRenderResourceDesc& render_resource_desc);
-
+		CBoxShape(const SRenderResourceDesc& render_resource_desc);
+		virtual void Draw() override;
 	private:
 		void InitBoxData(const SRenderResourceDesc& render_resource_desc);
 		

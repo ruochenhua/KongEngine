@@ -3,9 +3,9 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Actor.h"
-#include "model.h"
+#include "ModelMeshComponent.h"
 #include "Scene.h"
-#include "utilityshape.h"
+#include "BoxShape.h"
 
 using namespace tinyGL;
 
@@ -179,7 +179,7 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
             if(component_type == "box")
             {
                 SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
-                auto mesh_comp = make_shared<CUtilityBox>(render_resource_desc);
+                auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
 
                 new_actor->AddComponent(mesh_comp);
             }

@@ -3,9 +3,9 @@
 #include <nlohmann/json.hpp>
 
 #include "Actor.h"
-#include "model.h"
+#include "ModelMeshComponent.h"
 #include "Scene.h"
-#include "utilityshape.h"
+#include "BoxShape.h"
 using json = nlohmann::json;
 
 using namespace tinyGL;
@@ -186,7 +186,7 @@ using namespace JsonParser;
                 if(component_type == "box")
                 {
                     SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
-                    auto mesh_comp = make_shared<CUtilityBox>(render_resource_desc);
+                    auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
 
                     new_actor->AddComponent(mesh_comp);
                 

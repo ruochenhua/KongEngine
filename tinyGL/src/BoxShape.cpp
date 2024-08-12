@@ -1,11 +1,11 @@
-#include "utilityshape.h"
+#include "BoxShape.h"
 
 #include "render.h"
 #include "Shader/BRDFShader.h"
 
 using namespace tinyGL;
 using namespace std;
-vector<float> CUtilityBox::s_vBoxVertices = {
+vector<float> CBoxShape::s_vBoxVertices = {
     // positions          // normals           // texture coords
     0.5f, -0.5f, -0.5f,
     -0.5f, -0.5f, -0.5f,
@@ -50,7 +50,7 @@ vector<float> CUtilityBox::s_vBoxVertices = {
     -0.5f, 0.5f, -0.5f
 };
 
-vector<float> CUtilityBox::s_vBoxNormals = {
+vector<float> CBoxShape::s_vBoxNormals = {
     // positions          // normals           // texture coords
     0.0f, 0.0f, -1.0f,
     0.0f, 0.0f, -1.0f,
@@ -95,7 +95,7 @@ vector<float> CUtilityBox::s_vBoxNormals = {
     0.0f, 1.0f, 0.0f,
 };
 
-vector<float> CUtilityBox::s_vBoxTexCoords = {
+vector<float> CBoxShape::s_vBoxTexCoords = {
     // positions          // normals           // texture coords
     1.0f, 0.0f,
     0.0f, 0.0f,
@@ -140,7 +140,7 @@ vector<float> CUtilityBox::s_vBoxTexCoords = {
     0.0f, 1.0f
 };
 
-CUtilityBox::CUtilityBox(const SRenderResourceDesc& render_resource_desc)
+CBoxShape::CBoxShape(const SRenderResourceDesc& render_resource_desc)
     : CMeshComponent(render_resource_desc)
 {
     InitBoxData(render_resource_desc);
@@ -152,7 +152,24 @@ CUtilityBox::CUtilityBox(const SRenderResourceDesc& render_resource_desc)
     }
 }
 
-void CUtilityBox::InitBoxData(const SRenderResourceDesc& render_resource_desc)
+void CBoxShape::Draw()
+{
+    auto& render_info = mesh_list[0].m_RenderInfo;
+    if(render_info.instance_buffer != GL_NONE)
+    {
+        // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDrawArraysInstanced(GL_TRIANGLES, 0,
+            render_info.vertex_size / render_info.stride_count,
+            render_info.instance_count);
+    }
+    else
+    {
+        // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
+    }
+}
+
+void CBoxShape::InitBoxData(const SRenderResourceDesc& render_resource_desc)
 {
     CMesh mesh;
     mesh.m_Vertex = s_vBoxVertices;

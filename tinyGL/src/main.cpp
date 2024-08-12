@@ -4,7 +4,7 @@
 #include "Engine.h"
 #include "Scene.h"
 
-#include "utilityshape.h"
+#include "BoxShape.h"
 #include "ui.h"
 using namespace glm;
 using namespace std;
