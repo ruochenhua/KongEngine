@@ -12,8 +12,6 @@
 #include <assimp/postprocess.h>
 
 #include "glm/gtc/random.hpp"
-#include "Shader/BRDFShader.h"
-#include "Shader/EmitShader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -161,7 +159,7 @@ int CMeshComponent::ImportObj(const std::string& model_path)
 		aiProcess_CalcTangentSpace
 		|aiProcess_Triangulate
 		|aiProcess_OptimizeMeshes
-		|aiProcess_GenNormals
+		|aiProcess_GenSmoothNormals
 		|aiProcess_OptimizeGraph
 		|aiProcess_JoinIdenticalVertices
 		|aiProcess_FlipUVs
@@ -170,9 +168,8 @@ int CMeshComponent::ImportObj(const std::string& model_path)
 	mesh_list.clear();
 
 	directory = model_path.substr(0, model_path.find_last_of('/'));
-	
+
 	ProcessAssimpNode(scene->mRootNode, scene);
-	
 	return 0;
 }
 
@@ -196,21 +193,34 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 {
 	// assimp允许一个模型顶点有8组纹理坐标，暂时我们只关心第一组
 	bool has_uv = mesh->mTextureCoords[0];
+	bool has_normal = mesh->HasNormals();
 	bool has_tangent = mesh->HasTangentsAndBitangents();
+	
 	CMesh new_mesh;
+	new_mesh.name = mesh->mName.C_Str();
 	for(unsigned int i = 0; i < mesh->mNumVertices; ++i)
 	{
 		// 用emplace_back而不是push_back可以避免构造后的拷贝操作
 		const auto& vert = mesh->mVertices[i];
+		
 		new_mesh.m_Vertex.emplace_back(vert.x);
 		new_mesh.m_Vertex.emplace_back(vert.y);
 		new_mesh.m_Vertex.emplace_back(vert.z);
-
-		const auto& norm = mesh->mNormals[i];
-		new_mesh.m_Normal.emplace_back(norm.x);
-		new_mesh.m_Normal.emplace_back(norm.y);
-		new_mesh.m_Normal.emplace_back(norm.z);
-
+		
+		if(has_normal)
+		{
+			const auto& norm = mesh->mNormals[i];
+			new_mesh.m_Normal.emplace_back(norm.x);
+			new_mesh.m_Normal.emplace_back(norm.y);
+			new_mesh.m_Normal.emplace_back(norm.z);
+		}
+		else
+		{
+			new_mesh.m_Normal.emplace_back(0);
+			new_mesh.m_Normal.emplace_back(1);
+			new_mesh.m_Normal.emplace_back(0);
+		}
+		
 		if(has_uv)
 		{
 			const auto& tex_uv = mesh->mTextureCoords[0][i];
@@ -256,27 +266,49 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 		}
 	}
 
+	auto& mesh_material = new_mesh.m_RenderInfo.material;
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+		unsigned base_color_count = material->GetTextureCount(aiTextureType_BASE_COLOR);
 		unsigned diffuse_count = material->GetTextureCount(aiTextureType_DIFFUSE);
-		if(diffuse_count > 0)
+		if(base_color_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_BASE_COLOR, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
+		}
+		else if(diffuse_count > 0)
 		{
 			aiString tex_str;
 			material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
 			new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
 		}
-
-		unsigned normal_count = material->GetTextureCount(aiTextureType_HEIGHT);
-		if(normal_count > 0)
+		
+		aiColor4D base_color;
+		aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
+		mesh_material.albedo = vec3(base_color.r, base_color.g, base_color.b);
+	
+		unsigned height_count = material->GetTextureCount(aiTextureType_HEIGHT);
+		if(height_count > 0)
 		{
 			aiString tex_str;
 			material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
 			new_mesh.m_RenderInfo.normal_tex_id = CRender::LoadTexture(tex_path);
 		}
-
+		unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
+		if(normal_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			new_mesh.m_RenderInfo.normal_tex_id = CRender::LoadTexture(tex_path);
+		}
+		
+		//aiTextureType_SHININESS
 		unsigned specular_count = material->GetTextureCount(aiTextureType_SPECULAR);
 		if(specular_count > 0)
 		{
@@ -285,6 +317,40 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 			string tex_path = directory + "/" + tex_str.C_Str();
 			new_mesh.m_RenderInfo.specular_tex_id = CRender::LoadTexture(tex_path);
 		}
+
+		unsigned shininess_count = material->GetTextureCount(aiTextureType_SHININESS);
+		if(shininess_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_SHININESS, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			new_mesh.m_RenderInfo.specular_tex_id = CRender::LoadTexture(tex_path);
+		}
+				
+		unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
+		if(clear_coat_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
+		}
+		
+		unsigned roughness_count = material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS);
+		if(roughness_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			new_mesh.m_RenderInfo.diffuse_roughness_tex_id = CRender::LoadTexture(tex_path);
+		}
+
+		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);
+		
+		ret = aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &mesh_material.metallic);
+		aiColor4D ambient_color;
+		ret = aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient_color);
+		aiGetMaterialFloat(material, AI_MATKEY_SPECULAR_FACTOR, &mesh_material.specular_factor);
 		
 	}
 	mesh_list.push_back(new_mesh);

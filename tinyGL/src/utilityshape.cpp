@@ -178,12 +178,7 @@ void CUtilityBox::InitBoxData(const SRenderResourceDesc& render_resource_desc)
     {
         render_info.normal_tex_id = CRender::LoadTexture(normal_path_iter->second);
     }
-
-    auto tangent_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::tangent);
-    if (tangent_path_iter != texture_paths.end())
-    {
-        render_info.tangent_tex_id = CRender::LoadTexture(tangent_path_iter->second);
-    }
+    
 
     render_info.material = render_resource_desc.material;
 

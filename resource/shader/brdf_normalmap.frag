@@ -25,6 +25,7 @@ layout(std140, binding=0) uniform UBO {
 } matrix_ubo;
 
 uniform vec3 albedo;    // color
+uniform float specular_factor;
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
@@ -32,6 +33,7 @@ uniform float ao;
 uniform sampler2D diffuse_texture;
 uniform sampler2D specular_texture;
 uniform sampler2D normal_texture;
+uniform sampler2D diffuse_roughness_tex;
 
 vec3 GetAlbedo()
 {
@@ -71,12 +73,26 @@ vec3 GetSpecular()
     return vec3(1);
 }
 
+float GetRoughness()
+{
+    float texture_size = textureSize(diffuse_roughness_tex, 0).x;
+    if(texture_size > 1.0)
+    {
+        return texture(diffuse_roughness_tex, frag_uv).r;
+    }
+
+    return roughness;
+}
+
+
+
 vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
     BRDFMaterial material;
-    material.roughness = roughness;
+    material.roughness = GetRoughness();
     material.metallic = metallic;
     material.albedo = GetAlbedo();
+    material.specular_factor = specular_factor;
     material.ao = ao;
 
     return CalcLight_BRDF(light_color, to_light_dir, normal, view, material);
@@ -126,5 +142,6 @@ void main()
     // 伽马校正（Reinhard）
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));
+    //FragColor = vec4((obj_normal+1)/2, 1.0);
     FragColor = vec4(color, 1.0);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "Component.h"
+#include "assimp/matrix4x4.h"
 #include "Shader/Shader.h"
 
 struct aiMesh;
@@ -48,7 +49,7 @@ namespace tinyGL
 		shared_ptr<Shader> shader_data;
 		
 		CMeshComponent(const SRenderResourceDesc& render_resource_desc);	
-
+		
 		void BeginPlay() override;
 		
 	protected:

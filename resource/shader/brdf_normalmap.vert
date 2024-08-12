@@ -11,7 +11,6 @@ out vec3 frag_pos;
 out vec3 frag_normal;
 out vec2 frag_uv;
 out mat3 TBN;
-out vec3 out_tangent;
 
 layout(std140, binding=0) uniform UBO {
     mat4 model;
@@ -32,14 +31,9 @@ void main(){
     frag_normal = normalize(mat3(transpose(inverse(normal_model_mat))) * in_normal);
     frag_uv = in_texcoord;
     
-    vec3 tangent = in_tangent;
-    out_tangent = tangent;
-    
     vec3 T = normalize(vec3(model*vec4(in_tangent, 0.0)));
     vec3 B = normalize(vec3(model*vec4(in_bitangent, 0.0)));
     vec3 N = normalize(vec3(model*vec4(frag_normal, 0.0)));
     
     TBN = mat3(T, B, N);
-
-    //ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);
 }

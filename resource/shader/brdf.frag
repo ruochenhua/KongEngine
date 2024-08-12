@@ -32,6 +32,7 @@ layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 } light_info_ubo;
 
 uniform vec3 albedo;    // color
+uniform float specular_factor;
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
@@ -69,6 +70,7 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
     BRDFMaterial material;
     material.roughness = roughness;
+	material.specular_factor = specular_factor;
     material.metallic = metallic;
     material.albedo = GetAlbedo();
     material.ao = ao;

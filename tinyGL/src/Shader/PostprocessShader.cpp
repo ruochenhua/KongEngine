@@ -86,8 +86,8 @@ void PostprocessShader::GenerateScreenTexture()
     }
     
     glBindTexture(GL_TEXTURE_2D, screen_quad_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height,
-    0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, window_width, window_height,
+    0, GL_RGBA, GL_FLOAT, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -100,7 +100,7 @@ void PostprocessShader::GenerateScreenTexture()
     }
     glBindRenderbuffer(GL_RENDERBUFFER, scene_rbo);
     
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, window_width, window_height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_width, window_height);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_quad_texture, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene_rbo);

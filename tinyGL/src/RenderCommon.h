@@ -19,7 +19,8 @@ namespace tinyGL
 		
     struct SMaterial
     {
-        glm::vec3 albedo = glm::vec3(0.f); 	
+        glm::vec3 albedo = glm::vec3(0.f);
+        float specular_factor = 1.0f;
         float metallic = 0.5f;
         float roughness = 0.5;
         float ao = 0.3f;
@@ -40,18 +41,21 @@ namespace tinyGL
         GLuint bitangent_buffer = 0;
         GLuint instance_buffer = 0;
 		
-        SMaterial material;
         // shader program
         unsigned vertex_size = 0;
         unsigned stride_count = 1;
         unsigned indices_count = 0;
         unsigned instance_count = 0;
+
         // texture id
-        // todo: 总不能一个一个加吧，要支持类型映射
         GLuint diffuse_tex_id = 0;
         GLuint specular_tex_id = 0;
         GLuint normal_tex_id = 0;
         GLuint tangent_tex_id = 0;
+        GLuint diffuse_roughness_tex_id = 0;
+        
+        // 材质
+        SMaterial material;
     };
 	
     class CMesh
@@ -77,7 +81,7 @@ namespace tinyGL
         std::vector<unsigned int> m_Index;
 
         SRenderInfo m_RenderInfo;
-
+        string name;
     };
 
     // 渲染资源描述

@@ -1,0 +1,54 @@
+{
+	"scene": [
+	  {
+		  "actor": "model1",
+		  "component": [
+			  {
+				  "type": "mesh",
+				  "shader_type" : "brdf_normalmap",
+				  "model_path": "Porsche/scene.gltf"
+			  },
+			  {
+				  "type": "transform",
+				  "location": [
+					  0,
+					  -1,
+					  0
+				  ]
+			  }
+		  ]
+	  },
+	  {
+		  "actor": "point_light1",
+		  "component" : [
+			  {
+				  "type": "point_light",
+				  "light_color": [
+					  30,
+					  30,
+					  30
+				  ]
+			  },
+			  {
+				  "type": "transform",
+				  "location": [0, 1, 0],
+				  "scale" : [0.1,0.1,0.1]
+			  },
+			  {
+				  "type": "box",
+				  "shader_path": {
+					  "vs": "shader/emit.vert",
+					  "fs": "shader/emit.frag"
+				  },
+				  "material": {
+					  "albedo": [
+						  1.0,
+						  1.0,
+						  1.0
+					  ]
+				  }
+			  }
+		  ]
+	  }
+	]
+  }

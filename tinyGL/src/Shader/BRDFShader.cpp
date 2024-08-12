@@ -75,6 +75,7 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 
 	// 材质属性
 	SetVec3("albedo", render_info.material.albedo);
+	SetFloat("specular_factor", render_info.material.specular_factor);
 	SetFloat("metallic", render_info.material.metallic);
 	SetFloat("roughness", render_info.material.roughness);
 	SetFloat("ao", render_info.material.ao);
@@ -83,8 +84,8 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
-	mat3 normal_model_mat = transpose(inverse(actor_model_mat));
-	SetMat3("normal_model_mat", normal_model_mat);
+	// mat3 normal_model_mat = transpose(inverse(actor_model_mat));
+	SetMat3("normal_model_mat", actor_model_mat);
 
 	GLuint null_tex_id = CRender::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
@@ -153,6 +154,10 @@ void BRDFShader_NormalMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& 
 	glActiveTexture(GL_TEXTURE2);
 	GLuint normal_tex_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_tex_id);
+
+	glActiveTexture(GL_TEXTURE3);
+	GLuint diffuse_roughness = render_info.diffuse_roughness_tex_id != 0 ? render_info.diffuse_roughness_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, diffuse_roughness);
 }
 
 void BRDFShader_NormalMap::InitDefaultShader()
@@ -170,6 +175,7 @@ void BRDFShader_NormalMap::InitDefaultShader()
 	SetInt("diffuse_texture", 0);
 	SetInt("specular_texture", 1);
 	SetInt("normal_texture", 2);
+	SetInt("diffuse_roughness_tex",3);
 }
 
 void BRDFShader_ShadowMap::SetupData(CMesh& mesh)

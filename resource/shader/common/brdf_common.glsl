@@ -4,6 +4,7 @@
 struct BRDFMaterial
 {
     vec3 albedo;    // color
+    float specular_factor;
     float metallic;
     float roughness;
     float ao;
@@ -61,34 +62,35 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view, BRDFMaterial matrial)
+vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view, BRDFMaterial material)
 {
     const float PI_Val = 3.14159265359;
     vec3 h = normalize(to_light_dir + view);
     vec3 radiance = light_color;
 
-    float NDF = DistributionGGX(normal, h, matrial.roughness);
-    float G = GeometrySmith(normal, view, to_light_dir, matrial.roughness);
+    float NDF = DistributionGGX(normal, h, material.roughness);
+    float G = GeometrySmith(normal, view, to_light_dir, material.roughness);
     vec3 F0 = vec3(0.04);
-    vec3 obj_albedo = matrial.albedo;
-    F0 = mix(F0, obj_albedo, matrial.metallic);
+    F0 = mix(F0, material.albedo, material.metallic);
 
     vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
     //vec3 F = FresnelSchlick(clamp(dot(h, to_light_dir), 0.0, 1.0), F0);
 
     vec3 numerator = NDF*G*F;
     float demoninator = 4.0 * max(dot(normal, view), 0.0) * max(dot(normal, to_light_dir), 0.0) + 0.0001; //加一个小数避免处于0的情况出现
-    vec3 specualr = numerator / demoninator;
+    vec3 specular = numerator / demoninator * material.specular_factor;
     // KS就是菲涅尔的值
     vec3 KS = F;
     // 根据能量守恒定律，KS+KD不大于1
     vec3 KD = vec3(1.0) - KS;
     // 非金属材质才有漫反射量，这里乘以一下(1-metallic)
-    KD *= 1.0 - matrial.metallic;
+    KD *= 1.0 - material.metallic;
     // 取在观测方向上的一个分量
     float NdotL = max(dot(normal, to_light_dir), 0.0);
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
-    return (KD*obj_albedo / PI_Val + specualr)*radiance*NdotL;
+    //return material.specular_factor;
+    return (KD*material.albedo / PI_Val + specular)*radiance*NdotL;
+    //return specular;
 }
 #endif  // _BRDF_COMMON_GLSL_
