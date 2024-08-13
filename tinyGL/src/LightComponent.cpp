@@ -47,14 +47,14 @@ void CDirectionalLightComponent::RenderShadowMap()
     auto actors = CScene::GetActors();
     for(auto actor : actors)
     {
-        auto mesh_component = actor->GetComponent<CMeshComponent>();
-        if(mesh_component.expired())
+        auto render_obj = actor->GetComponent<CMeshComponent>();
+        if(!render_obj)
         {
             continue;
         }
         // 光源actor里面的mesh就不要渲染shadowmap了
         auto light_component = actor->GetComponent<CLightComponent>();
-        if(!light_component.expired())
+        if(light_component)
         {
             continue;
         }
@@ -66,9 +66,7 @@ void CDirectionalLightComponent::RenderShadowMap()
         mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
         light_space_mat = light_proj * light_view;
         shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
-        
-        shared_ptr<CMeshComponent> render_obj = mesh_component.lock();
-        
+                
         for(auto& mesh : render_obj->mesh_list)
         {
             const SRenderInfo& render_info = mesh.GetRenderInfo();
@@ -123,19 +121,17 @@ void CPointLightComponent::RenderShadowMap()
     auto actors = CScene::GetActors();
     for(auto actor : actors)
     {
-        auto mesh_component = actor->GetComponent<CMeshComponent>();
-        if(mesh_component.expired())
+        auto render_obj = actor->GetComponent<CMeshComponent>();
+        if(!render_obj)
         {
             continue;
         }
         // 光源actor里面的mesh就不要渲染shadowmap了
         auto light_component = actor->GetComponent<CLightComponent>();
-        if(!light_component.expired())
+        if(light_component)
         {
             continue;
         }
-        
-        shared_ptr<CMeshComponent> render_obj = mesh_component.lock();
         
         for(auto& mesh : render_obj->mesh_list)
         {

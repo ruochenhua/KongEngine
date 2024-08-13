@@ -50,7 +50,6 @@ void EmitShader::SetupData(CMesh& mesh)
 }
 
 void EmitShader::UpdateRenderData(const CMesh& mesh,
-			const glm::mat4& actor_model_mat,
 			const SSceneRenderInfo& scene_render_info)
 {
 	const SRenderInfo& render_info = mesh.GetRenderInfo();

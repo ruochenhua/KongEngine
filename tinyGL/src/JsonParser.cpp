@@ -6,6 +6,7 @@
 #include "ModelMeshComponent.h"
 #include "Scene.h"
 #include "BoxShape.h"
+#include "QuadShape.h"
 using json = nlohmann::json;
 
 using namespace tinyGL;
@@ -50,37 +51,6 @@ namespace JsonParser
 
             transform_comp->GenInstanceModelMatrix();
         }
-    }
-
-    void ParseInstancing(nlohmann::basic_json<> in_json, shared_ptr<CTransformComponent> scene_object)
-    {
-        if(in_json["instancing"].is_null())
-        {
-            return;
-        }
-        //
-        // auto& instancing_info = scene_object->instancing_info;
-        //
-        // auto instancing = in_json["instancing"];
-        // instancing_info.count = instancing["count"];
-        //
-        // if(!instancing["location"].is_null())
-        // {
-        //     instancing_info.location_min = ParseVec3(instancing["location"]["min"]);
-        //     instancing_info.location_max = ParseVec3(instancing["location"]["max"]);
-        // }
-        //
-        // if(!instancing["rotation"].is_null())
-        // {
-        //     instancing_info.rotation_min = ParseVec3(instancing["rotation"]["min"]);
-        //     instancing_info.rotation_max = ParseVec3(instancing["rotation"]["max"]);
-        // }
-        //
-        // if(!instancing["scale"].is_null())
-        // {
-        //     instancing_info.scale_min = ParseVec3(instancing["scale"]["min"]);
-        //     instancing_info.scale_max = ParseVec3(instancing["scale"]["max"]);
-        // }
     }
 
     SRenderResourceDesc ParseRenderObjInfo(nlohmann::basic_json<> in_json)
@@ -189,12 +159,6 @@ using namespace JsonParser;
                     auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
 
                     new_actor->AddComponent(mesh_comp);
-                
-                    // ParseTransform(actor, new_box);
-                    // ParseInstancing(actor, new_box);        // 暂时就box支持json导入instancing，单纯看下效果
-                    // new_box->InitInstancingData();             // 初始化一下instancing的数据
-                    // render_objs.push_back(new_box);
-                    //
                 }
                 else if(component_type == "mesh")
                 {
@@ -202,6 +166,13 @@ using namespace JsonParser;
                     auto mesh_comp = make_shared<CModelMeshComponent>(render_resource_desc);
 
                     new_actor->AddComponent(mesh_comp);   
+                }
+                else if(component_type == "quad")
+                {
+                    SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
+                    auto mesh_comp = make_shared<CQuadShape>(render_resource_desc);
+
+                    new_actor->AddComponent(mesh_comp);
                 }
                 else if(component_type == "transform")
                 {
@@ -214,19 +185,17 @@ using namespace JsonParser;
                 {
                     auto dirlight_comp = make_shared<CDirectionalLightComponent>();
                     dirlight_comp->light_color = ParseVec3(component["light_color"]);
-                    // ParseTransform(actor, new_light);    
-            
-                    //lights.push_back(new_light);
+
                     new_actor->AddComponent(dirlight_comp);
                 }
                 else if(component_type == "point_light")
                 {
                     auto pointlight_comp = make_shared<CPointLightComponent>();
                     pointlight_comp->light_color = ParseVec3(component["light_color"]);
-                    //ParseTransform(actor, new_light);
         
                     new_actor->AddComponent(pointlight_comp);
                 }
+                
             }
 
             scene_actors.push_back(new_actor);

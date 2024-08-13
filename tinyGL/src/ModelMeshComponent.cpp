@@ -14,8 +14,9 @@ CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resou
 	}
 }
 
-void CModelMeshComponent::Draw()
+void CModelMeshComponent::Draw(const SSceneRenderInfo& scene_render_info)
 {
+	CMeshComponent::Draw(scene_render_info);
 	//
 	// if(render_info.index_buffer == GL_NONE)
 	// {

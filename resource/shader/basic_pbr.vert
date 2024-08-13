@@ -20,15 +20,12 @@ layout(std140, binding=0) uniform UBO {
 } matrix_ubo;
 
 
-uniform mat3 normal_model_mat;
-
-
 void main(){
 	gl_Position = matrix_ubo.projection * matrix_ubo.view * matrix_ubo.model * vec4(in_pos, 1.0);
     out_pos = (matrix_ubo.model * vec4(in_pos, 1.0)).xyz;
 	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
-    out_normal = normal_model_mat * in_normal;
+    out_normal = normalize(mat3(transpose(inverse(model)))) * in_normal;
 	out_texcoord = in_texcoord;
     
 	//ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);

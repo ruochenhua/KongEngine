@@ -9,9 +9,7 @@ namespace tinyGL
         BRDFShader() = default;
         
         void SetupData(CMesh& mesh) override;
-        void UpdateRenderData(const CMesh& mesh,
-            const glm::mat4& actor_model_mat,
-            const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
     
         virtual void InitDefaultShader() override;
     };
@@ -23,8 +21,7 @@ namespace tinyGL
         BRDFShader_NormalMap() = default;
 
         void SetupData(CMesh& mesh) override;
-        void UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-            const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
         
         virtual void InitDefaultShader() override;
     };
@@ -36,8 +33,7 @@ namespace tinyGL
         BRDFShader_ShadowMap() = default;
 
         void SetupData(CMesh& mesh) override;
-        void UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-            const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
         
         virtual void InitDefaultShader() override;
     };

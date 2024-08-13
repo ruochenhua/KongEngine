@@ -68,8 +68,8 @@ vector<weak_ptr<CMeshComponent>> CScene::GetSceneMeshes_Implement()
     auto actors = g_scene->GetSceneActors_Implement();
     for(auto& actor : actors)
     {
-        weak_ptr<CMeshComponent> mesh = actor->GetComponent<CMeshComponent>();
-        if(mesh.expired())
+        shared_ptr<CMeshComponent> mesh = actor->GetComponent<CMeshComponent>();
+        if(!mesh)
         {
             continue;
         }

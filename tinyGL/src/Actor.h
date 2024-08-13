@@ -22,7 +22,7 @@ namespace tinyGL
         void Update(float delta);
         
         template<class T>
-        weak_ptr<T> GetComponent();
+        shared_ptr<T> GetComponent();
         glm::mat4 GetModelMatrix();
         std::string name;
 
@@ -37,7 +37,7 @@ namespace tinyGL
     };
 
     template <class T>
-    weak_ptr<T> AActor::GetComponent()
+    shared_ptr<T> AActor::GetComponent()
     {
         std::type_index type_index = typeid(T);
         auto cache_iter = component_cache.find(type_index); 
@@ -56,6 +56,6 @@ namespace tinyGL
             }
         }
 
-        return std::weak_ptr<T>();
+        return nullptr;
     }
 }

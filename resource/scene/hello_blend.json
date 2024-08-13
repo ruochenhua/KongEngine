@@ -1,0 +1,159 @@
+{
+	"scene": [
+	  {
+		  "actor": "box1",
+		  "component": [
+			  {
+				  "type": "box",
+				  "shader_path": {
+					  "vs": "shader/brdf.vert",
+					  "fs": "shader/brdf.frag"
+				  },
+				  "material": {
+					  "albedo": [
+						  0.6,
+						  0.6,
+						  0.3
+					  ],
+					  "metallic": 0.9,
+					  "roughness": 0.0,
+					  "ao": 1
+				  }
+			  },
+			  {
+				  "type": "transform",
+				  "location": [
+					  0,
+					  -1,
+					  0
+				  ],
+				  "rotation": [
+					  45,
+					  0,
+					  30
+				  ]
+			  }
+		  ]
+	  },
+		{
+			"actor": "quad1",
+			"component": [
+				{
+					"type": "quad",
+					"shader_type": "brdf",
+					"texture_path": {
+						"diffuse": "crater/crater_diffuse.png",
+						"specular": "crater/crater_specular_map.png"
+					},
+					"material": {
+                        "albedo": [1,0,0.4],
+						"metallic": 0.8,
+						"roughness": 0.1,
+						"ao": 1
+					}
+				},
+				{
+					"type": "transform",
+					"location": [
+						1,
+						1,
+						0
+					],
+                  "rotation": [
+					  0,
+					  -90,
+					  0
+				  ]
+				}
+			]
+		},
+	  {
+		  "actor": "model1",
+		  "component" : [
+			  {
+				  "type": "mesh",
+				  "shader_path": {
+					  "vs": "shader/brdf.vert",
+					  "fs": "shader/brdf.frag"
+				  },
+				  "model_path": "cyborg/cyborg.obj",
+				  "texture_path": {
+					  "diffuse": "cyborg/cyborg.tga",
+					  "normal": "cyborg/cyborg.tga"
+				  },
+				  "material": {
+					  "albedo": [1, 1, 0.3],
+					  "metallic": 0.9,
+					  "roughness": 0.1,
+					  "ao": 1
+				  }
+			  },
+			  {
+				  "type": "transform",
+				  "location": [
+					  0,
+					  0,
+					  -3
+				  ],
+				  "rotation": [
+					  0,
+					  45,
+					  0
+				  ]
+			  }
+		  ]
+	  },
+		{
+			"actor": "dir_light",
+			"component": [
+				{
+					"type" : "directional_light",
+					"light_color": [
+						20,
+						20,
+						20
+					]
+				},
+				{
+					"type": "transform",
+					"rotation": [
+						45,
+						-20,
+						0
+					]
+				}
+			]
+		},
+		{
+			"actor": "point_light1",
+			"component": [
+				{
+					"type" : "point_light",
+					"light_color": [
+						3,
+						0,
+						0
+					]
+				},
+				{
+					"type": "transform",
+					"scale": [0.1,0.1,0.1]
+				},
+				{
+					"type": "box",
+					"shader_path": {
+						"vs": "shader/emit.vert",
+						"fs": "shader/emit.frag"
+					},
+					"material": {
+						"albedo": [
+							1.0,
+							0.0,
+							0.0
+						]
+					}
+				}
+			]
+		}
+	]
+  }

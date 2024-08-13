@@ -20,7 +20,6 @@ layout(std140, binding=0) uniform UBO {
     vec3 cam_pos;
 } matrix_ubo;
 
-uniform mat3 normal_model_mat;
 struct DirectionalLight
 {
 	vec4 light_dir;
@@ -49,7 +48,7 @@ void main(){
     frag_pos = (model * vec4(in_pos, 1.0)).xyz;
 
     // 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
-    frag_normal = normalize(normal_model_mat * in_normal);
+    frag_normal = normalize(mat3(transpose(inverse(model))) * in_normal);
     frag_uv = in_texcoord;
     frag_pos_lightspace = light_info_ubo.directional_light.light_space_mat * vec4(frag_pos, 1.0);
 

@@ -219,7 +219,45 @@ void CRender::RenderSkyBox()
 
 void CRender::RenderScene() const
 {
-	// 这里试着更新UBO里的矩阵数据
+	// 更新光源UBO
+	SceneLightInfo light_info;
+	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
+	if(has_dir_light)
+	{
+		light_info.has_dir_light = ivec4(1);
+		auto dir_light = scene_render_info.scene_dirlight.lock();
+		light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
+		light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
+		light_info.directional_light.light_space_mat = dir_light->light_space_mat;
+	}
+	else
+	{
+		light_info.has_dir_light = ivec4(0);
+	}
+			
+	int point_light_count = 0;
+	for(auto light : scene_render_info.scene_pointlights)
+	{
+		if(point_light_count > 3)
+		{
+			break;
+		}
+				
+		if(light.expired())
+		{
+			continue;
+		}
+		PointLight point_light;
+		point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
+		point_light.light_color = vec4(light.lock()->light_color, 1.0);
+
+		light_info.point_lights[point_light_count] = point_light; 				
+		++point_light_count;
+	}
+			
+	light_info.point_light_count = ivec4(point_light_count);
+	
+	// 更新UBO里的矩阵数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
 	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
@@ -227,117 +265,87 @@ void CRender::RenderScene() const
 	matrix_ubo.EndBind();
 	
 	auto actors = CScene::GetActors();
-		
 	for(auto actor : actors)
 	{
 		auto mesh_component = actor->GetComponent<CMeshComponent>();
-		if(mesh_component.expired())
+		if(!mesh_component)
 		{
 			continue;
 		}
 
-		auto render_obj = mesh_component.lock();
+		// auto render_obj = mesh_component;
 
 		CTransformComponent* transform_component_ptr = nullptr;
 		auto tranform_component = actor->GetComponent<CTransformComponent>();
-		if(!tranform_component.expired())
+		if(tranform_component)
 		{
-			transform_component_ptr = tranform_component.lock().get();
+			transform_component_ptr = tranform_component.get();
 		}
 		if(!transform_component_ptr)
 		{
 			continue;
 		}
-		
-		
-		auto& shader_data  = render_obj->shader_data;
-		shader_data->Use();
-		unsigned mesh_idx = 0;
-		for(auto& mesh : render_obj->mesh_list)
-		{
-			glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
-			mat4 model_mat;
-			if(transform_component_ptr->instancing_info.count == 0)
-			{
-				model_mat = actor->GetModelMatrix();
-			}
-			else
-			{
-				model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
-			}
-			
-			// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
-			matrix_ubo.Bind();
-			matrix_ubo.UpdateData(model_mat, "model");
-			
-			// 更新光源UBO
-			SceneLightInfo light_info;
-			bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
-			if(has_dir_light)
-			{
-				light_info.has_dir_light = ivec4(1);
-				auto dir_light = scene_render_info.scene_dirlight.lock();
-				light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
-				light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
-				light_info.directional_light.light_space_mat = dir_light->light_space_mat;
-			}
-			else
-			{
-				light_info.has_dir_light = ivec4(0);
-			}
-			
-			int point_light_count = 0;
-			for(auto light : scene_render_info.scene_pointlights)
-			{
-				if(point_light_count > 3)
-				{
-					break;
-				}
-				
-				if(light.expired())
-				{
-					continue;
-				}
-				PointLight point_light;
-				point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
-				point_light.light_color = vec4(light.lock()->light_color, 1.0);
 
-				light_info.point_lights[point_light_count] = point_light; 				
-				++point_light_count;
-			}
-			light_info.point_light_count = ivec4(point_light_count);
-
-			scene_light_ubo.Bind();
-			scene_light_ubo.UpdateData(light_info, "light_info");
-			
-			shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
-			// Draw the triangle !
-			// if no index, use draw array
-			auto& render_info = mesh.m_RenderInfo;
-			if(render_info.index_buffer == GL_NONE)
-			{
-				if(render_info.instance_buffer != GL_NONE)
-				{
-					// Starting from vertex 0; 3 vertices total -> 1 triangle
-					glDrawArraysInstanced(GL_TRIANGLES, 0,
-						render_info.vertex_size / render_info.stride_count,
-						render_info.instance_count);
-				}
-				else
-				{
-					// Starting from vertex 0; 3 vertices total -> 1 triangle
-					glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
-				}
-			}
-			else
-			{		
-				glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-			}
-			mesh_idx++;
 		
-			glBindVertexArray(GL_NONE);	// 解绑VAO
-		}
+		matrix_ubo.Bind();
+		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
+		matrix_ubo.EndBind();
+
+		scene_light_ubo.Bind();
+		scene_light_ubo.UpdateData(light_info, "light_info");
+		scene_light_ubo.EndBind();		
+	
+		mesh_component->Draw(scene_render_info);
+		//
+		// auto& shader_data  = render_obj->shader_data;
+		// shader_data->Use();
+		// unsigned mesh_idx = 0;
+		// for(auto& mesh : render_obj->mesh_list)
+		// {
+		// 	glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
+		// 	mat4 model_mat;
+		// 	if(transform_component_ptr->instancing_info.count == 0)
+		// 	{
+		// 		model_mat = actor->GetModelMatrix();
+		// 	}
+		// 	else
+		// 	{
+		// 		model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
+		// 	}
+		// 	
+		// 	// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
+		// 	matrix_ubo.Bind();
+		// 	matrix_ubo.UpdateData(model_mat, "model");
+		// 	
+		// 	shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
+		// 	// Draw the triangle !
+		// 	// if no index, use draw array
+		// 	auto& render_info = mesh.m_RenderInfo;
+		// 	if(render_info.index_buffer == GL_NONE)
+		// 	{
+		// 		if(render_info.instance_buffer != GL_NONE)
+		// 		{
+		// 			// Starting from vertex 0; 3 vertices total -> 1 triangle
+		// 			glDrawArraysInstanced(GL_TRIANGLES, 0,
+		// 				render_info.vertex_size / render_info.stride_count,
+		// 				render_info.instance_count);
+		// 		}
+		// 		else
+		// 		{
+		// 			// Starting from vertex 0; 3 vertices total -> 1 triangle
+		// 			glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
+		// 		}
+		// 	}
+		// 	else
+		// 	{		
+		// 		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+		// 	}
+		// 	mesh_idx++;
+		//
+		// 	glBindVertexArray(GL_NONE);	// 解绑VAO
+		// }
 	}
+	
 }
 
 void CRender::CollectLightInfo()
@@ -351,34 +359,32 @@ void CRender::CollectLightInfo()
 	for(auto actor: actors)
 	{
 		auto light_component = actor->GetComponent<CLightComponent>();
-		if(light_component.expired())
+		if(!light_component)
 		{
 			continue;
 		}
 
 		// light需要tranform信息，没有就跳过
 		auto transform_component = actor->GetComponent<CTransformComponent>();
-		if(transform_component.expired())
+		if(!transform_component)
 		{
 			continue;
 		}
-		
-		auto light_sharedptr = light_component.lock();
 
-		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_sharedptr);
+		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
 		if(dir_light)
 		{
-			dir_light->SetLightDir(transform_component.lock()->rotation);
+			dir_light->SetLightDir(transform_component->rotation);
 			scene_render_info.scene_dirlight = dir_light;
 			continue;
 		}
 
 		if(scene_render_info.scene_pointlights.size() < 4)
 		{
-			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_sharedptr);
+			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_component);
 			if(point_light)
 			{
-				point_light->SetLightLocation(transform_component.lock()->location);
+				point_light->SetLightLocation(transform_component->location);
 				scene_render_info.scene_pointlights.push_back(point_light);
 			}
 		}

@@ -9,19 +9,14 @@ CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
     : CMeshComponent(render_resource_desc)
 {
     InitQuadData(render_resource_desc);
-
-    // 调用一下shader的初始化
-    // for(auto& mesh : mesh_list)
-    // {
-    //     shader_data->SetupData(mesh);	
-    // }
+    
     // 屏幕mesh
     float quadVertices[] = {
-        // positions        // texture Coords
-        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-         1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-         1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        // positions         // normals         // texture Coords
+        -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+         1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
     };
     
     auto& render_info = mesh_list[0].m_RenderInfo;
@@ -32,16 +27,21 @@ CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
     glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 }
 
-void CQuadShape::Draw()
+void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 {
+    shader_data->Use();
     auto& render_info = mesh_list[0].m_RenderInfo;
+    
     glBindVertexArray(render_info.vertex_array_id);
+    shader_data->UpdateRenderData(mesh_list[0], scene_render_info);
+   
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);
 }

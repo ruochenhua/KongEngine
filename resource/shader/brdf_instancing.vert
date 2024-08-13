@@ -18,9 +18,6 @@ layout(std140, binding=0) uniform UBO {
     vec3 cam_pos;
 } matrix_ubo;
 
-uniform mat3 normal_model_mat;
-
-
 void main(){
 	gl_Position = matrix_ubo.projection * matrix_ubo.view * instance_model_mat * vec4(in_pos, 1.0);
     frag_pos = (instance_model_mat * vec4(in_pos, 1.0)).xyz;

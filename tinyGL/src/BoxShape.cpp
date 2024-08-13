@@ -152,9 +152,13 @@ CBoxShape::CBoxShape(const SRenderResourceDesc& render_resource_desc)
     }
 }
 
-void CBoxShape::Draw()
+void CBoxShape::Draw(const SSceneRenderInfo& scene_render_info)
 {
+    shader_data->Use();
     auto& render_info = mesh_list[0].m_RenderInfo;
+    
+    glBindVertexArray(render_info.vertex_array_id);
+    shader_data->UpdateRenderData(mesh_list[0], scene_render_info);
     if(render_info.instance_buffer != GL_NONE)
     {
         // Starting from vertex 0; 3 vertices total -> 1 triangle
@@ -167,6 +171,7 @@ void CBoxShape::Draw()
         // Starting from vertex 0; 3 vertices total -> 1 triangle
         glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
     }
+    glBindVertexArray(GL_NONE);	// 解绑VAO
 }
 
 void CBoxShape::InitBoxData(const SRenderResourceDesc& render_resource_desc)

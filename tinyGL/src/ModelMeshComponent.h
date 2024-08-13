@@ -7,6 +7,6 @@ namespace tinyGL
 	{
 	public:
 		CModelMeshComponent(const SRenderResourceDesc& render_resource_desc);
-		virtual void Draw() override;
+		virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
 	};
 }

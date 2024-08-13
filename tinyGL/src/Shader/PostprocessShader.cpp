@@ -6,8 +6,7 @@ void PostprocessShader::SetupData(CMesh& mesh)
    
 }
 
-void PostprocessShader::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-    const SSceneRenderInfo& scene_render_info)
+void PostprocessShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
     //Shader::UpdateRenderData(mesh, actor_model_mat, scene_render_info);
     //glBindVertexArray(scene_vao);
@@ -47,8 +46,7 @@ void PostprocessShader::InitDefaultShader()
     Use();
     SetInt("scene_texture", 0);
     assert(shader_id, "Shader load failed!");
-
-
+    
     Engine engine = Engine::GetEngine();
     window_width = engine.GetWindowWidth();
     window_height = engine.GetWindowHeight();

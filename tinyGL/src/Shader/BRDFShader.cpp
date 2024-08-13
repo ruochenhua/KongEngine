@@ -66,9 +66,7 @@ void BRDFShader::SetupData(CMesh& mesh)
 	render_info.indices_count = indices.size();
 }
 
-void BRDFShader::UpdateRenderData(const CMesh& mesh,
-			const glm::mat4& actor_model_mat,
-			const SSceneRenderInfo& scene_render_info)
+void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
 	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
@@ -79,13 +77,6 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh,
 	SetFloat("metallic", render_info.material.metallic);
 	SetFloat("roughness", render_info.material.roughness);
 	SetFloat("ao", render_info.material.ao);
-
-	/*
-	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
-	Normal = mat3(transpose(inverse(model))) * aNormal;
-	 */
-	// mat3 normal_model_mat = transpose(inverse(actor_model_mat));
-	SetMat3("normal_model_mat", actor_model_mat);
 
 	GLuint null_tex_id = CRender::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
@@ -144,10 +135,9 @@ void BRDFShader_NormalMap::SetupData(CMesh& mesh)
 	}
 }
 
-void BRDFShader_NormalMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-	const SSceneRenderInfo& scene_render_info)
+void BRDFShader_NormalMap::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
-	BRDFShader::UpdateRenderData(mesh, actor_model_mat, scene_render_info);
+	BRDFShader::UpdateRenderData(mesh, scene_render_info);
 	GLuint null_tex_id = CRender::GetNullTexId();
 	auto& render_info = mesh.m_RenderInfo;
 	// normal map加一个法线贴图的数据
@@ -183,10 +173,9 @@ void BRDFShader_ShadowMap::SetupData(CMesh& mesh)
 	BRDFShader_NormalMap::SetupData(mesh);
 }
 
-void BRDFShader_ShadowMap::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-	const SSceneRenderInfo& scene_render_info)
+void BRDFShader_ShadowMap::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
-	BRDFShader_NormalMap::UpdateRenderData(mesh, actor_model_mat, scene_render_info);
+	BRDFShader_NormalMap::UpdateRenderData(mesh, scene_render_info);
 	GLuint null_tex_id = CRender::GetNullTexId();
 	
 	// 添加光源的阴影贴图

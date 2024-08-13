@@ -27,9 +27,9 @@ void AActor::Update(float delta)
     // todo：先处理一下点光源和box mesh之间的颜色同步的问题吧，具体其他的还没想好
     auto point_light_comp = GetComponent<CPointLightComponent>();
     auto box_comp = GetComponent<CBoxShape>();
-    if(!point_light_comp.expired() && !box_comp.expired())
+    if(point_light_comp && box_comp)
     {
-        box_comp.lock()->mesh_list[0].m_RenderInfo.material.albedo = point_light_comp.lock()->light_color;
+        box_comp->mesh_list[0].m_RenderInfo.material.albedo = point_light_comp->light_color;
     }
 }
 
@@ -60,21 +60,21 @@ void AActor::BeginPlay()
     // 在加载完后需要做一些事情
     // 这里先处理一下instancing的东西，其他的后面再加
     auto transform_comp = GetComponent<CTransformComponent>();
-    if(transform_comp.expired())
+    if(transform_comp)
     {
         return;
     }
 
-    if(transform_comp.lock()->instancing_info.count > 0)
+    if(transform_comp->instancing_info.count > 0)
     {
-        transform_comp.lock()->InitInstancingData();
+        transform_comp->InitInstancingData();
         auto mesh_comp = GetComponent<CMeshComponent>();
-        if(mesh_comp.expired())
+        if(mesh_comp)
         {
             return;
         }
 
-        transform_comp.lock()->BindInstancingToMesh(mesh_comp);
+        transform_comp->BindInstancingToMesh(mesh_comp);
     }
 }
 

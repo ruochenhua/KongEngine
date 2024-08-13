@@ -76,10 +76,11 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_shadow_directionallight",
 		"hello_shadow_pointlight",
 		"hello_instancing",
-		"hello_porsche"
+		"hello_porsche",
+		"hello_blend"
 	};
 
-	static int item_type = 7;
+	static int item_type = 8;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
@@ -103,30 +104,29 @@ void CUIManager::DescribeUIContent(double delta)
 			if(ImGui::TreeNode("","%s", actor->name.c_str()))
 			{
 				auto transform_comp = actor->GetComponent<CTransformComponent>();
-				if(!transform_comp.expired())
+				if(transform_comp)
 				{
-					auto trans_ptr = transform_comp.lock();
 					if(ImGui::TreeNode("", "transform:"))
 					{
 						if(ImGui::TreeNode("","location:"))
 						{
-							ImGui::DragFloat("lx", &trans_ptr->location.x, 0.02f);
-							ImGui::DragFloat("ly", &trans_ptr->location.y, 0.02f);
-							ImGui::DragFloat("lz", &trans_ptr->location.z, 0.02f);
+							ImGui::DragFloat("lx", &transform_comp->location.x, 0.02f);
+							ImGui::DragFloat("ly", &transform_comp->location.y, 0.02f);
+							ImGui::DragFloat("lz", &transform_comp->location.z, 0.02f);
 							ImGui::TreePop();
 						}
 						if(ImGui::TreeNode("","rotation:"))
 						{
-							ImGui::DragFloat("rx", &trans_ptr->rotation.x, 0.02f);
-							ImGui::DragFloat("ry", &trans_ptr->rotation.y, 0.02f);
-							ImGui::DragFloat("rz", &trans_ptr->rotation.z, 0.02f);
+							ImGui::DragFloat("rx", &transform_comp->rotation.x, 0.02f);
+							ImGui::DragFloat("ry", &transform_comp->rotation.y, 0.02f);
+							ImGui::DragFloat("rz", &transform_comp->rotation.z, 0.02f);
 							ImGui::TreePop();
 						}
 						if(ImGui::TreeNode("","scale:"))
 						{
-							ImGui::DragFloat("sx", &trans_ptr->scale.x, 0.02f, 0.01f);
-							ImGui::DragFloat("sy", &trans_ptr->scale.y, 0.02f, 0.01f);
-							ImGui::DragFloat("sz", &trans_ptr->scale.z, 0.02f, 0.01f);
+							ImGui::DragFloat("sx", &transform_comp->scale.x, 0.02f, 0.01f);
+							ImGui::DragFloat("sy", &transform_comp->scale.y, 0.02f, 0.01f);
+							ImGui::DragFloat("sz", &transform_comp->scale.z, 0.02f, 0.01f);
 							ImGui::TreePop();
 						}
 						ImGui::TreePop();
@@ -134,16 +134,15 @@ void CUIManager::DescribeUIContent(double delta)
 				}
 
 				auto light_comp = actor->GetComponent<CLightComponent>();
-				if(!light_comp.expired())
+				if(light_comp)
 				{
-					auto light_ptr = light_comp.lock();
 					if(ImGui::TreeNode("", "light:"))
 					{
 						if(ImGui::TreeNode("","color:"))
 						{
-							ImGui::DragFloat("color_x", &light_ptr->light_color.x, 0.02f, 0.f);
-							ImGui::DragFloat("color_y", &light_ptr->light_color.y, 0.02f, 0.f);
-							ImGui::DragFloat("color_z", &light_ptr->light_color.z, 0.02f, 0.f);
+							ImGui::DragFloat("color_x", &light_comp->light_color.x, 0.02f, 0.f);
+							ImGui::DragFloat("color_y", &light_comp->light_color.y, 0.02f, 0.f);
+							ImGui::DragFloat("color_z", &light_comp->light_color.z, 0.02f, 0.f);
 							ImGui::TreePop();
 						}
 						ImGui::TreePop();

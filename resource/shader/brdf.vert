@@ -10,8 +10,6 @@ out vec3 frag_normal;
 out vec2 frag_uv;
 //out vec4 ShadowCoord;
 
-uniform mat3 normal_model_mat;
-
 layout(std140, binding=0) uniform UBO {
     mat4 model;
     mat4 view;
@@ -24,7 +22,7 @@ void main(){
     frag_pos = (matrix_ubo.model * vec4(in_pos, 1.0)).xyz;
 	
 	// 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
-    frag_normal = normalize(normal_model_mat * in_normal);
+    frag_normal = normalize(mat3(transpose(inverse(matrix_ubo.model))) * in_normal);
 	frag_uv = in_texcoord;
 		
 	//ShadowCoord = depth_bias_mvp * vec4(vertexPosition_modelspace, 1);

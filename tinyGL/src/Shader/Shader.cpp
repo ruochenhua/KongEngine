@@ -229,8 +229,7 @@ void Shader::SetupData(CMesh& mesh)
 	SetInt("shadow_map_pointlight", 4);
 }
 
-void Shader::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_mat,
-                              const SSceneRenderInfo& scene_render_info)
+void Shader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
 	auto& render_info = mesh.m_RenderInfo;
     glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
@@ -246,9 +245,6 @@ void Shader::UpdateRenderData(const CMesh& mesh, const glm::mat4& actor_model_ma
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
-	//mat3 normal_model_mat = transpose(inverse(actor_model_mat));
-	SetMat3("normal_model_mat", actor_model_mat);
-
 	GLuint null_tex_id = CRender::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
 	GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
