@@ -5,10 +5,7 @@
 		  "component": [
 			  {
 				  "type": "box",
-				  "shader_path": {
-					  "vs": "shader/brdf.vert",
-					  "fs": "shader/brdf.frag"
-				  },
+				  "shader_type": "brdf",
 				  "material": {
 					  "albedo": [
 						  0.6,
@@ -40,10 +37,7 @@
 			"component": [
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/brdf.vert",
-						"fs": "shader/brdf.frag"
-					},
+					"shader_type": "brdf",
 					"texture_path": {
 						"diffuse": "crater/crater_diffuse.png",
 						"specular": "crater/crater_specular_map.png"
@@ -74,10 +68,7 @@
 		  "component" : [
 			  {
 				  "type": "mesh",
-				  "shader_path": {
-					  "vs": "shader/brdf.vert",
-					  "fs": "shader/brdf.frag"
-				  },
+				  "shader_type": "brdf",
 				  "model_path": "cyborg/cyborg.obj",
 				  "texture_path": {
 					  "diffuse": "cyborg/cyborg.tga",
@@ -143,10 +134,7 @@
 				},
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/emit.vert",
-						"fs": "shader/emit.frag"
-					},
+					"shader_type": "emit",
 					"material": {
 						"albedo": [
 							1.0,
@@ -179,10 +167,7 @@
 				},
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/emit.vert",
-						"fs": "shader/emit.frag"
-					},
+					"shader_type": "emit",
 					"material": {
 						"albedo": [
 							0.0,

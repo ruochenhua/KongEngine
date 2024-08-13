@@ -114,7 +114,7 @@ namespace JsonParser
             auto material_json = in_json["material"];
             if(!material_json["albedo"].is_null())
             {
-                render_resource_desc.material.albedo = ParseVec3(material_json["albedo"]);    
+                render_resource_desc.material.albedo = glm::vec4(ParseVec3(material_json["albedo"]), 1.0);    
             }
 
             if(!material_json["metallic"].is_null())
@@ -157,7 +157,7 @@ using namespace JsonParser;
                 {
                     SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
                     auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
-
+                    
                     new_actor->AddComponent(mesh_comp);
                 }
                 else if(component_type == "mesh")

@@ -3,7 +3,7 @@
 
 struct BRDFMaterial
 {
-    vec3 albedo;    // color
+    vec4 albedo;    // color
     float specular_factor;
     float metallic;
     float roughness;
@@ -71,7 +71,7 @@ vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view,
     float NDF = DistributionGGX(normal, h, material.roughness);
     float G = GeometrySmith(normal, view, to_light_dir, material.roughness);
     vec3 F0 = vec3(0.04);
-    F0 = mix(F0, material.albedo, material.metallic);
+    F0 = mix(F0, material.albedo.xyz, material.metallic);
 
     vec3 F = FresnelSchlick(clamp(dot(h, view), 0.0, 1.0), F0);
     //vec3 F = FresnelSchlick(clamp(dot(h, to_light_dir), 0.0, 1.0), F0);
@@ -90,7 +90,7 @@ vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view,
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     //return material.specular_factor;
-    return (KD*material.albedo / PI_Val + specular)*radiance*NdotL;
+    return (KD*material.albedo.xyz / PI_Val + specular)*radiance*NdotL;
     //return specular;
 }
 #endif  // _BRDF_COMMON_GLSL_

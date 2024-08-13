@@ -8,7 +8,6 @@ namespace tinyGL
     {
     public:
         EmitShader() = default;
-        void SetupData(CMesh& mesh) override;
         void UpdateRenderData(const CMesh& mesh,
             const SSceneRenderInfo& scene_render_info) override;
     

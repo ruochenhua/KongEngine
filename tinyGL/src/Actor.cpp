@@ -29,7 +29,7 @@ void AActor::Update(float delta)
     auto box_comp = GetComponent<CBoxShape>();
     if(point_light_comp && box_comp)
     {
-        box_comp->mesh_list[0].m_RenderInfo.material.albedo = point_light_comp->light_color;
+        box_comp->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(point_light_comp->light_color, 1.0);
     }
 }
 

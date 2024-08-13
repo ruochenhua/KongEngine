@@ -19,7 +19,7 @@ namespace tinyGL
 		
     struct SMaterial
     {
-        glm::vec3 albedo = glm::vec3(0.f);
+        glm::vec4 albedo = glm::vec4(0.f);
         float specular_factor = 1.0f;
         float metallic = 0.5f;
         float roughness = 0.5;

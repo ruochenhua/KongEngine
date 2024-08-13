@@ -5,10 +5,7 @@
 		  "component": [
 			  {
 				  "type": "mesh",
-				  "shader_path": {
-					  "vs": "shader/brdf.vert",
-					  "fs": "shader/brdf.frag"
-				  },
+				  "shader_type": "brdf",
 				  "model_path": "nanosuit/nanosuit.obj",
 				  "material": {
 					  "metallic": 0.9,
@@ -58,10 +55,7 @@
 			  },
 			  {
 				  "type": "box",
-				  "shader_path": {
-					  "vs": "shader/emit.vert",
-					  "fs": "shader/emit.frag"
-				  },
+				  "shader_type": "emit",
 				  "material": {
 					  "albedo": [
 						  1.0,
@@ -94,10 +88,7 @@
 				},
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/emit.vert",
-						"fs": "shader/emit.frag"
-					},
+					"shader_type": "emit",
 					"material": {
 						"albedo": [
 							0.0,

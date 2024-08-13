@@ -8,6 +8,8 @@ namespace tinyGL
 	public:
 		CBoxShape(const SRenderResourceDesc& render_resource_desc);
 		virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
+	
+	//	void InitRenderInfo() override;
 	private:
 		void InitBoxData(const SRenderResourceDesc& render_resource_desc);
 		

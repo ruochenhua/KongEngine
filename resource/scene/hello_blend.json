@@ -5,10 +5,7 @@
 		  "component": [
 			  {
 				  "type": "box",
-				  "shader_path": {
-					  "vs": "shader/brdf.vert",
-					  "fs": "shader/brdf.frag"
-				  },
+				  "shader_type": "brdf",
 				  "material": {
 					  "albedo": [
 						  0.6,
@@ -23,8 +20,8 @@
 			  {
 				  "type": "transform",
 				  "location": [
+					  1,
 					  0,
-					  -1,
 					  0
 				  ],
 				  "rotation": [
@@ -40,30 +37,32 @@
 			"component": [
 				{
 					"type": "quad",
-					"shader_type": "brdf",
+					"shader_type": "blend",
 					"texture_path": {
-						"diffuse": "crater/crater_diffuse.png",
-						"specular": "crater/crater_specular_map.png"
-					},
-					"material": {
-                        "albedo": [1,0,0.4],
-						"metallic": 0.8,
-						"roughness": 0.1,
-						"ao": 1
+						"diffuse": "textures/window.png"
 					}
 				},
 				{
 					"type": "transform",
-					"location": [
-						1,
-						1,
-						0
-					],
-                  "rotation": [
-					  0,
-					  -90,
-					  0
-				  ]
+					"location": [-1, 0, 0],
+					"rotation": [0, -90, 0]
+				}
+			]
+		},
+		{
+			"actor": "quad2",
+			"component": [
+				{
+					"type": "quad",
+					"shader_type": "blend",
+					"texture_path": {
+						"diffuse": "textures/window.png"
+					}
+				},
+				{
+					"type": "transform",
+					"location": [-2, 0, 0],
+                  	"rotation": [0, -90, 0]
 				}
 			]
 		},
@@ -72,10 +71,7 @@
 		  "component" : [
 			  {
 				  "type": "mesh",
-				  "shader_path": {
-					  "vs": "shader/brdf.vert",
-					  "fs": "shader/brdf.frag"
-				  },
+				  "shader_type": "brdf",
 				  "model_path": "cyborg/cyborg.obj",
 				  "texture_path": {
 					  "diffuse": "cyborg/cyborg.tga",
@@ -130,8 +126,8 @@
 				{
 					"type" : "point_light",
 					"light_color": [
-						3,
-						0,
+						30,
+						30,
 						0
 					]
 				},
@@ -141,14 +137,11 @@
 				},
 				{
 					"type": "box",
-					"shader_path": {
-						"vs": "shader/emit.vert",
-						"fs": "shader/emit.frag"
-					},
+					"shader_type": "emit",
 					"material": {
 						"albedo": [
 							1.0,
-							0.0,
+							1.0,
 							0.0
 						]
 					}

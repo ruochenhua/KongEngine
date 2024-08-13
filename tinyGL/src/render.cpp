@@ -136,12 +136,14 @@ void CRender::RenderSceneObject()
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 #if SHADOWMAP_DEBUG
 #else
 	int width = Engine::GetEngine().GetWindowWidth();
 	int height = Engine::GetEngine().GetWindowHeight();
 
-	glViewport(0,0,width, height);
+	glViewport(0,0, width, height);
 	// 渲染到后处理framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
 	
@@ -171,7 +173,7 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 	{
 		return texture_id;		
 	}
-	// stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(true);
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data);

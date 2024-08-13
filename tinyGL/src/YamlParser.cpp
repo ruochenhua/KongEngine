@@ -138,7 +138,7 @@ namespace YamlParser
             auto material_node = in_node["material"];
             if(material_node["albedo"])
             {
-                render_resource_desc.material.albedo = ParseVec3(material_node["albedo"].as<vector<float>>());    
+                render_resource_desc.material.albedo = glm::vec4(ParseVec3(material_node["albedo"].as<vector<float>>()), 1.0);    
             }
 
             if(material_node["metallic"])

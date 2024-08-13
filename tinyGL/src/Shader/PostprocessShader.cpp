@@ -1,11 +1,6 @@
 #include "PostprocessShader.h"
 using namespace tinyGL;
 
-void PostprocessShader::SetupData(CMesh& mesh)
-{
-   
-}
-
 void PostprocessShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
     //Shader::UpdateRenderData(mesh, actor_model_mat, scene_render_info);

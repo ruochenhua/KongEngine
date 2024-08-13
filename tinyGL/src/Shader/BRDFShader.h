@@ -3,12 +3,12 @@
 
 namespace tinyGL
 {
+    // todo：或许应该改名为pbrshader
     class BRDFShader : public Shader
     {
     public:
         BRDFShader() = default;
         
-        void SetupData(CMesh& mesh) override;
         void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
     
         virtual void InitDefaultShader() override;
@@ -19,8 +19,7 @@ namespace tinyGL
     {
     public:
         BRDFShader_NormalMap() = default;
-
-        void SetupData(CMesh& mesh) override;
+        
         void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
         
         virtual void InitDefaultShader() override;
@@ -31,8 +30,7 @@ namespace tinyGL
     {
     public:
         BRDFShader_ShadowMap() = default;
-
-        void SetupData(CMesh& mesh) override;
+        
         void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
         
         virtual void InitDefaultShader() override;

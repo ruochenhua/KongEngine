@@ -9,7 +9,22 @@ CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
     : CMeshComponent(render_resource_desc)
 {
     InitQuadData(render_resource_desc);
+}
+
+void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
+{
+    shader_data->Use();
+    auto& render_info = mesh_list[0].m_RenderInfo;
     
+    glBindVertexArray(render_info.vertex_array_id);
+    shader_data->UpdateRenderData(mesh_list[0], scene_render_info);
+   
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(GL_NONE);
+}
+
+void CQuadShape::InitRenderInfo()
+{
     // 屏幕mesh
     float quadVertices[] = {
         // positions         // normals         // texture Coords
@@ -34,18 +49,6 @@ CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 }
 
-void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
-{
-    shader_data->Use();
-    auto& render_info = mesh_list[0].m_RenderInfo;
-    
-    glBindVertexArray(render_info.vertex_array_id);
-    shader_data->UpdateRenderData(mesh_list[0], scene_render_info);
-   
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(GL_NONE);
-}
-
 void CQuadShape::InitQuadData(const SRenderResourceDesc& render_resource_desc)
 {
     CMesh mesh;
@@ -58,7 +61,7 @@ void CQuadShape::InitQuadData(const SRenderResourceDesc& render_resource_desc)
     {
         render_info.diffuse_tex_id = CRender::LoadTexture(diffuse_path_iter->second);
     }
-
+    
     auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
     if (specular_path_iter != texture_paths.end())
     {

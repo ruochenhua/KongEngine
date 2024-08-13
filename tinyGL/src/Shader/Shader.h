@@ -86,7 +86,6 @@ namespace tinyGL
     	void Use() const;
     	// 获取这个shader需要的数据，每个shader的需求应该是不一样的所以子类需要实现;
     	// 父类的这个是为了支持原先的传入shader文件的写法，也就是设置尽量全名的参数传入
-    	virtual void SetupData(CMesh& mesh);
     	virtual void UpdateRenderData(const CMesh& mesh,
     		const SSceneRenderInfo& scene_render_info);
     	virtual void InitDefaultShader(){};

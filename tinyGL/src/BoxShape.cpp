@@ -144,12 +144,7 @@ CBoxShape::CBoxShape(const SRenderResourceDesc& render_resource_desc)
     : CMeshComponent(render_resource_desc)
 {
     InitBoxData(render_resource_desc);
-
-    // 调用一下shader的初始化
-    for(auto& mesh : mesh_list)
-    {
-        shader_data->SetupData(mesh);	
-    }
+    //InitRenderInfo(render_resource_desc);
 }
 
 void CBoxShape::Draw(const SSceneRenderInfo& scene_render_info)

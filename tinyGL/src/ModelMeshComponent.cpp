@@ -8,10 +8,10 @@ CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resou
 	:CMeshComponent(render_resource_desc)
 {
 	ImportObj(render_resource_desc.model_path);
-	for(auto& mesh : mesh_list)
-	{
-		shader_data->SetupData(mesh);	
-	}
+	// for(auto& mesh : mesh_list)
+	// {
+	// 	shader_data->SetupData(mesh);	
+	// }
 }
 
 void CModelMeshComponent::Draw(const SSceneRenderInfo& scene_render_info)

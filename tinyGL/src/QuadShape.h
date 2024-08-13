@@ -8,6 +8,7 @@ namespace tinyGL
     public:
         CQuadShape(const SRenderResourceDesc& render_resource_desc);
         virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
+        virtual void InitRenderInfo() override;
     private:
         void InitQuadData(const SRenderResourceDesc& render_resource_desc);
         
