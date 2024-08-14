@@ -1,0 +1,83 @@
+{
+    "scene": [
+      {
+        "actor": "sphere1",
+        "component": [
+          {
+            "type": "sphere",
+            "shader_type": "brdf",
+            "texture_path": {
+              "diffuse": "textures/pbr/rusted_iron/albedo.png",
+              "metallic": "textures/pbr/rusted_iron/metallic.png",
+              "normal": "textures/pbr/rusted_iron/normal.png",
+              "roughness": "textures/pbr/rusted_iron/roughness.png",
+              "ao": "textures/pbr/rusted_iron/ao.png"
+            }
+          },
+          {
+            "type": "transform",
+            "location": [
+              0,
+              -1,
+              2
+            ],
+            "scale": [0.5, 0.5, 0.5]
+          }
+        ]
+      },
+      {
+        "actor": "box2",
+        "component": [
+          {
+            "type": "box",
+            "shader_type": "brdf",
+            "texture_path": {
+              "diffuse": "textures/pbr/grass/albedo.png",
+              "metallic": "textures/pbr/grass/metallic.png",
+              "normal": "textures/pbr/grass/normal.png",
+              "roughness": "textures/pbr/grass/roughness.png",
+              "ao": "textures/pbr/grass/ao.png"
+            }
+          },
+          {
+            "type": "transform",
+            "location": [
+              0,
+              -1,
+              0
+            ],
+            "scale": [0.5, 0.5, 0.5]
+          }
+        ]
+      },
+      {
+        "actor": "point_light",
+        "component": [
+          {
+            "type": "box",
+            "shader_type": "emit",
+            "material": {
+              "albedo": [
+                1.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "type": "point_light",
+            "light_color": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "type": "transform",
+            "location": [0,0,1],
+            "scale" : [0.1,0.1,0.1]
+          }
+        ]
+      }
+    ]
+  }

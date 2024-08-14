@@ -89,12 +89,13 @@ namespace tinyGL
     	virtual void UpdateRenderData(const CMesh& mesh,
     		const SSceneRenderInfo& scene_render_info);
     	virtual void InitDefaultShader(){};
+    	
+    	bool bIsBlend = false;
     protected:
     	// shader id
     	GLuint shader_id = GL_NONE;
 		// shader file path
     	map<EShaderType, string> shader_path_map;
-
 
     };
 

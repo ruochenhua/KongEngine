@@ -32,11 +32,13 @@ uniform float roughness;
 uniform float ao;
 
 uniform sampler2D diffuse_texture;
-uniform sampler2D specular_texture;
 uniform sampler2D normal_texture;
+uniform sampler2D roughness_texture;
+uniform sampler2D metallic_texture;
+uniform sampler2D ao_texture;
+
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight;
-
 
 vec4 GetAlbedo()
 {
@@ -63,6 +65,39 @@ vec3 GetNormal()
     }
 
     return frag_normal;
+}
+
+float GetRoughness()
+{
+    float texture_size = textureSize(roughness_texture, 0).x;
+    if(texture_size > 1.0)
+    {
+        return texture(roughness_texture, frag_uv).r;
+    }
+
+    return roughness;
+}
+
+float GetMetallic()
+{
+    float texture_size = textureSize(metallic_texture, 0).x;
+    if(texture_size > 1.0)
+    {
+        return texture(metallic_texture, frag_uv).r;
+    }
+
+    return metallic;
+}
+
+float GetAO()
+{
+    float texture_size = textureSize(ao_texture, 0).x;
+    if(texture_size > 1.0)
+    {
+        return texture(ao_texture, frag_uv).r;
+    }
+
+    return ao;
 }
 
 // 计算阴影
@@ -116,11 +151,11 @@ float ShadowCalculation_pointlight(vec3 in_frag_pos, vec3 light_pos)
 vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 {
     BRDFMaterial material;
-    material.roughness = roughness;
-    material.metallic = metallic;
+    material.roughness = GetRoughness();
+    material.metallic = GetMetallic();
     material.albedo = GetAlbedo();
 	material.specular_factor = specular_factor;
-    material.ao = ao;
+    material.ao = GetAO();
 
     return CalcLight_BRDF(light_color, to_light_dir, normal, view, material);
 }
@@ -138,6 +173,9 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
 
 vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
 {
+    float kc = 0.2;
+    float kl = 0.1;
+    float kq = 0.0;
     vec3 light_color = point_light.light_color.xyz;
     vec3 to_light_dir = normalize(point_light.light_pos.xyz - in_frag_pos);
 
@@ -145,7 +183,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag
 
     float shadow = ShadowCalculation_pointlight(frag_pos, point_light.light_pos.xyz);
     float distance = length(point_light.light_pos.xyz - in_frag_pos);
-    float attenuation = 1.0 / (distance * distance);	//衰减和点光源的参数可控，这里先简单弄个
+    float attenuation = 1.0 / (kc + kl*distance + kq*distance*distance);	//衰减和点光源的参数可控，这里先简单弄个
     return point_light_color * attenuation * (1.0 - shadow);
 }
 
@@ -170,7 +208,10 @@ void main()
     vec3 ambient = vec3(0.03)*GetAlbedo().xyz*ao;
     vec3 color = ambient + (dir_light_color + point_light_color);
     // 伽马校正（Reinhard）
-     color = color / (color + vec3(1.0));
-     color = pow(color, vec3(1.0/2.2));
+//     color = color / (color + vec3(1.0));
+//     color = pow(color, vec3(1.0/2.2));
+    //FragColor = vec4((obj_normal+1)/2, 1.0);// vec4(color, 1.0);
+    //FragColor = vec4(frag_uv, 0, 1);
+    //FragColor = GetAlbedo();
     FragColor = vec4(color, 1.0);
 }

@@ -27,7 +27,7 @@ void BlendShader::InitDefaultShader()
     shader_id = Shader::LoadShaders(shader_path_map);
     
     assert(shader_id, "Shader load failed!");
-    
+    bIsBlend = true;
     Use();
     SetInt("diffuse_texture", 0);
 }

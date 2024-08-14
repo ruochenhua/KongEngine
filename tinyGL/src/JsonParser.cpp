@@ -7,6 +7,7 @@
 #include "Scene.h"
 #include "BoxShape.h"
 #include "QuadShape.h"
+#include "SphereShape.h"
 using json = nlohmann::json;
 
 using namespace tinyGL;
@@ -107,6 +108,30 @@ namespace JsonParser
                 render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::tangent,
                     CSceneLoader::ToResourcePath(texture_json["tangent"]));   
             }
+
+            if(!texture_json["metallic"].is_null())
+            {
+                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::metallic,
+                    CSceneLoader::ToResourcePath(texture_json["metallic"]));   
+            }
+
+            if(!texture_json["roughness"].is_null())
+            {
+                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::roughness,
+                    CSceneLoader::ToResourcePath(texture_json["roughness"]));   
+            }
+
+            if(!texture_json["ao"].is_null())
+            {
+                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::ambient_occlusion,
+                    CSceneLoader::ToResourcePath(texture_json["ao"]));   
+            }
+
+            if(!texture_json["glow"].is_null())
+            {
+                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::glow,
+                    CSceneLoader::ToResourcePath(texture_json["glow"]));   
+            }
         }
 
         if(!in_json["material"].is_null())
@@ -157,6 +182,13 @@ using namespace JsonParser;
                 {
                     SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
                     auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
+                    
+                    new_actor->AddComponent(mesh_comp);
+                }
+                else if(component_type == "sphere")
+                {
+                    SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
+                    auto mesh_comp = make_shared<SphereShape>(render_resource_desc);
                     
                     new_actor->AddComponent(mesh_comp);
                 }

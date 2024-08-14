@@ -176,7 +176,7 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
-	assert(data);
+	assert(data, "load texture failed");
 
 	GLenum format = GL_BGR;
 	switch(nr_component)
@@ -259,6 +259,10 @@ void CRender::RenderScene() const
 			
 	light_info.point_light_count = ivec4(point_light_count);
 	
+	scene_light_ubo.Bind();
+	scene_light_ubo.UpdateData(light_info, "light_info");
+	scene_light_ubo.EndBind();
+	
 	// 更新UBO里的矩阵数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
@@ -287,67 +291,13 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
-
 		
 		matrix_ubo.Bind();
 		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
 		matrix_ubo.EndBind();
-
-		scene_light_ubo.Bind();
-		scene_light_ubo.UpdateData(light_info, "light_info");
-		scene_light_ubo.EndBind();		
 	
 		mesh_component->Draw(scene_render_info);
-		//
-		// auto& shader_data  = render_obj->shader_data;
-		// shader_data->Use();
-		// unsigned mesh_idx = 0;
-		// for(auto& mesh : render_obj->mesh_list)
-		// {
-		// 	glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
-		// 	mat4 model_mat;
-		// 	if(transform_component_ptr->instancing_info.count == 0)
-		// 	{
-		// 		model_mat = actor->GetModelMatrix();
-		// 	}
-		// 	else
-		// 	{
-		// 		model_mat = transform_component_ptr->GetInstancingModelMat(mesh_idx);
-		// 	}
-		// 	
-		// 	// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &model_mat);
-		// 	matrix_ubo.Bind();
-		// 	matrix_ubo.UpdateData(model_mat, "model");
-		// 	
-		// 	shader_data->UpdateRenderData(mesh, model_mat, scene_render_info);
-		// 	// Draw the triangle !
-		// 	// if no index, use draw array
-		// 	auto& render_info = mesh.m_RenderInfo;
-		// 	if(render_info.index_buffer == GL_NONE)
-		// 	{
-		// 		if(render_info.instance_buffer != GL_NONE)
-		// 		{
-		// 			// Starting from vertex 0; 3 vertices total -> 1 triangle
-		// 			glDrawArraysInstanced(GL_TRIANGLES, 0,
-		// 				render_info.vertex_size / render_info.stride_count,
-		// 				render_info.instance_count);
-		// 		}
-		// 		else
-		// 		{
-		// 			// Starting from vertex 0; 3 vertices total -> 1 triangle
-		// 			glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
-		// 		}
-		// 	}
-		// 	else
-		// 	{		
-		// 		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-		// 	}
-		// 	mesh_idx++;
-		//
-		// 	glBindVertexArray(GL_NONE);	// 解绑VAO
-		// }
 	}
-	
 }
 
 void CRender::CollectLightInfo()

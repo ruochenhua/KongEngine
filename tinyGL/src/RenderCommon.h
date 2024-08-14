@@ -53,7 +53,9 @@ namespace tinyGL
         GLuint specular_tex_id = 0;
         GLuint normal_tex_id = 0;
         GLuint tangent_tex_id = 0;
-        GLuint diffuse_roughness_tex_id = 0;
+        GLuint roughness_tex_id = 0;
+        GLuint metallic_tex_id = 0;
+        GLuint ao_tex_id = 0;
         
         // 材质
         SMaterial material;

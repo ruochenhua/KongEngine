@@ -77,10 +77,11 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_shadow_pointlight",
 		"hello_instancing",
 		"hello_porsche",
-		"hello_blend"
+		"hello_blend",
+		"hello_pbr_texture",
 	};
 
-	static int item_type = 8;
+	static int item_type = 9;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 

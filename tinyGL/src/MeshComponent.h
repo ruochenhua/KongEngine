@@ -54,12 +54,15 @@ namespace tinyGL
 		virtual void Draw(const SSceneRenderInfo& scene_render_info);
 		
 		virtual void InitRenderInfo();
+		bool IsBlend();
 	protected:
 		
 		string directory;
 		
 		// import obj model
+		// todo：同样的资源复用
 		int ImportObj(const std::string& model_path);
+		void LoadOverloadTexture(const SRenderResourceDesc& render_resource_desc);
 		void ProcessAssimpNode(aiNode* model_node, const aiScene* scene);
 		void ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene);
 	};

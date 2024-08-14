@@ -57,18 +57,7 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 	float spec = pow(max(dot(h, normal), 0), 256);
 	vec3 specular = ks * spec * light_color;
 
-	vec3 specular_color = vec3(0);
-
-	float spec_tex_size = textureSize(specular_map_texture, 0).x;
-	if(spec_tex_size > 1.0)
-	{
-		specular_color = specular * texture(specular_map_texture, out_texcoord).rgb;
-	}
-	else
-	{
-		specular_color = specular * albedo;
-	}
-
+	vec3 specular_color = specular * albedo;
 
 	return ambient + diffuse_color + specular_color;
 }

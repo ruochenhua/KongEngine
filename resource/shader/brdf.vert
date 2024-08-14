@@ -45,7 +45,7 @@ void main(){
 
     vec3 T = normalize(vec3(model*vec4(in_tangent, 0.0)));
     vec3 B = normalize(vec3(model*vec4(in_bitangent, 0.0)));
-    vec3 N = normalize(vec3(model*vec4(frag_normal, 0.0)));
+    vec3 N = normalize(vec3(model*vec4(in_normal, 0.0)));
 
     TBN = mat3(T, B, N);
 }

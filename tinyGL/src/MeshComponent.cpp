@@ -238,6 +238,11 @@ void CMeshComponent::InitRenderInfo()
 	}
 }
 
+bool CMeshComponent::IsBlend()
+{
+	return shader_data->bIsBlend;
+}
+
 std::vector<float> CMesh::GetVertices() const
 {
 	return m_Vertex;
@@ -287,6 +292,52 @@ int CMeshComponent::ImportObj(const std::string& model_path)
 
 	ProcessAssimpNode(scene->mRootNode, scene);
 	return 0;
+}
+
+void CMeshComponent::LoadOverloadTexture(const SRenderResourceDesc& render_resource_desc)
+{
+	for(auto& mesh : mesh_list)
+	{
+		auto& render_info = mesh.m_RenderInfo;
+		const auto& texture_paths = render_resource_desc.texture_paths;
+		auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
+		if (diffuse_path_iter != texture_paths.end())
+		{
+			render_info.diffuse_tex_id = CRender::LoadTexture(diffuse_path_iter->second);
+		}
+
+		auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
+		if (specular_path_iter != texture_paths.end())
+		{
+			render_info.specular_tex_id = CRender::LoadTexture(specular_path_iter->second);
+		}
+
+		auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
+		if (normal_path_iter != texture_paths.end())
+		{
+			render_info.normal_tex_id = CRender::LoadTexture(normal_path_iter->second);
+		}
+
+		auto metallic_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::metallic);
+		if (metallic_path_iter != texture_paths.end())
+		{
+			render_info.metallic_tex_id = CRender::LoadTexture(metallic_path_iter->second);
+		}
+
+		auto roughness_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::roughness);
+		if (roughness_path_iter != texture_paths.end())
+		{
+			render_info.roughness_tex_id = CRender::LoadTexture(roughness_path_iter->second);
+		}
+
+		auto ao_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::ambient_occlusion);
+		if (ao_path_iter != texture_paths.end())
+		{
+			render_info.ao_tex_id = CRender::LoadTexture(ao_path_iter->second);
+		}
+
+		render_info.material = render_resource_desc.material;
+	}
 }
 
 void CMeshComponent::ProcessAssimpNode(aiNode* model_node, const aiScene* scene)
@@ -465,7 +516,7 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 			aiString tex_str;
 			material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.diffuse_roughness_tex_id = CRender::LoadTexture(tex_path);
+			new_mesh.m_RenderInfo.roughness_tex_id = CRender::LoadTexture(tex_path);
 		}
 
 		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);
