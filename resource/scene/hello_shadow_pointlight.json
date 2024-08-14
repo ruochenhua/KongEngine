@@ -17,7 +17,7 @@
 					"type": "transform",
 					"location": [
 						5,
-						-0.5,
+						-1,
 						0
 					],
 					"scale": [
@@ -63,7 +63,7 @@
 					"type": "transform",
 					"location": [
 						0,
-						-1,
+						-2,
 						0
 					],
 					"scale": [

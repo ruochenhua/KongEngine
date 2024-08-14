@@ -336,7 +336,10 @@ void CMeshComponent::LoadOverloadTexture(const SRenderResourceDesc& render_resou
 			render_info.ao_tex_id = CRender::LoadTexture(ao_path_iter->second);
 		}
 
-		render_info.material = render_resource_desc.material;
+		if(render_resource_desc.bOverloadMaterial)
+		{
+			render_info.material = render_resource_desc.material;
+		}
 	}
 }
 

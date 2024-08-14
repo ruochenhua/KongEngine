@@ -5,7 +5,7 @@
 		  "component": [
 			  {
 				  "type": "mesh",
-				  "shader_type" : "brdf",
+				  "shader_type": "brdf",
 				  "model_path": "Porsche/scene.gltf"
 			  },
 			  {

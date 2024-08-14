@@ -109,6 +109,7 @@ namespace tinyGL
         map<ETextureType, string> texture_paths;
 
         string model_path;
+        bool bOverloadMaterial = false;
         SMaterial material;
     };
 

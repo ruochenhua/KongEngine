@@ -160,6 +160,7 @@ namespace YamlParser
 
         if(in_node["material"])
         {
+            render_resource_desc.bOverloadMaterial = true;
             auto material_node = in_node["material"];
             if(material_node["albedo"])
             {

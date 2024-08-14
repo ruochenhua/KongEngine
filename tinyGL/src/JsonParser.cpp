@@ -136,6 +136,7 @@ namespace JsonParser
 
         if(!in_json["material"].is_null())
         {
+            render_resource_desc.bOverloadMaterial = true;
             auto material_json = in_json["material"];
             if(!material_json["albedo"].is_null())
             {
