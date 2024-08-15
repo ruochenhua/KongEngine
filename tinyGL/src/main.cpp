@@ -9,7 +9,7 @@
 using namespace glm;
 using namespace std;
 using namespace tinyGL;
-
+constexpr double FRAME_TIME_CAP = 1.0/120.0;
 int main()
 {
 	// Open a window and create its OpenGL context
@@ -32,14 +32,17 @@ int main()
 		}
 
 		double delta = new_time - current_time;
-		ui_manager->PreRenderUpdate(delta);
-		render->Update(delta);
+		if(delta > FRAME_TIME_CAP)
+		{
+			ui_manager->PreRenderUpdate(delta);
+			render->Update(delta);
 
-		CScene::GetScene()->UpdateScene(delta);
+			CScene::GetScene()->UpdateScene(delta);
 		
-		ui_manager->PostRenderUpdate();
-		render->PostUpdate();
-		current_time = new_time;
+			ui_manager->PostRenderUpdate();
+			render->PostUpdate();
+			current_time = new_time;
+		}
 		new_time = glfwGetTime();
 	}
 

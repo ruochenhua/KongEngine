@@ -55,6 +55,7 @@ int CRender::Init()
 	InitCamera();
 	
 	// m_SkyBox.Init();
+#if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
 		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.vert")},
 		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.frag")}
@@ -66,6 +67,7 @@ int CRender::Init()
 	shadowmap_debug_shader->Init(debug_shader_paths);
 	shadowmap_debug_shader->Use();
 	shadowmap_debug_shader->SetInt("shadow_map", 0);
+#endif
 	
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
@@ -138,8 +140,7 @@ void CRender::RenderSceneObject()
 	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-#if SHADOWMAP_DEBUG
-#else
+#if !SHADOWMAP_DEBUG
 	int width = Engine::GetEngine().GetWindowWidth();
 	int height = Engine::GetEngine().GetWindowHeight();
 

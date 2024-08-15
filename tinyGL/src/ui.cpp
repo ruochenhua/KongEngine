@@ -5,6 +5,7 @@
 
 #include "Actor.h"
 #include "Engine.h"
+#include "render.h"
 #include "Scene.h"
 using namespace tinyGL;
 
@@ -93,12 +94,16 @@ void CUIManager::DescribeUIContent(double delta)
 		
 		CScene::GetScene()->LoadScene(scene_name);
 	}
-
+	auto main_cam = CRender::GetRender()->GetCamera();
+	if(main_cam)
+	{
+		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
+	}
+	
 	if(ImGui::TreeNode("scene"))
 	{
 		auto actors = CScene::GetActors();
 		unsigned actor_count = actors.size();
-
 		for(auto actor : actors)
 		{
 			ImGui::PushID(actor->name.c_str());

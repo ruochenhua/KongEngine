@@ -112,7 +112,7 @@ float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir)
 
 //    float closet_depth = texture(shadow_map, proj_coords.xy).r;
     float current_depth = proj_coords.z;
-    float bias = max(0.0001 * (1.0 - dot(frag_normal, to_light_dir)), 0.0001);
+    float bias = max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
 //    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
     // 采用pcf柔和阴影锯齿边界
     // todo: 更多优化方法
@@ -134,15 +134,27 @@ float ShadowCalculation_pointlight(vec3 in_frag_pos, vec3 light_pos)
 {
     vec3 frag_to_light = in_frag_pos - light_pos;
     // 立方体贴图采样
-    float close_depth = texture(shadow_map_pointlight, frag_to_light).r;
+    //float close_depth = texture(shadow_map_pointlight, frag_to_light).r;
     // 从0-1映射到0-farplane
     float far_plane = 30.f;
-    close_depth *= far_plane;
+    //close_depth *= far_plane;
     // 这里计算的是真实光源到像素点世界位置的距离
     float current_depth = length(frag_to_light);
-    float bias = 0.0001;
+    float bias = 0.005;
     // 进行比较，如果贴图上的距离比真实距离小，则代表在阴影当中
-    float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
+    //float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
+    float shadow = 0.0;
+    vec3 texelSize = vec3(0.001);//1.0 / textureSize(shadow_map_pointlight, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadow_map_pointlight, frag_to_light + vec3(x, y, 0) * texelSize).r * far_plane;
+            shadow += (current_depth - bias) > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+    return shadow;
 
     return shadow;
 

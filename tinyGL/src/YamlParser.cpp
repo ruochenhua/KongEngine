@@ -18,7 +18,6 @@ namespace YamlParser
         return glm::vec3(in_vector[0], in_vector[1], in_vector[2]);
     }
 
-
     void ParseTransform(YAML::Node transform_node, shared_ptr<CTransformComponent> transform_comp)
     {        
         if(transform_node["location"])

@@ -1,4 +1,6 @@
 #include "PostprocessShader.h"
+
+#include "render.h"
 using namespace tinyGL;
 
 void PostprocessShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
@@ -13,6 +15,11 @@ void PostprocessShader::DrawScreenQuad()
     glBindVertexArray(screen_quad_vao);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, screen_quad_texture);
+    auto main_cam = CRender::GetRender()->GetCamera();
+    if(main_cam)
+    {
+        SetFloat("exposure", main_cam->exposure);    
+    }
     
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     

@@ -48,6 +48,8 @@ namespace tinyGL
         void RotateStart();
         void RotateEnd();
 
+        float exposure = 1.0f;
+        
     private:
         void UpdateRotation(double delta);
         bool m_updateRotation;

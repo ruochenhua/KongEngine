@@ -71,7 +71,7 @@ namespace tinyGL
 		int Init();
 		int Update(double delta);
 		void PostUpdate();
-		
+		CCamera* GetCamera() {return mainCamera;}
 		// load image file and create texture 
 		static GLuint LoadTexture(const std::string& texture_path);
 		

@@ -2,6 +2,7 @@
 out vec4 FragColor;
 
 in vec2 TexCoords;
+uniform float exposure;
 
 uniform sampler2D scene_texture;
 const float offset = 1.0 / 300.0;
@@ -11,15 +12,15 @@ void main()
     FragColor = vec4(scene_value, 1.0);
 
     // Reinhard色调映射
-//    vec3 hdr_color = scene_value;
-//    //vec3 mapped = hdr_color / (hdr_color + vec3(1.0));
+    vec3 hdr_color = scene_value;
+//    vec3 mapped = hdr_color / (hdr_color + vec3(1.0));
 //    // exposure
 //    float exposure = 1.0;
-//    vec3 mapped = vec3(1.0) - exp(-hdr_color * exposure);
+    vec3 mapped = vec3(1.0) - exp(-hdr_color * exposure);
 //    // gamma校正
-//    const float gamma = 2.2;
-//    mapped = pow(mapped, vec3(1.0 / gamma));
-//    FragColor = vec4(mapped, 1.0);
+    const float gamma = 2.2;
+    mapped = pow(mapped, vec3(1.0 / gamma));
+    FragColor = vec4(mapped, 1.0);
 
     // 黑白效果
 //    vec3 scene_value = texture(scene_texture, TexCoords).rgb;
