@@ -5,14 +5,20 @@ in vec2 TexCoords;
 uniform float exposure;
 
 uniform sampler2D scene_texture;
+uniform sampler2D bright_texture;
+uniform bool bloom;
 const float offset = 1.0 / 300.0;
 void main()
 {
     vec3 scene_value = texture(scene_texture, TexCoords).rgb;
-    FragColor = vec4(scene_value, 1.0);
-
+    //FragColor = vec4(scene_value, 1.0);
     // Reinhard色调映射
     vec3 hdr_color = scene_value;
+    vec3 bloom_value = texture(bright_texture, TexCoords).rgb;
+    if(bloom)
+    {
+        hdr_color += bloom_value;
+    }
 //    vec3 mapped = hdr_color / (hdr_color + vec3(1.0));
 //    // exposure
 //    float exposure = 1.0;

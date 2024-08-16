@@ -75,6 +75,7 @@ namespace tinyGL
 		// load image file and create texture 
 		static GLuint LoadTexture(const std::string& texture_path);
 		
+		shared_ptr<PostprocessShader> postprocess_shader;
 	private:
 		int InitCamera();
 		void InitUBO();
@@ -100,7 +101,6 @@ namespace tinyGL
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
 
-		shared_ptr<PostprocessShader> postprocess_shader;
 
 		CCamera* mainCamera = nullptr;
 		

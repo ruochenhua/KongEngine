@@ -3,7 +3,8 @@
 #include "/common/common.glsl" 
 #include "/common/brdf_common.glsl"
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 BrightColor;
 
 in vec3 frag_pos;
 in vec3 frag_normal;
@@ -226,4 +227,16 @@ void main()
     //FragColor = vec4(frag_uv, 0, 1);
     //FragColor = GetAlbedo();
     FragColor = vec4(color, 1.0);
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+    {
+        BrightColor = vec4(color, 1.0);
+    }
+    else
+    {
+        // 低于阈值的要设置成黑色（或者其他背景色）
+        // 否则在blend开启的情况下会导致alpha为0的时候被遮挡的高亮穿透模型在场景中显现
+        BrightColor = vec4(0,0,0,1);
+    }
+
 }

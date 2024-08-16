@@ -7,6 +7,7 @@
 #include "Engine.h"
 #include "render.h"
 #include "Scene.h"
+#include "Shader/PostprocessShader.h"
 using namespace tinyGL;
 
 CUIManager* g_uimanager = new CUIManager;
@@ -99,7 +100,12 @@ void CUIManager::DescribeUIContent(double delta)
 	{
 		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
 	}
-	
+
+	auto postprocess = CRender::GetRender()->postprocess_shader;
+	if(postprocess)
+	{
+		ImGui::Checkbox("bloom", &postprocess->bloom);
+	}
 	if(ImGui::TreeNode("scene"))
 	{
 		auto actors = CScene::GetActors();

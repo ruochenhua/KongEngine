@@ -116,7 +116,7 @@ int CRender::Update(double delta)
 	mainCamera->Update(delta);		
 	
 	// Clear the screen
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
 	//RenderSkyBox();
@@ -148,15 +148,16 @@ void CRender::RenderSceneObject()
 	// 渲染到后处理framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
 	
-	glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	RenderScene();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDisable(GL_BLEND);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	
 	postprocess_shader->DrawScreenQuad();
 #endif
 }
