@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+#include "render.h"
+
 using namespace tinyGL;
 static Engine g_engine;
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
@@ -8,6 +10,9 @@ void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
     g_engine.SetWidthHeight(width, height);
     //glfwSetWindowSize(window, width, height);
     //glfwSetWindowAspectRatio(window, width, height);
+
+    //后处理贴图大小重新处理一下
+    CRender::GetRender()->post_process.OnWindowResize(width, height); 
 }
 
 Engine::Engine()

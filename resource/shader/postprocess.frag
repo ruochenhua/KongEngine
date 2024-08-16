@@ -14,9 +14,9 @@ void main()
     //FragColor = vec4(scene_value, 1.0);
     // Reinhard色调映射
     vec3 hdr_color = scene_value;
-    vec3 bloom_value = texture(bright_texture, TexCoords).rgb;
     if(bloom)
     {
+        vec3 bloom_value = texture(bright_texture, TexCoords).rgb;
         hdr_color += bloom_value;
     }
 //    vec3 mapped = hdr_color / (hdr_color + vec3(1.0));

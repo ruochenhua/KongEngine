@@ -8,34 +8,43 @@ namespace tinyGL
     {
     public:
         PostprocessShader() = default;
-        void UpdateRenderData(const CMesh& mesh,
-            const SSceneRenderInfo& scene_render_info) override;
-        void DrawScreenQuad();
+        virtual vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) = 0;
+
+        virtual void InitDefaultShader() override = 0;
+        
+        virtual void InitPostProcessShader(unsigned width, unsigned height) = 0;
+        virtual void GenerateTexture(unsigned width, unsigned height) = 0;
+    };
+    
+    class FinalPostprocessShader : public PostprocessShader
+    {
+    public:
+        FinalPostprocessShader() = default;
+        vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
 
         virtual void InitDefaultShader() override;
+        virtual void InitPostProcessShader(unsigned width, unsigned height) override;
+        virtual void GenerateTexture(unsigned width, unsigned height) override;
+    };
 
-        GLuint screen_quad_fbo = GL_NONE;
-        bool bloom = false;
+    class GaussianBlurShader : public PostprocessShader
+    {
+    public:
+        GaussianBlurShader() = default;
+        void UpdateRenderData(const CMesh& mesh,
+            const SSceneRenderInfo& scene_render_info) override;
+        vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
+
+        virtual void InitDefaultShader() override;
+        virtual void InitPostProcessShader(unsigned width, unsigned height) override;
+        void SetBlurAmount(unsigned amount) {blur_amount = amount;}
+        virtual void GenerateTexture(unsigned width, unsigned height) override;
     protected:
-        // 渲染到屏幕的顶点数据，可以共用        
-        GLuint screen_quad_vao = GL_NONE;
-        GLuint screen_quad_vbo = GL_NONE;
-
-        // 渲染到屏幕的texture
-        // 0: scene texture
-        // 1: bright texture(for bloom effect)
-        GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
-        GLuint scene_rbo = GL_NONE;
-        
-        // bloom effect
         GLuint blur_texture[2] = {GL_NONE, GL_NONE};
         GLuint blur_fbo[2] = {GL_NONE, GL_NONE};
-        // todo: 重构后处理流程
-        GLuint blur_shader_id = GL_NONE;
+        
     private:
-        int window_width = 1024;
-        int window_height = 768;
-
-        void GenerateScreenTexture();
+        unsigned blur_amount = 10;
     };
+    
 }

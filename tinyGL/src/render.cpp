@@ -74,10 +74,8 @@ int CRender::Init()
 	null_tex_id = LoadTexture(null_tex_path);
 
 	InitUBO();
-
-	// 后处理shader
-	postprocess_shader = make_shared<PostprocessShader>();
-	postprocess_shader->InitDefaultShader();
+	post_process.Init();
+	
 	return 0;
 }
 
@@ -146,7 +144,7 @@ void CRender::RenderSceneObject()
 
 	glViewport(0,0, width, height);
 	// 渲染到后处理framebuffer上
-	glBindFramebuffer(GL_FRAMEBUFFER, postprocess_shader->screen_quad_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -154,11 +152,12 @@ void CRender::RenderSceneObject()
 	RenderScene();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	postprocess_shader->DrawScreenQuad();
+	//postprocess_shader->DrawScreenQuad();
+	post_process.Draw();
 #endif
 }
 

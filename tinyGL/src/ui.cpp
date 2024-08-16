@@ -101,11 +101,9 @@ void CUIManager::DescribeUIContent(double delta)
 		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
 	}
 
-	auto postprocess = CRender::GetRender()->postprocess_shader;
-	if(postprocess)
-	{
-		ImGui::Checkbox("bloom", &postprocess->bloom);
-	}
+	auto& postprocess = CRender::GetRender()->post_process;
+	ImGui::Checkbox("bloom", &postprocess.bloom);
+	ImGui::DragInt("bloom_range", &postprocess.bloom_range, 1, 1, 50);
 	if(ImGui::TreeNode("scene"))
 	{
 		auto actors = CScene::GetActors();

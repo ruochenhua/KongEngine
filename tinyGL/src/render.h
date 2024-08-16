@@ -1,12 +1,13 @@
 #pragma once
 #include "CameraComponent.h"
 #include "Common.h"
+#include "postprocess.h"
 #include "skybox.h"
 #include "Shader/Shader.h"
 
 namespace tinyGL
 {
-	class PostprocessShader;
+	class FinalPostprocessShader;
 	class CPointLightComponent;
 	class CDirectionalLightComponent;
 	class CMeshComponent;
@@ -75,7 +76,7 @@ namespace tinyGL
 		// load image file and create texture 
 		static GLuint LoadTexture(const std::string& texture_path);
 		
-		shared_ptr<PostprocessShader> postprocess_shader;
+		PostProcess post_process;
 	private:
 		int InitCamera();
 		void InitUBO();
@@ -85,18 +86,13 @@ namespace tinyGL
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject();
-		// todo:整合一下吧这两个
+		
 		void RenderShadowMap();
-		
-		
 	private:
 		
 		CSkyBox m_SkyBox;
-
 		GLuint null_tex_id			= GL_NONE;
 		
-		// debug
-		// GLuint m_ShadowMapDebugShaderId = GL_NONE;
 		shared_ptr<Shader> shadowmap_debug_shader;
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
