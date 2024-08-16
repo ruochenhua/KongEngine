@@ -74,7 +74,7 @@ namespace tinyGL
 		void PostUpdate();
 		CCamera* GetCamera() {return mainCamera;}
 		// load image file and create texture 
-		static GLuint LoadTexture(const std::string& texture_path);
+		static GLuint LoadTexture(const std::string& texture_path, bool flip_uv = true);
 		
 		PostProcess post_process;
 	private:

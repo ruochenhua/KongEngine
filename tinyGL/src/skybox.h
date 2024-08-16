@@ -1,41 +1,21 @@
 #pragma once
+#include "BoxShape.h"
 #include "Common.h"
 #include "RenderCommon.h"
 
 namespace tinyGL
 {
-	struct SCubeMapTexture {
-	void Bind(GLenum texture_unit);
-	void Load(const std::vector<std::string>& tex_path_vec,
-		const std::vector<unsigned int>& tex_type_vec);
+	class CSkyBox
+	{
+	public:
+		void Init();
 
-	GLuint cube_map_id;
-};
+		void Render(const glm::mat4& mvp);
 
-struct SSkyBoxMesh {
-	void Init(const std::vector<std::string>& tex_path_vec,
-		const std::vector<unsigned int>& tex_type_vec);
-	
-	std::vector<GLfloat> vertices;
-	std::vector<GLfloat> texcoords;
+	private:
+		GLuint shader_id = GL_NONE;
+		GLuint cube_map_id = GL_NONE;
 
-	std::vector<GLfloat> v_geo_bb;
-
-	SRenderInfo render_info;
-	GLuint shader_id = 0;
-	SCubeMapTexture cube_map_tex;
-};
-
-class CSkyBox
-{
-public:
-	void Init();
-
-	void Render(const glm::mat4& mvp);
-
-private:
-	//SSkyBoxTech m_Tech;
-	SSkyBoxMesh m_BoxMesh;
-	GLuint m_programID;
-};
+		shared_ptr<CBoxShape> box_mesh;
+	};
 }

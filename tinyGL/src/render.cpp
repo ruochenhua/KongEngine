@@ -54,7 +54,7 @@ int CRender::Init()
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
 	
-	// m_SkyBox.Init();
+	m_SkyBox.Init();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
 		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.vert")},
@@ -117,7 +117,7 @@ int CRender::Update(double delta)
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 	
-	//RenderSkyBox();
+	// RenderSkyBox();
 	CollectLightInfo();
 	
 	RenderShadowMap();			
@@ -134,8 +134,6 @@ void CRender::PostUpdate()
 
 void CRender::RenderSceneObject()
 {
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 #if !SHADOWMAP_DEBUG
@@ -149,6 +147,8 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	RenderSkyBox();
+	
 	RenderScene();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -159,9 +159,14 @@ void CRender::RenderSceneObject()
 	//postprocess_shader->DrawScreenQuad();
 	post_process.Draw();
 #endif
+
+	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//
+	// RenderSkyBox();
 }
 
-GLuint CRender::LoadTexture(const std::string& texture_path)
+GLuint CRender::LoadTexture(const std::string& texture_path, bool flip_uv)
 {
 	auto texture_iter = texture_manager.find(texture_path);
 	if(texture_iter != texture_manager.end())
@@ -174,7 +179,7 @@ GLuint CRender::LoadTexture(const std::string& texture_path)
 	{
 		return texture_id;		
 	}
-	stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(flip_uv);
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data, "load texture failed");
@@ -222,6 +227,8 @@ void CRender::RenderSkyBox()
 
 void CRender::RenderScene() const
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	// 更新光源UBO
 	SceneLightInfo light_info;
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 

@@ -114,7 +114,6 @@ CMeshComponent::CMeshComponent(const SRenderResourceDesc& render_resource_desc)
 void CMeshComponent::BeginPlay()
 {
 	CComponent::BeginPlay();
-
 	InitRenderInfo();
 }
 
@@ -427,6 +426,8 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 		}
 	}
 
+	new_mesh.m_RenderInfo.vertex_size = mesh->mNumVertices;
+	
 	for(unsigned int i = 0; i < mesh->mNumFaces; ++i)
 	{
 		aiFace face = mesh->mFaces[i];
@@ -435,6 +436,7 @@ void CMeshComponent::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene)
 			new_mesh.m_Index.push_back(face.mIndices[j]);
 		}
 	}
+	new_mesh.m_RenderInfo.indices_count = mesh->mNumFaces;
 
 	if(mesh->mMaterialIndex > 0)
 	{
