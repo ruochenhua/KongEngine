@@ -22,27 +22,27 @@ namespace JsonParser
     }
 
 
-    void ParseTransform(nlohmann::basic_json<> json_transform, shared_ptr<CTransformComponent> transform_comp)
+    void ParseTransform(nlohmann::basic_json<> json_transform, shared_ptr<AActor> actor)
     {        
         if(!json_transform["location"].is_null())
         {
-            transform_comp->location = ParseVec3(json_transform["location"]);
+            actor->location = ParseVec3(json_transform["location"]);
         }
 
         if(!json_transform["rotation"].is_null())
         {
-            transform_comp->rotation = ParseVec3(json_transform["rotation"]);
+            actor->rotation = ParseVec3(json_transform["rotation"]);
         }
 
         if(!json_transform["scale"].is_null())
         {
-            transform_comp->scale = ParseVec3(json_transform["scale"]);
+            actor->scale = ParseVec3(json_transform["scale"]);
         }
 
         if(!json_transform["instancing"].is_null())
         {
             auto instancing = json_transform["instancing"];
-            auto& instancing_info = transform_comp->instancing_info;
+            auto& instancing_info = actor->instancing_info;
             instancing_info.count = instancing["count"];
             instancing_info.location_max = ParseVec3(instancing["location"]["max"]);
             instancing_info.location_min = ParseVec3(instancing["location"]["min"]);
@@ -50,8 +50,8 @@ namespace JsonParser
             instancing_info.rotation_min = ParseVec3(instancing["rotation"]["min"]);
             instancing_info.scale_max = ParseVec3(instancing["scale"]["max"]);
             instancing_info.scale_min = ParseVec3(instancing["scale"]["min"]);
-
-            transform_comp->GenInstanceModelMatrix();
+        
+            // actor->GenInstanceModelMatrix();
         }
     }
 
@@ -208,13 +208,7 @@ using namespace JsonParser;
 
                     new_actor->AddComponent(mesh_comp);
                 }
-                else if(component_type == "transform")
-                {
-                    auto trans_comp = make_shared<CTransformComponent>();
-                    ParseTransform(component, trans_comp);
-                
-                    new_actor->AddComponent(trans_comp);
-                }
+
                 else if(component_type == "directional_light")
                 {
                     auto dirlight_comp = make_shared<CDirectionalLightComponent>();
@@ -229,7 +223,14 @@ using namespace JsonParser;
         
                     new_actor->AddComponent(pointlight_comp);
                 }
-                
+            }
+
+            if(!actor["transform"].is_null())
+            {
+                //auto trans_comp = make_shared<CTransformComponent>();
+                ParseTransform(actor["transform"], new_actor);
+                //
+                // new_actor->AddComponent(trans_comp);
             }
 
             scene_actors.push_back(new_actor);

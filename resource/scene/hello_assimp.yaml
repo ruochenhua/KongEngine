@@ -1,0 +1,70 @@
+scene:
+  - actor: model1
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: nanosuit/nanosuit.obj
+        material:
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+    transform:
+      location:
+        - 0
+        - -1
+        - 0
+      rotation:
+        - 0
+        - 0
+        - 0
+      scale:
+        - 0.3
+        - 0.3
+        - 0.3
+  - actor: point_light1
+    transform:
+      location:
+        - 0
+        - 1
+        - -2
+      scale:
+        - 0.1
+        - 0.1
+        - 0.1
+    component:
+      - type: point_light
+        light_color:
+          - 30
+          - 0
+          - 0
+    
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 1
+            - 0
+            - 0
+  - actor: point_light2
+    transform:
+      location:
+        - 0
+        - 1
+        - 3
+      scale:
+        - 0.1
+        - 0.1
+        - 0.1
+    component:
+      - type: point_light
+        light_color:
+          - 0
+          - 30
+          - 0
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 0
+            - 1
+            - 0

@@ -1,0 +1,114 @@
+scene:
+  - actor: box1
+    transform:
+     location:
+       - 1
+       - 0
+       - 0
+     rotation:
+       - 45
+       - 0
+       - 30
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          albedo:
+            - 0.6
+            - 0.6
+            - 0.3
+          metallic: 0.9
+          roughness: 0
+          ao: 1
+
+  - actor: quad1
+    transform:
+      location:
+        - -1
+        - 0
+        - 0
+      rotation:
+        - 0
+        - -90
+        - 0
+    component:
+      - type: quad
+        shader_type: blend
+        texture_path:
+          diffuse: textures/window.png
+
+  - actor: quad2
+    transform:
+      location:
+        - -2
+        - 0
+        - 0
+      rotation:
+        - 0
+        - -90
+        - 0
+    component:
+      - type: quad
+        shader_type: blend
+        texture_path:
+          diffuse: textures/window.png
+
+  - actor: model1
+    transform:
+      location:
+        - 0
+        - 0
+        - -3
+      rotation:
+        - 0
+        - 45
+        - 0
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: cyborg/cyborg.obj
+        texture_path:
+          diffuse: cyborg/cyborg.tga
+          normal: cyborg/cyborg.tga
+        material:
+          albedo:
+            - 1
+            - 1
+            - 0.3
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+
+  - actor: dir_light
+    transform:
+      rotation:
+        - 45
+        - -20
+        - 0
+    component:
+      - type: directional_light
+        light_color:
+          - 20
+          - 20
+          - 20
+
+  - actor: point_light1
+    transform:
+      scale:
+        - 0.1
+        - 0.1
+        - 0.1
+        
+    component:
+      - type: point_light
+        light_color:
+          - 30
+          - 30
+          - 0
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 1
+            - 1
+            - 0

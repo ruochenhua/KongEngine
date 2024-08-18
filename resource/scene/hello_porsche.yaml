@@ -1,0 +1,35 @@
+scene:
+  - actor: model1
+    transform:
+      location:
+        - 0
+        - -1
+        - 0
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: Porsche/scene.gltf
+
+  - actor: point_light1
+    transform:
+      location:
+        - 0
+        - 1
+        - 0
+      scale:
+        - 0.1
+        - 0.1
+        - 0.1
+    component:
+      - type: point_light
+        light_color:
+          - 30
+          - 30
+          - 30
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 1
+            - 1
+            - 1

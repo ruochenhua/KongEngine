@@ -1,0 +1,28 @@
+scene:
+  - actor: model1
+    transform:
+      location:
+        - 0
+        - -1
+        - 6
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: nanosuit/nanosuit.obj
+        material:
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+
+  - actor: dir_light
+    component:
+      - type: directional_light
+        light_color:
+          - 10
+          - 10
+          - 10
+      - type: transform
+        rotation:
+          - 1
+          - -1
+          - 0.5

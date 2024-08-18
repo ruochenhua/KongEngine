@@ -7,9 +7,17 @@
 #include "Component/Mesh/MeshComponent.h"
 namespace tinyGL
 {
-    class CTransformComponent;
     class CComponent;
-
+    struct InstancingInfo
+    {
+        unsigned count = 0;
+        glm::vec3 location_min	= glm::vec3(0.0);
+        glm::vec3 location_max	= glm::vec3(0.0);
+        glm::vec3 rotation_min	= glm::vec3(0.0);
+        glm::vec3 rotation_max	= glm::vec3(0.0);
+        glm::vec3 scale_min		= glm::vec3(0.0);
+        glm::vec3 scale_max		= glm::vec3(0.0);
+    };
     // 参考UE的Actor
     class AActor
     {
@@ -19,20 +27,34 @@ namespace tinyGL
         
         void AddComponent(std::shared_ptr<CComponent> component);
         void Update(double delta);
-        
         template<class T>
         shared_ptr<T> GetComponent();
-        glm::mat4 GetModelMatrix();
+        glm::mat4 GetModelMatrix() const;
         std::string name;
 
         void BeginPlay();
         
+        glm::vec3 location	= glm::vec3(0,0,0);
+        glm::vec3 rotation	= glm::vec3(0,0,0);
+        glm::vec3 scale		= glm::vec3(1,1,1);
+        InstancingInfo instancing_info;
+
+        
+        glm::mat4 GenInstanceModelMatrix() const;
+        void InitInstancingData();
+        void BindInstancingToMesh(weak_ptr<CMeshComponent> mesh_comp);
+        const glm::mat4& GetInstancingModelMat(unsigned idx) const;
+
     protected:
         std::vector<std::shared_ptr<CComponent>> components;
         // 可能比较常用，可以缓存一下
-        std::weak_ptr<CTransformComponent> transform;
+        //std::shared_ptr<CTransformComponent> transform;
 
         map<std::type_index, std::weak_ptr<CComponent>> component_cache;
+
+    
+    private:
+        std::vector<glm::mat4> instancing_model_mat;
     };
 
     template <class T>

@@ -1,58 +1,54 @@
 scene:
   - actor: box1
+    transform:
+      location:
+        - 1
+        - -1
+        - 0
+      rotation:
+        - 45
+        - 0
+        - 30
     component:
       - type: box
-        shader_path:
-          vs: shader/basic_pbr.vert
-          fs: shader/basic_pbr.frag
+        shader_type: brdf
         material:
           albedo:
             - 0.6
             - 0.6
             - 0.3
-      - type: transform
-        location:
-          - 1
-          - -1
-          - 0
-        rotation:
-          - 45
-          - 0
-          - 30
   - actor: box2
+    transform:
+      location:
+        - -1
+        - 1
+        - 0
+      rotation:
+        - 45
+        - 30
+        - 0
     component:
       - type: box
-        shader_path:
-          vs: shader/basic_pbr.vert
-          fs: shader/basic_pbr.frag
+        shader_type: brdf
         texture_path:
           diffuse: crater/crater_diffuse.png
           specular: crater/crater_specular_map.png
-      - type: transform
-        location:
-          - -1
-          - 1
-          - 0
-        rotation:
-          - 45
-          - 30
-          - 0
   - actor: cyborg_model
+    transform:
+      location:
+        - 0
+        - 0
+        - -3
+      rotation:
+        - 0
+        - 20
+        - 40
     component:
       - type: mesh
-        model_path: cyborg//cyborg.obj
+        model_path: cyborg/cyborg.obj
         shader_path:
           vs: shader/basic_pbr.vert
           fs: shader/basic_pbr.frag
-      - type: transform
-        location:
-          - 0
-          - 0
-          - -3
-        rotation:
-          - 0
-          - 20
-          - 40
   - actor: directional_light
     component:
       - type: directional_light
@@ -68,9 +64,7 @@ scene:
   - actor: point_light
     component:
       - type: box
-        shader_path:
-          vs: shader/emit.vert
-          fs: shader/emit.frag
+        shader_type: emit
         material:
           albedo:
             - 1

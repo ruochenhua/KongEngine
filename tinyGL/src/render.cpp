@@ -288,19 +288,6 @@ void CRender::RenderScene() const
 			continue;
 		}
 
-		// auto render_obj = mesh_component;
-
-		CTransformComponent* transform_component_ptr = nullptr;
-		auto tranform_component = actor->GetComponent<CTransformComponent>();
-		if(tranform_component)
-		{
-			transform_component_ptr = tranform_component.get();
-		}
-		if(!transform_component_ptr)
-		{
-			continue;
-		}
-		
 		matrix_ubo.Bind();
 		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
 		matrix_ubo.EndBind();
@@ -325,17 +312,17 @@ void CRender::CollectLightInfo()
 			continue;
 		}
 
-		// light需要tranform信息，没有就跳过
-		auto transform_component = actor->GetComponent<CTransformComponent>();
-		if(!transform_component)
-		{
-			continue;
-		}
+		// // light需要tranform信息，没有就跳过
+		// auto transform_component = actor->GetComponent<CTransformComponent>();
+		// if(!transform_component)
+		// {
+		// 	continue;
+		// }
 
 		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
 		if(dir_light)
 		{
-			dir_light->SetLightDir(transform_component->rotation);
+			dir_light->SetLightDir(actor->rotation);
 			scene_render_info.scene_dirlight = dir_light;
 			continue;
 		}
@@ -345,7 +332,7 @@ void CRender::CollectLightInfo()
 			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_component);
 			if(point_light)
 			{
-				point_light->SetLightLocation(transform_component->location);
+				point_light->SetLightLocation(actor->location);
 				scene_render_info.scene_pointlights.push_back(point_light);
 			}
 		}

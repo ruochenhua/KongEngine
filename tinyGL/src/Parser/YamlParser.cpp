@@ -19,27 +19,27 @@ namespace YamlParser
         return glm::vec3(in_vector[0], in_vector[1], in_vector[2]);
     }
 
-    void ParseTransform(YAML::Node transform_node, shared_ptr<CTransformComponent> transform_comp)
+    void ParseTransform(YAML::Node transform_node, shared_ptr<AActor> actor)
     {        
         if(transform_node["location"])
         {
-            transform_comp->location = ParseVec3(transform_node["location"].as<vector<float>>());
+            actor->location = ParseVec3(transform_node["location"].as<vector<float>>());
         }
 
         if(transform_node["rotation"])
         {
-            transform_comp->rotation = ParseVec3(transform_node["rotation"].as<vector<float>>());
+            actor->rotation = ParseVec3(transform_node["rotation"].as<vector<float>>());
         }
 
         if(transform_node["scale"])
         {
-            transform_comp->scale = ParseVec3(transform_node["scale"].as<vector<float>>());
+            actor->scale = ParseVec3(transform_node["scale"].as<vector<float>>());
         }
 
         if(transform_node["instancing"])
         {
             auto instancing = transform_node["instancing"];
-            auto& instancing_info = transform_comp->instancing_info;
+            auto& instancing_info = actor->instancing_info;
             instancing_info.count = instancing["count"].as<int>();
             instancing_info.location_max = ParseVec3(instancing["location"]["max"].as<vector<float>>());
             instancing_info.location_min = ParseVec3(instancing["location"]["min"].as<vector<float>>());
@@ -47,13 +47,13 @@ namespace YamlParser
             instancing_info.rotation_min = ParseVec3(instancing["rotation"]["min"].as<vector<float>>());
             instancing_info.scale_max = ParseVec3(instancing["scale"]["max"].as<vector<float>>());
             instancing_info.scale_min = ParseVec3(instancing["scale"]["min"].as<vector<float>>());
-
-            // transform_comp->GenInstanceModelMatrix();
+        
+            // actor->GenInstanceModelMatrix();
         }
     }
 
-    void ParseInstancing(YAML::Node in_node, shared_ptr<CTransformComponent> scene_object)
-    {
+    // void ParseInstancing(YAML::Node in_node, shared_ptr<CTransformComponent> scene_object)
+    // {
         // auto& instancing_info = scene_object->instancing_info;
         //
         // auto instancing = in_json["instancing"];
@@ -76,7 +76,7 @@ namespace YamlParser
         //     instancing_info.scale_min = ParseVec3(instancing["scale"]["min"]);
         //     instancing_info.scale_max = ParseVec3(instancing["scale"]["max"]);
         // }
-    }
+    // }
 
     SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
     {
@@ -223,13 +223,6 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
 
                 new_actor->AddComponent(mesh_comp);   
             }
-            else if(component_type == "transform")
-            {
-                auto trans_comp = make_shared<CTransformComponent>();
-                ParseTransform(component, trans_comp);
-            
-                new_actor->AddComponent(trans_comp);
-            }
             else if(component_type == "directional_light")
             {
                 auto dirlight_comp = make_shared<CDirectionalLightComponent>();
@@ -247,6 +240,11 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
     
                 new_actor->AddComponent(pointlight_comp);
             }
+        }
+
+        if(actor["transform"])
+        {
+            ParseTransform(actor["transform"], new_actor);
         }
 
         scene_actors.push_back(new_actor);

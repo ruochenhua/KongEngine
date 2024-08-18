@@ -1,0 +1,73 @@
+scene:
+  - actor: model1
+    transform:
+      location:
+        - 5
+        - -1
+        - 0
+      scale:
+        - 0.3
+        - 0.3
+        - 0.3
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: nanosuit/nanosuit.obj
+        material:
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+
+  - actor: box1
+    transform:
+      location:
+        - 0
+        - 1
+        - 0
+
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          albedo:
+            - 0.6
+            - 0.6
+            - 0
+          metallic: 0.5
+          roughness: 0.3
+          ao: 1
+          
+  - actor: floor
+    transform:
+      location:
+        - 0
+        - -2
+        - 0
+      scale:
+        - 200
+        - 1
+        - 200
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          albedo:
+            - 0.6
+            - 0.3
+            - 0.6
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+
+  - actor: directional_light
+    component:
+      - type: directional_light
+        light_color:
+          - 10
+          - 10
+          - 10
+    transform:
+      rotation:
+        - 30
+        - 45
+        - -70

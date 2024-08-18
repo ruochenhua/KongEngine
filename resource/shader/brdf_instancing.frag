@@ -24,7 +24,7 @@ layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 } light_info_ubo;
 
 
-uniform vec3 albedo;    // color
+uniform vec4 albedo;    // color
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
@@ -32,14 +32,14 @@ uniform float ao;
 uniform sampler2D diffuse_texture;
 uniform sampler2D specular_texture;
 
-vec3 GetAlbedo()
+vec4 GetAlbedo()
 {
 	float texture_size = textureSize(diffuse_texture, 0).x;
 	if(texture_size > 1.0)
 	{
-		vec3 texture_albedo = texture(diffuse_texture, frag_uv).rgb;
+		vec4 texture_albedo = texture(diffuse_texture, frag_uv);
 		// sRGB空间转换到线性空间
-		return pow(texture_albedo, vec3(2.2));
+		return pow(texture_albedo, vec4(2.2));
 	}
 
 	return albedo;
@@ -107,7 +107,7 @@ void main()
         point_light_color += CalcPointLight(light_info_ubo.point_lights[i], frag_normal, view, frag_pos);
     }
 
-	vec3 ambient = vec3(0.03)*GetAlbedo()*ao;
+	vec3 ambient = vec3(0.03)*GetAlbedo().xyz*ao;
 	vec3 color = ambient+ dir_light_color + point_light_color;
 	// 伽马校正（Reinhard）
 	// color = color / (color + vec3(1.0));

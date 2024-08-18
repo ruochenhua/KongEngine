@@ -92,7 +92,7 @@ void CUIManager::DescribeUIContent(double delta)
 	{
 		// Load scene
 		string scene_name = scene_items[item_type];
-		scene_name = "scene/" + scene_name + ".json";
+		scene_name = "scene/" + scene_name + ".yaml";
 		
 		CScene::GetScene()->LoadScene(scene_name);
 	}
@@ -114,35 +114,35 @@ void CUIManager::DescribeUIContent(double delta)
 			ImGui::PushID(actor->name.c_str());
 			if(ImGui::TreeNode("","%s", actor->name.c_str()))
 			{
-				auto transform_comp = actor->GetComponent<CTransformComponent>();
-				if(transform_comp)
+				// auto transform_comp = actor->GetComponent<CTransformComponent>();
+				// if(transform_comp)
+				// {
+				if(ImGui::TreeNode("", "transform:"))
 				{
-					if(ImGui::TreeNode("", "transform:"))
+					if(ImGui::TreeNode("","location:"))
 					{
-						if(ImGui::TreeNode("","location:"))
-						{
-							ImGui::DragFloat("lx", &transform_comp->location.x, 0.02f);
-							ImGui::DragFloat("ly", &transform_comp->location.y, 0.02f);
-							ImGui::DragFloat("lz", &transform_comp->location.z, 0.02f);
-							ImGui::TreePop();
-						}
-						if(ImGui::TreeNode("","rotation:"))
-						{
-							ImGui::DragFloat("rx", &transform_comp->rotation.x, 0.02f);
-							ImGui::DragFloat("ry", &transform_comp->rotation.y, 0.02f);
-							ImGui::DragFloat("rz", &transform_comp->rotation.z, 0.02f);
-							ImGui::TreePop();
-						}
-						if(ImGui::TreeNode("","scale:"))
-						{
-							ImGui::DragFloat("sx", &transform_comp->scale.x, 0.02f, 0.01f);
-							ImGui::DragFloat("sy", &transform_comp->scale.y, 0.02f, 0.01f);
-							ImGui::DragFloat("sz", &transform_comp->scale.z, 0.02f, 0.01f);
-							ImGui::TreePop();
-						}
+						ImGui::DragFloat("lx", &actor->location.x, 0.02f);
+						ImGui::DragFloat("ly", &actor->location.y, 0.02f);
+						ImGui::DragFloat("lz", &actor->location.z, 0.02f);
 						ImGui::TreePop();
 					}
+					if(ImGui::TreeNode("","rotation:"))
+					{
+						ImGui::DragFloat("rx", &actor->rotation.x, 0.02f);
+						ImGui::DragFloat("ry", &actor->rotation.y, 0.02f);
+						ImGui::DragFloat("rz", &actor->rotation.z, 0.02f);
+						ImGui::TreePop();
+					}
+					if(ImGui::TreeNode("","scale:"))
+					{
+						ImGui::DragFloat("sx", &actor->scale.x, 0.02f, 0.01f);
+						ImGui::DragFloat("sy", &actor->scale.y, 0.02f, 0.01f);
+						ImGui::DragFloat("sz", &actor->scale.z, 0.02f, 0.01f);
+						ImGui::TreePop();
+					}
+					ImGui::TreePop();
 				}
+				// }
 
 				auto light_comp = actor->GetComponent<CLightComponent>();
 				if(light_comp)
