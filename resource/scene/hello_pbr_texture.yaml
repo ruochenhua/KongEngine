@@ -60,3 +60,24 @@ scene:
           - 20
           - 20
 
+  - actor: floor
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          albedo:
+            - 0.6
+            - 0.3
+            - 0.6
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+    transform:
+      location:
+        - 0
+        - -4
+        - 0
+      scale:
+        - 200
+        - 1
+        - 200

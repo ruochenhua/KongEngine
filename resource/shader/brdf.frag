@@ -218,15 +218,10 @@ void main()
     {
         point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
     }
-
-
+    
     vec3 ambient = vec3(0.03)*GetAlbedo().xyz*ao;
     vec3 color = ambient + (dir_light_color + point_light_color);
-    // 伽马校正（Reinhard）
-//     color = color / (color + vec3(1.0));
-//     color = pow(color, vec3(1.0/2.2));
-    //FragColor = vec4((obj_normal+1)/2, 1.0);// vec4(color, 1.0);
-    //FragColor = vec4(frag_uv, 0, 1);
+    
     //FragColor = GetAlbedo();
     FragColor = vec4(color, 1.0);
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));

@@ -135,16 +135,14 @@ void AActor::BeginPlay()
     // {
     //     return;
     // }
-    // todo: instancing
-    // if(transform_comp->instancing_info.count > 0)
-    // {
-    //     transform_comp->InitInstancingData();
-    //     auto mesh_comp = GetComponent<CMeshComponent>();
-    //     if(mesh_comp)
-    //     {
-    //         return;
-    //     }
-    //
-    //     transform_comp->BindInstancingToMesh(mesh_comp);
-    // }
+    //todo: instancing
+    if(instancing_info.count > 0)
+    {
+        InitInstancingData();
+        auto mesh_comp = GetComponent<CMeshComponent>();
+        if(mesh_comp)
+        {
+			BindInstancingToMesh(mesh_comp);
+        }
+    }
 }

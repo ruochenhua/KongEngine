@@ -8,6 +8,7 @@
 #include "Component/LightComponent.h"
 #include "Component/Mesh/BoxShape.h"
 #include "Component/Mesh/SphereShape.h"
+#include "glm/gtc/random.hpp"
 
 using namespace tinyGL;
 
@@ -51,32 +52,6 @@ namespace YamlParser
             // actor->GenInstanceModelMatrix();
         }
     }
-
-    // void ParseInstancing(YAML::Node in_node, shared_ptr<CTransformComponent> scene_object)
-    // {
-        // auto& instancing_info = scene_object->instancing_info;
-        //
-        // auto instancing = in_json["instancing"];
-        // instancing_info.count = instancing["count"];
-        //
-        // if(!instancing["location"].is_null())
-        // {
-        //     instancing_info.location_min = ParseVec3(instancing["location"]["min"]);
-        //     instancing_info.location_max = ParseVec3(instancing["location"]["max"]);
-        // }
-        //
-        // if(!instancing["rotation"].is_null())
-        // {
-        //     instancing_info.rotation_min = ParseVec3(instancing["rotation"]["min"]);
-        //     instancing_info.rotation_max = ParseVec3(instancing["rotation"]["max"]);
-        // }
-        //
-        // if(!instancing["scale"].is_null())
-        // {
-        //     instancing_info.scale_min = ParseVec3(instancing["scale"]["min"]);
-        //     instancing_info.scale_max = ParseVec3(instancing["scale"]["max"]);
-        // }
-    // }
 
     SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
     {
@@ -186,18 +161,8 @@ namespace YamlParser
         return render_resource_desc;
     }
 
-}
-using namespace YamlParser;
-void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<std::shared_ptr<AActor>>& scene_actors)
-{
-    YAML::Node scene_node = YAML::Load(scene_content);
-
-    auto scene = scene_node["scene"];
-    for(auto& actor : scene)
-    {
-        auto new_actor = make_shared<AActor>();
-        new_actor->name = actor["actor"].as<string>();
-
+    void ParseComponent(YAML::Node actor, shared_ptr<AActor> new_actor)
+    {        
         auto actor_components = actor["component"];
         for(auto component : actor_components)
         {
@@ -241,12 +206,25 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
                 new_actor->AddComponent(pointlight_comp);
             }
         }
+    }
+}
+using namespace YamlParser;
+void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<std::shared_ptr<AActor>>& scene_actors)
+{
+    YAML::Node scene_node = YAML::Load(scene_content);
+
+    auto scene = scene_node["scene"];
+    for(auto& actor : scene)
+    {
+        auto new_actor = make_shared<AActor>();
+        new_actor->name = actor["actor"].as<string>();
 
         if(actor["transform"])
         {
             ParseTransform(actor["transform"], new_actor);
         }
 
+        ParseComponent(actor, new_actor);
         scene_actors.push_back(new_actor);
     }
 }

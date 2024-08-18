@@ -6,15 +6,18 @@ scene:
           vs: shader/brdf_instancing.vert
           fs: shader/brdf_instancing.frag
         texture_path:
-          diffuse: crater/crater_diffuse.png
-          specular: crater/crater_specular_map.png
+          diffuse: textures/pbr/rusted_iron/albedo.png
+          metallic: textures/pbr/rusted_iron/metallic.png
+          normal: textures/pbr/rusted_iron/normal.png
+          roughness: textures/pbr/rusted_iron/roughness.png
+          ao: textures/pbr/rusted_iron/ao.png
         material:
           metallic: 0.8
           roughness: 0.1
           ao: 1
     transform:
       instancing:
-        count: 100000
+        count: 10000
         location:
           min:
             - -300
