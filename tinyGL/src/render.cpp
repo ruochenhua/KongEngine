@@ -51,7 +51,12 @@ GLuint CRender::GetNullTexId()
 
 GLuint CRender::GetSkyboxTexture() const
 {
-	return m_SkyBox.GetTextureId();
+	return m_SkyBox.GetSkyBoxTextureId();
+}
+
+GLuint CRender::GetSkyboxDiffuseIrradianceTexture() const
+{
+	return m_SkyBox.GetDiffuseIrradianceTexture();
 }
 
 int CRender::Init()

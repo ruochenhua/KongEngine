@@ -10,8 +10,8 @@ using namespace tinyGL;
 void CSkyBox::Init()
 {
 	map<EShaderType, string> skybox_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox.frag")}
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/skybox.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/skybox.frag")}
 	};
 	
 	shader_id = Shader::LoadShaders(skybox_shader);
@@ -77,12 +77,12 @@ void CSkyBox::Init()
 	glDisable(GL_DEPTH_TEST);
 	
 	map<EShaderType, string> sphere_to_cube_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/sphere_to_cube.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/sphere_to_cube.frag")}
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.frag")}
 	};
 	
 	sphere_to_cube_shader_id = Shader::LoadShaders(sphere_to_cube_shader);
-	assert(shader_id, "load skybox shader failed");
+	assert(sphere_to_cube_shader_id, "load skybox shader failed");
 	
 	// 贴图球形映射转换为立方体贴图映射
 	glGenFramebuffers(1, &sphere_to_cube_fbo);
@@ -117,16 +117,12 @@ void CSkyBox::Init()
 	{
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
-	
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-
-
-
+	
 	auto& render_info = box_mesh->mesh_list[0].m_RenderInfo;
 	
 	vec3 scene_center = vec3(0);
@@ -164,6 +160,55 @@ void CSkyBox::Init()
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
+	// 辐照度预计算shader
+	map<EShaderType, string> irradiance_shader = {
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.frag")}
+	};
+	
+	irradiance_shader_id = Shader::LoadShaders(irradiance_shader);
+	assert(irradiance_shader_id, "load skybox shader failed");
+	
+	// 创建辐照度立方体贴图
+	glGenTextures(1, &irradiance_tex_id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_tex_id);
+	for(int i = 0; i < 6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	// 预计算辐照度贴图
+	glUseProgram(irradiance_shader_id);
+	glUniform1i(glGetUniformLocation(irradiance_shader_id, "cube_map"), 0);
+	glUniformMatrix4fv(glGetUniformLocation(irradiance_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
+		
+	glBindFramebuffer(GL_FRAMEBUFFER, sphere_to_cube_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, sphere_to_cube_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+	
+	glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		glUniformMatrix4fv(glGetUniformLocation(irradiance_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
+	
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+							   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_tex_id, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+		//renderCube(); // renders a 1x1 cube
+		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 #endif
 }
 

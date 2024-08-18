@@ -38,6 +38,7 @@ uniform sampler2D roughness_texture;
 uniform sampler2D metallic_texture;
 uniform sampler2D ao_texture;
 uniform samplerCube skybox_texture;
+uniform samplerCube skybox_diffuse_irradiance_texture;
 
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
@@ -224,7 +225,15 @@ void main()
     vec3 reflect_vec = reflect(-view, obj_normal);
     vec4 skybox_color = texture(skybox_texture, reflect_vec);
     
-    vec3 ambient = vec3(0.03)*GetAlbedo().xyz*ao;
+    // 用IBL的辐照度贴图作为环境光
+    vec3 skybox_irradiance = texture(skybox_diffuse_irradiance_texture, obj_normal).xyz;
+    vec3 F0 = vec3(0.04);
+    vec3 kS = FresnelSchlick(max(dot(obj_normal, view), 0.0), F0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - GetMetallic();
+    vec3 ambient = kD*GetAlbedo().xyz*skybox_irradiance*ao;
+    
+    
     vec3 color = ambient + (dir_light_color + point_light_color);
     
     //FragColor = GetAlbedo();

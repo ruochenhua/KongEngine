@@ -55,10 +55,7 @@ scene:
     component:
       - type: mesh
         shader_type: brdf
-        model_path: cyborg/cyborg.obj
-        texture_path:
-          diffuse: cyborg/cyborg.tga
-          normal: cyborg/cyborg.tga
+        model_path: cyborg/cyborg.obj 
         material:
           albedo:
             - 1

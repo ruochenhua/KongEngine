@@ -70,7 +70,7 @@ namespace tinyGL
 		CRender() = default;
 
 		GLuint GetSkyboxTexture() const;
-		
+		GLuint GetSkyboxDiffuseIrradianceTexture() const;
 		int Init();
 		int Update(double delta);
 		void PostUpdate();

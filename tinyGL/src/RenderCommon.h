@@ -16,8 +16,9 @@ namespace tinyGL
     constexpr unsigned METALLIC_TEX_SHADER_ID = 3;
     constexpr unsigned AO_TEX_SHADER_ID = 4;
     constexpr unsigned SKYBOX_TEX_SHADER_ID = 5;
-    constexpr unsigned DIRLIGHT_SM_TEX_SHADER_ID = 6;
-    constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 7;
+    constexpr unsigned SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID = 6;
+    constexpr unsigned DIRLIGHT_SM_TEX_SHADER_ID = 7;
+    constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 8;
     
     enum EShaderType
     {
