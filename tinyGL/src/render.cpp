@@ -10,7 +10,6 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
-#include "Shader/PostprocessShader.h"
 
 using namespace tinyGL;
 using namespace glm;
@@ -312,13 +311,6 @@ void CRender::CollectLightInfo()
 			continue;
 		}
 
-		// // light需要tranform信息，没有就跳过
-		// auto transform_component = actor->GetComponent<CTransformComponent>();
-		// if(!transform_component)
-		// {
-		// 	continue;
-		// }
-
 		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
 		if(dir_light)
 		{
@@ -413,22 +405,5 @@ void CRender::RenderShadowMap()
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
 #endif
-	
 }
-
-// void CRender::UpdateLightDir(float delta)
-// {
-// 	// rotate speed
-// 	double light_speed = 30.0;
-//
-// 	light_yaw += light_speed*delta;
-// 	
-// 	vec3 front;
-// 	front.x = cos(glm::radians(light_yaw)) * cos(glm::radians(light_pitch));
-// 	front.y = sin(glm::radians(light_pitch));
-// 	front.z = sin(glm::radians(light_yaw)) * cos(glm::radians(light_pitch));
-//
-// 	m_LightDir = normalize(front);
-// 	// printf("--- light dir %f %f %f\n", m_LightDir.x, m_LightDir.y, m_LightDir.z);
-// }
 

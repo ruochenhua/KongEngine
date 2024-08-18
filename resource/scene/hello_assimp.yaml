@@ -68,3 +68,49 @@ scene:
             - 0
             - 1
             - 0
+  - actor: point_light3
+    transform:
+      location:
+        - 3
+        - 1
+        - 0
+      scale:
+        - 0.1
+        - 0.1
+        - 0.1
+    component:
+      - type: point_light
+        light_color:
+          - 0
+          - 0
+          - 30
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 0
+            - 0
+            - 1
+
+
+  - actor: floor
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          albedo:
+            - 0.6
+            - 0.3
+            - 0.6
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1
+    transform:
+      location:
+        - 0
+        - -2
+        - 0
+      scale:
+        - 200
+        - 1
+        - 200

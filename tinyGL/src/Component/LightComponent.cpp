@@ -19,12 +19,7 @@ CLightComponent::CLightComponent(ELightType in_type)
 
 GLuint CLightComponent::GetShadowMapTexture() const
 {
-    if(!shadowmap_shader)
-    {
-        return GL_NONE;
-    }
-
-    return shadowmap_shader->shadowmap_texture;
+    return shadowmap_texture;
 }
 
 CDirectionalLightComponent::CDirectionalLightComponent()
@@ -32,6 +27,28 @@ CDirectionalLightComponent::CDirectionalLightComponent()
 {
     shadowmap_shader = dynamic_pointer_cast<DirectionalLightShadowMapShader>(ShaderManager::GetShader("directional_light_shadowmap"));
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
+
+    
+    glGenFramebuffers(1, &shadowmap_fbo);
+    glGenTextures(1, &shadowmap_texture);
+    glBindTexture(GL_TEXTURE_2D, shadowmap_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
+	   
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowmap_texture, 0);
+	   
+    // 我们需要的只是在从光的透视图下渲染场景的时候深度信息，所以颜色缓冲没有用。
+    // 然而，不包含颜色缓冲的帧缓冲对象是不完整的，所以我们需要显式告诉OpenGL我们不适用任何颜色数据进行渲染。
+    // 我们通过将调用glDrawBuffer和glReadBuffer把读和绘制缓冲设置为GL_NONE来做这件事。
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 glm::vec3 CDirectionalLightComponent::GetLightDir() const
@@ -41,7 +58,7 @@ glm::vec3 CDirectionalLightComponent::GetLightDir() const
 
 void CDirectionalLightComponent::RenderShadowMap()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_shader->shadowmap_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
     
     auto actors = CScene::GetActors();
@@ -104,6 +121,29 @@ CPointLightComponent::CPointLightComponent()
 {
     shadowmap_shader = dynamic_pointer_cast<PointLightShadowMapShader>(ShaderManager::GetShader("point_light_shadowmap"));
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
+    
+    glGenFramebuffers(1, &shadowmap_fbo);
+    // 创建点光源阴影贴图
+    glGenTextures(1, &shadowmap_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, shadowmap_texture);
+    for(GLuint i = 0; i < 6; ++i)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+            SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    }
+    
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -115,7 +155,7 @@ vec3 CPointLightComponent::GetLightDir() const
 
 void CPointLightComponent::RenderShadowMap()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_shader->shadowmap_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
     
     auto actors = CScene::GetActors();
@@ -140,7 +180,7 @@ void CPointLightComponent::RenderShadowMap()
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-            shadowmap_shader->UpdateShadowMapRender(GetLightLocation(), model_mat);
+            shadowmap_shader->UpdateShadowMapRender(GetLightLocation(), model_mat, vec2(near_plane, far_plane));
                         // Draw the triangle !
             // if no index, use draw array
             if(render_info.index_buffer == GL_NONE)

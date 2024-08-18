@@ -39,7 +39,7 @@ uniform sampler2D metallic_texture;
 uniform sampler2D ao_texture;
 
 uniform sampler2D shadow_map;
-uniform samplerCube shadow_map_pointlight;
+uniform samplerCube shadow_map_pointlight[4];
 
 vec4 GetAlbedo()
 {
@@ -131,16 +131,20 @@ float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir)
     return shadow;
 }
 
-float ShadowCalculation_pointlight(vec3 in_frag_pos, vec3 light_pos)
+float ShadowCalculation_pointlight(int light_index, vec3 in_frag_pos, vec3 light_pos)
 {
     vec3 frag_to_light = in_frag_pos - light_pos;
     // 立方体贴图采样
-    //float close_depth = texture(shadow_map_pointlight, frag_to_light).r;
+    // float close_depth = texture(shadow_map_pointlight[light_index], frag_to_light).r;
     // 从0-1映射到0-farplane
     float far_plane = 30.f;
-    //close_depth *= far_plane;
+    // close_depth *= far_plane;
     // 这里计算的是真实光源到像素点世界位置的距离
     float current_depth = length(frag_to_light);
+    if(current_depth > far_plane)
+    {
+        return 0.0;
+    }
     float bias = 0.005;
     // 进行比较，如果贴图上的距离比真实距离小，则代表在阴影当中
     //float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
@@ -150,15 +154,12 @@ float ShadowCalculation_pointlight(vec3 in_frag_pos, vec3 light_pos)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(shadow_map_pointlight, frag_to_light + vec3(x, y, 0) * texelSize).r * far_plane;
+            float pcfDepth = texture(shadow_map_pointlight[light_index], frag_to_light + vec3(x, y, 0) * texelSize).r * far_plane;
             shadow += (current_depth - bias) > pcfDepth ? 1.0 : 0.0;
         }
     }
     shadow /= 9.0;
     return shadow;
-
-    return shadow;
-
 }
 
 vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
@@ -184,7 +185,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
     //return vec3(shadow);
 }
 
-vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag_pos)
+vec3 CalcPointLight(PointLight point_light, int light_index, vec3 normal, vec3 view, vec3 in_frag_pos)
 {
     float kc = 0.2;
     float kl = 0.1;
@@ -194,9 +195,10 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 in_frag
 
     vec3 point_light_color = CalcLight(light_color, to_light_dir, normal, view);
 
-    float shadow = ShadowCalculation_pointlight(frag_pos, point_light.light_pos.xyz);
+    float shadow = ShadowCalculation_pointlight(light_index, frag_pos, point_light.light_pos.xyz);
     float distance = length(point_light.light_pos.xyz - in_frag_pos);
     float attenuation = 1.0 / (kc + kl*distance + kq*distance*distance);	//衰减和点光源的参数可控，这里先简单弄个
+    //return vec3(shadow);
     return point_light_color * attenuation * (1.0 - shadow);
 }
 
@@ -212,9 +214,9 @@ void main()
 	}
 
     vec3 point_light_color = vec3(0,0,0);
-    for(int i = 0; i <  min(light_info_ubo.point_light_count.x,4); ++i)
+    for(int i = 0; i < light_info_ubo.point_light_count.x; ++i)
     {
-        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], obj_normal, view, frag_pos);
+        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
     }
 
 
@@ -238,5 +240,4 @@ void main()
         // 否则在blend开启的情况下会导致alpha为0的时候被遮挡的高亮穿透模型在场景中显现
         BrightColor = vec4(0,0,0,1);
     }
-
 }

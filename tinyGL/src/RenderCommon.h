@@ -10,6 +10,14 @@ namespace tinyGL
     class CPointLightComponent;
     class CDirectionalLightComponent;
 
+    constexpr unsigned DIFFUSE_TEX_SHADER_ID = 0;
+    constexpr unsigned NORMAL_TEX_SHADER_ID = 1;
+    constexpr unsigned ROUGHNESS_TEX_SHADER_ID = 2;
+    constexpr unsigned METALLIC_TEX_SHADER_ID = 3;
+    constexpr unsigned AO_TEX_SHADER_ID = 4;
+    constexpr unsigned DIRLIGHT_SM_TEX_SHADER_ID = 5;
+    constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 6;
+    
     enum EShaderType
     {
         vs = GL_VERTEX_SHADER,		// vertex shader
