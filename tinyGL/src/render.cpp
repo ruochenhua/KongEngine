@@ -48,6 +48,12 @@ GLuint CRender::GetNullTexId()
 {
 	return g_render->null_tex_id;
 }
+
+GLuint CRender::GetSkyboxTexture() const
+{
+	return m_SkyBox.GetTextureId();
+}
+
 int CRender::Init()
 {
 	render_window = Engine::GetRenderWindow();

@@ -37,6 +37,7 @@ uniform sampler2D normal_texture;
 uniform sampler2D roughness_texture;
 uniform sampler2D metallic_texture;
 uniform sampler2D ao_texture;
+uniform samplerCube skybox_texture;
 
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
@@ -169,6 +170,7 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
     material.metallic = GetMetallic();
     material.albedo = GetAlbedo();
 	material.specular_factor = specular_factor;
+    
     material.ao = GetAO();
 
     return CalcLight_BRDF(light_color, to_light_dir, normal, view, material);
@@ -219,11 +221,15 @@ void main()
         point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
     }
     
+    vec3 reflect_vec = reflect(-view, obj_normal);
+    vec4 skybox_color = texture(skybox_texture, reflect_vec);
+    
     vec3 ambient = vec3(0.03)*GetAlbedo().xyz*ao;
     vec3 color = ambient + (dir_light_color + point_light_color);
     
     //FragColor = GetAlbedo();
     FragColor = vec4(color, 1.0);
+    // FragColor = skybox_color;
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
     {

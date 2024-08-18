@@ -42,6 +42,10 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& sce
 	GLuint ao_tex_id = render_info.ao_tex_id != 0 ? render_info.ao_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, ao_tex_id);
 
+	// 添加天空盒贴图
+	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEX_SHADER_ID);
+	GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
 	GLuint dir_light_shadowmap_id = null_tex_id;
@@ -93,7 +97,7 @@ void BRDFShader::InitDefaultShader()
 	SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);
 	SetInt("metallic_texture", METALLIC_TEX_SHADER_ID);
 	SetInt("ao_texture", AO_TEX_SHADER_ID);
-	
+	SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
 	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
 	for(unsigned int i = 0; i < 4; ++i)
 	{

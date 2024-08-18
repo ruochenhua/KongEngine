@@ -69,6 +69,8 @@ namespace tinyGL
 		GLFWwindow* render_window;
 		CRender() = default;
 
+		GLuint GetSkyboxTexture() const;
+		
 		int Init();
 		int Update(double delta);
 		void PostUpdate();
