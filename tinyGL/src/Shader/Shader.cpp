@@ -5,7 +5,6 @@
 #include "BlendShader.h"
 #include "BRDFShader.h"
 #include "EmitShader.h"
-#include "LightComponent.h"
 #include "render.h"
 #include "ShadowMapShader.h"
 

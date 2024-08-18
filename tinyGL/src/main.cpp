@@ -1,10 +1,8 @@
 //tiny openGL project
 #include "render.h"
-#include "message.h"
 #include "Engine.h"
 #include "Scene.h"
 
-#include "BoxShape.h"
 #include "ui.h"
 using namespace glm;
 using namespace std;

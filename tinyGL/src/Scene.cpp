@@ -1,10 +1,10 @@
 #include "Scene.h"
 #include "Engine.h"
-#include "MeshComponent.h"
+#include "Component/Mesh/MeshComponent.h"
 
 #include "Actor.h"
-#include "JsonParser.h"
-#include "YamlParser.h"
+#include "Parser/JsonParser.h"
+#include "Parser/YamlParser.h"
 
 using namespace tinyGL;
 CScene* g_scene = new CScene;

@@ -2,10 +2,10 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Actor.h"
-#include "CameraComponent.h"
+#include "Component/CameraComponent.h"
 #include "Engine.h"
-#include "LightComponent.h"
-#include "MeshComponent.h"
+#include "Component/LightComponent.h"
+#include "Component/Mesh/MeshComponent.h"
 #include "message.h"
 #include "Scene.h"
 #include "Shader/Shader.h"
@@ -229,6 +229,7 @@ void CRender::RenderScene() const
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 	// 更新光源UBO
 	SceneLightInfo light_info;
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 

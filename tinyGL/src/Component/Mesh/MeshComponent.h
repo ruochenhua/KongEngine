@@ -1,7 +1,6 @@
 #pragma once
 #include "Common.h"
-#include "Component.h"
-#include "assimp/matrix4x4.h"
+#include "Component/Component.h"
 #include "Shader/Shader.h"
 
 struct aiMesh;

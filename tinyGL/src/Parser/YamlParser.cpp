@@ -3,10 +3,11 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Actor.h"
-#include "ModelMeshComponent.h"
+#include "Component/Mesh/ModelMeshComponent.h"
 #include "Scene.h"
-#include "BoxShape.h"
-#include "SphereShape.h"
+#include "Component/LightComponent.h"
+#include "Component/Mesh/BoxShape.h"
+#include "Component/Mesh/SphereShape.h"
 
 using namespace tinyGL;
 

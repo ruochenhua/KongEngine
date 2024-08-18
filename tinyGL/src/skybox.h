@@ -1,5 +1,5 @@
 #pragma once
-#include "BoxShape.h"
+#include "Component/Mesh/BoxShape.h"
 #include "Common.h"
 #include "RenderCommon.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "CameraComponent.h"
+#include "Component/CameraComponent.h"
 #include "Common.h"
 #include "postprocess.h"
 #include "skybox.h"

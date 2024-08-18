@@ -4,8 +4,7 @@
 
 #include "common.h"
 
-#include "LightComponent.h"
-#include "MeshComponent.h"
+#include "Component/Mesh/MeshComponent.h"
 namespace tinyGL
 {
     class CTransformComponent;

@@ -3,11 +3,12 @@
 #include <nlohmann/json.hpp>
 
 #include "Actor.h"
-#include "ModelMeshComponent.h"
+#include "Component/Mesh/ModelMeshComponent.h"
 #include "Scene.h"
-#include "BoxShape.h"
-#include "QuadShape.h"
-#include "SphereShape.h"
+#include "Component/LightComponent.h"
+#include "Component/Mesh/BoxShape.h"
+#include "Component/Mesh/QuadShape.h"
+#include "Component/Mesh/SphereShape.h"
 using json = nlohmann::json;
 
 using namespace tinyGL;

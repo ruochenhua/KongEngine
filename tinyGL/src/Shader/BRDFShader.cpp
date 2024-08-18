@@ -1,6 +1,6 @@
 #include "BRDFShader.h"
 
-#include "LightComponent.h"
+#include "Component/LightComponent.h"
 #include "render.h"
 #include "Scene.h"
 

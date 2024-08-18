@@ -7,7 +7,8 @@
 #include "Engine.h"
 #include "render.h"
 #include "Scene.h"
-#include "Shader/PostprocessShader.h"
+#include "Component/LightComponent.h"
+
 using namespace tinyGL;
 
 CUIManager* g_uimanager = new CUIManager;

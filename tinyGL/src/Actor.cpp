@@ -1,8 +1,8 @@
 #include "Actor.h"
 
-#include "MeshComponent.h"
-#include "LightComponent.h"
-#include "BoxShape.h"
+#include "Component/Mesh/MeshComponent.h"
+#include "Component/LightComponent.h"
+#include "Component/Mesh/BoxShape.h"
 using namespace tinyGL;
 
 AActor::~AActor()

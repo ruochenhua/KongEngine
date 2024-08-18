@@ -1,5 +1,5 @@
 #include "LightComponent.h"
-#include "MeshComponent.h"
+#include "Component/Mesh/MeshComponent.h"
 #include "Actor.h"
 #include "Scene.h"
 #include "glm/gtx/euler_angles.hpp"

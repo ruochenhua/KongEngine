@@ -1,6 +1,7 @@
 #pragma once
 
-#include "MeshComponent.h"
+#include "Component.h"
+#include "Component/Mesh/MeshComponent.h"
 
 namespace tinyGL
 {
