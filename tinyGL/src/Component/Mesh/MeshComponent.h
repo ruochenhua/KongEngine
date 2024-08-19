@@ -41,7 +41,6 @@ namespace tinyGL
 		
 		void BeginPlay() override;
 		virtual void Draw(const SSceneRenderInfo& scene_render_info);
-		
 		virtual void InitRenderInfo();
 		bool IsBlend();
 	protected:

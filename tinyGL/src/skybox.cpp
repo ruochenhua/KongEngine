@@ -2,11 +2,12 @@
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
+#include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"
 
 using namespace tinyGL;
 
-#define USE_CUBE_MAP 0
+#define USE_HDR_SKYBOX 0
 void CSkyBox::Init()
 {
 	map<EShaderType, string> skybox_shader = {
@@ -20,7 +21,9 @@ void CSkyBox::Init()
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
 	box_mesh->BeginPlay();
 	
-#if USE_CUBE_MAP
+	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
+	quad_shape->BeginPlay();
+#if USE_HDR_SKYBOX
 	std::vector<std::string> tex_path_vec = {
 		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_bk.tga"),
 		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_dn.tga"),
@@ -77,7 +80,7 @@ void CSkyBox::Init()
 	glDisable(GL_DEPTH_TEST);
 	
 	map<EShaderType, string> sphere_to_cube_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.vert")},
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
 		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.frag")}
 	};
 	
@@ -85,13 +88,13 @@ void CSkyBox::Init()
 	assert(sphere_to_cube_shader_id, "load skybox shader failed");
 	
 	// 贴图球形映射转换为立方体贴图映射
-	glGenFramebuffers(1, &sphere_to_cube_fbo);
-	glGenRenderbuffers(1, &sphere_to_cube_rbo);
+	glGenFramebuffers(1, &preprocess_fbo);
+	glGenRenderbuffers(1, &preprocess_rbo);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, sphere_to_cube_fbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, sphere_to_cube_rbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sphere_to_cube_rbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, preprocess_rbo);
 	stbi_set_flip_vertically_on_load(true);
 	string sphere_map_path = CSceneLoader::ToResourcePath("sky_box/newport_loft.hdr");
 	int width, height, nr_component;
@@ -118,7 +121,7 @@ void CSkyBox::Init()
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -144,7 +147,7 @@ void CSkyBox::Init()
 	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
 
 	glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
-	glBindFramebuffer(GL_FRAMEBUFFER, sphere_to_cube_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		glUniformMatrix4fv(glGetUniformLocation(sphere_to_cube_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
@@ -154,15 +157,21 @@ void CSkyBox::Init()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-		//renderCube(); // renders a 1x1 cube
 		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
 
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// 创建mipmap，在预滤波环境贴图的时候使用他的mipmap贴图可以有效减少采样结果异常斑点的问题
+	// 转换完成再生成mipmap
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	
 
 	// 辐照度预计算shader
 	map<EShaderType, string> irradiance_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.vert")},
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
 		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.frag")}
 	};
 	
@@ -187,8 +196,8 @@ void CSkyBox::Init()
 	glUniform1i(glGetUniformLocation(irradiance_shader_id, "cube_map"), 0);
 	glUniformMatrix4fv(glGetUniformLocation(irradiance_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
 		
-	glBindFramebuffer(GL_FRAMEBUFFER, sphere_to_cube_fbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, sphere_to_cube_rbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
@@ -208,45 +217,124 @@ void CSkyBox::Init()
 		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
 
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// 预滤波环境贴图计算shader
+	map<EShaderType, string> prefilter_shader = {
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/prefilter_map.frag")}
+	};
+	
+	prefilter_shader_id = Shader::LoadShaders(prefilter_shader);
+	assert(prefilter_shader_id, "load skybox shader failed");
+	
+	// 预滤波环境贴图
+	glGenTextures(1, &prefilter_map_id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_id);
+	for(unsigned i = 0; i <6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
+			GL_RGB16F, 128, 128, 0,
+			GL_RGB, GL_FLOAT, nullptr);
+	}
+	
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	// 启用三线性过滤
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	// 和环境光辐照度积分不同，镜面反射依赖于材质表面的粗糙度。镜面反射光的形状，称为镜面波瓣(Specular lobe)依赖于入射方向和粗糙度
+	// 采用蒙特卡洛积分和重要性采样（大数定律）
+	// 从总体（理论上大小是无限）中挑选样本N生成采样值并求平均
+	// 用低差异序列随机采样的蒙特卡洛方法（拟蒙特卡洛积分）+ 重要性采样（可以做到实时求解）
+	glUseProgram(prefilter_shader_id);
+	glUniform1i(glGetUniformLocation(prefilter_shader_id, "cube_map"), 0);
+	glUniformMatrix4fv(glGetUniformLocation(prefilter_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	// 启用立方体贴图之间的正确过渡，去除面之间的接缝
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	int map_mip_levels = 5;
+	for(int mip = 0; mip < map_mip_levels; ++mip)
+	{
+		unsigned int mip_width = 128 * pow(0.5, mip);
+		unsigned int mip_height = 128 * pow(0.5, mip);
+		
+		glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mip_width, mip_height);
+		glViewport(0, 0, mip_width, mip_height);
+
+		// 不同的粗糙度对应不同的mip等级
+		float roughness = (float)mip/(float)(map_mip_levels - 1);
+		glUniform1f(glGetUniformLocation(prefilter_shader_id, "roughness"), roughness);
+
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			glUniformMatrix4fv(glGetUniformLocation(prefilter_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
+	
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+								   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilter_map_id, mip);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+			glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+		}
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+
+	// brdf预计算贴图shader
+	map<EShaderType, string> brdf_lut_shader = {
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/brdf_lut.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/brdf_lut.frag")}
+	};
+	
+	brdf_lut_shader_id = Shader::LoadShaders(brdf_lut_shader);
+	assert(brdf_lut_shader_id, "load skybox shader failed");
+	
+	// brdf预计算贴图
+	glGenTextures(1, &brdf_lut_map_id);
+	glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
+	// 只需要RG两个分量就行
+	glTexImage2D(GL_TEXTURE_2D, 0,
+		GL_RG16F, 512, 512, 0,
+			GL_RG, GL_FLOAT, 0);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	
+	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_map_id, 0);
+	
+	glViewport(0, 0, 512, 512);
+	glUseProgram(brdf_lut_shader_id);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	quad_shape->Draw();
+	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 #endif
 }
 
 void CSkyBox::Render(const glm::mat4& mvp)
 {
-	auto& render_info = box_mesh->mesh_list[0].m_RenderInfo;
-
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(shader_id);
-	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 	//Shader::SetMat4(m_BoxMesh.shader_id, "MVP", mvp);
 	glUniformMatrix4fv(glGetUniformLocation(shader_id, "MVP"), 1, GL_FALSE, &mvp[0][0]);
+	glUniform1i(glGetUniformLocation(shader_id, "skybox"), 0);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-	
-	glUniform1i(glGetUniformLocation(shader_id, "skybox"), 0);
-	
-	//glDrawArrays(GL_TRIANGLES, 0, mesh_info.vertex_size / 3);
-	if(render_info.index_buffer == GL_NONE)
-	{
-		if(render_info.instance_buffer != GL_NONE)
-		{
-			// Starting from vertex 0; 3 vertices total -> 1 triangle
-			glDrawArraysInstanced(GL_TRIANGLES, 0,
-				render_info.vertex_size / render_info.stride_count,
-				render_info.instance_count);
-		}
-		else
-		{
-			// Starting from vertex 0; 3 vertices total -> 1 triangle
-			glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); 	
-		}
-	}
-	else
-	{		
-		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-	}
-	glBindVertexArray(GL_NONE);
+	//glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
+	//quad_shape->Draw();
+	box_mesh->Draw();
 }

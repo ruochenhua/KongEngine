@@ -23,6 +23,15 @@ void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
     glBindVertexArray(GL_NONE);
 }
 
+void CQuadShape::Draw()
+{
+    auto& render_info = mesh_list[0].m_RenderInfo;
+    
+    glBindVertexArray(render_info.vertex_array_id);   
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(GL_NONE);
+}
+
 void CQuadShape::InitRenderInfo()
 {
     // 屏幕mesh

@@ -71,6 +71,8 @@ namespace tinyGL
 
 		GLuint GetSkyboxTexture() const;
 		GLuint GetSkyboxDiffuseIrradianceTexture() const;
+		GLuint GetSkyboxPrefilterTexture() const;
+		GLuint GetSkyboxBRDFLutTexture() const;
 		int Init();
 		int Update(double delta);
 		void PostUpdate();

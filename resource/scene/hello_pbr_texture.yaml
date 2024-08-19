@@ -35,11 +35,11 @@ scene:
       - type: box
         shader_type: brdf
         texture_path:
-          diffuse: textures/pbr/grass/albedo.png
-          metallic: textures/pbr/grass/metallic.png
-          normal: textures/pbr/grass/normal.png
-          roughness: textures/pbr/grass/roughness.png
-          ao: textures/pbr/grass/ao.png
+          diffuse: textures/pbr/gold/albedo.png
+          metallic: textures/pbr/gold/metallic.png
+          normal: textures/pbr/gold/normal.png
+          roughness: textures/pbr/gold/roughness.png
+          ao: textures/pbr/gold/ao.png
 
   - actor: point_light
     transform:
@@ -56,28 +56,6 @@ scene:
         shader_type: emit
       - type: point_light
         light_color:
-          - 20
-          - 20
-          - 20
-
-  - actor: floor
-    component:
-      - type: box
-        shader_type: brdf
-        material:
-          albedo:
-            - 0.6
-            - 0.3
-            - 0.6
-          metallic: 0.9
-          roughness: 0.1
-          ao: 1
-    transform:
-      location:
-        - 0
-        - -4
-        - 0
-      scale:
-        - 200
-        - 1
-        - 200
+          - 5
+          - 5
+          - 5

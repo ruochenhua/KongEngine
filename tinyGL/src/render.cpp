@@ -59,6 +59,16 @@ GLuint CRender::GetSkyboxDiffuseIrradianceTexture() const
 	return m_SkyBox.GetDiffuseIrradianceTexture();
 }
 
+GLuint CRender::GetSkyboxPrefilterTexture() const
+{
+	return m_SkyBox.GetPrefilterTexture();
+}
+
+GLuint CRender::GetSkyboxBRDFLutTexture() const
+{
+	return m_SkyBox.GetBRDFLutTexture();
+}
+
 int CRender::Init()
 {
 	render_window = Engine::GetRenderWindow();
@@ -232,6 +242,7 @@ void CRender::RenderSkyBox()
 {
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
+	//mat4 mvp = projection * mainCamera->GetViewMatrix(); //
 	m_SkyBox.Render(mvp);
 }
 

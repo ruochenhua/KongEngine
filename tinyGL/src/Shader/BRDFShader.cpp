@@ -51,6 +51,14 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& sce
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
 	GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
+	// 天空盒预滤波贴图
+	glActiveTexture(GL_TEXTURE0 + SKYBOX_PREFILTER_TEX_SHADER_ID);
+	GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
+	// 天空盒brdf lut贴图
+	glActiveTexture(GL_TEXTURE0 + SKYBOX_BRDF_LUT_TEX_SHADER_ID);
+	GLuint skybox_brdf_lut_tex_id = CRender::GetRender()->GetSkyboxBRDFLutTexture();
+	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
 	GLuint dir_light_shadowmap_id = null_tex_id;
@@ -104,6 +112,8 @@ void BRDFShader::InitDefaultShader()
 	SetInt("ao_texture", AO_TEX_SHADER_ID);
 	SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
 	SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
+	SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
+	SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
 	for(unsigned int i = 0; i < 4; ++i)
 	{

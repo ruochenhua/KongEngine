@@ -39,6 +39,8 @@ uniform sampler2D metallic_texture;
 uniform sampler2D ao_texture;
 uniform samplerCube skybox_texture;
 uniform samplerCube skybox_diffuse_irradiance_texture;
+uniform samplerCube skybox_prefilter_texture;
+uniform sampler2D skybox_brdf_lut_texture;
 
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
@@ -221,19 +223,27 @@ void main()
     {
         point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
     }
-    
-    vec3 reflect_vec = reflect(-view, obj_normal);
-    vec4 skybox_color = texture(skybox_texture, reflect_vec);
-    
+
     // 用IBL的辐照度贴图作为环境光
     vec3 skybox_irradiance = texture(skybox_diffuse_irradiance_texture, obj_normal).xyz;
     vec3 F0 = vec3(0.04);
-    vec3 kS = FresnelSchlick(max(dot(obj_normal, view), 0.0), F0);
+    vec3 env_albedo = GetAlbedo().xyz;
+    float env_metallic = GetMetallic();
+    F0 = mix(F0, env_albedo, env_metallic);
+    vec3 kS = FresnelSchlickRoughness(max(dot(obj_normal, view), 0.0), F0, roughness);
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - GetMetallic();
-    vec3 ambient = kD*GetAlbedo().xyz*skybox_irradiance*ao;
-    
-    
+    kD *= 1.0 - env_metallic;
+    // IBL漫反射分量
+    vec3 env_diffuse = env_albedo * skybox_irradiance;
+    // IBL镜面反射分量
+    vec3 reflect_vec = reflect(-view, obj_normal);
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefiltered_color = textureLod(skybox_prefilter_texture, reflect_vec, roughness*MAX_REFLECTION_LOD).xyz;
+
+    vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(obj_normal, view), 0.0), roughness)).rg;
+    vec3 env_specular = prefiltered_color * (kS * env_BRDF.x + env_BRDF.y);
+    vec3 ambient = (kD*env_diffuse + env_specular)*ao;
+
     vec3 color = ambient + (dir_light_color + point_light_color);
     
     //FragColor = GetAlbedo();
