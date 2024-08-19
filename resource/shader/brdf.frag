@@ -224,13 +224,14 @@ void main()
         point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
     }
 
+    float env_roughness = GetRoughness();
     // 用IBL的辐照度贴图作为环境光
     vec3 skybox_irradiance = texture(skybox_diffuse_irradiance_texture, obj_normal).xyz;
     vec3 F0 = vec3(0.04);
     vec3 env_albedo = GetAlbedo().xyz;
     float env_metallic = GetMetallic();
     F0 = mix(F0, env_albedo, env_metallic);
-    vec3 kS = FresnelSchlickRoughness(max(dot(obj_normal, view), 0.0), F0, roughness);
+    vec3 kS = FresnelSchlickRoughness(max(dot(obj_normal, view), 0.0), F0, env_roughness);
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - env_metallic;
     // IBL漫反射分量
@@ -238,9 +239,9 @@ void main()
     // IBL镜面反射分量
     vec3 reflect_vec = reflect(-view, obj_normal);
     const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefiltered_color = textureLod(skybox_prefilter_texture, reflect_vec, roughness*MAX_REFLECTION_LOD).xyz;
+    vec3 prefiltered_color = textureLod(skybox_prefilter_texture, reflect_vec, env_roughness*MAX_REFLECTION_LOD).xyz;
 
-    vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(obj_normal, view), 0.0), roughness)).rg;
+    vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(obj_normal, view), 0.0), env_roughness)).rg;
     vec3 env_specular = prefiltered_color * (kS * env_BRDF.x + env_BRDF.y);
     vec3 ambient = (kD*env_diffuse + env_specular)*ao;
 
