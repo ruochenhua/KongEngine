@@ -7,7 +7,9 @@
 
 using namespace tinyGL;
 
-#define USE_HDR_SKYBOX 0
+unsigned CUBE_MAP_RES = 1024;
+
+#define USE_HDR_SKYBOX 1 
 void CSkyBox::Init()
 {
 	map<EShaderType, string> skybox_shader = {
@@ -23,7 +25,7 @@ void CSkyBox::Init()
 	
 	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
 	quad_shape->BeginPlay();
-#if USE_HDR_SKYBOX
+#if !USE_HDR_SKYBOX
 	std::vector<std::string> tex_path_vec = {
 		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_bk.tga"),
 		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_dn.tga"),
@@ -93,7 +95,7 @@ void CSkyBox::Init()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, CUBE_MAP_RES, CUBE_MAP_RES);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, preprocess_rbo);
 	stbi_set_flip_vertically_on_load(true);
 	string sphere_map_path = CSceneLoader::ToResourcePath("sky_box/newport_loft.hdr");
@@ -105,7 +107,7 @@ void CSkyBox::Init()
 	// 创建球形映射的贴图
 	glGenTextures(1, &sphere_map_texture);
 	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -118,7 +120,7 @@ void CSkyBox::Init()
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 	for (int i = 0; i < 6; ++i)
 	{
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -146,7 +148,7 @@ void CSkyBox::Init()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
 
-	glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
+	glViewport(0, 0, CUBE_MAP_RES, CUBE_MAP_RES); // don't forget to configure the viewport to the capture dimensions.
 	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
@@ -183,7 +185,7 @@ void CSkyBox::Init()
 	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_tex_id);
 	for(int i = 0; i < 6; ++i)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -234,7 +236,7 @@ void CSkyBox::Init()
 	for(unsigned i = 0; i <6; ++i)
 	{
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-			GL_RGB16F, 128, 128, 0,
+			GL_RGB32F, 128, 128, 0,
 			GL_RGB, GL_FLOAT, nullptr);
 	}
 	
