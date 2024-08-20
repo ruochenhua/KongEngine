@@ -31,6 +31,7 @@ uniform float specular_factor;
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
+uniform bool b_render_skybox;
 
 uniform sampler2D diffuse_texture;
 uniform sampler2D normal_texture;
@@ -227,28 +228,39 @@ void main()
     float env_roughness = GetRoughness();
     // 用IBL的辐照度贴图作为环境光
     vec3 skybox_irradiance = texture(skybox_diffuse_irradiance_texture, obj_normal).xyz;
-    vec3 F0 = vec3(0.04);
-    vec3 env_albedo = GetAlbedo().xyz;
-    float env_metallic = GetMetallic();
-    F0 = mix(F0, env_albedo, env_metallic);
-    vec3 kS = FresnelSchlickRoughness(max(dot(obj_normal, view), 0.0), F0, env_roughness);
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - env_metallic;
-    // IBL漫反射分量
-    vec3 env_diffuse = env_albedo * skybox_irradiance;
-    // IBL镜面反射分量
-    vec3 reflect_vec = reflect(-view, obj_normal);
-    const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefiltered_color = textureLod(skybox_prefilter_texture, reflect_vec, env_roughness*MAX_REFLECTION_LOD).xyz;
+    vec3 F0 = vec3(0.03);
 
-    vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(obj_normal, view), 0.0), env_roughness)).rg;
-    vec3 env_specular = prefiltered_color * (kS * env_BRDF.x + env_BRDF.y);
-    vec3 ambient = (kD*env_diffuse + env_specular)*ao;
+    vec3 ambient = vec3(0.0);
+    vec3 env_albedo = GetAlbedo().xyz;
+
+    if(b_render_skybox)
+    {
+        float env_metallic = GetMetallic();
+        F0 = mix(F0, env_albedo, env_metallic);
+        vec3 kS = FresnelSchlickRoughness(max(dot(obj_normal, view), 0.0), F0, env_roughness);
+        vec3 kD = 1.0 - kS;
+        kD *= 1.0 - env_metallic;
+        // IBL漫反射分量
+        vec3 env_diffuse = env_albedo * skybox_irradiance;
+        // IBL镜面反射分量
+        vec3 reflect_vec = reflect(-view, obj_normal);
+        const float MAX_REFLECTION_LOD = 4.0;
+        vec3 prefiltered_color = textureLod(skybox_prefilter_texture, reflect_vec, env_roughness*MAX_REFLECTION_LOD).xyz;
+
+        vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(obj_normal, view), 0.0), env_roughness)).rg;
+        vec3 env_specular = prefiltered_color * (kS * env_BRDF.x + env_BRDF.y);
+        ambient = (kD*env_diffuse + env_specular)*ao;
+    }
+    else
+    {
+        ambient = F0 *env_albedo *ao;
+    }
 
     vec3 color = ambient + (dir_light_color + point_light_color);
     
     //FragColor = GetAlbedo();
     FragColor = vec4(color, 1.0);
+
     // FragColor = skybox_color;
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)

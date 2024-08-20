@@ -81,9 +81,7 @@ int CRender::Init()
 		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.frag")}
 	};
 	shadowmap_debug_shader = make_shared<Shader>();
-	// m_ShadowMapDebugShaderId = Shader::LoadShaders(debug_shader_paths);
-	// glUseProgram(m_ShadowMapDebugShaderId);
-	// Shader::SetInt(m_ShadowMapDebugShaderId, "shadow_map", 0);
+
 	shadowmap_debug_shader->Init(debug_shader_paths);
 	shadowmap_debug_shader->Use();
 	shadowmap_debug_shader->SetInt("shadow_map", 0);
@@ -117,26 +115,12 @@ void CRender::InitUBO()
 	matrix_ubo.Init(0);
 
 	scene_light_ubo.AppendData(SceneLightInfo(), "light_info");
-	//scene_light_ubo.AppendData(glm::vec4(), "point_light_location");
-	//scene_light_ubo.AppendData(glm::vec4(), "point_light_color");
-	// scene_light_ubo.AppendData(glm::ivec4(), "point_light_count");
-	// scene_light_ubo.AppendData(PointLight(), "point_light");
-	//
-	// scene_light_ubo.AppendData(glm::vec4(), "point_light.light_pos");
-	// scene_light_ubo.AppendData(glm::vec4(), "point_light.light_color");
 	scene_light_ubo.Init(1);
 }
 
 int CRender::Update(double delta)
 {
-	//UpdateLightDir(delta);
-	//update camera
 	mainCamera->Update(delta);		
-	
-	// Clear the screen
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-	// glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-	
 	// RenderSkyBox();
 	CollectLightInfo();
 	
@@ -167,23 +151,24 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	RenderSkyBox();
+	if(b_render_skybox)
+	{
+		RenderSkyBox();	
+	}
 	
 	RenderScene();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	//glDisable(GL_BLEND);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	//postprocess_shader->DrawScreenQuad();
+	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
 	post_process.Draw();
 #endif
+}
 
-	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//
-	// RenderSkyBox();
+void CRender::ChangeSkybox()
+{
+	m_SkyBox.ChangeSkybox();
 }
 
 GLuint CRender::LoadTexture(const std::string& texture_path, bool flip_uv)
@@ -312,7 +297,9 @@ void CRender::RenderScene() const
 		matrix_ubo.Bind();
 		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
 		matrix_ubo.EndBind();
-	
+
+		mesh_component->shader_data->Use();
+		mesh_component->shader_data->SetBool("b_render_skybox", b_render_skybox);
 		mesh_component->Draw(scene_render_info);
 	}
 }

@@ -12,19 +12,18 @@ unsigned CUBE_MAP_RES = 1024;
 #define USE_HDR_SKYBOX 1 
 void CSkyBox::Init()
 {
-	map<EShaderType, string> skybox_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/skybox.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/skybox.frag")}
-	};
-	
-	shader_id = Shader::LoadShaders(skybox_shader);
-	assert(shader_id, "load skybox shader failed");
 	box_mesh = make_shared<CBoxShape>(SRenderResourceDesc());
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
 	box_mesh->BeginPlay();
 	
 	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
 	quad_shape->BeginPlay();
+	
+	skybox_shader = make_shared<SkyboxShader>();
+	equirectangular_to_cubemap_shader = make_shared<EquirectangularToCubemapShader>();
+	irradiance_calculation_shader = make_shared<IrradianceCalculationShader>();
+	prefilter_calculation_shader = make_shared<PrefilterCalculationShader>();
+	brdf_lut_calculation_shader = make_shared<BRDFLutCalculationShader>();
 #if !USE_HDR_SKYBOX
 	std::vector<std::string> tex_path_vec = {
 		CSceneLoader::ToResourcePath("sky_box/dark_sky/darkskies_bk.tga"),
@@ -78,18 +77,8 @@ void CSkyBox::Init()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 #else
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
 	
-	map<EShaderType, string> sphere_to_cube_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.frag")}
-	};
-	
-	sphere_to_cube_shader_id = Shader::LoadShaders(sphere_to_cube_shader);
-	assert(sphere_to_cube_shader_id, "load skybox shader failed");
-	
-	// 贴图球形映射转换为立方体贴图映射
+	////////// 创建skybox预处理帧缓冲
 	glGenFramebuffers(1, &preprocess_fbo);
 	glGenRenderbuffers(1, &preprocess_rbo);
 
@@ -97,90 +86,21 @@ void CSkyBox::Init()
 	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, CUBE_MAP_RES, CUBE_MAP_RES);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, preprocess_rbo);
-	stbi_set_flip_vertically_on_load(true);
-	string sphere_map_path = CSceneLoader::ToResourcePath("sky_box/newport_loft.hdr");
-	int width, height, nr_component;
 	
-	auto data = stbi_loadf(sphere_map_path.c_str(), &width, &height, &nr_component, 0);
-	assert(data);
-
-	// 创建球形映射的贴图
-	glGenTextures(1, &sphere_map_texture);
-	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	
-	stbi_image_free(data);
-		
-	// 创建立方体贴图
+	////////// 创建立方体贴图
 	glGenTextures(1, &cube_map_id);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 	for (int i = 0; i < 6; ++i)
 	{
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	
-	auto& render_info = box_mesh->mesh_list[0].m_RenderInfo;
-	
-	vec3 scene_center = vec3(0);
-	vector<mat4> skybox_views;
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(1,0,0), vec3(0,-1,0)));
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(-1,0,0), vec3(0,-1,0)));
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,1,0), vec3(0,0,1)));
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,-1,0), vec3(0,0,-1)));
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,0,1), vec3(0,-1,0)));
-	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,0,-1), vec3(0,-1,0)));
-	
-	mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	
-	glUseProgram(sphere_to_cube_shader_id);
-	glUniform1i(glGetUniformLocation(sphere_to_cube_shader_id, "sphere_map"), 0);
-	glUniformMatrix4fv(glGetUniformLocation(sphere_to_cube_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
 
-	glViewport(0, 0, CUBE_MAP_RES, CUBE_MAP_RES); // don't forget to configure the viewport to the capture dimensions.
-	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		glUniformMatrix4fv(glGetUniformLocation(sphere_to_cube_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
-	
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-							   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cube_map_id, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-
-	}
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// 创建mipmap，在预滤波环境贴图的时候使用他的mipmap贴图可以有效减少采样结果异常斑点的问题
-	// 转换完成再生成mipmap
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	
-
-	// 辐照度预计算shader
-	map<EShaderType, string> irradiance_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.frag")}
-	};
-	
-	irradiance_shader_id = Shader::LoadShaders(irradiance_shader);
-	assert(irradiance_shader_id, "load skybox shader failed");
-	
-	// 创建辐照度立方体贴图
+	////////// 创建辐照度立方体贴图
 	glGenTextures(1, &irradiance_tex_id);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_tex_id);
 	for(int i = 0; i < 6; ++i)
@@ -193,44 +113,7 @@ void CSkyBox::Init()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	// 预计算辐照度贴图
-	glUseProgram(irradiance_shader_id);
-	glUniform1i(glGetUniformLocation(irradiance_shader_id, "cube_map"), 0);
-	glUniformMatrix4fv(glGetUniformLocation(irradiance_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
-		
-	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-	
-	glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
-
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		glUniformMatrix4fv(glGetUniformLocation(irradiance_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
-	
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-							   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_tex_id, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-		//renderCube(); // renders a 1x1 cube
-		glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
-
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// 预滤波环境贴图计算shader
-	map<EShaderType, string> prefilter_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/preprocess_common.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/prefilter_map.frag")}
-	};
-	
-	prefilter_shader_id = Shader::LoadShaders(prefilter_shader);
-	assert(prefilter_shader_id, "load skybox shader failed");
-	
-	// 预滤波环境贴图
+	////////// 预滤波环境贴图
 	glGenTextures(1, &prefilter_map_id);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_id);
 	for(unsigned i = 0; i <6; ++i)
@@ -245,16 +128,122 @@ void CSkyBox::Init()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	////////// brdf预计算贴图
+	glGenTextures(1, &brdf_lut_map_id);
+	glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
+	// 只需要RG两个分量就行
+	glTexImage2D(GL_TEXTURE_2D, 0,
+		GL_RG16F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RG, GL_FLOAT, 0);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	skybox_res_list.emplace_back(CSceneLoader::ToResourcePath("sky_box/newport_loft.hdr"));
+	skybox_res_list.emplace_back(CSceneLoader::ToResourcePath("sky_box/illovo_beach_balcony_4k.hdr"));
+	
+	PreprocessIBL(skybox_res_list[current_skybox_idx]);
+	
+#endif
+}
+
+void CSkyBox::PreprocessIBL(const string& hdr_file_path)
+{
+	int width, height, nr_component;
+	stbi_set_flip_vertically_on_load(true);
+	auto data = stbi_loadf(hdr_file_path.c_str(), &width, &height, &nr_component, 0);
+	assert(data, "hdr file load failed");
+
+	// 若原来有贴图数据，释放掉旧的重新加载
+	if(sphere_map_texture)
+	{
+		glDeleteTextures(1, &sphere_map_texture);
+	}
+	// 创建球形映射的贴图
+	glGenTextures(1, &sphere_map_texture);
+	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	stbi_image_free(data);
+
+	// projection和view矩阵
+	vec3 scene_center = vec3(0);
+	vector<mat4> skybox_views;
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(1,0,0), vec3(0,-1,0)));
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(-1,0,0), vec3(0,-1,0)));
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,1,0), vec3(0,0,1)));
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,-1,0), vec3(0,0,-1)));
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,0,1), vec3(0,-1,0)));
+	skybox_views.push_back(lookAt(scene_center, scene_center+vec3(0,0,-1), vec3(0,-1,0)));
+	
+	mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	// 将等距柱状投影图转换为立方体贴图
+	equirectangular_to_cubemap_shader->Use();
+	equirectangular_to_cubemap_shader->SetInt("sphere_map", 0);
+	equirectangular_to_cubemap_shader->SetMat4("projection", projection);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
+
+	glViewport(0, 0, CUBE_MAP_RES, CUBE_MAP_RES); // don't forget to configure the viewport to the capture dimensions.
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		equirectangular_to_cubemap_shader->SetMat4("view", skybox_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+							   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cube_map_id, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		box_mesh->Draw();
+	}
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// 创建mipmap，在预滤波环境贴图的时候使用他的mipmap贴图可以有效减少采样结果异常斑点的问题
+	// 转换完成写入到cube_map贴图后再生成mipmap，否则不会生效
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	// 预计算辐照度贴图
+	irradiance_calculation_shader->Use();
+	irradiance_calculation_shader->SetInt("cube_map", 0);
+	irradiance_calculation_shader->SetMat4("projection", projection);
+			
+	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+	
+	glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		irradiance_calculation_shader->SetMat4("view", skybox_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+							   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_tex_id, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		box_mesh->Draw();
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// 和环境光辐照度积分不同，镜面反射依赖于材质表面的粗糙度。镜面反射光的形状，称为镜面波瓣(Specular lobe)依赖于入射方向和粗糙度
 	// 采用蒙特卡洛积分和重要性采样（大数定律）
 	// 从总体（理论上大小是无限）中挑选样本N生成采样值并求平均
 	// 用低差异序列随机采样的蒙特卡洛方法（拟蒙特卡洛积分）+ 重要性采样（可以做到实时求解）
-	glUseProgram(prefilter_shader_id);
-	glUniform1i(glGetUniformLocation(prefilter_shader_id, "cube_map"), 0);
-	glUniformMatrix4fv(glGetUniformLocation(prefilter_shader_id, "projection"), 1, GL_FALSE, &projection[0][0]);
+	prefilter_calculation_shader->Use();
+	prefilter_calculation_shader->SetInt("cube_map", 0);
+	prefilter_calculation_shader->SetMat4("projection", projection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 
@@ -272,71 +261,50 @@ void CSkyBox::Init()
 		glViewport(0, 0, mip_width, mip_height);
 
 		// 不同的粗糙度对应不同的mip等级
-		float roughness = (float)mip/(float)(map_mip_levels - 1);
-		glUniform1f(glGetUniformLocation(prefilter_shader_id, "roughness"), roughness);
-
+		float roughness = (float)mip/((float)map_mip_levels - 1.0f);
+		prefilter_calculation_shader->SetFloat("roughness", roughness);
+		
 		for (unsigned int i = 0; i < 6; ++i)
 		{
-			glUniformMatrix4fv(glGetUniformLocation(prefilter_shader_id, "view"), 1, GL_FALSE, &skybox_views[i][0][0]);
-	
+			prefilter_calculation_shader->SetMat4("view", skybox_views[i]);	
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
 								   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilter_map_id, mip);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-			glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+			box_mesh->Draw();
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-
-	// brdf预计算贴图shader
-	map<EShaderType, string> brdf_lut_shader = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/skybox/brdf_lut.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/brdf_lut.frag")}
-	};
-	
-	brdf_lut_shader_id = Shader::LoadShaders(brdf_lut_shader);
-	assert(brdf_lut_shader_id, "load skybox shader failed");
-	
-	// brdf预计算贴图
-	glGenTextures(1, &brdf_lut_map_id);
-	glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
-	// 只需要RG两个分量就行
-	glTexImage2D(GL_TEXTURE_2D, 0,
-		GL_RG16F, 512, 512, 0,
-			GL_RG, GL_FLOAT, 0);
-	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, preprocess_fbo);
-	
 	glBindRenderbuffer(GL_RENDERBUFFER, preprocess_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, CUBE_MAP_RES, CUBE_MAP_RES);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_map_id, 0);
 	
-	glViewport(0, 0, 512, 512);
-	glUseProgram(brdf_lut_shader_id);
+	glViewport(0, 0, CUBE_MAP_RES, CUBE_MAP_RES);
+	brdf_lut_calculation_shader->Use();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	quad_shape->Draw();
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-#endif
 }
 
 void CSkyBox::Render(const glm::mat4& mvp)
 {
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	glUseProgram(shader_id);
-	//Shader::SetMat4(m_BoxMesh.shader_id, "MVP", mvp);
-	glUniformMatrix4fv(glGetUniformLocation(shader_id, "MVP"), 1, GL_FALSE, &mvp[0][0]);
-	glUniform1i(glGetUniformLocation(shader_id, "skybox"), 0);
+	skybox_shader->Use();
+	skybox_shader->SetMat4("MVP", mvp);
+	skybox_shader->SetInt("skybox", 0);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 	//glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
 	//quad_shape->Draw();
 	box_mesh->Draw();
+}
+
+void CSkyBox::ChangeSkybox()
+{
+	current_skybox_idx = (current_skybox_idx + 1) % skybox_res_list.size();
+	PreprocessIBL(skybox_res_list[current_skybox_idx]);
 }

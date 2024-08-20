@@ -77,10 +77,12 @@ namespace tinyGL
 		int Update(double delta);
 		void PostUpdate();
 		CCamera* GetCamera() {return mainCamera;}
+		void ChangeSkybox();
 		// load image file and create texture 
 		static GLuint LoadTexture(const std::string& texture_path, bool flip_uv = true);
 		
 		PostProcess post_process;
+		bool b_render_skybox = true;
 	private:
 		int InitCamera();
 		void InitUBO();

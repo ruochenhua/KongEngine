@@ -88,6 +88,7 @@ void CUIManager::DescribeUIContent(double delta)
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
+	auto render_sys = CRender::GetRender();
 	if(ImGui::Button("load scene"))
 	{
 		// Load scene
@@ -96,13 +97,24 @@ void CUIManager::DescribeUIContent(double delta)
 		
 		CScene::GetScene()->LoadScene(scene_name);
 	}
-	auto main_cam = CRender::GetRender()->GetCamera();
+	if(ImGui::TreeNode("skybox"))
+	{
+		if(ImGui::Button("change hdr background"))
+		{
+			CRender::GetRender()->ChangeSkybox();
+		}
+
+		ImGui::Checkbox("render skybox", &render_sys->b_render_skybox);
+		ImGui::TreePop();
+	}
+	
+	auto main_cam = render_sys->GetCamera();
 	if(main_cam)
 	{
 		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
 	}
 
-	auto& postprocess = CRender::GetRender()->post_process;
+	auto& postprocess = render_sys->post_process;
 	ImGui::Checkbox("bloom", &postprocess.bloom);
 	ImGui::DragInt("bloom_range", &postprocess.bloom_range, 1, 1, 50);
 	if(ImGui::TreeNode("scene"))
@@ -114,9 +126,6 @@ void CUIManager::DescribeUIContent(double delta)
 			ImGui::PushID(actor->name.c_str());
 			if(ImGui::TreeNode("","%s", actor->name.c_str()))
 			{
-				// auto transform_comp = actor->GetComponent<CTransformComponent>();
-				// if(transform_comp)
-				// {
 				if(ImGui::TreeNode("", "transform:"))
 				{
 					if(ImGui::TreeNode("","location:"))
@@ -142,7 +151,6 @@ void CUIManager::DescribeUIContent(double delta)
 					}
 					ImGui::TreePop();
 				}
-				// }
 
 				auto light_comp = actor->GetComponent<CLightComponent>();
 				if(light_comp)
