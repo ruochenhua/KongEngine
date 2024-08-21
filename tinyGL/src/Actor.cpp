@@ -28,11 +28,17 @@ void AActor::Update(double delta)
 {
     // actor 更新调用
     // todo：先处理一下点光源和box mesh之间的颜色同步的问题吧，具体其他的还没想好
-    auto point_light_comp = GetComponent<CPointLightComponent>();
-    auto box_comp = GetComponent<CBoxShape>();
-    if(point_light_comp && box_comp)
+    auto light_comp = GetComponent<CLightComponent>();
+    auto mesh_comp = GetComponent<CMeshComponent>();
+    if(light_comp && mesh_comp)
     {
-        box_comp->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(point_light_comp->light_color, 1.0);
+        mesh_comp->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(light_comp->light_color, 1.0);
+
+    	auto dir_light_comp = dynamic_cast<CDirectionalLightComponent*>(light_comp.get());
+    	if(dir_light_comp)
+    	{
+    		location = -(dir_light_comp->GetLightDir() * 1000.f);
+    	}
     }
 }
 

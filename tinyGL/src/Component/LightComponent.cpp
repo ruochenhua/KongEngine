@@ -111,9 +111,13 @@ void CDirectionalLightComponent::RenderShadowMap()
 
 void CDirectionalLightComponent::SetLightDir(const glm::vec3& rotation)
 {
-    glm::mat3 rotation_mat = glm::eulerAngleXYZ(radians(rotation.x), radians(rotation.y), radians(rotation.z));
+    //glm::mat3 rotation_mat = glm::eulerAngleXYZ(radians(rotation.x), radians(rotation.y), radians(rotation.z));
     
-    light_dir = normalize(rotation_mat * vec3(1,0,0));
+    //light_dir = normalize(rotation_mat * vec3(1,0,0));
+    light_dir.x = sin(radians(rotation.x)) * cos(radians(rotation.y));
+    light_dir.y = sin(radians(rotation.x)) * sin(radians(rotation.y));
+    light_dir.z = cos(radians(rotation.x));
+    light_dir = normalize(light_dir);
 }
 
 CPointLightComponent::CPointLightComponent()
