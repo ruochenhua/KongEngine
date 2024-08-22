@@ -16,69 +16,101 @@ layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 #define iSteps 32
 #define jSteps 16
 
-vec2 rsi(vec3 r0, vec3 rd, float sr) {
+// 默认球心在原点
+vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, float sphere_radius)
+{
     // ray-sphere intersection that assumes
-    // the sphere is centered at the origin.
     // No intersection when result.x > result.y
-    float a = dot(rd, rd);
-    float b = 2.0 * dot(rd, r0);
-    float c = dot(r0, r0) - (sr * sr);
+    float a = dot(ray_direction, ray_direction);
+    float b = 2.0 * dot(ray_direction, ray_origin);
+    float c = dot(ray_origin, ray_origin) - (sphere_radius * sphere_radius);
     float d = (b*b) - 4.0*a*c;
-    if (d < 0.0) return vec2(1e5,-1e5);
+
+    // 返回击中结果，y小于x代表无结果
+    if (d < 0.0) return vec2(1e10,-1e10);
+    // 击中的话有两个相同或者不同的结果
     return vec2(
         (-b - sqrt(d))/(2.0*a),
         (-b + sqrt(d))/(2.0*a)
     );
 }
 
-vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, float shRlh, float shMie, float g) {
+// 获取大气密度
+// 传入位置离海平面的高度，以及散射的相关基准高度
+// 大气中任意一点的散射系数的计算，简化拆解为散射在海平面的散射系数，乘以基于海平面高度的该散射的大气密度计算公式
+float get_atmos_density(float height_to_sea_level, float scale_height)
+{
+    return exp(-height_to_sea_level / scale_height);
+}
+
+// 单次散射模型（太阳光进入大气，只经过一次散射改变方向）
+vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
+                vec3 pSun, float iSun,
+                float planet_radius, float rAtmos,
+                vec3 kRlh, float kMie, float scale_height_rlh, float scale_height_mie, float g)
+{
     // Normalize the sun and view directions.
     pSun = normalize(pSun);
-    r = normalize(r);
+    ray_dir = normalize(ray_dir);
 
-    // Calculate the step size of the primary ray.
-    vec2 p = rsi(r0, r, rAtmos);
-    if (p.x > p.y) return vec3(0,0,0);
-    p.y = min(p.y, rsi(r0, r, rPlanet).x);
-    float iStepSize = (p.y - p.x) / float(iSteps);
+    // 视线和大气层大小的尺寸的射线检测
+    // x为大气入射点的距离、y为大气出射点的距离（x==y代表光线和大气球体相切，x>y代表光线不经过大气）
+    vec2 atmos_hit = ray_sphere_intersection(ray_origin, ray_dir, rAtmos);
+    // 未击中，返回0
+    if (atmos_hit.x > atmos_hit.y) return vec3(0,0,0);
+
+    // 视线和星球做射线检测，取得近处的检测结果（远处的那个光被星球本体遮挡）
+    float planet_hit = ray_sphere_intersection(ray_origin, ray_dir, planet_radius).x;
+    // 这里有几种情况
+    // 1.视线星球有相交结果：观察距离为星球击中点的视线传播长度减去大气进入点的长度
+    // 2.视线和星球无相交结果并穿透大气：光线传播距离为光线大气出射点和大气入射点的长度
+    // 若相机在大气层内并靠近地表，则atmos_hit.x和planet_hit会出现是负值的情况（相交点在方向后面），按照下面的方法也能计算出光线在大气中传播的距离
+    float light_end = min(atmos_hit.y, planet_hit); // 这里用min因为没击中的话plant_hit会是一个很大的值
+    float ds = (light_end - atmos_hit.x) / float(iSteps);
 
     // Initialize the primary ray time.
     float iTime = 0.0;
 
     // Initialize accumulators for Rayleigh and Mie scattering.
-    vec3 totalRlh = vec3(0,0,0);
-    vec3 totalMie = vec3(0,0,0);
+    vec3 total_scatter_rlh = vec3(0,0,0);
+    vec3 total_scatter_mie = vec3(0,0,0);
 
     // Initialize optical depth accumulators for the primary ray.
-    float iOdRlh = 0.0;
-    float iOdMie = 0.0;
+    float total_od_rlh = 0.0;
+    float total_od_mie = 0.0;
 
     // Calculate the Rayleigh and Mie phases.
-    float mu = dot(r, pSun);
+    float mu = dot(ray_dir, pSun);
     float mumu = mu * mu;
     float gg = g * g;
+    // 瑞利散射相函数
     float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
-    float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
+    // 米氏散射相函数
+    float pMie = (1 - gg) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (4*PI));
 
-    // Sample the primary ray.
+    // 光线采样
     for (int i = 0; i < iSteps; i++) {
 
         // Calculate the primary ray sample position.
-        vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
+        // 以视角位置和方向，
+        vec3 iPos = ray_origin + ray_dir * (iTime + ds * 0.5);
 
+        // 观察点和星球表面距离（我们这里先默认星球的中心为原点，所以直接用位置的长度就行）
         // Calculate the height of the sample.
-        float iHeight = length(iPos) - rPlanet;
+        float surface_height = length(iPos) - planet_radius;
 
+        // 计算这一步的散射的光学深度结果
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float odStepRlh = exp(-iHeight / shRlh) * iStepSize;
-        float odStepMie = exp(-iHeight / shMie) * iStepSize;
+        float od_step_rlh = get_atmos_density(surface_height, scale_height_rlh) * ds;
+        float od_step_mie = get_atmos_density(surface_height, scale_height_mie) * ds;
 
         // Accumulate optical depth.
-        iOdRlh += odStepRlh;
-        iOdMie += odStepMie;
+        total_od_rlh += od_step_rlh;
+        total_od_mie += od_step_mie;
 
         // Calculate the step size of the secondary ray.
-        float jStepSize = rsi(iPos, pSun, rAtmos).y / float(jSteps);
+        // 在当前点向太阳的位置做射线检测，以大气的半径为球体。.y是代表大气的出射点，j_steps代表采样数
+        float jStepSize = ray_sphere_intersection(iPos, pSun, rAtmos).y / float(jSteps);
 
         // Initialize the secondary ray time.
         float jTime = 0.0;
@@ -87,6 +119,7 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
         float jOdRlh = 0.0;
         float jOdMie = 0.0;
 
+        // 在当前点到大气入射的举例上，采样计算
         // Sample the secondary ray.
         for (int j = 0; j < jSteps; j++) {
 
@@ -94,32 +127,30 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
             vec3 jPos = iPos + pSun * (jTime + jStepSize * 0.5);
 
             // Calculate the height of the sample.
-            float jHeight = length(jPos) - rPlanet;
+            float jHeight = length(jPos) - planet_radius;
 
             // Accumulate the optical depth.
-            jOdRlh += exp(-jHeight / shRlh) * jStepSize;
-            jOdMie += exp(-jHeight / shMie) * jStepSize;
+            jOdRlh += get_atmos_density(jHeight, scale_height_rlh) * jStepSize;
+            jOdMie += get_atmos_density(jHeight, scale_height_mie) * jStepSize;
 
             // Increment the secondary ray time.
             jTime += jStepSize;
         }
 
-        // Calculate attenuation.
-        vec3 attn = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
+        // 计算衰减系数，光在经过一定距离后衰减剩下来的比例。
+        vec3 attn = exp(-(kMie * (total_od_mie + jOdMie) + kRlh * (total_od_rlh + jOdRlh)));
 
         // Accumulate scattering.
-        totalRlh += odStepRlh * attn;
-        totalMie += odStepMie * attn;
+        total_scatter_rlh += od_step_rlh * attn;
+        total_scatter_mie += od_step_mie * attn;
 
         // Increment the primary ray time.
-        iTime += iStepSize;
-
+        iTime += ds;
     }
 
     // Calculate and return the final color.
-    return iSun * (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+    return iSun * (pRlh * kRlh * total_scatter_rlh + pMie * kMie * total_scatter_mie);
 }
-
 
 void main(){
 
@@ -137,11 +168,12 @@ void main(){
 			6471e3, // radius of the atmosphere in meters
 			vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
 			21e-6, // Mie scattering coefficient
-			8e3, // Rayleigh scale height
-			1.2e3, // Mie scale height
+			8500, // Rayleigh scale height
+			1200, // Mie scale height
 			0.758                           // Mie preferred scattering direction
 		);
 	}
+
 
 	FragColor = vec4(color, 1.0);
 }
