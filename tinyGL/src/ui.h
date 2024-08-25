@@ -1,7 +1,7 @@
 #pragma once
 #include <imgui.h>
 
-namespace tinyGL
+namespace Kong
 {
     // ui相关内容
     class CUIManager

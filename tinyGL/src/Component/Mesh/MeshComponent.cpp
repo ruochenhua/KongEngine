@@ -11,7 +11,7 @@
 
 #include "glm/gtc/random.hpp"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 
 CMeshComponent::CMeshComponent(const SRenderResourceDesc& render_resource_desc)

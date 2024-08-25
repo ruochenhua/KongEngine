@@ -8,7 +8,7 @@
 #include "render.h"
 #include "ShadowMapShader.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 
 ShaderManager* g_shader_manager = new ShaderManager;

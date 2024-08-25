@@ -1,6 +1,6 @@
 #include "SkyboxShader.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 SkyboxShader::SkyboxShader()
 {

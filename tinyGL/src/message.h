@@ -2,7 +2,7 @@
 #include <map>
 
 struct GLFWwindow;
-namespace tinyGL
+namespace Kong
 {
 
 class CMessage

@@ -11,7 +11,7 @@
 #include "Shader/Shader.h"
 #include "stb_image.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 using namespace std;
 
@@ -150,12 +150,8 @@ void CRender::RenderSceneObject()
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	if(b_render_skybox)
-	{
-		RenderSkyBox();	
-	}
 	
+	RenderSkyBox();	
 	RenderScene();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
@@ -225,10 +221,15 @@ GLuint CRender::LoadTexture(const std::string& texture_path, bool flip_uv)
 
 void CRender::RenderSkyBox()
 {
+	if(render_sky_env_status == 0)
+	{
+		return;
+	}
+	
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
 	//mat4 mvp = projection * mainCamera->GetViewMatrix(); //
-	m_SkyBox.Render(mvp);
+	m_SkyBox.Render(mvp, render_sky_env_status);
 }
 
 void CRender::RenderScene() const
@@ -299,7 +300,8 @@ void CRender::RenderScene() const
 		matrix_ubo.EndBind();
 
 		mesh_component->shader_data->Use();
-		mesh_component->shader_data->SetBool("b_render_skybox", b_render_skybox);
+		// 等于1代表渲染skybox，会需要用到环境贴图
+		mesh_component->shader_data->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_component->Draw(scene_render_info);
 	}
 }

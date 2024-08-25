@@ -14,7 +14,7 @@
 using namespace std;
 
 #define SHADOWMAP_DEBUG 0
-namespace tinyGL
+namespace Kong
 {
 	const string RESOURCE_PATH = "../resource/";
 	const int SHADOW_WIDTH = 2048;

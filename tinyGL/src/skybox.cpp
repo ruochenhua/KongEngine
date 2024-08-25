@@ -5,7 +5,7 @@
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 unsigned CUBE_MAP_RES = 1024;
 
@@ -288,13 +288,14 @@ void CSkyBox::PreprocessIBL(const string& hdr_file_path)
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void CSkyBox::Render(const glm::mat4& mvp)
+void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 {
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	skybox_shader->Use();
 	skybox_shader->SetMat4("MVP", mvp);
 	skybox_shader->SetInt("skybox", 0);
+	skybox_shader->SetInt("render_sky_status", render_sky_status);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);

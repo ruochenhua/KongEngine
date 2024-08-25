@@ -16,6 +16,8 @@ layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 #define iSteps 32
 #define jSteps 16
 
+uniform int render_sky_status;
+        
 // 默认球心在原点
 vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, float sphere_radius)
 {
@@ -152,28 +154,36 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
     return iSun * (pRlh * kRlh * total_scatter_rlh + pMie * kMie * total_scatter_mie);
 }
 
-void main(){
+void main() {
 
-	//FragColor = textureLod(skybox, uv, 0); //vec4(1,0.5,0.5,1);
-	vec3 color = vec3(0);
-	if(light_info_ubo.has_dir_light.x > 0)
-	{
-		vec3 uSunPos = -light_info_ubo.directional_light.light_dir.xyz;
-		color = atmosphere(
-			normalize(uv), // normalized ray direction
-			vec3(0, 6372e3, 0), // ray origin
-			uSunPos, // position of the sun
-			22.0, // intensity of the sun
-			6371e3, // radius of the planet in meters
-			6471e3, // radius of the atmosphere in meters
-			vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-			21e-6, // Mie scattering coefficient
-			8500, // Rayleigh scale height
-			1200, // Mie scale height
-			0.758                           // Mie preferred scattering direction
-		);
-	}
-
-
-	FragColor = vec4(color, 1.0);
+    if (render_sky_status == 1)
+    {
+        FragColor = textureLod(skybox, uv, 0); //vec4(1,0.5,0.5,1);    
+    }
+    else if (render_sky_status == 2)
+    {
+        vec3 color = vec3(0);
+        if(light_info_ubo.has_dir_light.x > 0)
+        {
+            vec3 uSunPos = -light_info_ubo.directional_light.light_dir.xyz;
+            color = atmosphere(
+                normalize(uv), // normalized ray direction
+                vec3(0, 6372e3, 0), // ray origin
+                uSunPos, // position of the sun
+                22.0, // intensity of the sun
+                6371e3, // radius of the planet in meters
+                6471e3, // radius of the atmosphere in meters
+                vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+                21e-6, // Mie scattering coefficient
+                8500, // Rayleigh scale height
+                1200, // Mie scale height
+                0.758                           // Mie preferred scattering direction
+            );
+        }
+        FragColor = vec4(color, 1.0);
+    }
+    else
+    {
+        FragColor = vec4(0.1, 0.1, 0.1, 1.0);
+    }
 }

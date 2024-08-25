@@ -2,7 +2,7 @@
 
 #include "render.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace std;
 
 CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)

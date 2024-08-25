@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     // todo：或许应该改名为pbrshader
     class BRDFShader : public Shader

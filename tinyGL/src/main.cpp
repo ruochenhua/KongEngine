@@ -6,7 +6,7 @@
 #include "ui.h"
 using namespace glm;
 using namespace std;
-using namespace tinyGL;
+using namespace Kong;
 constexpr double FRAME_TIME_CAP = 1.0/120.0;
 int main()
 {

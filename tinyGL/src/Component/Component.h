@@ -1,6 +1,6 @@
 #pragma once
 
-namespace tinyGL
+namespace Kong
 {
     // 参考UE的Actor
     class CComponent

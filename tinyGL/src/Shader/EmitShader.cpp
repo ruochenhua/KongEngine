@@ -2,7 +2,7 @@
 
 #include "render.h"
 #include "Scene.h"
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 using namespace std;
 

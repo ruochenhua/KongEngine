@@ -1,5 +1,5 @@
 #include "PostProcess.h"
-using namespace tinyGL;
+using namespace Kong;
 
 void PostProcess::Init()
 {

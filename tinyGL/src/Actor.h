@@ -5,7 +5,7 @@
 #include "common.h"
 
 #include "Component/Mesh/MeshComponent.h"
-namespace tinyGL
+namespace Kong
 {
     class CComponent;
     struct InstancingInfo

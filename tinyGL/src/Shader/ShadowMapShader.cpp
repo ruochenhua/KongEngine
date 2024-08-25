@@ -2,7 +2,7 @@
 
 #include "Scene.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 
 void DirectionalLightShadowMapShader::InitDefaultShader()

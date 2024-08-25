@@ -11,7 +11,7 @@
 #include "Component/Mesh/SphereShape.h"
 using json = nlohmann::json;
 
-using namespace tinyGL;
+using namespace Kong;
 
 namespace JsonParser
 {

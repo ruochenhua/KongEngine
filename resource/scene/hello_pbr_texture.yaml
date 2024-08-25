@@ -59,3 +59,17 @@ scene:
           - 5
           - 5
           - 5
+          
+  - actor: directional_light
+    component:
+      - type: directional_light
+        light_color:
+          - 10
+          - 10
+          - 10
+        
+    transform:
+      rotation:
+        - -130
+        - 75
+        - -70

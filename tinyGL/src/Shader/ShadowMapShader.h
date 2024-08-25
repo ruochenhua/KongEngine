@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     class ShadowMapShader : public Shader
     {

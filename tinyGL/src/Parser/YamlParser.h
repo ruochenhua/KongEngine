@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace tinyGL
+namespace Kong
 {
     class AActor;
 

@@ -2,7 +2,7 @@
 
 #include "render.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 
 void BlendShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)

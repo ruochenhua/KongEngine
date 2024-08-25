@@ -1,6 +1,6 @@
 #include "SphereShape.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 string SphereShape::sphere_model_path = "Engine/sphere/sphere.obj";
 

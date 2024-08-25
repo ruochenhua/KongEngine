@@ -5,7 +5,7 @@
 
 #include "render.h"
 
-namespace tinyGL
+namespace Kong
 {
     using namespace glm;
     struct SScreenInfo

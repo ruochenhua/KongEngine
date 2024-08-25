@@ -5,17 +5,23 @@
 #include "Shader/SkyboxShader.h"
 
 
-namespace tinyGL
+namespace Kong
 {
 	class CQuadShape;
-
+	enum ESkyEnvStatus
+	{
+		no_sky = 0,
+		skybox,
+		atmosphere,
+	};
+	
 	class CSkyBox
 	{
 	public:
 		void Init();
 		// IBL预处理HDR相关
 		void PreprocessIBL(const string& hdr_file_path);
-		void Render(const glm::mat4& mvp);
+		void Render(const glm::mat4& mvp, int render_sky_status);
 		void ChangeSkybox();
 		
 		GLuint GetSkyBoxTextureId() const {return cube_map_id;}

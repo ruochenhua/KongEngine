@@ -3,7 +3,7 @@
 #include "Component.h"
 #include "Component/Mesh/MeshComponent.h"
 
-namespace tinyGL
+namespace Kong
 {
     class ShadowMapShader;
     enum class ELightType

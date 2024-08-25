@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     // 简单发光shader
     class EmitShader : public Shader

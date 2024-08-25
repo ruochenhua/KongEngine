@@ -1,7 +1,7 @@
 #pragma once
 #include "MeshComponent.h"
 
-namespace tinyGL
+namespace Kong
 {
     class CQuadShape : public CMeshComponent
     {

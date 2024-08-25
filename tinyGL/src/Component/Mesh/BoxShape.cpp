@@ -2,7 +2,7 @@
 
 #include "render.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace std;
 string CBoxShape::box_model_path = "Engine/box/box.obj";
 

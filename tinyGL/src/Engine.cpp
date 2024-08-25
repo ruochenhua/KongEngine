@@ -2,7 +2,7 @@
 
 #include "render.h"
 
-using namespace tinyGL;
+using namespace Kong;
 static Engine g_engine;
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
 {
@@ -32,7 +32,7 @@ Engine::Engine()
 	
     // Open a window and create its OpenGL context
     // (In the accompanying source code, this variable is global for simplicity)
-    render_window = glfwCreateWindow(window_width, window_height, "tinyGL", nullptr, nullptr);
+    render_window = glfwCreateWindow(window_width, window_height, "KongEngine", nullptr, nullptr);
     window_aspect_ratio = (float)window_width/window_height;
     if (render_window == nullptr) {
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");

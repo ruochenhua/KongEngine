@@ -7,7 +7,7 @@ struct aiMesh;
 struct aiScene;
 struct aiNode;
 
-namespace tinyGL
+namespace Kong
 {
 	class CMeshComponent;
 	

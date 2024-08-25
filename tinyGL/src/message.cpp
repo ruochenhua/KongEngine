@@ -1,7 +1,7 @@
 #include "message.h"
 #include "render.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 CMessage g_MessageHandler;
 

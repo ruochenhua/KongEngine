@@ -9,7 +9,7 @@
 #include "Scene.h"
 #include "Component/LightComponent.h"
 
-using namespace tinyGL;
+using namespace Kong;
 
 CUIManager* g_uimanager = new CUIManager;
 
@@ -104,7 +104,9 @@ void CUIManager::DescribeUIContent(double delta)
 			CRender::GetRender()->ChangeSkybox();
 		}
 
-		ImGui::Checkbox("render skybox", &render_sys->b_render_skybox);
+		ImGui::DragInt("sky display status", &render_sys->render_sky_env_status, 0.1f, 0, 2);
+		//ImGui::Checkbox("render skybox", &render_sys->b_render_skybox);
+		
 		ImGui::TreePop();
 	}
 	

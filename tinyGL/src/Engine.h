@@ -1,7 +1,7 @@
 #pragma once
 #include "Common.h"
 
-namespace tinyGL
+namespace Kong
 {
     class Engine
     {

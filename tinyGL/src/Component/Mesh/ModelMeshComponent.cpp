@@ -2,7 +2,7 @@
 #include "render.h"
 
 using namespace glm;
-using namespace tinyGL;
+using namespace Kong;
 
 CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resource_desc)
 	:CMeshComponent(render_resource_desc)

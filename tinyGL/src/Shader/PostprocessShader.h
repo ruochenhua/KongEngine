@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     // 后处理shader
     class PostprocessShader : public Shader

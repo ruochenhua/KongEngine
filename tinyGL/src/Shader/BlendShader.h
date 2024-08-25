@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     // 颜色混合类型shader
     class BlendShader : public Shader

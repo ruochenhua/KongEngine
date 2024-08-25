@@ -5,7 +5,7 @@
 #include "Component/Mesh/BoxShape.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/euler_angles.hpp"
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 
 AActor::~AActor()

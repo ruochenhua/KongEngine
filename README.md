@@ -1,21 +1,23 @@
-# 关于tinyGL
+# 关于KongEngine
 
-这个工程是我用于学习和实践引擎的各个方面技术的项目。从基础的OpenGL接入开始，搭起一个能够实现各种效果的框架。
+这个工程是我用于学习和实践引擎技术的项目。原名是tinyGL，是一个功能较为基础的渲染引擎，现在计划是将他的能力扩展，接入更加先进多样的功能。
+![截图](docs/Hello/KongEngine_PBR.png)
+![截图](docs/Hello/KongEngine_IBL.png)
 
 目前包括以下几个部分：
-- 渲染：tiny render，渲染能力。目前利用OpenGL实现光栅化渲染；后续考虑接入类似于DXR的光线追踪框架能力。
-- 物理：tap engine，物理模拟能力。自己编写实现，作为组建提供真是的物理效果。
+- 渲染：kong engine，主入口，提供渲染能力。目前基于OpenGL接口，使用PBR的渲染框架实现真是的渲染效果。
+- 物理：tap engine，物理模拟能力的库。自己编写实现，作为组建提供真实的物理效果。
 
-场景的描述目前计划是基于yaml实现。
-目前计划是尽量实现支持多平台（后续接入DXR的话这个feature就只在windows上支持）
+场景的描述目前基于yaml和json实现，后面应该更加倾向于仅支持yaml。
 
+UI基于[ImGui](https://github.com/ocornut/imgui)
 
 # 构建
 *原msvc文件下的sln已经废弃不再使用*
 
-项目使用cmake进行构建，在工程主目录下，运行build.bat文件（目前只支持Windows），会在**project_build**目录下生成对应的sln工程，在里面找到TinyGL项目编译运行即可。
+项目使用cmake进行构建，在工程主目录下，运行build.bat文件（目前只支持Windows），会在**project_build**目录下生成对应的sln工程，编译KongEngine运行即可。
 
-# Todo List:
+# 现有能力和后续规划:
 ## 渲染能力
 ### 算法
  - [x] PBR(BRDF)基础能力实现
@@ -40,7 +42,7 @@
  - [ ] 环境光遮蔽
  - [ ] 大场景渲染
    - [ ] 地形
-   - [ ] 天空大气
+   - [x] 天空大气
    - [ ] 水体
    - [ ] 云层
 

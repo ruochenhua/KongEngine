@@ -2,7 +2,7 @@
 #include "Shader/PostprocessShader.h"
 #include "Shader/Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
     class PostProcess
     {

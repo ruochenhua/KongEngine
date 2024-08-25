@@ -68,10 +68,9 @@ scene:
           - 10
       - type: sphere
         shader_type: emit
-
     transform:
       rotation:
-        - 30
-        - 45
+        - -130
+        - 75
         - -70
 

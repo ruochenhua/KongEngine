@@ -1,7 +1,7 @@
 #include "PostprocessShader.h"
 
 #include "render.h"
-using namespace tinyGL;
+using namespace Kong;
 
 vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {

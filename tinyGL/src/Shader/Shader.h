@@ -6,7 +6,7 @@
 #include "RenderCommon.h"
 #include "Scene.h"
 
-namespace tinyGL
+namespace Kong
 {
 	class AActor;
 	class ShaderManager;

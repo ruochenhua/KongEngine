@@ -6,7 +6,7 @@
 #include "Shader/Shader.h"
 #include "Shader/ShadowMapShader.h"
 
-using namespace tinyGL;
+using namespace Kong;
 using namespace glm;
 const float SHADOWMAP_NEAR_PLANE = 1.0f;
 const float SHADOWMAP_FAR_PLANE = 30.0f;

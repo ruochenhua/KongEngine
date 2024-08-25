@@ -5,7 +5,7 @@
 #include "skybox.h"
 #include "Shader/Shader.h"
 
-namespace tinyGL
+namespace Kong
 {
 	class FinalPostprocessShader;
 	class CPointLightComponent;
@@ -59,7 +59,7 @@ namespace tinyGL
 		size_t size = sizeof(T);
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
-
+	
 	class CRender
 	{
 	public:
@@ -82,7 +82,7 @@ namespace tinyGL
 		static GLuint LoadTexture(const std::string& texture_path, bool flip_uv = true);
 		
 		PostProcess post_process;
-		bool b_render_skybox = true;
+		int render_sky_env_status = 0;
 	private:
 		int InitCamera();
 		void InitUBO();

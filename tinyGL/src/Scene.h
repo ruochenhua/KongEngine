@@ -1,12 +1,12 @@
 #pragma once
 #include "Common.h"
 
-namespace tinyGL
+namespace Kong
 {
     class AActor;
 }
 
-namespace tinyGL
+namespace Kong
 {
     class CLightComponent;
     class CMeshComponent;

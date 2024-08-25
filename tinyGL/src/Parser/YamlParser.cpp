@@ -10,7 +10,7 @@
 #include "Component/Mesh/SphereShape.h"
 #include "glm/gtc/random.hpp"
 
-using namespace tinyGL;
+using namespace Kong;
 
 namespace YamlParser
 {

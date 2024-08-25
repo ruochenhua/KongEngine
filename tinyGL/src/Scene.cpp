@@ -6,7 +6,7 @@
 #include "Parser/JsonParser.h"
 #include "Parser/YamlParser.h"
 
-using namespace tinyGL;
+using namespace Kong;
 CScene* g_scene = new CScene;
 
 string CSceneLoader::ToResourcePath(const string& in_path)
