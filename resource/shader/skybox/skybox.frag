@@ -12,9 +12,8 @@ layout(std140, binding=1) uniform LIGHT_INFO_UBO {
     PointLight point_lights[POINT_LIGHT_MAX];
 } light_info_ubo;
 
-#define PI 3.141592
-#define iSteps 32
-#define jSteps 16
+int iSteps = 64; 
+int jSteps = 32;
 
 uniform int render_sky_status;
         
@@ -168,7 +167,7 @@ void main() {
             vec3 uSunPos = -light_info_ubo.directional_light.light_dir.xyz;
             color = atmosphere(
                 normalize(uv), // normalized ray direction
-                vec3(0, 6372e3, 0), // ray origin
+                vec3(0, 6371000, 0), // ray origin
                 uSunPos, // position of the sun
                 22.0, // intensity of the sun
                 6371e3, // radius of the planet in meters
