@@ -118,7 +118,7 @@ float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir)
 
 //    float closet_depth = texture(shadow_map, proj_coords.xy).r;
     float current_depth = proj_coords.z;
-    float bias = max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
+    float bias = 0.0f;//max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
 //    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
     // 采用pcf柔和阴影锯齿边界
     // todo: 更多优化方法
@@ -150,7 +150,7 @@ float ShadowCalculation_pointlight(int light_index, vec3 in_frag_pos, vec3 light
     {
         return 0.0;
     }
-    float bias = 0.005;
+    float bias = 0.0f;//0.005;
     // 进行比较，如果贴图上的距离比真实距离小，则代表在阴影当中
     //float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
     float shadow = 0.0;
