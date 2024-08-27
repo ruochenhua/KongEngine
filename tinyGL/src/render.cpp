@@ -40,6 +40,57 @@ void UBOHelper::EndBind() const
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
+void DeferBuffer::Init(unsigned width, unsigned height)
+{
+	glGenFramebuffers(1, &g_buffer_);
+	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+	// 将当前视野的数据用贴图缓存
+	// 位置数据
+	glGenTextures(1, &g_position_);
+	glBindTexture(GL_TEXTURE_2D, g_position_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
+	
+	// 法线数据
+	glGenTextures(1, &g_normal_);
+	glBindTexture(GL_TEXTURE_2D, g_normal_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
+	
+	// 顶点颜色数据
+	glGenTextures(1, &g_albedo_);
+	glBindTexture(GL_TEXTURE_2D, g_albedo_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_, 0);
+
+	// orm数据（ao，roughness，metallic）
+	glGenTextures(1, &g_orm_);
+	glBindTexture(GL_TEXTURE_2D, g_orm_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, g_orm_, 0);
+
+	// 生成renderbuffer
+	glGenRenderbuffers(1, &g_rbo_);
+	glBindRenderbuffer(GL_RENDERBUFFER, g_rbo_);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, g_rbo_);
+	glEnable(GL_DEPTH_TEST);
+	
+	unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+	glDrawBuffers(4, attachments);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 CRender* CRender::GetRender()
 {
 	return g_render;
@@ -93,7 +144,11 @@ int CRender::Init()
 
 	InitUBO();
 	post_process.Init();
+
+	int width = Engine::GetEngine().GetWindowWidth();
+	int height = Engine::GetEngine().GetWindowHeight();
 	
+	defer_buffer_.Init(width, height);
 	return 0;
 }
 
@@ -103,6 +158,11 @@ int CRender::InitCamera()
 
 	mainCamera->InitControl();
 	return 0;
+}
+
+void CRender::InitGBuffer()
+{
+	
 }
 
 void CRender::InitUBO()
@@ -146,6 +206,7 @@ void CRender::RenderSceneObject()
 
 	glViewport(0,0, width, height);
 	// 渲染到后处理framebuffer上
+	//glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -157,7 +218,8 @@ void CRender::RenderSceneObject()
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//post_process.screen_quad_texture[0] = defer_buffer_.g_position_;
 	post_process.Draw();
 #endif
 }

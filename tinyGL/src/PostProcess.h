@@ -16,6 +16,7 @@ namespace Kong
         bool bloom = false;
         int bloom_range = 10;
         
+        GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
     protected:
         // 渲染到屏幕的顶点数据，可以共用        
         GLuint screen_quad_vao = GL_NONE;
@@ -34,7 +35,7 @@ namespace Kong
         // 渲染到屏幕的texture
         // 0: scene texture
         // 1: bright texture(for bloom effect)
-        GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
+        //GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
         GLuint scene_rbo = GL_NONE;
         
         int window_width = 1024;

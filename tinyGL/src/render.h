@@ -59,6 +59,19 @@ namespace Kong
 		size_t size = sizeof(T);
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
+
+	// 延迟渲染的数据结构
+	struct DeferBuffer
+	{
+		GLuint g_buffer_	= 0;
+		GLuint g_position_	= 0;
+		GLuint g_normal_	= 0;
+		GLuint g_albedo_	= 0;
+		GLuint g_orm_		= 0;	//o:ao, r:roughness, m: metallic
+		GLuint g_rbo_		= 0;
+		
+		void Init(unsigned width, unsigned height);
+	};
 	
 	class CRender
 	{
@@ -85,6 +98,7 @@ namespace Kong
 		int render_sky_env_status = 0;
 	private:
 		int InitCamera();
+		void InitGBuffer();
 		void InitUBO();
 		void RenderSkyBox();
 		void RenderScene() const;
@@ -122,5 +136,9 @@ namespace Kong
 		 *	SceneLightInfo light_info
 		 */
 		UBOHelper scene_light_ubo;
+
+		// 延迟渲染
+		DeferBuffer defer_buffer_;
+		// todo:SSAO相关
 	};
 }

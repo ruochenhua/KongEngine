@@ -27,7 +27,7 @@ void main()
     const float gamma = 2.2;
     mapped = pow(mapped, vec3(1.0 / gamma));
     FragColor = vec4(mapped, 1.0);
-
+    // FragColor = vec4(scene_value, 1.0);
     // 黑白效果
 //    vec3 scene_value = texture(scene_texture, TexCoords).rgb;
 //    float average = scene_value.x + scene_value.y + scene_value.z;

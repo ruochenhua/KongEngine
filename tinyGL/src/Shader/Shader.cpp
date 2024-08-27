@@ -4,6 +4,7 @@
 
 #include "BlendShader.h"
 #include "BRDFShader.h"
+#include "DeferInfoShader.h"
 #include "EmitShader.h"
 #include "render.h"
 #include "ShadowMapShader.h"
@@ -55,7 +56,7 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
     		std::vector<char> error_msg(info_log_length + 1);
     		glGetShaderInfoLog(shader_id, info_log_length, NULL, &error_msg[0]);
     		printf("%s\n", &error_msg[0]);
-    		assert(0);
+    		assert(0, "Shader load failed");
     	}
 		shader_id_list.push_back(shader_id);
     }
@@ -186,6 +187,7 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 	// create shader
 	if(shader_name == "brdf")
 	{
+		//auto shader_data = make_shared<DeferInfoShader>();
 		auto shader_data = make_shared<BRDFShader>();
 		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
