@@ -187,8 +187,11 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 	// create shader
 	if(shader_name == "brdf")
 	{
-		//auto shader_data = make_shared<DeferInfoShader>();
+#if USE_DERER_RENDER
+		auto shader_data = make_shared<DeferInfoShader>();
+#else
 		auto shader_data = make_shared<BRDFShader>();
+#endif
 		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;

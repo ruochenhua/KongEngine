@@ -5,6 +5,8 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 
+#define SHADOWMAP_DEBUG 0
+#define USE_DERER_RENDER 0
 namespace Kong
 {
     class CPointLightComponent;

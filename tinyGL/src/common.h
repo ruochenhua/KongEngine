@@ -13,7 +13,6 @@
 #include "GLM/gtc/matrix_transform.hpp"
 using namespace std;
 
-#define SHADOWMAP_DEBUG 0
 namespace Kong
 {
 	const string RESOURCE_PATH = "../resource/";
