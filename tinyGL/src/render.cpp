@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
+#include "Component/Mesh/QuadShape.h"
 
 using namespace Kong;
 using namespace glm;
@@ -38,6 +39,63 @@ void UBOHelper::Bind() const
 void UBOHelper::EndBind() const
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void DeferBuffer::Init(unsigned width, unsigned height)
+{
+	glGenFramebuffers(1, &g_buffer_);
+	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+	// 将当前视野的数据用贴图缓存
+	// 位置数据
+	glGenTextures(1, &g_position_);
+	glBindTexture(GL_TEXTURE_2D, g_position_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
+	
+	// 法线数据
+	glGenTextures(1, &g_normal_);
+	glBindTexture(GL_TEXTURE_2D, g_normal_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
+	
+	// 顶点颜色数据
+	glGenTextures(1, &g_albedo_);
+	glBindTexture(GL_TEXTURE_2D, g_albedo_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_, 0);
+
+	// orm数据（ao，roughness，metallic）
+	glGenTextures(1, &g_orm_);
+	glBindTexture(GL_TEXTURE_2D, g_orm_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, g_orm_, 0);
+
+	// 生成renderbuffer
+	glGenRenderbuffers(1, &g_rbo_);
+	glBindRenderbuffer(GL_RENDERBUFFER, g_rbo_);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, g_rbo_);
+	glEnable(GL_DEPTH_TEST);
+	
+	unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+	glDrawBuffers(4, attachments);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
+	quad_shape->InitRenderInfo();
+
+	defer_render_shader = make_shared<DeferredBRDFShader>();
+	defer_render_shader->InitDefaultShader();
 }
 
 CRender* CRender::GetRender()
@@ -93,7 +151,11 @@ int CRender::Init()
 
 	InitUBO();
 	post_process.Init();
+
+	int width = Engine::GetEngine().GetWindowWidth();
+	int height = Engine::GetEngine().GetWindowHeight();
 	
+	defer_buffer_.Init(width, height);
 	return 0;
 }
 
@@ -104,6 +166,7 @@ int CRender::InitCamera()
 	mainCamera->InitControl();
 	return 0;
 }
+
 
 void CRender::InitUBO()
 {
@@ -145,19 +208,32 @@ void CRender::RenderSceneObject()
 	int height = Engine::GetEngine().GetWindowHeight();
 
 	glViewport(0,0, width, height);
+#if USE_DERER_RENDER
+	// 渲染到gbuffer上
+	glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	DeferRenderSceneToGBuffer();
+#endif
+	
 	// 渲染到后处理framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
-	
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	RenderSkyBox();	
+	RenderSkyBox();
+#if USE_DERER_RENDER
+	DeferRenderSceneLighting();
+#else
 	RenderScene();
+#endif
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//post_process.screen_quad_texture[0] = defer_buffer_.g_position_;
 	post_process.Draw();
 #endif
 }
@@ -304,6 +380,111 @@ void CRender::RenderScene() const
 		mesh_component->shader_data->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_component->Draw(scene_render_info);
 	}
+}
+
+void CRender::DeferRenderSceneToGBuffer() const
+{
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
+	
+	// 更新UBO里的矩阵数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
+	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
+	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
+	matrix_ubo.EndBind();
+	
+	auto actors = CScene::GetActors();
+	for(auto actor : actors)
+	{
+		auto mesh_component = actor->GetComponent<CMeshComponent>();
+		if(!mesh_component)
+		{
+			continue;
+		}
+
+		matrix_ubo.Bind();
+		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
+		matrix_ubo.EndBind();
+
+		mesh_component->shader_data->Use();
+		// 等于1代表渲染skybox，会需要用到环境贴图
+		mesh_component->shader_data->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_component->Draw(scene_render_info);
+	}
+}
+
+void CRender::DeferRenderSceneLighting() const
+{
+	// glEnable(GL_CULL_FACE);
+	// glCullFace(GL_BACK);
+	// glEnable(GL_DEPTH_TEST);
+	// 更新光源UBO
+	SceneLightInfo light_info;
+	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
+	if(has_dir_light)
+	{
+		light_info.has_dir_light = ivec4(1);
+		auto dir_light = scene_render_info.scene_dirlight.lock();
+		light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
+		light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
+		light_info.directional_light.light_space_mat = dir_light->light_space_mat;
+	}
+	else
+	{
+		light_info.has_dir_light = ivec4(0);
+	}
+			
+	int point_light_count = 0;
+	for(auto light : scene_render_info.scene_pointlights)
+	{
+		if(point_light_count > 3)
+		{
+			break;
+		}
+				
+		if(light.expired())
+		{
+			continue;
+		}
+		PointLight point_light;
+		point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
+		point_light.light_color = vec4(light.lock()->light_color, 1.0);
+
+		light_info.point_lights[point_light_count] = point_light; 				
+		++point_light_count;
+	}
+			
+	light_info.point_light_count = ivec4(point_light_count);
+	
+	scene_light_ubo.Bind();
+	scene_light_ubo.UpdateData(light_info, "light_info");
+	scene_light_ubo.EndBind();
+	
+	// // 更新UBO里的矩阵数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
+	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
+	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
+	matrix_ubo.EndBind();
+	
+	defer_buffer_.defer_render_shader->Use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
+
+	// normal map加一个法线贴图的数据
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
+
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_albedo_);
+
+	glActiveTexture(GL_TEXTURE0 + 3);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
+
+	defer_buffer_.defer_render_shader->UpdateRenderData(defer_buffer_.quad_shape->mesh_list[0], scene_render_info);
+	defer_buffer_.quad_shape->Draw();
 }
 
 void CRender::CollectLightInfo()

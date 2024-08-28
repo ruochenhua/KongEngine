@@ -3,6 +3,8 @@
 #include "Common.h"
 #include "postprocess.h"
 #include "skybox.h"
+#include "Shader/BRDFShader.h"
+#include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
 
 namespace Kong
@@ -59,6 +61,22 @@ namespace Kong
 		size_t size = sizeof(T);
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
+
+	// 延迟渲染的数据结构
+	struct DeferBuffer
+	{
+		GLuint g_buffer_	= 0;
+		GLuint g_position_	= 0;
+		GLuint g_normal_	= 0;
+		GLuint g_albedo_	= 0;
+		GLuint g_orm_		= 0;	//o:ao, r:roughness, m: metallic
+		GLuint g_rbo_		= 0;
+		
+		void Init(unsigned width, unsigned height);
+		// 延迟渲染着色器
+		shared_ptr<DeferredBRDFShader> defer_render_shader;
+		shared_ptr<CQuadShape> quad_shape;
+	};
 	
 	class CRender
 	{
@@ -88,7 +106,9 @@ namespace Kong
 		void InitUBO();
 		void RenderSkyBox();
 		void RenderScene() const;
-
+		void DeferRenderSceneToGBuffer() const;
+		void DeferRenderSceneLighting() const;
+		
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject();
@@ -122,5 +142,9 @@ namespace Kong
 		 *	SceneLightInfo light_info
 		 */
 		UBOHelper scene_light_ubo;
+
+		// 延迟渲染
+		DeferBuffer defer_buffer_;
+		// todo:SSAO相关
 	};
 }
