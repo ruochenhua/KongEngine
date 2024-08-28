@@ -157,7 +157,7 @@ void main()
 //
 //    FragColor = vec4(lighting, 1.0);
 
-    bool b_render_skybox = true;
+    bool b_render_skybox = false;
     vec3 view = normalize(cam_pos - frag_pos);  //to_view
 
     vec3 dir_light_color = vec3(0,0,0);
@@ -202,10 +202,12 @@ void main()
 
     vec3 color = ambient + (dir_light_color + point_light_color);
 
-    //FragColor = GetAlbedo();
-    FragColor = vec4(frag_pos, 1.0);
-
+    // FragColor = GetAlbedo();
+    // FragColor = vec4((frag_normal+1)/2, 1.0);
+    // FragColor = vec4(vec3(env_roughness), 1.0);
+    // FragColor = vec4(vec3(env_metallic), 1.0);
     // FragColor = skybox_color;
+    FragColor = vec4(color, 1.0);
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
     {

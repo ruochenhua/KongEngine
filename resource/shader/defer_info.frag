@@ -31,10 +31,6 @@ uniform sampler2D normal_texture;
 uniform sampler2D roughness_texture;
 uniform sampler2D metallic_texture;
 uniform sampler2D ao_texture;
-uniform samplerCube skybox_texture;
-uniform samplerCube skybox_diffuse_irradiance_texture;
-uniform samplerCube skybox_prefilter_texture;
-uniform sampler2D skybox_brdf_lut_texture;
 
 vec4 GetAlbedo()
 {

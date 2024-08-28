@@ -8,6 +8,8 @@ namespace Kong
     public:
         DeferInfoShader() = default;
         virtual void InitDefaultShader() override;
+        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
+ 
     };
     
     class DeferredBRDFShader : public Shader

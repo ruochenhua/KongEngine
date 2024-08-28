@@ -34,6 +34,41 @@ void DeferInfoShader::InitDefaultShader()
     // }
 }
 
+void DeferInfoShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+{
+	const SRenderInfo& render_info = mesh.GetRenderInfo();
+	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+
+	// 材质属性
+	SetVec4("albedo", render_info.material.albedo);
+	SetFloat("specular_factor", render_info.material.specular_factor);
+	SetFloat("metallic", render_info.material.metallic);
+	SetFloat("roughness", render_info.material.roughness);
+	SetFloat("ao", render_info.material.ao);
+
+	GLuint null_tex_id = CRender::GetNullTexId();
+	glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID);
+	GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
+
+	// normal map加一个法线贴图的数据
+	glActiveTexture(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID);
+	GLuint normal_tex_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, normal_tex_id);
+
+	glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID);
+	GLuint roughness_tex_id = render_info.roughness_tex_id != 0 ? render_info.roughness_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, roughness_tex_id);
+
+	glActiveTexture(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID);
+	GLuint metallic_tex_id = render_info.metallic_tex_id != 0 ? render_info.metallic_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, metallic_tex_id);
+
+	glActiveTexture(GL_TEXTURE0 + AO_TEX_SHADER_ID);
+	GLuint ao_tex_id = render_info.ao_tex_id != 0 ? render_info.ao_tex_id : null_tex_id;
+	glBindTexture(GL_TEXTURE_2D, ao_tex_id);
+}
+
 void DeferredBRDFShader::InitDefaultShader()
 {
     shader_path_map = {
