@@ -214,6 +214,7 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	DeferRenderSceneToGBuffer();
+
 #endif
 	
 	// 渲染到后处理framebuffer上
@@ -221,12 +222,16 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	RenderSkyBox();
 #if USE_DERER_RENDER
 	DeferRenderSceneLighting();
-#else
-	RenderScene();
+	
+	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #endif
+	RenderScene();
+	RenderSkyBox();
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
@@ -370,14 +375,20 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
-
+		auto mesh_shader = mesh_component->shader_data;
+		// 跳过延迟渲染的mesh
+		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader))
+		{
+			continue;
+		}
+		
 		matrix_ubo.Bind();
 		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
 		matrix_ubo.EndBind();
 
-		mesh_component->shader_data->Use();
 		// 等于1代表渲染skybox，会需要用到环境贴图
-		mesh_component->shader_data->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->Use();
+		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_component->Draw(scene_render_info);
 	}
 }
@@ -403,14 +414,19 @@ void CRender::DeferRenderSceneToGBuffer() const
 		{
 			continue;
 		}
-
+		auto mesh_shader = mesh_component->shader_data;
+		if(!dynamic_pointer_cast<DeferInfoShader>(mesh_shader))
+		{
+			continue;
+		}
+		
 		matrix_ubo.Bind();
 		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
 		matrix_ubo.EndBind();
 
-		mesh_component->shader_data->Use();
+		mesh_shader->Use();
 		// 等于1代表渲染skybox，会需要用到环境贴图
-		mesh_component->shader_data->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_component->Draw(scene_render_info);
 	}
 }
@@ -483,6 +499,7 @@ void CRender::DeferRenderSceneLighting() const
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 
+	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 	defer_buffer_.defer_render_shader->UpdateRenderData(defer_buffer_.quad_shape->mesh_list[0], scene_render_info);
 	defer_buffer_.quad_shape->Draw();
 }

@@ -9,6 +9,7 @@ layout(location = 1) out vec4 BrightColor;
 in vec2 TexCoords;
 
 uniform vec3 cam_pos;
+uniform bool b_render_skybox;
 
 uniform sampler2D position_texture;
 uniform sampler2D normal_texture;
@@ -144,20 +145,6 @@ void main()
 	material.specular_factor = 1.0;
     material.ao = ao;
 
-//    // 先测试最基础的光照
-//    vec3 lighting = env_albedo.xyz * 0.1; // 硬编码环境光照分量
-//    // vec3 viewDir = normalize(viewPos - FragPos);
-//    for(int i = 0; i < light_info_ubo.point_light_count.x; ++i)
-//    {
-//        // 漫反射
-//        vec3 lightDir = normalize(light_info_ubo.point_lights[i].light_pos.xyz - frag_pos);
-//        vec3 diffuse = max(dot(frag_normal, lightDir), 0.0) * env_albedo.xyz * light_info_ubo.point_lights[i].light_color.xyz;
-//        lighting += diffuse;
-//    }
-//
-//    FragColor = vec4(lighting, 1.0);
-
-    bool b_render_skybox = false;
     vec3 view = normalize(cam_pos - frag_pos);  //to_view
 
     vec3 dir_light_color = vec3(0,0,0);

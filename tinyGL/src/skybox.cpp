@@ -290,8 +290,10 @@ void CSkyBox::PreprocessIBL(const string& hdr_file_path)
 
 void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 {
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	// glDisable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
 	skybox_shader->Use();
 	skybox_shader->SetMat4("MVP", mvp);
 	skybox_shader->SetInt("skybox", 0);
@@ -302,6 +304,8 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 	//glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
 	//quad_shape->Draw();
 	box_mesh->Draw();
+	
+	glCullFace(GL_BACK);
 }
 
 void CSkyBox::ChangeSkybox()
