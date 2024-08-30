@@ -32,7 +32,7 @@ void AActor::Update(double delta)
     auto mesh_comp = GetComponent<CMeshComponent>();
     if(light_comp && mesh_comp)
     {
-        mesh_comp->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(light_comp->light_color, 1.0);
+        mesh_comp->mesh_resource->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(light_comp->light_color, 1.0);
 
     	auto dir_light_comp = dynamic_cast<CDirectionalLightComponent*>(light_comp.get());
     	if(dir_light_comp)
@@ -89,7 +89,7 @@ void AActor::BindInstancingToMesh(weak_ptr<CMeshComponent> mesh_comp)
 {
 	auto mesh_ptr = mesh_comp.lock();
 
-	CMesh& mesh = mesh_ptr->mesh_list[0];
+	CMesh& mesh = mesh_ptr->mesh_resource->mesh_list[0];
 	auto& render_info = mesh.m_RenderInfo;
 	glGenBuffers(1, &render_info.instance_buffer);
 	

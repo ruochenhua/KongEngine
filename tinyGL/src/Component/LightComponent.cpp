@@ -84,7 +84,7 @@ void CDirectionalLightComponent::RenderShadowMap()
         light_space_mat = light_proj * light_view;
         shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
                 
-        for(auto& mesh : render_obj->mesh_list)
+        for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
             const SRenderInfo& render_info = mesh.GetRenderInfo();
             glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
@@ -177,7 +177,7 @@ void CPointLightComponent::RenderShadowMap()
             continue;
         }
         
-        for(auto& mesh : render_obj->mesh_list)
+        for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
             const SRenderInfo& render_info = mesh.GetRenderInfo();
             glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO

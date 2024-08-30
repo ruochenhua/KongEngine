@@ -97,8 +97,7 @@ namespace Kong
 		CCamera* GetCamera() {return mainCamera;}
 		void ChangeSkybox();
 		// load image file and create texture 
-		static GLuint LoadTexture(const std::string& texture_path, bool flip_uv = true);
-		
+				
 		PostProcess post_process;
 		int render_sky_env_status = 0;
 	private:

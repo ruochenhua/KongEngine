@@ -16,7 +16,6 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
-map<string, GLuint> texture_manager;
 
 CRender* g_render = new CRender;
 
@@ -147,7 +146,7 @@ int CRender::Init()
 	
 	// load null texture
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
-	null_tex_id = LoadTexture(null_tex_path);
+	null_tex_id = ResourceManager::GetOrLoadTexture(null_tex_path);
 
 	InitUBO();
 	post_process.Init();
@@ -247,58 +246,6 @@ void CRender::ChangeSkybox()
 {
 	m_SkyBox.ChangeSkybox();
 }
-
-GLuint CRender::LoadTexture(const std::string& texture_path, bool flip_uv)
-{
-	auto texture_iter = texture_manager.find(texture_path);
-	if(texture_iter != texture_manager.end())
-	{
-		return texture_iter->second;
-	}
-	
-	GLuint texture_id = GL_NONE;
-	if (texture_path.empty())
-	{
-		return texture_id;		
-	}
-	stbi_set_flip_vertically_on_load(flip_uv);
-	int width, height, nr_component;
-	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
-	assert(data, "load texture failed");
-
-	GLenum format = GL_BGR;
-	switch(nr_component)
-	{
-	case 1:
-		format = GL_RED;
-		break;
-	case 3:
-		format = GL_RGB;
-		break;
-	case 4:
-		format = GL_RGBA;
-		break;
-	default:
-		break;
-	}
-
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// release memory
-	stbi_image_free(data);
-	// tex_image->read_tga_file(texture_path.c_str());
-	texture_manager.emplace(texture_path, texture_id);
-	return texture_id;
-}
-
 
 void CRender::RenderSkyBox()
 {
@@ -500,7 +447,7 @@ void CRender::DeferRenderSceneLighting() const
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-	defer_buffer_.defer_render_shader->UpdateRenderData(defer_buffer_.quad_shape->mesh_list[0], scene_render_info);
+	defer_buffer_.defer_render_shader->UpdateRenderData(defer_buffer_.quad_shape->mesh_resource->mesh_list[0], scene_render_info);
 	defer_buffer_.quad_shape->Draw();
 }
 

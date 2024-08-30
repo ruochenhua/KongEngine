@@ -20,7 +20,7 @@ void CBoxShape::Draw(const SSceneRenderInfo& scene_render_info)
 
 void CBoxShape::Draw()
 {
-    for(auto& mesh : mesh_list)
+    for(auto& mesh : mesh_resource->mesh_list)
     {
         glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
         auto& render_info = mesh.m_RenderInfo;

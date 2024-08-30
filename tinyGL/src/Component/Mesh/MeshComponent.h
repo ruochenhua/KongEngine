@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "Component/Component.h"
+#include "Parser/ResourceManager.h"
 #include "Shader/Shader.h"
 
 struct aiMesh;
@@ -34,7 +35,7 @@ namespace Kong
 	class CMeshComponent : public CComponent
 	{
 	public:
-		vector<CMesh> mesh_list;
+		shared_ptr<MeshResource> mesh_resource;
 		shared_ptr<Shader> shader_data;
 		
 		CMeshComponent(const SRenderResourceDesc& render_resource_desc);	
@@ -44,14 +45,9 @@ namespace Kong
 		virtual void InitRenderInfo();
 		bool IsBlend();
 	protected:
-		
-		string directory;
-		
 		// import obj model
 		// todo：同样的资源复用
 		int ImportObj(const std::string& model_path);
 		void LoadOverloadTexture(const SRenderResourceDesc& render_resource_desc);
-		void ProcessAssimpNode(aiNode* model_node, const aiScene* scene);
-		void ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene);
 	};
 }

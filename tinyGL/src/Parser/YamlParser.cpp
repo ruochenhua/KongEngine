@@ -53,6 +53,30 @@ namespace YamlParser
         }
     }
 
+    void ParseSpawnerTransform(YAML::Node transform_node, shared_ptr<AActor> actor)
+    {
+        if(transform_node["location"])
+        {
+            glm::vec3 location_min = ParseVec3(transform_node["location"]["min"].as<vector<float>>());
+            glm::vec3 location_max = ParseVec3(transform_node["location"]["max"].as<vector<float>>());
+            actor->location = glm::linearRand(location_min, location_max);
+        }
+
+        if(transform_node["rotation"])
+        {
+            glm::vec3 rotation_min = ParseVec3(transform_node["rotation"]["min"].as<vector<float>>());
+            glm::vec3 rotation_max = ParseVec3(transform_node["rotation"]["max"].as<vector<float>>());
+            actor->rotation = glm::linearRand(rotation_min, rotation_max);
+        }
+
+        if(transform_node["scale"])
+        {
+            glm::vec3 scale_min = ParseVec3(transform_node["scale"]["min"].as<vector<float>>());
+            glm::vec3 scale_max = ParseVec3(transform_node["scale"]["max"].as<vector<float>>());
+            actor->scale = glm::linearRand(scale_min, scale_max);
+        }
+    }
+
     SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
     {
         SRenderResourceDesc render_resource_desc;
@@ -216,15 +240,35 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
     auto scene = scene_node["scene"];
     for(auto& actor : scene)
     {
-        auto new_actor = make_shared<AActor>();
-        new_actor->name = actor["actor"].as<string>();
-
-        if(actor["transform"])
+        // 是actor spawner，会需要生成多个actor
+        if(actor["type"] && actor["type"].as<string>() == "spawner")
         {
-            ParseTransform(actor["transform"], new_actor);
+            int count = actor["count"].as<int>();
+            for(int i = 0; i < count; i++)
+            {
+                auto new_actor = make_shared<AActor>();
+                new_actor->name = actor["actor"].as<string>();
+                if(actor["transform"])
+                {
+                    ParseSpawnerTransform(actor["transform"], new_actor);
+                }
+                
+                ParseComponent(actor, new_actor);
+                scene_actors.push_back(new_actor);
+            }
         }
+        else
+        {
+            auto new_actor = make_shared<AActor>();
+            new_actor->name = actor["actor"].as<string>();
 
-        ParseComponent(actor, new_actor);
-        scene_actors.push_back(new_actor);
+            if(actor["transform"])
+            {
+                ParseTransform(actor["transform"], new_actor);
+            }
+
+            ParseComponent(actor, new_actor);
+            scene_actors.push_back(new_actor);
+        }
     }
 }

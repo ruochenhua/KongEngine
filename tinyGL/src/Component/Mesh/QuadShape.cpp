@@ -14,10 +14,10 @@ CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
 void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 {
     shader_data->Use();
-    auto& render_info = mesh_list[0].m_RenderInfo;
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
     
     glBindVertexArray(render_info.vertex_array_id);
-    shader_data->UpdateRenderData(mesh_list[0], scene_render_info);
+    shader_data->UpdateRenderData(mesh_resource->mesh_list[0], scene_render_info);
    
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);
@@ -25,7 +25,7 @@ void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 
 void CQuadShape::Draw()
 {
-    auto& render_info = mesh_list[0].m_RenderInfo;
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
     
     glBindVertexArray(render_info.vertex_array_id);   
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -43,7 +43,7 @@ void CQuadShape::InitRenderInfo()
          1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
     };
     
-    auto& render_info = mesh_list[0].m_RenderInfo;
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
     // 初始化屏幕相关的 VAO
     glGenVertexArrays(1, &render_info.vertex_array_id);
     glGenBuffers(1, &render_info.vertex_buffer);
@@ -61,36 +61,36 @@ void CQuadShape::InitRenderInfo()
 void CQuadShape::InitQuadData(const SRenderResourceDesc& render_resource_desc)
 {
     CMesh mesh;
-
+    mesh_resource = make_shared<MeshResource>();
     auto& render_info = mesh.m_RenderInfo;
     // // load texture map
     const auto& texture_paths = render_resource_desc.texture_paths;
     auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
     if (diffuse_path_iter != texture_paths.end())
     {
-        render_info.diffuse_tex_id = CRender::LoadTexture(diffuse_path_iter->second);
+        render_info.diffuse_tex_id = ResourceManager::GetOrLoadTexture(diffuse_path_iter->second);
     }
     
     auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
     if (specular_path_iter != texture_paths.end())
     {
-        render_info.specular_tex_id = CRender::LoadTexture(specular_path_iter->second);
+        render_info.specular_tex_id = ResourceManager::GetOrLoadTexture(specular_path_iter->second);
     }
 
     auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
     if (normal_path_iter != texture_paths.end())
     {
-        render_info.normal_tex_id = CRender::LoadTexture(normal_path_iter->second);
+        render_info.normal_tex_id = ResourceManager::GetOrLoadTexture(normal_path_iter->second);
     }
 
     auto tangent_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::tangent);
     if (tangent_path_iter != texture_paths.end())
     {
-        render_info.tangent_tex_id = CRender::LoadTexture(tangent_path_iter->second);
+        render_info.tangent_tex_id = ResourceManager::GetOrLoadTexture(tangent_path_iter->second);
     }
 
     render_info.material = render_resource_desc.material;
 
-    mesh_list.push_back(mesh);
+    mesh_resource->mesh_list.push_back(mesh);
 
 }

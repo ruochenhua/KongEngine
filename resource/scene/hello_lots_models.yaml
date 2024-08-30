@@ -1,0 +1,35 @@
+scene:
+  - actor: model1
+    type: spawner
+    count: 30
+    component:
+      - type: mesh
+        shader_type: brdf
+        model_path: nanosuit/nanosuit.obj
+    transform:
+      location:
+        min: [-30, 0, -30]
+        max: [30, 0, 30]
+  - actor: point_light1
+    type: spawner
+    count: 10
+    transform:
+      location:
+        min: [-10, 0, -10]
+        max: [10, 20, 10]
+      scale:
+        min: [0.1, 0.1, 0.1]
+        max: [0.1, 0.1, 0.1]
+    component:
+      - type: point_light
+        light_color:
+          - 30
+          - 30
+          - 30
+      - type: box
+        shader_type: emit
+        material:
+          albedo:
+            - 10
+            - 10
+            - 10

@@ -82,6 +82,7 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_porsche",
 		"hello_blend",
 		"hello_pbr_texture",
+		"hello_lots_models",
 	};
 
 	static int item_type = 9;
