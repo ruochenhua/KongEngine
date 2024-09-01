@@ -31,9 +31,6 @@ namespace Kong
         shared_ptr<ShadowMapShader> shadowmap_shader;
         GLuint shadowmap_texture = GL_NONE;
         GLuint shadowmap_fbo = GL_NONE;
-    
-        GLfloat near_plane = 1.0f;
-        GLfloat far_plane = 30.f;
         
     private:
         ELightType light_type;

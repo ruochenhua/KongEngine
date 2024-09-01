@@ -6,13 +6,6 @@ layout(location=0) in vec3 in_pos;
 layout(location=1) in vec3 in_normal;
 layout(location=2) in vec2 in_texcoord;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
 out vec2 TexCoords;
 
 void main(){

@@ -1,4 +1,6 @@
 #version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/common/common.glsl" 
 
 layout(location=0) in vec3 in_pos;
 layout(location=1) in vec3 in_normal;
@@ -11,12 +13,6 @@ out vec3 frag_normal;
 out vec2 frag_uv;
 //out vec4 ShadowCoord;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
 
 void main(){
 	gl_Position = matrix_ubo.projection * matrix_ubo.view * instance_model_mat * vec4(in_pos, 1.0);

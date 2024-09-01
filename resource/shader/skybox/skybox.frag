@@ -5,12 +5,6 @@ in vec3 uv;
 out vec4 FragColor;
 
 uniform samplerCube skybox;
-layout(std140, binding=1) uniform LIGHT_INFO_UBO {
-	ivec4 has_dir_light;
-    DirectionalLight directional_light;
-	ivec4 point_light_count;
-    PointLight point_lights[POINT_LIGHT_MAX];
-} light_info_ubo;
 
 int iSteps = 64; 
 int jSteps = 32;

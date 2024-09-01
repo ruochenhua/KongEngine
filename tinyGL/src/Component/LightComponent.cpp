@@ -8,7 +8,7 @@
 
 using namespace Kong;
 using namespace glm;
-const float SHADOWMAP_NEAR_PLANE = 1.0f;
+const float SHADOWMAP_NEAR_PLANE = 0.1f;
 const float SHADOWMAP_FAR_PLANE = 30.0f;
 
 CLightComponent::CLightComponent(ELightType in_type)
@@ -184,7 +184,8 @@ void CPointLightComponent::RenderShadowMap()
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-            shadowmap_shader->UpdateShadowMapRender(GetLightLocation(), model_mat, vec2(near_plane, far_plane));
+            shadowmap_shader->UpdateShadowMapRender(GetLightLocation(), model_mat,
+                vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
             if(render_info.index_buffer == GL_NONE)

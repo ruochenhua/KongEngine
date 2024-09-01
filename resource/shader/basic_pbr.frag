@@ -8,20 +8,6 @@ in vec2 out_texcoord;
 
 out vec3 color;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
-layout(std140, binding=1) uniform LIGHT_INFO_UBO {
-	ivec4 has_dir_light;
-    DirectionalLight directional_light;
-	ivec4 point_light_count;
-    PointLight point_lights[POINT_LIGHT_MAX];
-} light_info_ubo;
-
 uniform vec3 albedo;
 
 uniform sampler2D diffuse_texture;
@@ -86,7 +72,7 @@ vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 view, vec3 frag_po
 
 void main()
 {
-	vec3 view = normalize(matrix_ubo.cam_pos - out_pos);
+	vec3 view = normalize(matrix_ubo.cam_pos.xyz - out_pos);
 	
 	vec3 dir_light_color = vec3(0,0,0);
 	if(light_info_ubo.has_dir_light.x > 0)

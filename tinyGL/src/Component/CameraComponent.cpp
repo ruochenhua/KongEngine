@@ -37,6 +37,11 @@ vec3 CCamera::GetPosition() const
 	return m_center;
 }
 
+vec2 CCamera::GetNearFar() const
+{
+	return glm::vec2(m_screenInfo._near, m_screenInfo._far);
+}
+
 void CCamera::UpdateRotation(double delta)
 {
 	auto window = Engine::GetRenderWindow();

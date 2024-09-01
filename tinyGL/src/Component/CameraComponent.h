@@ -37,7 +37,7 @@ namespace Kong
         mat4 GetViewMatrixNoTranslate() const;
         vec3 GetDirection() const;
         vec3 GetPosition() const;
-
+        vec2 GetNearFar() const;
     public:
         //camera control
         void InitControl();

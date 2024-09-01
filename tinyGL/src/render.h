@@ -83,6 +83,7 @@ namespace Kong
 	public:
 		static CRender* GetRender();
 		static GLuint GetNullTexId();
+		static glm::vec2 GetNearFar();
 		
 		GLFWwindow* render_window;
 		CRender() = default;

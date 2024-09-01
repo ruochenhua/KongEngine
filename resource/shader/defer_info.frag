@@ -13,13 +13,6 @@ in vec3 frag_normal;
 in vec2 frag_uv;
 in mat3 TBN;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
 uniform vec4 albedo;    // color
 uniform float specular_factor;
 uniform float metallic;

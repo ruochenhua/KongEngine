@@ -15,20 +15,6 @@ out vec2 frag_uv;
 out mat3 TBN;
 out vec4 frag_pos_lightspace;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
-layout(std140, binding=1) uniform LIGHT_INFO_UBO {
-	ivec4 has_dir_light;
-    DirectionalLight directional_light;
-	ivec4 point_light_count;
-    PointLight point_lights[POINT_LIGHT_MAX];
-} light_info_ubo;
-
 
 void main(){
     mat4 model = matrix_ubo.model;

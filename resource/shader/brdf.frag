@@ -12,20 +12,6 @@ in vec2 frag_uv;
 in mat3 TBN;
 in vec4 frag_pos_lightspace;
 
-layout(std140, binding=1) uniform LIGHT_INFO_UBO {
-	ivec4 has_dir_light;
-    DirectionalLight directional_light;
-	ivec4 point_light_count;
-    PointLight point_lights[POINT_LIGHT_MAX];
-} light_info_ubo;
-
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
 uniform vec4 albedo;    // color
 uniform float specular_factor;
 uniform float metallic;
@@ -211,7 +197,7 @@ vec3 CalcPointLight(PointLight point_light, int light_index,
 
 void main()
 {
-    vec3 view = normalize(matrix_ubo.cam_pos - frag_pos);  //to_view
+    vec3 view = normalize(matrix_ubo.cam_pos.xyz - frag_pos);  //to_view
     vec3 obj_normal = GetNormal();
 
     vec3 dir_light_color = vec3(0,0,0);

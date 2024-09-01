@@ -24,14 +24,6 @@ uniform sampler2D skybox_brdf_lut_texture;
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
 
-layout(std140, binding=1) uniform LIGHT_INFO_UBO {
-	ivec4 has_dir_light;
-    DirectionalLight directional_light;
-	ivec4 point_light_count;
-    PointLight point_lights[POINT_LIGHT_MAX];
-} light_info_ubo;
-
-
 // 计算阴影
 float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir, vec3 frag_normal)
 {

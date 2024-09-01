@@ -14,13 +14,6 @@ out vec3 frag_normal;
 out vec2 frag_uv;
 out mat3 TBN;
 
-layout(std140, binding=0) uniform UBO {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 cam_pos;
-} matrix_ubo;
-
 void main(){
     mat4 model = matrix_ubo.model;
     gl_Position = matrix_ubo.projection * matrix_ubo.view * model * vec4(in_pos, 1.0);

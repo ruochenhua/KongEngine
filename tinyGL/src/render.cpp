@@ -106,6 +106,11 @@ GLuint CRender::GetNullTexId()
 	return g_render->null_tex_id;
 }
 
+vec2 CRender::GetNearFar()
+{
+	return g_render->mainCamera->GetNearFar();
+}
+
 GLuint CRender::GetSkyboxTexture() const
 {
 	return m_SkyBox.GetSkyBoxTextureId();
@@ -173,11 +178,16 @@ void CRender::InitUBO()
 	matrix_ubo.AppendData(glm::mat4(), "model");
 	matrix_ubo.AppendData(glm::mat4(), "view");
 	matrix_ubo.AppendData(glm::mat4(), "projection");
-	matrix_ubo.AppendData(glm::vec3(), "cam_pos");
+	matrix_ubo.AppendData(glm::vec4(), "cam_pos");
+	matrix_ubo.AppendData(glm::vec4(), "near_far");
 	matrix_ubo.Init(0);
 
 	scene_light_ubo.AppendData(SceneLightInfo(), "light_info");
 	scene_light_ubo.Init(1);
+
+	// 更新远近平面数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
 }
 
 int CRender::Update(double delta)
