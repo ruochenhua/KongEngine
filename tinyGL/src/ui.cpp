@@ -133,16 +133,16 @@ void CUIManager::DescribeUIContent(double delta)
 				{
 					if(ImGui::TreeNode("","location:"))
 					{
-						ImGui::DragFloat("lx", &actor->location.x, 0.02f);
-						ImGui::DragFloat("ly", &actor->location.y, 0.02f);
-						ImGui::DragFloat("lz", &actor->location.z, 0.02f);
+						ImGui::DragFloat("lx", &actor->location.x, 0.2f);
+						ImGui::DragFloat("ly", &actor->location.y, 0.2f);
+						ImGui::DragFloat("lz", &actor->location.z, 0.2f);
 						ImGui::TreePop();
 					}
 					if(ImGui::TreeNode("","rotation:"))
 					{
-						ImGui::DragFloat("rx", &actor->rotation.x, 0.02f);
-						ImGui::DragFloat("ry", &actor->rotation.y, 0.02f);
-						ImGui::DragFloat("rz", &actor->rotation.z, 0.02f);
+						ImGui::DragFloat("rx", &actor->rotation.x, 0.2f);
+						ImGui::DragFloat("ry", &actor->rotation.y, 0.2f);
+						ImGui::DragFloat("rz", &actor->rotation.z, 0.2f);
 						ImGui::TreePop();
 					}
 					if(ImGui::TreeNode("","scale:"))

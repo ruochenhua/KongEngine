@@ -14,6 +14,7 @@ struct PointLight
     vec4 light_color;
 };
 
-#define POINT_LIGHT_MAX 4
+#define POINT_LIGHT_MAX 32
+#define POINT_LIGHT_SHADOW_MAX 4
 const float PI = 3.14159265359;
 #endif  // _COMMON_GLSL_

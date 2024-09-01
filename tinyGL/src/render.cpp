@@ -284,7 +284,7 @@ void CRender::RenderScene() const
 	int point_light_count = 0;
 	for(auto light : scene_render_info.scene_pointlights)
 	{
-		if(point_light_count > 3)
+		if(point_light_count >= POINT_LIGHT_MAX)
 		{
 			break;
 		}

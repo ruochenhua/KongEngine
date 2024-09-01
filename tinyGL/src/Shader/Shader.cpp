@@ -3,7 +3,7 @@
 #include <regex>
 
 #include "BlendShader.h"
-#include "BRDFShader.h"
+#include "PBRShader.h"
 #include "DeferInfoShader.h"
 #include "EmitShader.h"
 #include "render.h"

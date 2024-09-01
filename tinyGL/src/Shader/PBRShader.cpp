@@ -1,4 +1,4 @@
-#include "BRDFShader.h"
+#include "PBRShader.h"
 
 #include "Component/LightComponent.h"
 #include "render.h"
@@ -8,7 +8,7 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
-void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void PBRShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
 {
 	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
@@ -76,7 +76,7 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& sce
 	for(auto light : scene_render_info.scene_pointlights)
 	{
 		// 限定4个点光源
-		if(point_light_num > 3)
+		if(point_light_num >= POINT_LIGHT_SHADOW_MAX)
 		{
 			break;
 		}
@@ -91,7 +91,7 @@ void BRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& sce
 	}
 }
 
-void BRDFShader::InitDefaultShader()
+void PBRShader::InitDefaultShader()
 {
 	shader_path_map = {
 		{vs, CSceneLoader::ToResourcePath("shader/brdf.vert")},
@@ -115,7 +115,7 @@ void BRDFShader::InitDefaultShader()
 	SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
 	SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
-	for(unsigned int i = 0; i < 4; ++i)
+	for(unsigned int i = 0; i < POINT_LIGHT_SHADOW_MAX; ++i)
 	{
 		stringstream ss;
 		ss << "shadow_map_pointlight[" << i << "]";

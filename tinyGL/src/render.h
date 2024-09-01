@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "postprocess.h"
 #include "skybox.h"
-#include "Shader/BRDFShader.h"
+#include "Shader/PBRShader.h"
 #include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
 

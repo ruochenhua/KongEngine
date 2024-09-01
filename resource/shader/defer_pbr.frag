@@ -44,7 +44,7 @@ float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir, vec3 f
 
 //    float closet_depth = texture(shadow_map, proj_coords.xy).r;
     float current_depth = proj_coords.z;
-    float bias = max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
+    float bias = 0.0f; //max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
 //    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
     // 采用pcf柔和阴影锯齿边界
     // todo: 更多优化方法
@@ -76,7 +76,7 @@ float ShadowCalculation_pointlight(int light_index, vec3 in_frag_pos, vec3 light
     {
         return 0.0;
     }
-    float bias = 0.005;
+    float bias = 0.0f;
     // 进行比较，如果贴图上的距离比真实距离小，则代表在阴影当中
     //float shadow = (current_depth - bias) > close_depth ? 1.0 : 0.0;
     float shadow = 0.0;
@@ -99,17 +99,18 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view, BRDF
 }
 
 // calculate color causes by directional light
-vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, BRDFMaterial material)
+vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, vec3 frag_pos, BRDFMaterial material)
 {
     vec3 light_color = dir_light.light_color.xyz;
     vec3 to_light_dir = -dir_light.light_dir.xyz;
-
-    float shadow = 0;//ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir, normal);
+    vec4 frag_pos_lightspace = light_info_ubo.directional_light.light_space_mat * vec4(frag_pos, 1.0);
+    float shadow = ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir, normal);
     return CalcLight(light_color, to_light_dir, normal, view, material) * (1.0 - shadow);
     //return vec3(shadow);
 }
 
-vec3 CalcPointLight(PointLight point_light, int light_index, vec3 normal, vec3 view, vec3 in_frag_pos, BRDFMaterial material)
+vec3 CalcPointLight(PointLight point_light, int light_index, 
+                    vec3 normal, vec3 view, vec3 in_frag_pos, BRDFMaterial material, bool calc_shadow)
 {
     float kc = 0.2;
     float kl = 0.1;
@@ -119,7 +120,8 @@ vec3 CalcPointLight(PointLight point_light, int light_index, vec3 normal, vec3 v
 
     vec3 point_light_color = CalcLight(light_color, to_light_dir, normal, view, material);
 
-    float shadow = 0;// ShadowCalculation_pointlight(light_index, in_frag_pos, point_light.light_pos.xyz);
+    float shadow = calc_shadow ? ShadowCalculation_pointlight(light_index, in_frag_pos, point_light.light_pos.xyz) : 0;
+    
     float distance = length(point_light.light_pos.xyz - in_frag_pos);
     float attenuation = 1.0 / (kc + kl*distance + kq*distance*distance);	//衰减和点光源的参数可控，这里先简单弄个
     //return vec3(shadow);
@@ -150,13 +152,14 @@ void main()
     vec3 dir_light_color = vec3(0,0,0);
 	if(light_info_ubo.has_dir_light.x > 0)
 	{
-		dir_light_color = CalcDirLight(light_info_ubo.directional_light, frag_normal, view, material);
+		dir_light_color = CalcDirLight(light_info_ubo.directional_light, frag_normal, view,  frag_pos, material);
 	}
 
     vec3 point_light_color = vec3(0,0,0);
     for(int i = 0; i < light_info_ubo.point_light_count.x; ++i)
     {
-        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, frag_normal, view, frag_pos, material);
+        bool calc_shadow = (i < POINT_LIGHT_SHADOW_MAX);
+        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, frag_normal, view, frag_pos, material, calc_shadow);
     }
 
     // 用IBL的辐照度贴图作为环境光

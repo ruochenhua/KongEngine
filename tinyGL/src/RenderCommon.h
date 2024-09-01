@@ -157,14 +157,14 @@ namespace Kong
     };
 
     // 先全部按照vec4对齐，用int和float等等算数据对齐还有问题需要后续解决
-    constexpr unsigned POINT_LIGHT_MAX = 4;
+    constexpr unsigned POINT_LIGHT_MAX = 32;
+    constexpr unsigned POINT_LIGHT_SHADOW_MAX = 4;
     struct SceneLightInfo
     {
-        glm::ivec4 has_dir_light = glm::ivec4(0);;
+        glm::ivec4 has_dir_light = glm::ivec4(0);
         DirectionalLight directional_light;
         glm::ivec4 point_light_count = glm::ivec4(0);
         PointLight point_lights[POINT_LIGHT_MAX];
-   
     };
 
 }

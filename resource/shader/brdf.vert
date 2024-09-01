@@ -22,7 +22,6 @@ layout(std140, binding=0) uniform UBO {
     vec3 cam_pos;
 } matrix_ubo;
 
-#define POINT_LIGHT_MAX 4
 layout(std140, binding=1) uniform LIGHT_INFO_UBO {
 	ivec4 has_dir_light;
     DirectionalLight directional_light;

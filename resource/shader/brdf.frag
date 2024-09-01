@@ -181,17 +181,18 @@ vec3 CalcLight(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view)
 }
 
 // calculate color causes by directional light
-vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view)
+vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, bool calc_shadow)
 {
     vec3 light_color = dir_light.light_color.xyz;
     vec3 to_light_dir = -dir_light.light_dir.xyz;
 
-    float shadow = ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir);
+    float shadow = calc_shadow ? ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir) : 0;
     return CalcLight(light_color, to_light_dir, normal, view) * (1.0 - shadow);
     //return vec3(shadow);
 }
 
-vec3 CalcPointLight(PointLight point_light, int light_index, vec3 normal, vec3 view, vec3 in_frag_pos)
+vec3 CalcPointLight(PointLight point_light, int light_index, 
+                    vec3 normal, vec3 view, vec3 in_frag_pos, bool calc_shadow)
 {
     float kc = 0.2;
     float kl = 0.1;
@@ -201,7 +202,7 @@ vec3 CalcPointLight(PointLight point_light, int light_index, vec3 normal, vec3 v
 
     vec3 point_light_color = CalcLight(light_color, to_light_dir, normal, view);
 
-    float shadow = ShadowCalculation_pointlight(light_index, frag_pos, point_light.light_pos.xyz);
+    float shadow = calc_shadow ? ShadowCalculation_pointlight(light_index, frag_pos, point_light.light_pos.xyz) : 0;
     float distance = length(point_light.light_pos.xyz - in_frag_pos);
     float attenuation = 1.0 / (kc + kl*distance + kq*distance*distance);	//衰减和点光源的参数可控，这里先简单弄个
     //return vec3(shadow);
@@ -216,13 +217,15 @@ void main()
     vec3 dir_light_color = vec3(0,0,0);
 	if(light_info_ubo.has_dir_light.x > 0)
 	{
-		dir_light_color = CalcDirLight(light_info_ubo.directional_light, obj_normal, view);
+		dir_light_color = CalcDirLight(light_info_ubo.directional_light, obj_normal, view, true);
 	}
 
     vec3 point_light_color = vec3(0,0,0);
     for(int i = 0; i < light_info_ubo.point_light_count.x; ++i)
     {
-        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos);
+        bool calc_shadow = (i<POINT_LIGHT_SHADOW_MAX);
+
+        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos, calc_shadow);
     }
 
     float env_roughness = GetRoughness();

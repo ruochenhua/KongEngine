@@ -98,16 +98,7 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
 
         // 观察点和星球表面距离（我们这里先默认星球的中心为原点，所以直接用位置的长度就行）
         // Calculate the height of the sample.
-        float surface_height = length(iPos) - planet_radius;
 
-        // 计算这一步的散射的光学深度结果
-        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float od_step_rlh = get_atmos_density(surface_height, scale_height_rlh) * ds;
-        float od_step_mie = get_atmos_density(surface_height, scale_height_mie) * ds;
-
-        // Accumulate optical depth.
-        total_od_rlh += od_step_rlh;
-        total_od_mie += od_step_mie;
 
         // Calculate the step size of the secondary ray.
         // 在当前点向太阳的位置做射线检测，以大气的半径为球体。.y是代表大气的出射点，j_steps代表采样数
@@ -137,7 +128,16 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
             // Increment the secondary ray time.
             jTime += jStepSize;
         }
+        
+        float surface_height = length(iPos) - planet_radius;
+        // 计算这一步的散射的光学深度结果
+        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
+        float od_step_rlh = get_atmos_density(surface_height, scale_height_rlh) * ds;
+        float od_step_mie = get_atmos_density(surface_height, scale_height_mie) * ds;
 
+        // Accumulate optical depth.
+        total_od_rlh += od_step_rlh;
+        total_od_mie += od_step_mie;
         // 计算衰减系数，光在经过一定距离后衰减剩下来的比例。
         vec3 attn = exp(-(kMie * (total_od_mie + jOdMie) + kRlh * (total_od_rlh + jOdRlh)));
 

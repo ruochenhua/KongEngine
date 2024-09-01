@@ -107,6 +107,18 @@ void CCamera::Update(double delta)
 		MoveRight();
 	}
 
+	if(glfwGetKey(render_window, GLFW_KEY_Q) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_Q) == GLFW_REPEAT)
+	{
+		MoveDown();
+	}
+
+	if(glfwGetKey(render_window, GLFW_KEY_E) == GLFW_PRESS
+		|| glfwGetKey(render_window, GLFW_KEY_E) == GLFW_REPEAT)
+	{
+		MoveUp();
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse)
 	{
@@ -150,27 +162,38 @@ void CCamera::InitControl()
 
 void CCamera::MoveForward()
 {
-	m_moveVec += m_front * 0.1f;
+	m_moveVec += m_front;
 }
 
 void CCamera::MoveBackward()
 {
-	m_moveVec -= m_front * 0.1f;
+	m_moveVec -= m_front;
 }
 
 void CCamera::MoveLeft()
 {
 	vec3 right = cross(m_front, m_up);
 
-	m_moveVec -= right * 0.1f;
+	m_moveVec -= right;
 }
 
 void CCamera::MoveRight()
 {
 	vec3 right = cross(m_front, m_up);
 
-	m_moveVec += right * 0.1f;
+	m_moveVec += right;
 }
+
+void CCamera::MoveUp()
+{
+	m_moveVec += m_up;
+}
+
+void CCamera::MoveDown()
+{
+	m_moveVec -= m_up;
+}
+
 
 void CCamera::RotateStart()
 {

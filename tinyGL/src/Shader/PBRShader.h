@@ -4,10 +4,10 @@
 namespace Kong
 {
     // todo：或许应该改名为pbrshader
-    class BRDFShader : public Shader
+    class PBRShader : public Shader
     {
     public:
-        BRDFShader() = default;
+        PBRShader() = default;
         
         void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
     

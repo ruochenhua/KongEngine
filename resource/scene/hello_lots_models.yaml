@@ -1,7 +1,7 @@
 scene:
   - actor: model1
     type: spawner
-    count: 30
+    count: 100
     component:
       - type: mesh
         shader_type: brdf
