@@ -75,7 +75,6 @@ namespace Kong
 		void Init(unsigned width, unsigned height);
 		// 延迟渲染着色器
 		shared_ptr<DeferredBRDFShader> defer_render_shader;
-		shared_ptr<CQuadShape> quad_shape;
 	};
 	
 	class CRender
@@ -108,6 +107,8 @@ namespace Kong
 		void RenderScene() const;
 		void DeferRenderSceneToGBuffer() const;
 		void DeferRenderSceneLighting() const;
+
+		void SSAORender() const;
 		
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
@@ -122,6 +123,7 @@ namespace Kong
 		shared_ptr<Shader> shadowmap_debug_shader;
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
+
 
 
 		CCamera* mainCamera = nullptr;
@@ -145,6 +147,18 @@ namespace Kong
 
 		// 延迟渲染
 		DeferBuffer defer_buffer_;
-		// todo:SSAO相关
+		// SSAO相关
+		unsigned ssao_kernel_count = 64;
+		unsigned ssao_noise_size = 4;
+		vector<glm::vec3> ssao_kernal_samples;
+		vector<glm::vec3> ssao_kernal_noises;
+		
+		GLuint SSAO_FBO = GL_NONE;
+		//GLuint SSAO_RBO = GL_NONE;
+		GLuint ssao_noise_texture = GL_NONE;
+		GLuint ssao_result_texture = GL_NONE;
+		shared_ptr<SSAOShader> ssao_shader_;
+
+		shared_ptr<CQuadShape> quad_shape;
 	};
 }

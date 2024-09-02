@@ -19,6 +19,7 @@ uniform float metallic;
 uniform float roughness;
 uniform float ao;
 
+
 uniform sampler2D diffuse_texture;
 uniform sampler2D normal_texture;
 uniform sampler2D roughness_texture;
@@ -85,9 +86,18 @@ float GetAO()
     return ao;
 }
 
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0;
+    float near = 0.1;//matrix_ubo.near_far.x;
+    float far = 50.0f; //matrix_ubo.near_far.y;
+    return (2.0 * near * far) / (near + far - z*(far - near));
+}
+
 void main()
 {
-    gPosition = vec4(frag_pos,1.0);
+    // 深度信息存储到position贴图的w值中
+    gPosition = vec4(frag_pos, LinearizeDepth(gl_FragCoord.z));
     gNormal = vec4(GetNormal(),1.0);
     gAlbedo = GetAlbedo();
     gORM = vec4(GetAO(), GetRoughness(), GetMetallic(), 1.0);

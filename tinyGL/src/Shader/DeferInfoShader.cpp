@@ -97,6 +97,9 @@ void DeferredBRDFShader::InitDefaultShader()
         ss << "shadow_map_pointlight[" << i << "]";
         SetInt(ss.str(), 9 + i);
     }
+
+	// ssao结果数据
+	SetInt("ssao_result_texture", 13);
 }
 
 void DeferredBRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
@@ -153,4 +156,36 @@ void DeferredBRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderI
 		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
 		point_light_num++;
 	}
+}
+
+void SSAOShader::InitDefaultShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/ssao.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/ssao.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+    
+	Use();
+	SetInt("position_texture", 0);
+	SetInt("normal_texture", 1);
+	SetInt("noise_texture", 2);
+}
+
+
+void SSAOShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+{
+	// glActiveTexture(GL_TEXTURE0 + 4);
+	// GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
+	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
+	// // 天空盒辐照度贴图
+	// glActiveTexture(GL_TEXTURE0 + 5);
+	// GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
+	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
+	// // 天空盒预滤波贴图
+	// glActiveTexture(GL_TEXTURE0 + 6);
+	// GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
+	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
 }

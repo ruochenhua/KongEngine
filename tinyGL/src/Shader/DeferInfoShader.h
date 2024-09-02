@@ -19,4 +19,12 @@ namespace Kong
         void InitDefaultShader() override;
         void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
     };
+
+    class SSAOShader : public Shader
+    {
+    public:
+        SSAOShader() = default;
+        virtual void InitDefaultShader() override;
+        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info);
+    };
 }

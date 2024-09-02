@@ -23,7 +23,7 @@ uniform sampler2D skybox_brdf_lut_texture;
 
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
-
+uniform sampler2D ssao_result_texture;
 // 计算阴影
 float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir, vec3 frag_normal)
 {
@@ -123,7 +123,7 @@ vec3 CalcPointLight(PointLight point_light, int light_index,
 
 void main()
 {
-    vec3 frag_pos = texture(position_texture, TexCoords).rgb;
+    vec3 frag_pos = texture(position_texture, TexCoords).xyz;
     vec3 frag_normal = texture(normal_texture, TexCoords).rgb;
     vec4 env_albedo = texture(albedo_texture, TexCoords);
 
@@ -190,6 +190,7 @@ void main()
     // FragColor = vec4(vec3(env_metallic), 1.0);
     // FragColor = skybox_color;
     FragColor = vec4(color, 1.0);
+    FragColor = vec4(texture(ssao_result_texture, TexCoords).xxx, 1.0);
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
     {

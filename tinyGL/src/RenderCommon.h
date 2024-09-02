@@ -7,6 +7,8 @@
 
 #define SHADOWMAP_DEBUG 0
 #define USE_DERER_RENDER 1
+#define USE_SSAO 1
+
 namespace Kong
 {
     class CPointLightComponent;
