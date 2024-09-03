@@ -8,7 +8,7 @@ layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gAlbedo;
 layout(location = 3) out vec4 gORM;
 
-in vec3 frag_pos;
+in vec4 frag_pos;
 in vec3 frag_normal;
 in vec2 frag_uv;
 in mat3 TBN;
@@ -90,15 +90,15 @@ float LinearizeDepth(float depth)
 {
     float z = depth * 2.0 - 1.0;
     float near = 0.1;//matrix_ubo.near_far.x;
-    float far = 50.0f; //matrix_ubo.near_far.y;
+    float far = 500.0f; //matrix_ubo.near_far.y;
     return (2.0 * near * far) / (near + far - z*(far - near));
 }
 
 void main()
 {
     // 深度信息存储到position贴图的w值中
-    gPosition = vec4(frag_pos, LinearizeDepth(gl_FragCoord.z));
-    gNormal = vec4(GetNormal(),1.0);
+    gPosition = frag_pos;
+    gNormal = vec4(GetNormal(), LinearizeDepth(gl_FragCoord.z));
     gAlbedo = GetAlbedo();
     gORM = vec4(GetAO(), GetRoughness(), GetMetallic(), 1.0);
 }

@@ -9,7 +9,7 @@ layout(location=3) in vec3 in_tangent;
 layout(location=4) in vec3 in_bitangent;
 
 // out vec3 normal_world;
-out vec3 frag_pos;
+out vec4 frag_pos;
 out vec3 frag_normal;
 out vec2 frag_uv;
 out mat3 TBN;
@@ -17,7 +17,8 @@ out mat3 TBN;
 void main(){
     mat4 model = matrix_ubo.model;
     gl_Position = matrix_ubo.projection * matrix_ubo.view * model * vec4(in_pos, 1.0);
-    frag_pos = (model * vec4(in_pos, 1.0)).xyz;
+    // frag_pos = (matrix_ubo.view * model * vec4(in_pos, 1.0)).xyz;
+    frag_pos = model * vec4(in_pos, 1.0);
 
     // 法线没有位移，不需要w向量，且还需要一些特殊处理来处理不等比缩放时带来的问题
     frag_normal = normalize(mat3(transpose(inverse(model))) * in_normal);
@@ -31,3 +32,4 @@ void main(){
 
     TBN = mat3(T, B, N);
 }
+

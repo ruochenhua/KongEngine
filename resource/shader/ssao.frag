@@ -8,14 +8,17 @@ uniform sampler2D position_texture;
 uniform sampler2D normal_texture;
 uniform sampler2D noise_texture;
 
-uniform mat4 ssao_proj;
 uniform vec3 samples[64];
 
 const vec2 noise_scale = vec2(1024.0 / 4.0, 768.0 / 4.0);   // todo 屏幕分辨率传入
 
 void main()
 {
-    vec3 frag_pos = texture(position_texture, TexCoords).xyz;
+    // ssao计算需要view空间下的顶点数据
+    // defer render进行光照计算需要world下的顶点数据，这里需要保留vec4的world顶点坐标（带w分量），否则这里进行view变换会出差错
+    vec4 frag_pos_world = texture(position_texture, TexCoords);
+    vec3 frag_pos = (matrix_ubo.view * frag_pos_world).xyz;
+    // vec3 frag_pos = texture(position_texture, TexCoords).xyz;
     vec3 normal = texture(normal_texture, TexCoords).xyz;
     vec3 random_vec = texture(noise_texture, TexCoords*noise_scale).xyz;
 
@@ -32,15 +35,16 @@ void main()
         tmp_sample = frag_pos + tmp_sample * radius;
 
         vec4 offset = vec4(tmp_sample, 1.0);
-        offset = ssao_proj * offset;
+        offset = matrix_ubo.projection * offset;
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
 
-        float sample_depth = -texture(position_texture, offset.xy).w;
+        // 深度值存在normal贴图的w分量上；
+        float sample_depth = -texture(normal_texture, offset.xy).w;
         float range_check = smoothstep(0.0, 1.0, radius/abs(frag_pos.z - sample_depth));
-        occlusion += (sample_depth > tmp_sample.z ? 1.0 : 0.0);
+        occlusion += (sample_depth > tmp_sample.z ? 1.0 : 0.0) * range_check;
     }
 
     occlusion = 1.0 - (occlusion / kernel_size);
-    FragColor = occlusion;
+    FragColor = occlusion;// frag_pos/10;(frag_pos) + 1 / 2;
 }

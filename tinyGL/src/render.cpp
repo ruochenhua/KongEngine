@@ -170,6 +170,7 @@ int CRender::Init()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_result_texture, 0);
 
 	ssao_shader_ = make_shared<SSAOShader>();
@@ -305,8 +306,8 @@ void CRender::RenderSceneObject()
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #endif
-	// glEnable(GL_BLEND);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	RenderScene();
 	RenderSkyBox();
 	
@@ -532,7 +533,6 @@ void CRender::DeferRenderSceneLighting() const
 void CRender::SSAORender() const
 {
 	ssao_shader_->Use();
-	ssao_shader_->SetMat4("ssao_proj", perspective(mainCamera->m_screenInfo._fov, mainCamera->m_screenInfo._aspect_ratio, 0.1f, 50.0f));
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
 	glActiveTexture(GL_TEXTURE0 + 1);
