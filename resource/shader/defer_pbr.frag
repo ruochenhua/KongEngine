@@ -23,6 +23,8 @@ uniform sampler2D skybox_brdf_lut_texture;
 
 uniform sampler2D shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
+
+uniform bool use_ssao;
 uniform sampler2D ssao_result_texture;
 // 计算阴影
 float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir, vec3 frag_normal)
@@ -175,22 +177,28 @@ void main()
 
         vec2 env_BRDF = texture(skybox_brdf_lut_texture, vec2(max(dot(frag_normal, view), 0.0), env_roughness)).rg;
         vec3 env_specular = prefiltered_color * (kS * env_BRDF.x + env_BRDF.y);
-        ambient = (kD*env_diffuse + env_specular)*ao;
+        ambient = (kD*env_diffuse + env_specular);
     }
     else
     {
-        ambient = F0 *env_albedo.xyz *ao;
+        ambient = F0 *env_albedo.xyz;
     }
 
-    float occlusion = texture(ssao_result_texture, TexCoords).x;
+    // 仅仅作用于ambient light的话太不明显了是什么原因？
     vec3 color = ambient + (dir_light_color + point_light_color);
+    if(use_ssao)
+    {
+        float occlusion = texture(ssao_result_texture, TexCoords).x;
+        color *= occlusion;
+    }
 
-    // FragColor = GetAlbedo();
-    // FragColor = vec4((frag_normal+1)/2, 1.0);
+
+    /// FragColor = env_albedo;
     // FragColor = vec4(vec3(env_roughness), 1.0);
     // FragColor = vec4(vec3(env_metallic), 1.0);
     // FragColor = skybox_color;
     FragColor = vec4(color, 1.0);
+    // FragColor = vec4(vec3(ao), 1.0);
 //    FragColor = vec4(texture(ssao_result_texture, TexCoords).xxx, 1.0);
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
@@ -203,5 +211,4 @@ void main()
         // 否则在blend开启的情况下会导致alpha为0的时候被遮挡的高亮穿透模型在场景中显现
         BrightColor = vec4(0,0,0,1);
     }
-
 }

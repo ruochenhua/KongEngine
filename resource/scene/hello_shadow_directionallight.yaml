@@ -5,18 +5,10 @@ scene:
         - 5
         - -1
         - 0
-      scale:
-        - 0.3
-        - 0.3
-        - 0.3
     component:
       - type: mesh
         shader_type: brdf
-        model_path: nanosuit/nanosuit.obj
-        material:
-          metallic: 0.9
-          roughness: 0.1
-          ao: 1
+        model_path: cyborg/cyborg.obj
 
   - actor: box1
     transform:
@@ -63,9 +55,9 @@ scene:
     component:
       - type: directional_light
         light_color:
-          - 10
-          - 10
-          - 10
+          - 60
+          - 60
+          - 60
       - type: sphere
         shader_type: emit
     transform:

@@ -9,11 +9,11 @@ uniform sampler2D normal_texture;
 uniform sampler2D noise_texture;
 
 uniform vec3 samples[64];
-
-const vec2 noise_scale = vec2(1024.0 / 4.0, 768.0 / 4.0);   // todo 屏幕分辨率传入
+uniform vec2 screen_size;
 
 void main()
 {
+    const vec2 noise_scale = vec2(screen_size.x / 4.0, screen_size.y / 4.0);
     // ssao计算需要view空间下的顶点数据
     // defer render进行光照计算需要world下的顶点数据，这里需要保留vec4的world顶点坐标（带w分量），否则这里进行view变换会出差错
     vec4 frag_pos_world = texture(position_texture, TexCoords);
@@ -46,5 +46,5 @@ void main()
     }
 
     occlusion = 1.0 - (occlusion / kernel_size);
-    FragColor = occlusion;// frag_pos/10;(frag_pos) + 1 / 2;
+    FragColor = occlusion;
 }

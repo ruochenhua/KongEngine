@@ -89,8 +89,8 @@ float GetAO()
 float LinearizeDepth(float depth)
 {
     float z = depth * 2.0 - 1.0;
-    float near = 0.1;//matrix_ubo.near_far.x;
-    float far = 500.0f; //matrix_ubo.near_far.y;
+    float near = matrix_ubo.near_far.x;
+    float far = matrix_ubo.near_far.y;
     return (2.0 * near * far) / (near + far - z*(far - near));
 }
 
