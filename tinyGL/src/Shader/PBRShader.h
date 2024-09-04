@@ -9,7 +9,7 @@ namespace Kong
     public:
         PBRShader() = default;
         
-        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info) override;
     
         virtual void InitDefaultShader() override;
     };

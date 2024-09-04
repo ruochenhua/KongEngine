@@ -73,8 +73,29 @@ namespace Kong
 		GLuint g_rbo_		= 0;
 		
 		void Init(unsigned width, unsigned height);
+		void GenerateDeferRenderTextures(int width, int height);
 		// 延迟渲染着色器
 		shared_ptr<DeferredBRDFShader> defer_render_shader;
+	};
+
+	struct SSAOHelper
+	{
+		// SSAO相关
+		unsigned ssao_kernel_count = 64;
+		unsigned ssao_noise_size = 4;
+		vector<glm::vec3> ssao_kernal_samples;
+		vector<glm::vec3> ssao_kernal_noises;
+		
+		GLuint ssao_fbo = GL_NONE;
+		GLuint SSAO_BlurFBO = GL_NONE;
+		GLuint ssao_noise_texture = GL_NONE;
+		GLuint ssao_result_texture = GL_NONE;
+		GLuint ssao_blur_texture = GL_NONE;
+		shared_ptr<SSAOShader> ssao_shader_;
+		shared_ptr<Shader> ssao_blur_shader_;
+
+		void Init(int width, int height);
+		void GenerateSSAOTextures(int width, int height);
 	};
 	
 	class CRender
@@ -83,6 +104,7 @@ namespace Kong
 		static CRender* GetRender();
 		static GLuint GetNullTexId();
 		static glm::vec2 GetNearFar();
+		static shared_ptr<CQuadShape> GetScreenShape();
 		
 		GLFWwindow* render_window;
 		CRender() = default;
@@ -96,10 +118,11 @@ namespace Kong
 		void PostUpdate();
 		CCamera* GetCamera() {return mainCamera;}
 		void ChangeSkybox();
-		// load image file and create texture 
-				
+		void OnWindowResize(int width, int height);
+						
 		PostProcess post_process;
 		int render_sky_env_status = 0;
+		bool use_ssao = true;
 	private:
 		int InitCamera();
 		void InitUBO();
@@ -147,17 +170,7 @@ namespace Kong
 
 		// 延迟渲染
 		DeferBuffer defer_buffer_;
-		// SSAO相关
-		unsigned ssao_kernel_count = 64;
-		unsigned ssao_noise_size = 4;
-		vector<glm::vec3> ssao_kernal_samples;
-		vector<glm::vec3> ssao_kernal_noises;
-		
-		GLuint SSAO_FBO = GL_NONE;
-		//GLuint SSAO_RBO = GL_NONE;
-		GLuint ssao_noise_texture = GL_NONE;
-		GLuint ssao_result_texture = GL_NONE;
-		shared_ptr<SSAOShader> ssao_shader_;
+		SSAOHelper ssao_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
 	};

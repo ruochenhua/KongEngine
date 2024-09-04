@@ -8,11 +8,10 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
-void PBRShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void PBRShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
-	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-
+	
 	// 材质属性
 	SetVec4("albedo", render_info.material.albedo);
 	SetFloat("specular_factor", render_info.material.specular_factor);

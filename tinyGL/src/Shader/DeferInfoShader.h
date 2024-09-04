@@ -8,7 +8,7 @@ namespace Kong
     public:
         DeferInfoShader() = default;
         virtual void InitDefaultShader() override;
-        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info) override;
  
     };
     
@@ -17,7 +17,7 @@ namespace Kong
     public:
         DeferredBRDFShader() = default;
         void InitDefaultShader() override;
-        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info) override;
     };
 
     class SSAOShader : public Shader
@@ -25,6 +25,6 @@ namespace Kong
     public:
         SSAOShader() = default;
         virtual void InitDefaultShader() override;
-        void UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info);
+        void UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info);
     };
 }

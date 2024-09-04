@@ -44,6 +44,10 @@ namespace Kong
 		virtual void Draw(const SSceneRenderInfo& scene_render_info);
 		virtual void InitRenderInfo();
 		bool IsBlend();
+
+		// 覆盖原有材质 
+		SRenderInfo override_render_info;
+		bool use_override_material = false;
 	protected:
 		// import obj model
 		// todo：同样的资源复用

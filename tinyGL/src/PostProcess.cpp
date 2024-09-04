@@ -4,8 +4,9 @@ using namespace Kong;
 void PostProcess::Init()
 {
     Engine engine = Engine::GetEngine();
-    window_width = engine.GetWindowWidth();
-    window_height = engine.GetWindowHeight();
+    glm::ivec2 window_size = engine.GetWindowSize();
+    window_width = window_size.x;
+    window_height = window_size.y;
     
     final_postprocess = make_shared<FinalPostprocessShader>();
     final_postprocess->InitPostProcessShader(window_width, window_height);

@@ -15,9 +15,9 @@ using namespace glm;
 ShaderManager* g_shader_manager = new ShaderManager;
 std::set<string> shader_include_set;
 
-Shader::Shader(const SRenderResourceDesc& render_resource_desc)
+Shader::Shader(const map<EShaderType, string>& shader_paths)
 {
-    Init(render_resource_desc.shader_paths);
+    Init(shader_paths);
 }
 
 GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
@@ -141,9 +141,8 @@ void Shader::Use() const
     glUseProgram(shader_id);
 }
 
-void Shader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void Shader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
-	auto& render_info = mesh.m_RenderInfo;
     glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 
 	// 材质属性

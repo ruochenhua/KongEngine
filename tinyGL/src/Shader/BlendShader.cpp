@@ -5,10 +5,8 @@
 using namespace Kong;
 
 
-void BlendShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void BlendShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
-    const SRenderInfo& render_info = mesh.GetRenderInfo();
-
     // 材质属性
     SetVec4("albedo", render_info.material.albedo);
     

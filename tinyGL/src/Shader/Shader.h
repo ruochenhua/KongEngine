@@ -17,7 +17,7 @@ namespace Kong
     {
     public:
     	Shader() = default;
-    	Shader(const SRenderResourceDesc& render_resource_desc);
+    	Shader(const map<EShaderType, string>& shader_paths);
 	    virtual ~Shader() = default;
 	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
     	static GLuint LoadShaders(const map<EShaderType, string>& shader_path_map);
@@ -86,7 +86,7 @@ namespace Kong
     	void Use() const;
     	// 获取这个shader需要的数据，每个shader的需求应该是不一样的所以子类需要实现;
     	// 父类的这个是为了支持原先的传入shader文件的写法，也就是设置尽量全名的参数传入
-    	virtual void UpdateRenderData(const CMesh& mesh,
+    	virtual void UpdateRenderData(const SRenderInfo& render_info,
     		const SSceneRenderInfo& scene_render_info);
     	virtual void InitDefaultShader(){};
     	
@@ -98,7 +98,7 @@ namespace Kong
     	map<EShaderType, string> shader_path_map;
 
     };
-
+	
 	class ShaderManager
 	{
 	public:

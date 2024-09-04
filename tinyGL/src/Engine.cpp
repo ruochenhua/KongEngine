@@ -12,7 +12,7 @@ void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
     //glfwSetWindowAspectRatio(window, width, height);
 
     //后处理贴图大小重新处理一下
-    CRender::GetRender()->post_process.OnWindowResize(width, height); 
+    CRender::GetRender()->OnWindowResize(width, height); 
 }
 
 Engine::Engine()
@@ -32,8 +32,8 @@ Engine::Engine()
 	
     // Open a window and create its OpenGL context
     // (In the accompanying source code, this variable is global for simplicity)
-    render_window = glfwCreateWindow(window_width, window_height, "KongEngine", nullptr, nullptr);
-    window_aspect_ratio = (float)window_width/window_height;
+    render_window = glfwCreateWindow(window_size.x, window_size.y, "KongEngine", nullptr, nullptr);
+    window_aspect_ratio = (float)window_size.x/window_size.y;
     if (render_window == nullptr) {
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.\n");
         glfwTerminate();
@@ -78,8 +78,8 @@ string Engine::ReadFile(const string& file_path)
 
 void Engine::SetWidthHeight(int width, int height)
 {
-    window_width = width;
-    window_height = height;
+    window_size.x = width;
+    window_size.y = height;
     window_aspect_ratio = (float)width / height;
 }
 

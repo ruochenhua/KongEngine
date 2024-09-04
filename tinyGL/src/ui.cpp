@@ -117,6 +117,7 @@ void CUIManager::DescribeUIContent(double delta)
 		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
 	}
 
+	ImGui::Checkbox("ssao", &render_sys->use_ssao);
 	auto& postprocess = render_sys->post_process;
 	ImGui::Checkbox("bloom", &postprocess.bloom);
 	ImGui::DragInt("bloom_range", &postprocess.bloom_range, 1, 1, 50);

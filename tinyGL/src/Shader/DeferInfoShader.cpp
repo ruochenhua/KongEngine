@@ -34,9 +34,8 @@ void DeferInfoShader::InitDefaultShader()
     // }
 }
 
-void DeferInfoShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void DeferInfoShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
-	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 
 	// 材质属性
@@ -102,9 +101,8 @@ void DeferredBRDFShader::InitDefaultShader()
 	SetInt("ssao_result_texture", 13);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void DeferredBRDFShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
-	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 
 	GLuint null_tex_id = CRender::GetNullTexId();
@@ -175,7 +173,7 @@ void SSAOShader::InitDefaultShader()
 }
 
 
-void SSAOShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
+void SSAOShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
 {
 	// glActiveTexture(GL_TEXTURE0 + 4);
 	// GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();

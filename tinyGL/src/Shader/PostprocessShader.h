@@ -31,8 +31,6 @@ namespace Kong
     {
     public:
         GaussianBlurShader() = default;
-        void UpdateRenderData(const CMesh& mesh,
-            const SSceneRenderInfo& scene_render_info) override;
         vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
 
         virtual void InitDefaultShader() override;

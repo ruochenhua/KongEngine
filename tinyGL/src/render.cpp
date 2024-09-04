@@ -45,26 +45,47 @@ void UBOHelper::EndBind() const
 void DeferBuffer::Init(unsigned width, unsigned height)
 {
 	glGenFramebuffers(1, &g_buffer_);
+	GenerateDeferRenderTextures(width, height);
+
+	defer_render_shader = make_shared<DeferredBRDFShader>();
+	defer_render_shader->InitDefaultShader();
+}
+
+void DeferBuffer::GenerateDeferRenderTextures(int width, int height)
+{
 	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+
+	if(g_position_)
+	{
+		glDeleteTextures(1, &g_position_);
+	}
 	// 将当前视野的数据用贴图缓存
 	// 位置数据
 	glGenTextures(1, &g_position_);
 	glBindTexture(GL_TEXTURE_2D, g_position_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
-	
+
+	if(g_normal_)
+	{
+		glDeleteTextures(1, &g_normal_);
+	}
 	// 法线数据
 	glGenTextures(1, &g_normal_);
 	glBindTexture(GL_TEXTURE_2D, g_normal_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
-	
+
+	if(g_albedo_)
+	{
+		glDeleteTextures(1, &g_albedo_);
+	}
 	// 顶点颜色数据
 	glGenTextures(1, &g_albedo_);
 	glBindTexture(GL_TEXTURE_2D, g_albedo_);
@@ -74,6 +95,10 @@ void DeferBuffer::Init(unsigned width, unsigned height)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_, 0);
 
 	// orm数据（ao，roughness，metallic）
+	if(g_orm_)
+	{
+		glDeleteTextures(1, &g_orm_);
+	}
 	glGenTextures(1, &g_orm_);
 	glBindTexture(GL_TEXTURE_2D, g_orm_);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
@@ -81,6 +106,10 @@ void DeferBuffer::Init(unsigned width, unsigned height)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, g_orm_, 0);
 
+	if(g_rbo_)
+	{
+		glDeleteRenderbuffers(1, &g_rbo_);
+	}
 	// 生成renderbuffer
 	glGenRenderbuffers(1, &g_rbo_);
 	glBindRenderbuffer(GL_RENDERBUFFER, g_rbo_);
@@ -91,10 +120,113 @@ void DeferBuffer::Init(unsigned width, unsigned height)
 	unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 	glDrawBuffers(4, attachments);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	defer_render_shader = make_shared<DeferredBRDFShader>();
-	defer_render_shader->InitDefaultShader();
 }
+
+void SSAOHelper::Init(int width, int height)
+{
+	// ssao初始化
+	glGenFramebuffers(1, &ssao_fbo);
+	
+	ssao_shader_ = make_shared<SSAOShader>();
+	ssao_shader_->InitDefaultShader();
+	// init kernel
+	ssao_kernal_samples.resize(ssao_kernel_count);
+	uniform_real_distribution<GLfloat> random_floats(0.0f, 1.0f);
+	default_random_engine generator;
+	auto my_lerp = [](GLfloat a, GLfloat b, GLfloat value)->float
+	{
+		return 	a + value*(b - a);
+	};
+
+	// 半球随机采样点数组
+	for(unsigned int i = 0; i < ssao_kernel_count; i++)
+	{
+		vec3 sample(random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator));
+
+		sample = normalize(sample) * random_floats(generator);
+		float scale = (float)i / float(ssao_kernel_count);
+		scale = my_lerp(0.1f, 1.0f, scale*scale);
+		ssao_kernal_samples[i] = sample*scale;
+	}
+
+	// 引入一些随机旋转
+	unsigned total_noise = ssao_noise_size*ssao_noise_size;
+	ssao_kernal_noises.resize(total_noise);
+	for(unsigned i = 0; i < total_noise; i++)
+	{
+		vec3 noise(random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator) * 2.0 - 1.0,
+			0);
+		ssao_kernal_noises[i] = noise;
+	}
+
+	ssao_shader_->Use();
+	for(unsigned i = 0; i < ssao_kernel_count; ++i)
+	{
+		stringstream ss;
+		ss << "samples[" << i << "]";
+		ssao_shader_->SetVec3(ss.str(), ssao_kernal_samples[i]);
+	}
+	
+	glGenTextures(1, &ssao_noise_texture);
+	glBindTexture(GL_TEXTURE_2D, ssao_noise_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_kernal_noises[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// ssao模糊
+	glGenFramebuffers(1, &SSAO_BlurFBO);
+	
+	// ssao blur shader
+	map<EShaderType, string> blur_ssao_shader_path = {
+		{vs, CSceneLoader::ToResourcePath("shader/ssao.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/ssao_blur.frag")},
+	};
+	
+	ssao_blur_shader_ = make_shared<Shader>(blur_ssao_shader_path);
+	ssao_blur_shader_->Use();
+	ssao_blur_shader_->SetInt("ssao_texture", 0);
+
+	GenerateSSAOTextures(width, height);
+}
+
+void SSAOHelper::GenerateSSAOTextures(int width, int height)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo);
+	// 绑定对应的ssao计算结果贴图
+	if(ssao_result_texture)
+	{
+		glDeleteTextures(1, &ssao_result_texture);
+	}
+	glGenTextures(1, &ssao_result_texture);
+	glBindTexture(GL_TEXTURE_2D, ssao_result_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_result_texture, 0);
+
+	// ssao模糊
+	glBindFramebuffer(GL_FRAMEBUFFER, SSAO_BlurFBO);
+	if(ssao_blur_texture)
+	{
+		glDeleteTextures(1, &ssao_blur_texture);
+	}
+	glGenTextures(1, &ssao_blur_texture);
+	glBindTexture(GL_TEXTURE_2D, ssao_blur_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, ssao_blur_texture, 0);
+
+	ssao_shader_->Use();
+	ssao_shader_->SetVec2("screen_size", vec2(width, height));
+}
+
 
 CRender* CRender::GetRender()
 {
@@ -108,6 +240,11 @@ GLuint CRender::GetNullTexId()
 vec2 CRender::GetNearFar()
 {
 	return g_render->mainCamera->GetNearFar();
+}
+
+shared_ptr<CQuadShape> CRender::GetScreenShape()
+{
+	return g_render->quad_shape;
 }
 
 GLuint CRender::GetSkyboxTexture() const
@@ -155,66 +292,13 @@ int CRender::Init()
 
 	InitUBO();
 	post_process.Init();
-
-	int width = Engine::GetEngine().GetWindowWidth();
-	int height = Engine::GetEngine().GetWindowHeight();
+	glm::ivec2 window_size = Engine::GetEngine().GetWindowSize();
+	int width = window_size.x;
+	int height = window_size.y;
 	
 	defer_buffer_.Init(width, height);
-
-	// ssao初始化
-	glGenFramebuffers(1, &SSAO_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, SSAO_FBO);
-	// 绑定对应的ssao计算结果贴图
-	glGenTextures(1, &ssao_result_texture);
-	glBindTexture(GL_TEXTURE_2D, ssao_result_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	ssao_helper_.Init(width, height);
 	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_result_texture, 0);
-
-	ssao_shader_ = make_shared<SSAOShader>();
-	ssao_shader_->InitDefaultShader();
-	// init kernel
-	ssao_kernal_samples.resize(ssao_kernel_count);
-	uniform_real_distribution<GLfloat> random_floats(0.0f, 1.0f);
-	default_random_engine generator;
-	auto my_lerp = [](GLfloat a, GLfloat b, GLfloat value)->float
-	{
-		return 	a + value*(b - a);
-	};
-
-	// 半球随机采样点数组
-	for(unsigned int i = 0; i < ssao_kernel_count; i++)
-	{
-		vec3 sample(random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator));
-
-		sample = normalize(sample) * random_floats(generator);
-		float scale = (float)i / float(ssao_kernel_count);
-		scale = my_lerp(0.1f, 1.0f, scale*scale);
-		ssao_kernal_samples[i] = sample*scale;
-	}
-
-	// 引入一些随机旋转
-	unsigned total_noise = ssao_noise_size*ssao_noise_size;
-	ssao_kernal_noises.resize(total_noise);
-	for(unsigned i = 0; i < total_noise; i++)
-	{
-		vec3 noise(random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator) * 2.0 - 1.0,
-			0);
-		ssao_kernal_noises[i] = noise;
-	}
-	
-	glGenTextures(1, &ssao_noise_texture);
-	glBindTexture(GL_TEXTURE_2D, ssao_noise_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_kernal_noises[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	
 	return 0;
 }
@@ -269,10 +353,10 @@ void CRender::RenderSceneObject()
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
 #if !SHADOWMAP_DEBUG
-	int width = Engine::GetEngine().GetWindowWidth();
-	int height = Engine::GetEngine().GetWindowHeight();
+	ivec2 window_size = Engine::GetEngine().GetWindowSize();
+	
 
-	glViewport(0,0, width, height);
+	glViewport(0,0, window_size.x, window_size.y);
 #if USE_DERER_RENDER
 	// 渲染到gbuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
@@ -281,14 +365,12 @@ void CRender::RenderSceneObject()
 	DeferRenderSceneToGBuffer();
 #endif
 
-#if USE_SSAO
-	// 处理SSAO效果
-	glBindFramebuffer(GL_FRAMEBUFFER, SSAO_FBO);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	SSAORender();
-	
-#endif
+	if(use_ssao)
+	{
+		// 处理SSAO效果
+		SSAORender();
+	}
+
 	
 	// 渲染到后处理framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
@@ -297,14 +379,15 @@ void CRender::RenderSceneObject()
 	
 #if USE_DERER_RENDER
 	defer_buffer_.defer_render_shader->Use();
+	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
 	glActiveTexture(GL_TEXTURE0 + 13);
-	glBindTexture(GL_TEXTURE_2D, ssao_result_texture);
+	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
 	DeferRenderSceneLighting();
 	
 	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
-	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0, window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #endif
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -316,7 +399,6 @@ void CRender::RenderSceneObject()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	//post_process.screen_quad_texture[0] = defer_buffer_.g_position_;
 	post_process.Draw();
 #endif
 }
@@ -526,29 +608,39 @@ void CRender::DeferRenderSceneLighting() const
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0], scene_render_info);
+	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo, scene_render_info);
 	quad_shape->Draw();
 }
 
 void CRender::SSAORender() const
 {
-	ssao_shader_->Use();
+	// 处理SSAO效果
+	glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.ssao_fbo);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	ssao_helper_.ssao_shader_->Use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
 	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, ssao_noise_texture);
+	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_noise_texture);
 
+	// ssao_shader_->SetVec2("screen_size");
 	// kernal samples to shader
-	for(unsigned i = 0; i < ssao_kernel_count; ++i)
-	{
-		stringstream ss;
-		ss << "samples[" << i << "]";
-		ssao_shader_->SetVec3(ss.str(), ssao_kernal_samples[i]);
-	}
 	quad_shape->Draw();
 	
+	// blur
+	glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.SSAO_BlurFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	ssao_helper_.ssao_blur_shader_->Use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_result_texture);
+
+	quad_shape->Draw();
 }
 
 void CRender::CollectLightInfo()
@@ -663,3 +755,9 @@ void CRender::RenderShadowMap()
 #endif
 }
 
+void CRender::OnWindowResize(int width, int height)
+{
+	post_process.OnWindowResize(width, height);
+	defer_buffer_.GenerateDeferRenderTextures(width, height);
+	ssao_helper_.GenerateSSAOTextures(width, height);
+}

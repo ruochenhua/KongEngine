@@ -46,7 +46,7 @@ glm::mat4 AActor::GetModelMatrix() const
 {
     mat4 model = mat4(1.0);
     model = translate(model, location);
-    model *= eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+    model *= eulerAngleXYZ(radians(rotation.x), radians(rotation.y), radians(rotation.z));
     model = glm::scale(model, scale);
 
     return model;
@@ -62,7 +62,7 @@ mat4 AActor::GenInstanceModelMatrix() const
 	ins_scale	 = glm::linearRand(instancing_info.scale_min, instancing_info.scale_max);
 
 	model = translate(model, ins_location);
-	model *= eulerAngleXYZ(ins_rotation.x, ins_rotation.y, ins_rotation.z);
+	model *= eulerAngleXYZ(radians(ins_rotation.x), radians(ins_rotation.y), radians(ins_rotation.z));
 	model = glm::scale(model, ins_scale);
 	
 	return model;

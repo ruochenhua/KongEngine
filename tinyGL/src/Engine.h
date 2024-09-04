@@ -16,11 +16,9 @@ namespace Kong
         float GetAspectRatio() const {return window_aspect_ratio;}
         
         void  SetWidthHeight(int width, int height);
-        int GetWindowWidth() const {return window_width;}
-        int GetWindowHeight() const {return window_height;}
+        glm::ivec2 GetWindowSize() const {return window_size;}
     private:
-        int window_width = 1024;
-        int window_height = 768;
+        glm::ivec2 window_size = glm::ivec2(1024, 768);
         float window_aspect_ratio = 1.f;
         GLFWwindow* render_window = nullptr;
     };

@@ -57,11 +57,6 @@ void FinalPostprocessShader::GenerateTexture(unsigned width, unsigned height)
 {
 }
 
-void GaussianBlurShader::UpdateRenderData(const CMesh& mesh, const SSceneRenderInfo& scene_render_info)
-{
-    Shader::UpdateRenderData(mesh, scene_render_info);
-}
-
 vector<GLuint> GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     bool horizontal = true, first_iteration = true;

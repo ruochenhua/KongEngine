@@ -17,7 +17,14 @@ void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
     auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
     
     glBindVertexArray(render_info.vertex_array_id);
-    shader_data->UpdateRenderData(mesh_resource->mesh_list[0], scene_render_info);
+    if(use_override_material)
+    {
+        shader_data->UpdateRenderData(override_render_info, scene_render_info);
+    }
+    else
+    {
+        shader_data->UpdateRenderData(mesh_resource->mesh_list[0].m_RenderInfo, scene_render_info);
+    }
    
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);

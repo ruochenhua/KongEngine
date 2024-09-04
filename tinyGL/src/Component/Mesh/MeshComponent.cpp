@@ -14,7 +14,7 @@ CMeshComponent::CMeshComponent(const SRenderResourceDesc& render_resource_desc)
 {
 	if(render_resource_desc.shader_type.empty())
 	{
-		shader_data = make_shared<Shader>(render_resource_desc);
+		shader_data = make_shared<Shader>(render_resource_desc.shader_paths);
 	}
 	else
 	{
@@ -34,7 +34,14 @@ void CMeshComponent::Draw(const SSceneRenderInfo& scene_render_info)
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
 		glBindVertexArray(mesh.m_RenderInfo.vertex_array_id);
-		shader_data->UpdateRenderData(mesh, scene_render_info);
+		if(use_override_material)
+		{
+			shader_data->UpdateRenderData(override_render_info, scene_render_info);
+		}
+		else
+		{
+			shader_data->UpdateRenderData(mesh.m_RenderInfo, scene_render_info);
+		}
 		// Draw the triangle !
 		// if no index, use draw array
 		auto& render_info = mesh.m_RenderInfo;
@@ -199,49 +206,48 @@ int CMeshComponent::ImportObj(const std::string& model_path)
 
 void CMeshComponent::LoadOverloadTexture(const SRenderResourceDesc& render_resource_desc)
 {
-	for(auto& mesh : mesh_resource->mesh_list)
+	// todo: vbo、vao这些应该拆出来
+	override_render_info = mesh_resource->mesh_list[0].m_RenderInfo;
+	if(render_resource_desc.bOverloadMaterial)
 	{
-		auto& render_info = mesh.m_RenderInfo;
-		const auto& texture_paths = render_resource_desc.texture_paths;
-		auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
-		if (diffuse_path_iter != texture_paths.end())
-		{
-			render_info.diffuse_tex_id = ResourceManager::GetOrLoadTexture(diffuse_path_iter->second);
-		}
+		use_override_material = true;
+		override_render_info.material = render_resource_desc.material;
+	}
+	
+	const auto& texture_paths = render_resource_desc.texture_paths;
+	auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
+	if (diffuse_path_iter != texture_paths.end())
+	{
+		override_render_info.diffuse_tex_id = ResourceManager::GetOrLoadTexture(diffuse_path_iter->second);
+	}
 
-		auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
-		if (specular_path_iter != texture_paths.end())
-		{
-			render_info.specular_tex_id = ResourceManager::GetOrLoadTexture(specular_path_iter->second);
-		}
+	auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
+	if (specular_path_iter != texture_paths.end())
+	{
+		override_render_info.specular_tex_id = ResourceManager::GetOrLoadTexture(specular_path_iter->second);
+	}
 
-		auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
-		if (normal_path_iter != texture_paths.end())
-		{
-			render_info.normal_tex_id = ResourceManager::GetOrLoadTexture(normal_path_iter->second);
-		}
+	auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
+	if (normal_path_iter != texture_paths.end())
+	{
+		override_render_info.normal_tex_id = ResourceManager::GetOrLoadTexture(normal_path_iter->second);
+	}
 
-		auto metallic_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::metallic);
-		if (metallic_path_iter != texture_paths.end())
-		{
-			render_info.metallic_tex_id = ResourceManager::GetOrLoadTexture(metallic_path_iter->second);
-		}
+	auto metallic_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::metallic);
+	if (metallic_path_iter != texture_paths.end())
+	{
+		override_render_info.metallic_tex_id = ResourceManager::GetOrLoadTexture(metallic_path_iter->second);
+	}
 
-		auto roughness_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::roughness);
-		if (roughness_path_iter != texture_paths.end())
-		{
-			render_info.roughness_tex_id = ResourceManager::GetOrLoadTexture(roughness_path_iter->second);
-		}
+	auto roughness_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::roughness);
+	if (roughness_path_iter != texture_paths.end())
+	{
+		override_render_info.roughness_tex_id = ResourceManager::GetOrLoadTexture(roughness_path_iter->second);
+	}
 
-		auto ao_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::ambient_occlusion);
-		if (ao_path_iter != texture_paths.end())
-		{
-			render_info.ao_tex_id = ResourceManager::GetOrLoadTexture(ao_path_iter->second);
-		}
-
-		if(render_resource_desc.bOverloadMaterial)
-		{
-			render_info.material = render_resource_desc.material;
-		}
+	auto ao_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::ambient_occlusion);
+	if (ao_path_iter != texture_paths.end())
+	{
+		override_render_info.ao_tex_id = ResourceManager::GetOrLoadTexture(ao_path_iter->second);
 	}
 }

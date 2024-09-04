@@ -6,10 +6,9 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
-void EmitShader::UpdateRenderData(const CMesh& mesh,
+void EmitShader::UpdateRenderData(const SRenderInfo& render_info,
 			const SSceneRenderInfo& scene_render_info)
 {
-	const SRenderInfo& render_info = mesh.GetRenderInfo();
 	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
 
 	// 材质属性
