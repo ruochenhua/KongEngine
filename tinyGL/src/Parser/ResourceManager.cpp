@@ -88,7 +88,6 @@ shared_ptr<MeshResource> ResourceManager::GetMesh(const std::string& model_path)
 		|aiProcess_GenSmoothNormals
 		|aiProcess_OptimizeGraph
 		|aiProcess_JoinIdenticalVertices
-		//|aiProcess_FlipUVs
 		);
 
 	auto mesh_resource = make_shared<MeshResource>();
@@ -116,8 +115,6 @@ void ResourceManager::ProcessAssimpNode(const aiNode* model_node,
     {
         ProcessAssimpNode(model_node->mChildren[i], scene, mesh_resource);
     }
-
-	
 }
 
 void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
@@ -190,7 +187,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 		}
 	}
 
-	new_mesh.m_RenderInfo.vertex_size = mesh->mNumVertices;
+	new_mesh.m_RenderInfo.vertex.vertex_size = mesh->mNumVertices;
 	
 	for(unsigned int i = 0; i < mesh->mNumFaces; ++i)
 	{
@@ -200,14 +197,25 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_mesh.m_Index.push_back(face.mIndices[j]);
 		}
 	}
-	new_mesh.m_RenderInfo.indices_count = mesh->mNumFaces;
+	new_mesh.m_RenderInfo.vertex.indices_count = mesh->mNumFaces;
 
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 		auto& mesh_material = new_mesh.m_RenderInfo.material;
 		mesh_material.name = material->GetName().C_Str();
+		
+		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);
+		ret = aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &mesh_material.metallic);
+				
+		aiColor4D ambient_color;
+		ret = aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient_color);
+		aiGetMaterialFloat(material, AI_MATKEY_SPECULAR_FACTOR, &mesh_material.specular_factor);
 
+		aiColor4D base_color;
+		aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
+		mesh_material.albedo = vec4(base_color.r, base_color.g, base_color.b, base_color.a);
+		
 		unsigned base_color_count = material->GetTextureCount(aiTextureType_BASE_COLOR);
 		unsigned diffuse_count = material->GetTextureCount(aiTextureType_DIFFUSE);
 		if(base_color_count > 0)
@@ -215,32 +223,30 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			aiString tex_str;
 			material->GetTexture(aiTextureType_BASE_COLOR, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.diffuse_tex_id = GetOrLoadTexture(tex_path);
+			mesh_material.diffuse_tex_id = GetOrLoadTexture(tex_path);
 		}
 		else if(diffuse_count > 0)
 		{
 			aiString tex_str;
 			material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.diffuse_tex_id = GetOrLoadTexture(tex_path);
+			mesh_material.diffuse_tex_id = GetOrLoadTexture(tex_path);
 		}
 		
-		aiColor4D base_color;
-		aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
-		mesh_material.albedo = vec4(base_color.r, base_color.g, base_color.b, base_color.a);
+
 		// 暂时还不支持coat效果，先屏蔽掉对应的mesh
 		if(mesh_material.name == "coat")
 		{
 			return;
-			//mesh_material.albedo = vec3(1,0,0);
 		}
+
 		unsigned height_count = material->GetTextureCount(aiTextureType_HEIGHT);
 		if(height_count > 0)
 		{
 			aiString tex_str;
 			material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.normal_tex_id = GetOrLoadTexture(tex_path);
+			mesh_material.normal_tex_id = GetOrLoadTexture(tex_path);
 		}
 		unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
 		if(normal_count > 0)
@@ -248,36 +254,17 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			aiString tex_str;
 			material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.normal_tex_id = GetOrLoadTexture(tex_path);
+			mesh_material.normal_tex_id = GetOrLoadTexture(tex_path);
 		}
 		
-		//aiTextureType_SHININESS
-		unsigned specular_count = material->GetTextureCount(aiTextureType_SPECULAR);
-		if(specular_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_SPECULAR, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.specular_tex_id = GetOrLoadTexture(tex_path);
-		}
-
-		unsigned shininess_count = material->GetTextureCount(aiTextureType_SHININESS);
-		if(shininess_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_SHININESS, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.specular_tex_id = GetOrLoadTexture(tex_path);
-		}
-				
-		unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
-		if(clear_coat_count > 0)
-		{
-			// aiString tex_str;
-			// material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
-			// string tex_path = directory + "/" + tex_str.C_Str();
-			// new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
-		}
+		// unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
+		// if(clear_coat_count > 0)
+		// {
+		// 	// aiString tex_str;
+		// 	// material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
+		// 	// string tex_path = directory + "/" + tex_str.C_Str();
+		// 	// new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
+		// }
 		
 		unsigned roughness_count = material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS);
 		if(roughness_count > 0)
@@ -285,16 +272,26 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			aiString tex_str;
 			material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
 			string tex_path = directory + "/" + tex_str.C_Str();
-			new_mesh.m_RenderInfo.roughness_tex_id = GetOrLoadTexture(tex_path);
+			mesh_material.roughness_tex_id = GetOrLoadTexture(tex_path);
 		}
 
-		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);
-		
-		ret = aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &mesh_material.metallic);
-		aiColor4D ambient_color;
-		ret = aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient_color);
-		aiGetMaterialFloat(material, AI_MATKEY_SPECULAR_FACTOR, &mesh_material.specular_factor);
-		
+		unsigned metallic_count = material->GetTextureCount(aiTextureType_METALNESS);
+		if(metallic_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_METALNESS, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			mesh_material.metallic_tex_id = GetOrLoadTexture(tex_path);
+		}
+
+		unsigned ambient_count = material->GetTextureCount(aiTextureType_AMBIENT);
+		if(ambient_count > 0)
+		{
+			aiString tex_str;
+			material->GetTexture(aiTextureType_AMBIENT, 0, &tex_str);
+			string tex_path = directory + "/" + tex_str.C_Str();
+			mesh_material.ao_tex_id = GetOrLoadTexture(tex_path);
+		}
 	}
 	mesh_resource->mesh_list.push_back(new_mesh);
 }

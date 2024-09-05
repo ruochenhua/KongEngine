@@ -13,7 +13,7 @@ scene:
       - type: box
         shader_type: brdf
         material:
-          albedo:
+          diffuse:
             - 0.6
             - 0.6
             - 0.3
@@ -34,10 +34,8 @@ scene:
     component:
       - type: box
         shader_type: brdf
-        texture_path:
-          diffuse: crater/crater_diffuse.png
-          specular: crater/crater_specular_map.png
         material:
+          diffuse: crater/crater_diffuse.png
           metallic: 0.8
           roughness: 0.1
           ao: 1
@@ -55,15 +53,7 @@ scene:
     component:
       - type: mesh
         shader_type: brdf
-        model_path: cyborg/cyborg.obj 
-        material:
-          albedo:
-            - 1
-            - 1
-            - 0.3
-          metallic: 0.9
-          roughness: 0.1
-          ao: 1
+        model_path: cyborg/cyborg.obj
 
   - actor: dir_light
     transform:
@@ -93,7 +83,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 1
             - 0
             - 0
@@ -116,7 +106,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 0
             - 1
             - 0

@@ -6,7 +6,7 @@
 #include "glm/vec3.hpp"
 
 #define SHADOWMAP_DEBUG 0
-#define USE_DERER_RENDER 1
+#define USE_DERER_RENDER 0
 
 namespace Kong
 {
@@ -24,7 +24,16 @@ namespace Kong
     constexpr unsigned SKYBOX_BRDF_LUT_TEX_SHADER_ID = 8;
     constexpr unsigned DIRLIGHT_SM_TEX_SHADER_ID = 9;
     constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 10;
-    
+
+    enum ETextureType
+    {
+        diffuse = 0,
+        normal,
+        roughness,
+        metallic,
+        ambient_occlusion,
+    };
+
     enum EShaderType
     {
         vs = GL_VERTEX_SHADER,		// vertex shader
@@ -34,16 +43,24 @@ namespace Kong
 		
     struct SMaterial
     {
-        glm::vec4 albedo = glm::vec4(0.f);
+        SMaterial() = default;
+        glm::vec4 albedo = glm::vec4(0.2f);
         float specular_factor = 1.0f;
         float metallic = 0.5f;
         float roughness = 0.5;
         float ao = 0.3f;
         string name;
+
+        // texture id
+        std::map<ETextureType, GLuint> textures;
+        GLuint diffuse_tex_id = 0;
+        GLuint normal_tex_id = 0;
+        GLuint roughness_tex_id = 0;
+        GLuint metallic_tex_id = 0;
+        GLuint ao_tex_id = 0;
     };
 
-    // 渲染信息
-    struct SRenderInfo
+    struct SVertex
     {
         // vertex buffer id(vbo)
         GLuint vertex_buffer = 0;
@@ -57,21 +74,17 @@ namespace Kong
         GLuint bitangent_buffer = 0;
         GLuint instance_buffer = 0;
 		
-        // shader program
         unsigned vertex_size = 0;
         unsigned stride_count = 1;
         unsigned indices_count = 0;
         unsigned instance_count = 0;
+    };
 
-        // texture id
-        GLuint diffuse_tex_id = 0;
-        GLuint specular_tex_id = 0;
-        GLuint normal_tex_id = 0;
-        GLuint tangent_tex_id = 0;
-        GLuint roughness_tex_id = 0;
-        GLuint metallic_tex_id = 0;
-        GLuint ao_tex_id = 0;
-        
+    // 渲染信息
+    struct SRenderInfo
+    {
+        // 顶点
+        SVertex vertex;
         // 材质
         SMaterial material;
     };
@@ -85,8 +98,6 @@ namespace Kong
         std::vector<unsigned int> GetIndices() const;
         std::vector<float> GetTangents() const;
         std::vector<float> GetBitangents() const;
-
-        SRenderInfo GetRenderInfo() const { return m_RenderInfo; }
 
         // virtual void GenerateRenderInfo() = 0;
 		
@@ -102,21 +113,29 @@ namespace Kong
         string name;
     };
 
+    struct MeshBuffer
+    {
+        // vertex buffer id(vbo)
+        GLuint vertex_buffer = 0;
+        GLuint index_buffer = 0;
+        GLuint texture_buffer = 0;
+        // vao
+        GLuint vertex_array_id = 0;
+        
+        GLuint normal_buffer = 0;
+        GLuint tangent_buffer = 0;
+        GLuint bitangent_buffer = 0;
+        GLuint instance_buffer = 0;
+
+        unsigned vertex_size = 0;
+        unsigned stride_count = 1;
+        unsigned indices_count = 0;
+        unsigned instance_count = 0;
+    };
+
     // 渲染资源描述
     struct SRenderResourceDesc
     {
-        enum ETextureType
-        {
-            diffuse = 0,
-            specular,
-            normal,
-            tangent,
-            metallic,
-            roughness,
-            ambient_occlusion,
-            glow,
-        };
-
         // shader类型
         string shader_type;
         // 没有shader类型那就直接读取shader文件路径，尽量不要用这个

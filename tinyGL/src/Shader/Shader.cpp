@@ -141,16 +141,14 @@ void Shader::Use() const
     glUseProgram(shader_id);
 }
 
-void Shader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
+void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
 {
-    glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-
 	// 材质属性
-	SetVec4("albedo", render_info.material.albedo);
-	SetFloat("specular_factor", render_info.material.specular_factor);
-	SetFloat("metallic", render_info.material.metallic);
-	SetFloat("roughness", render_info.material.roughness);
-	SetFloat("ao", render_info.material.ao);
+	SetVec4("albedo", render_material.albedo);
+	SetFloat("specular_factor", render_material.specular_factor);
+	SetFloat("metallic", render_material.metallic);
+	SetFloat("roughness", render_material.roughness);
+	SetFloat("ao", render_material.ao);
 
 	/*
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
@@ -158,15 +156,11 @@ void Shader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRender
 	 */
 	GLuint null_tex_id = CRender::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
-	GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
 	glActiveTexture(GL_TEXTURE1);
-	GLuint specular_map_id = render_info.specular_tex_id != 0 ? render_info.specular_tex_id : null_tex_id;
-	glBindTexture(GL_TEXTURE_2D, specular_map_id);
-
-	glActiveTexture(GL_TEXTURE2);
-	GLuint normal_map_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+	GLuint normal_map_id = render_material.normal_tex_id != 0 ? render_material.normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_map_id);
 }
 
@@ -189,7 +183,7 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 #if USE_DERER_RENDER
 		auto shader_data = make_shared<DeferInfoShader>();
 #else
-		auto shader_data = make_shared<BRDFShader>();
+		auto shader_data = make_shared<PBRShader>();
 #endif
 		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);

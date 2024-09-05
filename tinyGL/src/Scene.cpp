@@ -3,7 +3,6 @@
 #include "Component/Mesh/MeshComponent.h"
 
 #include "Actor.h"
-#include "Parser/JsonParser.h"
 #include "Parser/YamlParser.h"
 
 using namespace Kong;
@@ -18,13 +17,6 @@ string CSceneLoader::ToResourcePath(const string& in_path)
 bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<AActor>>& scene_actors)
 {
     std::string scene_file_content = Engine::ReadFile(ToResourcePath(file_path));
-    auto json_file = file_path.find(".json");
-    if(json_file != std::string::npos)
-    {
-        // 格式为json，读取json文件
-        CJsonParser::ParseJsonFile(scene_file_content, scene_actors);
-    }
-    
     auto yaml_file = file_path.find(".yaml");
     if(yaml_file != std::string::npos)
     {

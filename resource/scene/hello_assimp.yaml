@@ -4,10 +4,6 @@ scene:
       - type: mesh
         shader_type: brdf
         model_path: nanosuit/nanosuit.obj
-        material:
-          metallic: 0.9
-          roughness: 0.1
-          ao: 1
     transform:
       location:
         - 0
@@ -41,7 +37,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 1
             - 0
             - 0
@@ -64,7 +60,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 0
             - 1
             - 0
@@ -87,7 +83,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 0
             - 0
             - 1
@@ -98,7 +94,7 @@ scene:
       - type: box
         shader_type: brdf
         material:
-          albedo:
+          diffuse:
             - 0.6
             - 0.3
             - 0.6

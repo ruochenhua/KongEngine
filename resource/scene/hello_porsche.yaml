@@ -29,7 +29,7 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 1
             - 1
             - 1

@@ -6,7 +6,7 @@ namespace Kong
     class SphereShape : public CMeshComponent
     {
     public:
-        SphereShape(const SRenderResourceDesc& render_resource_desc);
+        SphereShape();
 
     private:
         static std::string sphere_model_path;

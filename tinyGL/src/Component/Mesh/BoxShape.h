@@ -6,7 +6,7 @@ namespace Kong
 	class CBoxShape : public CMeshComponent
 	{
 	public:
-		CBoxShape(const SRenderResourceDesc& render_resource_desc);
+		CBoxShape();
 		virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
 		void Draw();	
 	//	void InitRenderInfo() override;

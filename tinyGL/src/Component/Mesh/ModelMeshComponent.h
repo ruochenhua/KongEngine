@@ -6,7 +6,7 @@ namespace Kong
 	class CModelMeshComponent : public CMeshComponent
 	{
 	public:
-		CModelMeshComponent(const SRenderResourceDesc& render_resource_desc);
+		CModelMeshComponent(const string& model_path);
 		virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
 	};
 }

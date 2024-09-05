@@ -21,7 +21,7 @@ scene:
       - type: box
         shader_type: brdf
         material:
-          albedo:
+          diffuse:
             - 0.6
             - 0.6
             - 0
@@ -43,7 +43,7 @@ scene:
       - type: box
         shader_type: brdf
         material:
-          albedo:
+          diffuse:
             - 0.6
             - 0.3
             - 0.6
@@ -66,3 +66,24 @@ scene:
         - 75
         - -70
 
+  - actor: floor
+    transform:
+      location:
+        - 0
+        - -2
+        - 0
+      scale:
+        - 200
+        - 1
+        - 200
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.6
+            - 0.3
+            - 0.6
+          metallic: 0.9
+          roughness: 0.1
+          ao: 1

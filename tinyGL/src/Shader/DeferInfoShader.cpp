@@ -24,47 +24,37 @@ void DeferInfoShader::InitDefaultShader()
     SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
     SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
     SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
-    // shadow map应该不需要，不涉及光照部分
-    // SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
-    // for(unsigned int i = 0; i < 4; ++i)
-    // {
-    //     stringstream ss;
-    //     ss << "shadow_map_pointlight[" << i << "]";
-    //     SetInt(ss.str(), POINTLIGHT_SM_TEX_SHADER_ID + i);
-    // }
 }
 
-void DeferInfoShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
+void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
 {
-	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-
 	// 材质属性
-	SetVec4("albedo", render_info.material.albedo);
-	SetFloat("specular_factor", render_info.material.specular_factor);
-	SetFloat("metallic", render_info.material.metallic);
-	SetFloat("roughness", render_info.material.roughness);
-	SetFloat("ao", render_info.material.ao);
-
+	SetVec4("albedo", render_material.albedo);
+	SetFloat("specular_factor", render_material.specular_factor);
+	SetFloat("metallic", render_material.metallic);
+	SetFloat("roughness", render_material.roughness);
+	SetFloat("ao", render_material.ao);
+	
 	GLuint null_tex_id = CRender::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID);
-	GLuint diffuse_tex_id = render_info.diffuse_tex_id != 0 ? render_info.diffuse_tex_id : null_tex_id;
+	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
 	// normal map加一个法线贴图的数据
 	glActiveTexture(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID);
-	GLuint normal_tex_id = render_info.normal_tex_id != 0 ? render_info.normal_tex_id : null_tex_id;
+	GLuint normal_tex_id = render_material.normal_tex_id != 0 ? render_material.normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID);
-	GLuint roughness_tex_id = render_info.roughness_tex_id != 0 ? render_info.roughness_tex_id : null_tex_id;
+	GLuint roughness_tex_id = render_material.roughness_tex_id != 0 ? render_material.roughness_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, roughness_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID);
-	GLuint metallic_tex_id = render_info.metallic_tex_id != 0 ? render_info.metallic_tex_id : null_tex_id;
+	GLuint metallic_tex_id = render_material.metallic_tex_id != 0 ? render_material.metallic_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, metallic_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + AO_TEX_SHADER_ID);
-	GLuint ao_tex_id = render_info.ao_tex_id != 0 ? render_info.ao_tex_id : null_tex_id;
+	GLuint ao_tex_id = render_material.ao_tex_id != 0 ? render_material.ao_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, ao_tex_id);
 }
 
@@ -101,10 +91,8 @@ void DeferredBRDFShader::InitDefaultShader()
 	SetInt("ssao_result_texture", 13);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
+void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
 {
-	glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
-
 	GLuint null_tex_id = CRender::GetNullTexId();
 	SetVec3("cam_pos", scene_render_info.camera_pos);
 	// todo: 天空盒贴图需要每次都更新吗？
@@ -173,7 +161,7 @@ void SSAOShader::InitDefaultShader()
 }
 
 
-void SSAOShader::UpdateRenderData(const SRenderInfo& render_info, const SSceneRenderInfo& scene_render_info)
+void SSAOShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
 {
 	// glActiveTexture(GL_TEXTURE0 + 4);
 	// GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();

@@ -271,7 +271,7 @@ int CRender::Init()
 {
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
-	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
+	quad_shape = make_shared<CQuadShape>();
 	quad_shape->InitRenderInfo();
 	m_SkyBox.Init();
 #if SHADOWMAP_DEBUG
@@ -363,14 +363,12 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	DeferRenderSceneToGBuffer();
-#endif
-
 	if(use_ssao)
 	{
 		// 处理SSAO效果
 		SSAORender();
 	}
-
+#endif
 	
 	// 渲染到后处理framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
@@ -608,7 +606,8 @@ void CRender::DeferRenderSceneLighting() const
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo, scene_render_info);
+	
+	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
 	quad_shape->Draw();
 }
 

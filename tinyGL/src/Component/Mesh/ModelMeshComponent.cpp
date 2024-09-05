@@ -4,12 +4,9 @@
 using namespace glm;
 using namespace Kong;
 
-CModelMeshComponent::CModelMeshComponent(const SRenderResourceDesc& render_resource_desc)
-	:CMeshComponent(render_resource_desc)
+CModelMeshComponent::CModelMeshComponent(const string& model_path)
 {
-	ImportObj(render_resource_desc.model_path);
-	// texture overload
-	LoadOverloadTexture(render_resource_desc);
+	ImportObj(model_path);
 }
 
 void CModelMeshComponent::Draw(const SSceneRenderInfo& scene_render_info)

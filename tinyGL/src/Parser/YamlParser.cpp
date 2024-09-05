@@ -77,6 +77,100 @@ namespace YamlParser
         }
     }
 
+    void ParseMeshMaterial(YAML::Node mesh_node, shared_ptr<CMeshComponent> mesh_component)
+    {
+        // 创建shader
+        if(mesh_node["shader_type"])
+        {
+            mesh_component->shader_data = ShaderManager::GetShader(mesh_node["shader_type"].as<string>());
+        }
+        else if(mesh_node["shader_path"])
+        {
+            map<EShaderType, string> shader_cache;
+            auto shader_node = mesh_node["shader_path"];
+            if(shader_node["vs"])
+            {
+                shader_cache.emplace(EShaderType::vs,
+                    CSceneLoader::ToResourcePath(shader_node["vs"].as<string>()));
+            }
+
+            if(shader_node["fs"])
+            {
+                shader_cache.emplace(EShaderType::fs,
+                    CSceneLoader::ToResourcePath(shader_node["fs"].as<string>()));
+            }
+
+            mesh_component->shader_data = make_shared<Shader>(shader_cache);
+        }
+
+        if(mesh_node["material"])
+        {
+            auto material_node = mesh_node["material"];
+            // 读取材质信息
+            SMaterial tmp_material;
+            if(material_node["diffuse"])
+            {
+                if(material_node["diffuse"].IsSequence())
+                {
+                    tmp_material.albedo = glm::vec4(ParseVec3(material_node["diffuse"].as<vector<float>>()), 1.0);    
+                }
+                else
+                {
+                    tmp_material.diffuse_tex_id =
+                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>()));
+                }
+            }
+
+            if(material_node["metallic"])
+            {
+                try
+                {
+                    tmp_material.metallic = material_node["metallic"].as<float>();
+                }
+                catch (const YAML::BadConversion& e)
+                {
+                    tmp_material.metallic_tex_id =
+                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>()));
+                }
+            }
+
+            if(material_node["roughness"])
+            {
+                try
+                {
+                    tmp_material.roughness = material_node["roughness"].as<float>();    
+                }
+                catch (const YAML::BadConversion& e)
+                {
+                    tmp_material.roughness_tex_id =
+                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>()));
+                }    
+            }
+
+            if(material_node["ao"])
+            {
+                try
+                {
+                    tmp_material.ao = material_node["ao"].as<float>();    
+                }
+                catch (const YAML::BadConversion& e)
+                {
+                    tmp_material.ao_tex_id =
+                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["ao"].as<string>()));
+                }    
+            }
+            
+            if(material_node["normal"])
+            {
+                tmp_material.normal_tex_id =
+                    ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["normal"].as<string>()));
+            }
+
+            mesh_component->override_render_info.material = tmp_material;
+            mesh_component->use_override_material = true;
+        }
+    }
+    
     SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
     {
         SRenderResourceDesc render_resource_desc;
@@ -110,50 +204,32 @@ namespace YamlParser
             auto texture_node = in_node["texture_path"];
             if(texture_node["diffuse"])
             {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::diffuse,
+                render_resource_desc.texture_paths.emplace(ETextureType::diffuse,
                     CSceneLoader::ToResourcePath(texture_node["diffuse"].as<string>()));        
-            }
-
-            if(texture_node["specular"])
-            {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::specular,
-                    CSceneLoader::ToResourcePath(texture_node["specular"].as<string>()));   
             }
         
             if(texture_node["normal"])
             {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::normal,
+                render_resource_desc.texture_paths.emplace(ETextureType::normal,
                     CSceneLoader::ToResourcePath(texture_node["normal"].as<string>()));   
-            }
-        
-            if(texture_node["tangent"])
-            {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::tangent,
-                    CSceneLoader::ToResourcePath(texture_node["tangent"].as<string>()));   
             }
 
             if(texture_node["metallic"])
             {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::metallic,
+                render_resource_desc.texture_paths.emplace(ETextureType::metallic,
                     CSceneLoader::ToResourcePath(texture_node["metallic"].as<string>()));   
             }
 
             if(texture_node["roughness"])
             {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::roughness,
+                render_resource_desc.texture_paths.emplace(ETextureType::roughness,
                     CSceneLoader::ToResourcePath(texture_node["roughness"].as<string>()));   
             }
 
             if(texture_node["ao"])
             {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::ambient_occlusion,
+                render_resource_desc.texture_paths.emplace(ETextureType::ambient_occlusion,
                     CSceneLoader::ToResourcePath(texture_node["ao"].as<string>()));   
-            }
-
-            if(texture_node["glow"])
-            {
-                render_resource_desc.texture_paths.emplace(SRenderResourceDesc::ETextureType::glow,
-                    CSceneLoader::ToResourcePath(texture_node["glow"].as<string>()));   
             }
         }
 
@@ -163,7 +239,15 @@ namespace YamlParser
             auto material_node = in_node["material"];
             if(material_node["albedo"])
             {
-                render_resource_desc.material.albedo = glm::vec4(ParseVec3(material_node["albedo"].as<vector<float>>()), 1.0);    
+                if(material_node["albedo"].IsSequence())
+                {
+                    render_resource_desc.material.albedo = glm::vec4(ParseVec3(material_node["albedo"].as<vector<float>>()), 1.0);    
+                }
+                else
+                {
+                    render_resource_desc.texture_paths.emplace(ETextureType::diffuse,
+                        CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>()));     
+                }
             }
 
             if(material_node["metallic"])
@@ -193,23 +277,22 @@ namespace YamlParser
             string component_type = component["type"].as<string>();
             if(component_type == "box")
             {
-                SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
-                auto mesh_comp = make_shared<CBoxShape>(render_resource_desc);
-
+                auto mesh_comp = make_shared<CBoxShape>();
+                ParseMeshMaterial(component, mesh_comp);
                 new_actor->AddComponent(mesh_comp);
             }
             else if(component_type == "sphere")
             {
-                SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
-                auto mesh_comp = make_shared<SphereShape>(render_resource_desc);
-
+                auto mesh_comp = make_shared<SphereShape>();
+                ParseMeshMaterial(component, mesh_comp);
                 new_actor->AddComponent(mesh_comp);
             }
             else if(component_type == "mesh")
             {
-                SRenderResourceDesc render_resource_desc = ParseRenderObjInfo(component);
-                auto mesh_comp = make_shared<CModelMeshComponent>(render_resource_desc);
-
+                string model_path = component["model_path"].as<string>();
+                auto mesh_comp = make_shared<CModelMeshComponent>(CSceneLoader::ToResourcePath(model_path));
+                ParseMeshMaterial(component, mesh_comp);
+                
                 new_actor->AddComponent(mesh_comp);   
             }
             else if(component_type == "directional_light")

@@ -5,25 +5,19 @@
 using namespace Kong;
 using namespace std;
 
-CQuadShape::CQuadShape(const SRenderResourceDesc& render_resource_desc)
-    : CMeshComponent(render_resource_desc)
-{
-    InitQuadData(render_resource_desc);
-}
-
 void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 {
     shader_data->Use();
-    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
     
     glBindVertexArray(render_info.vertex_array_id);
     if(use_override_material)
     {
-        shader_data->UpdateRenderData(override_render_info, scene_render_info);
+        shader_data->UpdateRenderData(override_render_info.material, scene_render_info);
     }
     else
     {
-        shader_data->UpdateRenderData(mesh_resource->mesh_list[0].m_RenderInfo, scene_render_info);
+        shader_data->UpdateRenderData(mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
     }
    
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -32,7 +26,7 @@ void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 
 void CQuadShape::Draw()
 {
-    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
     
     glBindVertexArray(render_info.vertex_array_id);   
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -50,7 +44,10 @@ void CQuadShape::InitRenderInfo()
          1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
     };
     
-    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo;
+    mesh_resource = make_shared<MeshResource>();
+    mesh_resource->mesh_list.push_back(CMesh());
+    
+    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
     // 初始化屏幕相关的 VAO
     glGenVertexArrays(1, &render_info.vertex_array_id);
     glGenBuffers(1, &render_info.vertex_buffer);
@@ -65,39 +62,7 @@ void CQuadShape::InitRenderInfo()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 }
 
-void CQuadShape::InitQuadData(const SRenderResourceDesc& render_resource_desc)
+void CQuadShape::BindVAO()
 {
-    CMesh mesh;
-    mesh_resource = make_shared<MeshResource>();
-    auto& render_info = mesh.m_RenderInfo;
-    // // load texture map
-    const auto& texture_paths = render_resource_desc.texture_paths;
-    auto diffuse_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::diffuse);
-    if (diffuse_path_iter != texture_paths.end())
-    {
-        render_info.diffuse_tex_id = ResourceManager::GetOrLoadTexture(diffuse_path_iter->second);
-    }
-    
-    auto specular_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::specular);
-    if (specular_path_iter != texture_paths.end())
-    {
-        render_info.specular_tex_id = ResourceManager::GetOrLoadTexture(specular_path_iter->second);
-    }
-
-    auto normal_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::normal);
-    if (normal_path_iter != texture_paths.end())
-    {
-        render_info.normal_tex_id = ResourceManager::GetOrLoadTexture(normal_path_iter->second);
-    }
-
-    auto tangent_path_iter = texture_paths.find(SRenderResourceDesc::ETextureType::tangent);
-    if (tangent_path_iter != texture_paths.end())
-    {
-        render_info.tangent_tex_id = ResourceManager::GetOrLoadTexture(tangent_path_iter->second);
-    }
-
-    render_info.material = render_resource_desc.material;
-
-    mesh_resource->mesh_list.push_back(mesh);
-
+    glBindVertexArray(mesh_resource->mesh_list[0].m_RenderInfo.vertex.vertex_array_id);
 }

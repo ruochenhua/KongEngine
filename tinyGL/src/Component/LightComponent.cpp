@@ -86,21 +86,21 @@ void CDirectionalLightComponent::RenderShadowMap()
                 
         for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
-            const SRenderInfo& render_info = mesh.GetRenderInfo();
-            glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+            const SVertex& render_vertex = mesh.m_RenderInfo.vertex;
+            glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
 		
             mat4 model_mat = actor->GetModelMatrix();
             shadowmap_shader->SetMat4("model", model_mat);
             //shadowmap_shader->UpdateShadowMapRender(GetLightDir(), model_mat);
             // Draw the triangle !
             // if no index, use draw array
-            if(render_info.index_buffer == GL_NONE)
+            if(render_vertex.index_buffer == GL_NONE)
             {
-                glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+                glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
             }
             else
             {		
-                glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+                glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
             }
         }
         glBindVertexArray(GL_NONE);	// 解绑VAO
@@ -176,8 +176,8 @@ void CPointLightComponent::RenderShadowMap()
         
         for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
-            const SRenderInfo& render_info = mesh.GetRenderInfo();
-            glBindVertexArray(render_info.vertex_array_id);	// 绑定VAO
+            const SVertex& render_vertex = mesh.m_RenderInfo.vertex;
+            glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
@@ -185,13 +185,13 @@ void CPointLightComponent::RenderShadowMap()
                 vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
-            if(render_info.index_buffer == GL_NONE)
+            if(render_vertex.index_buffer == GL_NONE)
             {
-                glDrawArrays(GL_TRIANGLES, 0, render_info.vertex_size / render_info.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+                glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
             }
             else
             {		
-                glDrawElements(GL_TRIANGLES, render_info.indices_count, GL_UNSIGNED_INT, 0);
+                glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
             }
         }
         glBindVertexArray(GL_NONE);	// 解绑VAO

@@ -1,7 +1,7 @@
 scene:
   - actor: model1
     type: spawner
-    count: 100
+    count: 1000
     component:
       - type: mesh
         shader_type: brdf
@@ -29,7 +29,21 @@ scene:
       - type: box
         shader_type: emit
         material:
-          albedo:
+          diffuse:
             - 10
             - 10
             - 10
+  - actor: directional_light
+    component:
+      - type: directional_light
+        light_color:
+          - 60
+          - 60
+          - 60
+      - type: sphere
+        shader_type: emit
+    transform:
+      rotation:
+        - -130
+        - 75
+        - -70

@@ -32,7 +32,7 @@ void AActor::Update(double delta)
     auto mesh_comp = GetComponent<CMeshComponent>();
     if(light_comp && mesh_comp)
     {
-        mesh_comp->mesh_resource->mesh_list[0].m_RenderInfo.material.albedo = glm::vec4(light_comp->light_color, 1.0);
+        mesh_comp->override_render_info.material.albedo = glm::vec4(light_comp->light_color, 1.0);
 
     	auto dir_light_comp = dynamic_cast<CDirectionalLightComponent*>(light_comp.get());
     	if(dir_light_comp)
@@ -90,14 +90,14 @@ void AActor::BindInstancingToMesh(weak_ptr<CMeshComponent> mesh_comp)
 	auto mesh_ptr = mesh_comp.lock();
 
 	CMesh& mesh = mesh_ptr->mesh_resource->mesh_list[0];
-	auto& render_info = mesh.m_RenderInfo;
-	glGenBuffers(1, &render_info.instance_buffer);
+	auto& render_vertex = mesh.m_RenderInfo.vertex;
+	glGenBuffers(1, &render_vertex.instance_buffer);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, render_info.instance_buffer);
-	render_info.instance_count = instancing_info.count+1;
-	glBufferData(GL_ARRAY_BUFFER, render_info.instance_count * sizeof(glm::mat4), &instancing_model_mat[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, render_vertex.instance_buffer);
+	render_vertex.instance_count = instancing_info.count+1;
+	glBufferData(GL_ARRAY_BUFFER, render_vertex.instance_count * sizeof(glm::mat4), &instancing_model_mat[0], GL_STATIC_DRAW);
 	
-	glBindVertexArray(render_info.vertex_array_id);
+	glBindVertexArray(render_vertex.vertex_array_id);
 	GLsizei vec4_size = sizeof(glm::vec4);
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)0);

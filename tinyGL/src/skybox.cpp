@@ -12,11 +12,11 @@ unsigned CUBE_MAP_RES = 1024;
 #define USE_HDR_SKYBOX 1 
 void CSkyBox::Init()
 {
-	box_mesh = make_shared<CBoxShape>(SRenderResourceDesc());
+	box_mesh = make_shared<CBoxShape>();
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
 	box_mesh->BeginPlay();
 	
-	quad_shape = make_shared<CQuadShape>(SRenderResourceDesc());
+	quad_shape = make_shared<CQuadShape>();
 	quad_shape->BeginPlay();
 	
 	skybox_shader = make_shared<SkyboxShader>();

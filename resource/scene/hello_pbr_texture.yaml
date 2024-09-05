@@ -13,7 +13,7 @@ scene:
     component:
       - type: sphere
         shader_type: brdf
-        texture_path:
+        material:
           diffuse: textures/pbr/rusted_iron/albedo.png
           metallic: textures/pbr/rusted_iron/metallic.png
           normal: textures/pbr/rusted_iron/normal.png
@@ -34,7 +34,7 @@ scene:
     component:
       - type: box
         shader_type: brdf
-        texture_path:
+        material:
           diffuse: textures/pbr/gold/albedo.png
           metallic: textures/pbr/gold/metallic.png
           normal: textures/pbr/gold/normal.png
