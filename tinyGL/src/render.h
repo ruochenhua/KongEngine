@@ -123,6 +123,7 @@ namespace Kong
 		PostProcess post_process;
 		int render_sky_env_status = 0;
 		bool use_ssao = true;
+		
 	private:
 		int InitCamera();
 		void InitUBO();

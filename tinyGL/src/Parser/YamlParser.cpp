@@ -298,23 +298,64 @@ namespace YamlParser
             else if(component_type == "directional_light")
             {
                 auto dirlight_comp = make_shared<CDirectionalLightComponent>();
-                dirlight_comp->light_color = ParseVec3(component["light_color"].as<vector<float>>());
-                // ParseTransform(actor, new_light);    
-        
-                //lights.push_back(new_light);
+                if(component["light_color"])
+                {
+                    dirlight_comp->light_color = ParseVec3(component["light_color"].as<vector<float>>());
+                }
+                else
+                {
+                    // 不填光的颜色就随机给一个
+                    dirlight_comp->light_color = glm::abs(glm::ballRand(1.f));    
+                }
+
+                if(component["light_intensity"])
+                {
+                    // 填了光的强度的话，需要乘上去
+                    dirlight_comp->light_color *= component["light_intensity"].as<float>();
+                }
+
+                // 平行光默认打开阴影贴图
+                if(component["make_shadow"])
+                {
+                    dirlight_comp->TurnOnShadowMap(component["make_shadow"].as<bool>());
+                }
+                else
+                {
+                    dirlight_comp->TurnOnShadowMap(true);
+                }
                 new_actor->AddComponent(dirlight_comp);
             }
             else if(component_type == "point_light")
             {
                 auto pointlight_comp = make_shared<CPointLightComponent>();
-                pointlight_comp->light_color = ParseVec3(component["light_color"].as<vector<float>>());
-                //ParseTransform(actor, new_light);
-    
+                if(component["light_color"])
+                {
+                    pointlight_comp->light_color = ParseVec3(component["light_color"].as<vector<float>>());
+                }
+                else
+                {
+                    // 不填光的颜色就随机给一个
+                    pointlight_comp->light_color = glm::abs(glm::ballRand(1.f));    
+                }
+
+                if(component["light_intensity"])
+                {
+                    // 填了光的强度的话，需要乘上去
+                    pointlight_comp->light_color *= component["light_intensity"].as<float>();
+                }
+
+                // 点光源默认不开启阴影贴图
+                if(component["make_shadow"])
+                {
+                    pointlight_comp->TurnOnShadowMap(component["make_shadow"].as<bool>());
+                }
+                
                 new_actor->AddComponent(pointlight_comp);
             }
         }
     }
 }
+
 using namespace YamlParser;
 void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<std::shared_ptr<AActor>>& scene_actors)
 {

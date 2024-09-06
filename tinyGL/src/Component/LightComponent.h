@@ -26,7 +26,9 @@ namespace Kong
         
         virtual void RenderShadowMap() = 0;
         GLuint GetShadowMapTexture() const;
+        bool b_make_shadow = false;
 
+        virtual void TurnOnShadowMap(bool b_turn_on) = 0;
     protected:
         shared_ptr<ShadowMapShader> shadowmap_shader;
         GLuint shadowmap_texture = GL_NONE;
@@ -45,6 +47,8 @@ namespace Kong
         glm::vec3 GetLightDir() const override;
         void RenderShadowMap() override;
         void SetLightDir(const glm::vec3& rotation);
+
+        void TurnOnShadowMap(bool b_turn_on) override;
         glm::mat4 light_space_mat;
     private:
         glm::vec3 light_dir;
@@ -60,6 +64,8 @@ namespace Kong
         void RenderShadowMap() override;
         glm::vec3 GetLightLocation() const;
         void SetLightLocation(const glm::vec3& in_light_location);
+        
+        void TurnOnShadowMap(bool b_turn_on) override;
     private:
         glm::vec3 light_location;
     };

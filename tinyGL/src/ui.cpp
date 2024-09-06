@@ -186,7 +186,7 @@ ImVec4 CUIManager::GetFrameRateColor(int framerate)
 	if(framerate > 120)
 	{
 		// very very smooth
-		return ImVec4(0.f, 0.f, 1.0f, 1.0f);
+		return ImVec4(1.f, 1.f, 1.0f, 1.0f);
 	}
 
 	if(framerate > 60)

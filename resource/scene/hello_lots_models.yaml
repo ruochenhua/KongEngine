@@ -5,45 +5,27 @@ scene:
     component:
       - type: mesh
         shader_type: brdf
-        model_path: nanosuit/nanosuit.obj
-    transform:
-      location:
-        min: [-30, 0, -30]
-        max: [30, 0, 30]
-  - actor: point_light1
-    type: spawner
-    count: 10
+        model_path: cyborg/cyborg.obj
     transform:
       location:
         min: [-10, 0, -10]
-        max: [10, 20, 10]
+        max: [10, 0, 10]
+  - actor: point_light1
+    type: spawner
+    count: 200
+    transform:
+      location:
+        min: [-10, 3, -10]
+        max: [10, 5, 10]
       scale:
         min: [0.1, 0.1, 0.1]
         max: [0.1, 0.1, 0.1]
     component:
       - type: point_light
-        light_color:
-          - 30
-          - 30
-          - 30
       - type: box
         shader_type: emit
         material:
           diffuse:
-            - 10
-            - 10
-            - 10
-  - actor: directional_light
-    component:
-      - type: directional_light
-        light_color:
-          - 60
-          - 60
-          - 60
-      - type: sphere
-        shader_type: emit
-    transform:
-      rotation:
-        - -130
-        - 75
-        - -70
+            - 1
+            - 1
+            - 1

@@ -315,7 +315,7 @@ int CRender::InitCamera()
 void CRender::InitUBO()
 {
 	// 初始化UBO数据
-	matrix_ubo.AppendData(glm::mat4(), "model");
+//	matrix_ubo.AppendData(glm::mat4(), "model");
 	matrix_ubo.AppendData(glm::mat4(), "view");
 	matrix_ubo.AppendData(glm::mat4(), "projection");
 	matrix_ubo.AppendData(glm::vec4(), "cam_pos");
@@ -441,6 +441,8 @@ void CRender::RenderScene() const
 	}
 			
 	int point_light_count = 0;
+	int point_light_shadow_count = 0;
+	light_info.point_light_shadow_index = ivec4(-1);
 	for(auto light : scene_render_info.scene_pointlights)
 	{
 		if(point_light_count >= POINT_LIGHT_MAX)
@@ -452,11 +454,18 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
+		auto point_light_ptr = light.lock();
 		PointLight point_light;
-		point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
-		point_light.light_color = vec4(light.lock()->light_color, 1.0);
+		point_light.light_pos = vec4(point_light_ptr->GetLightLocation(), 1.0);
+		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
 
-		light_info.point_lights[point_light_count] = point_light; 				
+		light_info.point_lights[point_light_count] = point_light;
+		if(point_light_ptr->b_make_shadow && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
+		{
+			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
+			++point_light_shadow_count;
+		}
+		
 		++point_light_count;
 	}
 			
@@ -488,13 +497,14 @@ void CRender::RenderScene() const
 			continue;
 		}
 		
-		matrix_ubo.Bind();
-		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
-		matrix_ubo.EndBind();
+		// matrix_ubo.Bind();
+		// matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
+		// matrix_ubo.EndBind();
 
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		mesh_shader->Use();
 		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_component->Draw(scene_render_info);
 	}
 }
@@ -526,13 +536,14 @@ void CRender::DeferRenderSceneToGBuffer() const
 			continue;
 		}
 		
-		matrix_ubo.Bind();
-		matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
-		matrix_ubo.EndBind();
+		// matrix_ubo.Bind();
+		// matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
+		// matrix_ubo.EndBind();
 
 		mesh_shader->Use();
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_component->Draw(scene_render_info);
 	}
 }
@@ -559,9 +570,11 @@ void CRender::DeferRenderSceneLighting() const
 	}
 			
 	int point_light_count = 0;
+	int point_light_shadow_count = 0;
+	light_info.point_light_shadow_index = ivec4(-1);
 	for(auto light : scene_render_info.scene_pointlights)
 	{
-		if(point_light_count > 3)
+		if(point_light_count >= POINT_LIGHT_MAX)
 		{
 			break;
 		}
@@ -570,11 +583,18 @@ void CRender::DeferRenderSceneLighting() const
 		{
 			continue;
 		}
-		PointLight point_light;
-		point_light.light_pos = vec4(light.lock()->GetLightLocation(), 1.0);
-		point_light.light_color = vec4(light.lock()->light_color, 1.0);
 
-		light_info.point_lights[point_light_count] = point_light; 				
+		auto point_light_ptr = light.lock();
+		PointLight point_light;
+		point_light.light_pos = vec4(point_light_ptr->GetLightLocation(), 1.0);
+		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
+
+		light_info.point_lights[point_light_count] = point_light;
+		if(point_light_ptr->b_make_shadow && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
+		{
+			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
+			++point_light_shadow_count;
+		}
 		++point_light_count;
 	}
 			
@@ -666,7 +686,7 @@ void CRender::CollectLightInfo()
 			continue;
 		}
 
-		if(scene_render_info.scene_pointlights.size() < 4)
+		if(scene_render_info.scene_pointlights.size() < POINT_LIGHT_MAX)
 		{
 			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_component);
 			if(point_light)

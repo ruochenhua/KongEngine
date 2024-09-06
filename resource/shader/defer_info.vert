@@ -8,6 +8,7 @@ layout(location=2) in vec2 in_texcoord;
 layout(location=3) in vec3 in_tangent;
 layout(location=4) in vec3 in_bitangent;
 
+uniform mat4 model;
 // out vec3 normal_world;
 out vec4 frag_pos;
 out vec3 frag_normal;
@@ -15,7 +16,6 @@ out vec2 frag_uv;
 out mat3 TBN;
 
 void main(){
-    mat4 model = matrix_ubo.model;
     gl_Position = matrix_ubo.projection * matrix_ubo.view * model * vec4(in_pos, 1.0);
     // frag_pos = (matrix_ubo.view * model * vec4(in_pos, 1.0)).xyz;
     frag_pos = model * vec4(in_pos, 1.0);

@@ -16,6 +16,6 @@ using namespace std;
 namespace Kong
 {
 	const string RESOURCE_PATH = "../resource/";
-	const int SHADOW_WIDTH = 2048;
-	const int SHADOW_HEIGHT = 2048;
+	const int SHADOW_WIDTH = 1024;
+	const int SHADOW_HEIGHT = 1024;
 }

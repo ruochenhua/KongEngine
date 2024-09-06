@@ -178,7 +178,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, bool calc_
 }
 
 vec3 CalcPointLight(PointLight point_light, int light_index, 
-                    vec3 normal, vec3 view, vec3 in_frag_pos, bool calc_shadow)
+                    vec3 normal, vec3 view, vec3 in_frag_pos, int shadow_map_index)
 {
     float kc = 0.2;
     float kl = 0.1;
@@ -188,7 +188,7 @@ vec3 CalcPointLight(PointLight point_light, int light_index,
 
     vec3 point_light_color = CalcLight(light_color, to_light_dir, normal, view);
 
-    float shadow = calc_shadow ? ShadowCalculation_pointlight(light_index, frag_pos, point_light.light_pos.xyz) : 0;
+    float shadow = shadow_map_index>=0 ? ShadowCalculation_pointlight(shadow_map_index, frag_pos, point_light.light_pos.xyz) : 0;
     float distance = length(point_light.light_pos.xyz - in_frag_pos);
     float attenuation = 1.0 / (kc + kl*distance + kq*distance*distance);	//衰减和点光源的参数可控，这里先简单弄个
     //return vec3(shadow);
@@ -207,11 +207,11 @@ void main()
 	}
 
     vec3 point_light_color = vec3(0,0,0);
+    ivec4 shadow_index = light_info_ubo.point_light_shadow_index;
     for(int i = 0; i < light_info_ubo.point_light_count.x; ++i)
     {
-        bool calc_shadow = (i<POINT_LIGHT_SHADOW_MAX);
-
-        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos, calc_shadow);
+        int shadow_map_index = GetPointLightShadowMapIndex(i, shadow_index);
+        point_light_color += CalcPointLight(light_info_ubo.point_lights[i], i, obj_normal, view, frag_pos, shadow_map_index);
     }
 
     float env_roughness = GetRoughness();
@@ -246,10 +246,10 @@ void main()
     }
 
     vec3 color = ambient + (dir_light_color + point_light_color);
-    
-    //FragColor = GetAlbedo();
+
     FragColor = vec4(color, 1.0);
 
+    //FragColor = GetAlbedo();
     // FragColor = skybox_color;
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)

@@ -7,7 +7,7 @@
 using namespace glm;
 using namespace std;
 using namespace Kong;
-constexpr double FRAME_TIME_CAP = 1.0/120.0;
+constexpr double FRAME_TIME_CAP = 1.0/1200.0;
 int main()
 {
 	// Open a window and create its OpenGL context

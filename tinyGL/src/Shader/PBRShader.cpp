@@ -68,23 +68,23 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneR
 	
 	}
 	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
-
-	int point_light_num = 0;
+	
+	int point_light_shadow_num = 0;
 	for(auto light : scene_render_info.scene_pointlights)
 	{
-		// 限定4个点光源
-		if(point_light_num >= POINT_LIGHT_SHADOW_MAX)
+		if(point_light_shadow_num > 3 || light.expired())
 		{
-			break;
+			continue;
 		}
-		if(light.expired())
+		auto point_light_ptr = light.lock();
+		if(!point_light_ptr->b_make_shadow)
 		{
 			continue;
 		}
 		
-		glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SM_TEX_SHADER_ID + point_light_num);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.lock()->GetShadowMapTexture());
-		point_light_num++;
+		glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SM_TEX_SHADER_ID + point_light_shadow_num);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, point_light_ptr->GetShadowMapTexture());
+		point_light_shadow_num++;
 	}
 }
 
