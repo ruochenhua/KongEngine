@@ -17,16 +17,32 @@ void main()
      {
          for(int i = 1; i < 5; ++i)
          {
-            result += texture(bright_texture, TexCoords + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
-            result += texture(bright_texture, TexCoords - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+             vec2 blur_plus_coord = TexCoords + vec2(tex_offset.x * i, 0.0);
+             if(blur_plus_coord.x <= 1)
+             {
+                 result += texture(bright_texture, blur_plus_coord).rgb * weight[i];
+             }
+             vec2 blur_minus_coord = TexCoords - vec2(tex_offset.x * i, 0.0);
+             if(blur_minus_coord.x >= 0)
+             {
+                 result += texture(bright_texture, blur_minus_coord).rgb * weight[i];
+             }
          }
      }
      else
      {
          for(int i = 1; i < 5; ++i)
          {
-             result += texture(bright_texture, TexCoords + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
-             result += texture(bright_texture, TexCoords - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+             vec2 blur_plus_coord = TexCoords + vec2(0.0, tex_offset.y * i);
+             if(blur_plus_coord.y <= 1)
+             {
+                 result += texture(bright_texture, TexCoords + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+             }
+             vec2 blur_minus_coord = TexCoords - vec2(0.0, tex_offset.y * i);
+             if(blur_minus_coord.y >= 0)
+             {
+                 result += texture(bright_texture, TexCoords - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+             }
          }
      }
      FragColor = vec4(result, 1.0);
