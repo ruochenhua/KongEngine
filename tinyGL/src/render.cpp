@@ -298,8 +298,9 @@ int CRender::Init()
 	
 	defer_buffer_.Init(width, height);
 	ssao_helper_.Init(width, height);
-	
-	
+
+	string terrain_path = "terrain/iceland_heightmap.png";
+	terrain_ = make_shared<Terrain>(CSceneLoader::ToResourcePath(terrain_path));
 	return 0;
 }
 
@@ -391,7 +392,8 @@ void CRender::RenderSceneObject()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	RenderScene();
 	RenderSkyBox();
-	
+	// terrain
+	// terrain_->Draw();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

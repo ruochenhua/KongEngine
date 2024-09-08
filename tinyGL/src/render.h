@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "postprocess.h"
 #include "skybox.h"
+#include "Component/Mesh/Terrain.h"
 #include "Shader/PBRShader.h"
 #include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
@@ -174,5 +175,7 @@ namespace Kong
 		SSAOHelper ssao_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
+
+		shared_ptr<Terrain> terrain_;
 	};
 }
