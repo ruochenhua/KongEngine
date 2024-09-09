@@ -13,14 +13,17 @@ namespace Kong
         GLuint terrain_vao = GL_NONE;
         GLuint terrain_vbo = GL_NONE;
         GLuint terrain_ebo = GL_NONE;
+        GLuint terrain_height_map = GL_NONE;
         
         std::vector<float> height_data;
         std::vector<unsigned int> height_indices;
-        float y_scale = 32.0f/256.0f;
+        float y_scale = 64.0f/256.0f;
         float y_shift = 16.0f;
 
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
+        int rez = 20;
+        bool render_wireframe = true;
         // 读取高度图
         int ImportTerrain(const string &file_name);
         shared_ptr<Shader> terrain_shader;

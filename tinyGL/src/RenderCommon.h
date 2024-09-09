@@ -36,9 +36,11 @@ namespace Kong
 
     enum EShaderType
     {
-        vs = GL_VERTEX_SHADER,		// vertex shader
-        fs = GL_FRAGMENT_SHADER,	// fragment shader
-        gs = GL_GEOMETRY_SHADER,	// geometry shader
+        vs = GL_VERTEX_SHADER,		        // vertex shader
+        fs = GL_FRAGMENT_SHADER,	        // fragment shader
+        gs = GL_GEOMETRY_SHADER,	        // geometry shader
+        tcs = GL_TESS_CONTROL_SHADER,       // tessellation control shader
+        tes = GL_TESS_EVALUATION_SHADER,    // tessellation evaluation shader
     };
 		
     struct SMaterial
