@@ -1,6 +1,7 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
+#include "/common/perlin_noise.glsl"
 // tessellation primitive generator没有shader代码， 它根据tcs的输出数据和tes的输入数据结构设定计算
 // 如下方(quads,fractional_odd_spacing, ccw)代表了细分primitive的设置
 layout(quads, fractional_odd_spacing, ccw) in;
@@ -9,6 +10,10 @@ uniform sampler2D height_map;
 // patch的四个uv数据
 in vec2 TextureCoord[];
 out float tes_height;
+out vec2 frag_texcoord;
+out vec3 frag_pos;
+out vec3 frag_normal;
+out mat3 TBN;
 
 void main(){
     float u = gl_TessCoord.x;
@@ -40,7 +45,16 @@ void main(){
     // lerp得到细分的p点，并根据高度图和法线得到实际的高度（原P点的y为0）
     vec4 p0 = (p01 - p00) * u + p00;
     vec4 p1 = (p11 - p10) * u + p10;
-    vec4 p = (p1 - p0) * v + p0 + normal * tes_height;
+    //vec4 p = (p1 - p0) * v + p0 + normal * tes_height;
+    vec4 p = (p1 - p0) * v + p0;
+    p.y = Perlin(p.x, p.y);
 
     gl_Position = matrix_ubo.projection * matrix_ubo.view * p;
+
+    //frag_texcoord = texCoord;
+    frag_texcoord = gl_TessCoord.xy;
+    frag_pos = p.xyz;
+    frag_normal = normal.xyz;
+
+    TBN = mat3(normalize(uVec.xyz), normalize(vVec.xyz), normal.xyz);
 }

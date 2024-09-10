@@ -7,7 +7,7 @@ out float out_height;
 out vec3 out_position;
 
 void main(){
-    out_height = in_pos.y;
+    out_height = in_pos.y;    
     out_position = (matrix_ubo.view * vec4(in_pos, 1.0)).xyz;
     gl_Position = matrix_ubo.projection * matrix_ubo.view * vec4(in_pos, 1.0);
 }

@@ -52,7 +52,7 @@ namespace Kong
 
         float exposure = 0.3f;
         
-        SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 500.0f);
+        SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 5000.0f);
     private:
         void UpdateRotation(double delta);
         bool m_updateRotation;

@@ -23,9 +23,14 @@ namespace Kong
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
         int rez = 20;
-        bool render_wireframe = true;
+        bool render_wireframe = false;
         // 读取高度图
         int ImportTerrain(const string &file_name);
         shared_ptr<Shader> terrain_shader;
+
+        GLuint grass_texture = GL_NONE;
+        GLuint rock_texture = GL_NONE;
+        GLuint sand_texture = GL_NONE;
+        GLuint rock_normal_texture = GL_NONE;
     };
 }

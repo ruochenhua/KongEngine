@@ -21,9 +21,23 @@ Terrain::Terrain(const string& file_name)
         {fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_cpu.frag")},
     };
 #endif
+
+    string grass_path = "terrain/grass.jpg";
+    string rock_path = "terrain/rock.jpg";
+    string sand_path = "terrain/sand.jpg";
+    string rock_normal_path = "terrain/rock_normal.jpg";
+    grass_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_path));
+    rock_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_path));
+    sand_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_path));
+    rock_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_normal_path));
     
     terrain_shader = make_shared<Shader>(shader_path_map);
+    terrain_shader->Use();
     terrain_shader->SetInt("height_map", 0);
+    terrain_shader->SetInt("grass_texture", 1);
+    terrain_shader->SetInt("rock_texture", 2);
+    terrain_shader->SetInt("sand_texture", 3);
+    terrain_shader->SetInt("rock_normal_texture", 4);
 }
 
 void Terrain::Draw()
@@ -34,7 +48,19 @@ void Terrain::Draw()
 #if USE_TCS
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, terrain_height_map);
+    
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, grass_texture);
+    
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, rock_texture);
+    
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, sand_texture);
 
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, rock_normal_texture);
+    
     if(render_wireframe)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
