@@ -22,22 +22,35 @@ Terrain::Terrain()
     };
 #endif
 
-    string grass_path = "terrain/grass.jpg";
-    string rock_path = "terrain/rock.jpg";
-    string sand_path = "terrain/sand.jpg";
-    string rock_normal_path = "terrain/rock_normal.jpg";
-    grass_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_path));
-    rock_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_path));
-    sand_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_path));
+    string grass_dir = "textures/terrain/grass/";
+    string rock_snow_dir = "textures/terrain/rock_snow/";
+    string sand_dir = "textures/terrain/sand/";
+    
+    string grass_albedo_path = grass_dir + "stylized-grass1_albedo.png";
+    string grass_normal_path = grass_dir + "stylized-grass1_normal-ogl.png";
+
+    grass_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_albedo_path));
+    grass_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_normal_path));
+    
+    string rock_albedo_path = rock_snow_dir + "rock-snow-ice1-2k_Base_Color.png";
+    string rock_normal_path = rock_snow_dir + "rock-snow-ice1-2k_Normal-ogl.png";
+    rock_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_albedo_path));
     rock_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_normal_path));
+    
+    string sand_albedo_path = sand_dir + "wavy-sand_albedo.png";
+    string sand_normal_path = sand_dir + "wavy-sand_normal-ogl.png";
+    sand_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_albedo_path));
+    sand_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_normal_path));
     
     shader_data = make_shared<Shader>(shader_path_map);
     shader_data->Use();
     shader_data->SetInt("height_map", 0);
     shader_data->SetInt("grass_texture", 1);
-    shader_data->SetInt("rock_texture", 2);
+    shader_data->SetInt("grass_normal_texture", 2);
     shader_data->SetInt("sand_texture", 3);
-    shader_data->SetInt("rock_normal_texture", 4);
+    shader_data->SetInt("sand_normal_texture", 4);
+    shader_data->SetInt("rock_texture", 5);
+    shader_data->SetInt("rock_normal_texture", 6);
 }
 
 Terrain::Terrain(const string& file_name)
@@ -54,15 +67,21 @@ void Terrain::SimpleDraw()
     glBindTexture(GL_TEXTURE_2D, height_map_id);
     
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, grass_texture);
+    glBindTexture(GL_TEXTURE_2D, grass_albedo_texture);
     
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, rock_texture);
-    
+    glBindTexture(GL_TEXTURE_2D, grass_normal_texture);
+
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, sand_texture);
+    glBindTexture(GL_TEXTURE_2D, sand_albedo_texture);
 
     glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, sand_normal_texture);
+    
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, rock_albedo_texture);
+    
+    glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, rock_normal_texture);
     
     if(render_wireframe)

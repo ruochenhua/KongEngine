@@ -12,11 +12,13 @@ out vec4 FragColor;
 in mat3 TBN;
 
 uniform sampler2D grass_texture;
-uniform sampler2D rock_texture;
+uniform sampler2D grass_normal_texture;
 uniform sampler2D sand_texture;
+uniform sampler2D sand_normal_texture;
+uniform sampler2D rock_texture;
 uniform sampler2D rock_normal_texture;
 
-int trans = 30;
+int trans = 20;
 void main()
 {
     float grass_scale = 12.f;
@@ -33,17 +35,29 @@ void main()
     if(tes_height <= trans)
     {
         color = sand_color;
+        vec3 sand_normal = texture(sand_normal_texture, frag_texcoord*sand_scale).xyz;
+        sand_normal = normalize(TBN * (sand_normal*2.0-1.0));
+        normal = sand_normal;
     }
-    else if(tes_height <= 3*trans)
+    else if(tes_height <= 4*trans)
     {
-        color = mix(sand_color, grass_color, min(1, (tes_height-trans)/trans));
+        float alpha = min(1, (tes_height-trans)/trans);
+        color = mix(sand_color, grass_color, alpha);
+        vec3 sand_normal = texture(sand_normal_texture, frag_texcoord*sand_scale).xyz;
+        sand_normal = normalize(TBN * (sand_normal*2.0-1.0));
+        vec3 grass_normal = texture(grass_normal_texture, frag_texcoord*grass_scale).xyz;
+        grass_normal = normalize(TBN * (grass_normal*2.0-1.0));
+        normal = mix(sand_normal, grass_normal, alpha);
     }
     else
     {
-        color = mix(grass_color, rock_color, min(1, (tes_height-3*trans)/trans));
+        float alpha = min(1, (tes_height-4*trans)/trans);
+        color = mix(grass_color, rock_color, alpha);
+        vec3 grass_normal = texture(grass_normal_texture, frag_texcoord*grass_scale).xyz;
+        grass_normal = normalize(TBN * (grass_normal*2.0-1.0));
         vec3 rock_normal = texture(rock_normal_texture, frag_texcoord*rock_scale).xyz;
         rock_normal = normalize(TBN * (rock_normal*2.0-1.0));
-        normal = rock_normal;
+        normal = mix(grass_normal, rock_normal, alpha);
     }
 
     if(light_info_ubo.has_dir_light.x > 0)

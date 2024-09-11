@@ -38,9 +38,13 @@ namespace Kong
         int rez = 20;
         bool render_wireframe = false;
 
-        GLuint grass_texture = GL_NONE;
-        GLuint rock_texture = GL_NONE;
-        GLuint sand_texture = GL_NONE;
+        GLuint grass_albedo_texture = GL_NONE;
+        GLuint grass_normal_texture = GL_NONE;
+
+        GLuint sand_albedo_texture = GL_NONE;
+        GLuint sand_normal_texture = GL_NONE;
+        
+        GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
 
         int terrain_width = 1000, terrain_height = 1000;
