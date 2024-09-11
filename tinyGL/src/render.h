@@ -175,7 +175,5 @@ namespace Kong
 		SSAOHelper ssao_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
-
-		shared_ptr<Terrain> terrain_;
 	};
 }

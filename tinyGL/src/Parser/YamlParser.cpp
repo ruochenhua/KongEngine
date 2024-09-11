@@ -8,6 +8,7 @@
 #include "Component/LightComponent.h"
 #include "Component/Mesh/BoxShape.h"
 #include "Component/Mesh/SphereShape.h"
+#include "Component/Mesh/Terrain.h"
 #include "glm/gtc/random.hpp"
 
 using namespace Kong;
@@ -294,6 +295,22 @@ namespace YamlParser
                 ParseMeshMaterial(component, mesh_comp);
                 
                 new_actor->AddComponent(mesh_comp);   
+            }
+            else if(component_type == "terrain")
+            {
+                shared_ptr<Terrain> terrain_comp;
+                if(component["height_map_path"])
+                {
+                    string height_map_path = component["height_map_path"].as<string>();
+                    terrain_comp = make_shared<Terrain>(CSceneLoader::ToResourcePath(height_map_path));
+                }
+                else
+                {
+                    terrain_comp = make_shared<Terrain>();
+                }
+                
+                new_actor->AddComponent(terrain_comp);
+                
             }
             else if(component_type == "directional_light")
             {

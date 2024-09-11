@@ -16,7 +16,7 @@ uniform sampler2D rock_texture;
 uniform sampler2D sand_texture;
 uniform sampler2D rock_normal_texture;
 
-int trans = 10;
+int trans = 30;
 void main()
 {
     float grass_scale = 12.f;
@@ -57,4 +57,5 @@ void main()
     }
 
     FragColor = vec4(color.xyz, 1.0);
+    // FragColor = vec4(normal, 1.0);
 }

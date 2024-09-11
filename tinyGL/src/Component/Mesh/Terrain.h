@@ -7,9 +7,24 @@ namespace Kong
     class Terrain : public CMeshComponent
     {
     public:
+        Terrain();
         Terrain(const string &file_name);
-        void Draw();
+        void SimpleDraw() override;
+        float height_scale_ = 64.0f;
+        float height_shift_ = 16.0f;
+
+        // perlin noise生成数据相关
+        float amplitude = 20.f;
+        int octaves = 5;
+        float freq = 0.002f;
+        float power = 2.0f;
+        
+        void Draw(const SSceneRenderInfo& scene_render_info) override;
+        void InitRenderInfo() override;
+        
     private:
+        // 读取高度图
+        int LoadHeightMap(const string &file_name);
         GLuint terrain_vao = GL_NONE;
         GLuint terrain_vbo = GL_NONE;
         GLuint terrain_ebo = GL_NONE;
@@ -17,20 +32,17 @@ namespace Kong
         
         std::vector<float> height_data;
         std::vector<unsigned int> height_indices;
-        float y_scale = 64.0f/256.0f;
-        float y_shift = 16.0f;
 
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
         int rez = 20;
         bool render_wireframe = false;
-        // 读取高度图
-        int ImportTerrain(const string &file_name);
-        shared_ptr<Shader> terrain_shader;
 
         GLuint grass_texture = GL_NONE;
         GLuint rock_texture = GL_NONE;
         GLuint sand_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
+
+        int terrain_width = 1000, terrain_height = 1000;
     };
 }

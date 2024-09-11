@@ -65,28 +65,11 @@ void CDirectionalLightComponent::RenderShadowMap()
         vec3 light_pos = light_dir * -5.f;
         mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
         light_space_mat = light_proj * light_view;
+        
+        mat4 model_mat = actor->GetModelMatrix();
+        shadowmap_shader->SetMat4("model", model_mat);
         shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
-                
-        for(auto& mesh : render_obj->mesh_resource->mesh_list)
-        {
-            const SVertex& render_vertex = mesh.m_RenderInfo.vertex;
-            glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
-		
-            mat4 model_mat = actor->GetModelMatrix();
-            shadowmap_shader->SetMat4("model", model_mat);
-            //shadowmap_shader->UpdateShadowMapRender(GetLightDir(), model_mat);
-            // Draw the triangle !
-            // if no index, use draw array
-            if(render_vertex.index_buffer == GL_NONE)
-            {
-                glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-            }
-            else
-            {		
-                glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
-            }
-        }
-        glBindVertexArray(GL_NONE);	// 解绑VAO
+        render_obj->SimpleDraw();
     }
 	
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);

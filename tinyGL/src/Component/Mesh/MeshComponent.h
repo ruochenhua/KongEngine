@@ -19,6 +19,8 @@ namespace Kong
 		CMeshComponent() = default;	
 		
 		void BeginPlay() override;
+		// 简单调用一下draw，不管shader（可能用其他的shader）
+		virtual void SimpleDraw();
 		virtual void Draw(const SSceneRenderInfo& scene_render_info);
 		virtual void InitRenderInfo();
 		bool IsBlend();

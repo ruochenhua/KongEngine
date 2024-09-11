@@ -13,4 +13,9 @@ scene:
         - -130
         - 75
         - -70
+  - actor: terrain1
+    component:
+      - type: terrain
+        # height_map_path: terrain/iceland_heightmap.png
+
 

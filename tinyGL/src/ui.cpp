@@ -149,9 +149,9 @@ void CUIManager::DescribeUIContent(double delta)
 					}
 					if(ImGui::TreeNode("","scale:"))
 					{
-						ImGui::DragFloat("sx", &actor->scale.x, 0.02f, 0.01f);
-						ImGui::DragFloat("sy", &actor->scale.y, 0.02f, 0.01f);
-						ImGui::DragFloat("sz", &actor->scale.z, 0.02f, 0.01f);
+						ImGui::DragFloat("sx", &actor->scale.x, 0.02f, 0.01f, 100.f);
+						ImGui::DragFloat("sy", &actor->scale.y, 0.02f, 0.01f, 100.f);
+						ImGui::DragFloat("sz", &actor->scale.z, 0.02f, 0.01f, 100.f);
 						ImGui::TreePop();
 					}
 					ImGui::TreePop();
@@ -164,14 +164,28 @@ void CUIManager::DescribeUIContent(double delta)
 					{
 						if(ImGui::TreeNode("","color:"))
 						{
-							ImGui::DragFloat("color_x", &light_comp->light_color.x, 0.02f, 0.f);
-							ImGui::DragFloat("color_y", &light_comp->light_color.y, 0.02f, 0.f);
-							ImGui::DragFloat("color_z", &light_comp->light_color.z, 0.02f, 0.f);
+							ImGui::DragFloat("color_x", &light_comp->light_color.x, 0.02f, 0.f, 100.f);
+							ImGui::DragFloat("color_y", &light_comp->light_color.y, 0.02f, 0.f, 100.f);
+							ImGui::DragFloat("color_z", &light_comp->light_color.z, 0.02f, 0.f, 100.f);
 							ImGui::TreePop();
 						}
 						ImGui::TreePop();
 					}
 				}
+
+				auto terrain = actor->GetComponent<Terrain>();
+				if(terrain)
+				{
+					if(ImGui::TreeNode("", "terrain:"))
+					{
+						ImGui::DragFloat("amplitude", &terrain->amplitude, 0.02f, 0.f, 5000);
+						ImGui::DragFloat("freq", &terrain->freq, 0.0001f, 0.f, 1.0f);
+						ImGui::DragFloat("power", &terrain->power, 0.02f, 0.f, 32.f);
+						ImGui::DragInt("octaves", &terrain->octaves, 0.02f, 0, 100);
+						ImGui::TreePop();
+					}
+				}
+					
 				ImGui::TreePop();
 			}
 			ImGui::PopID();

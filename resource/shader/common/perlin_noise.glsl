@@ -23,24 +23,19 @@ float InterpolatedNoise(float x, float y)
     vec2 w = vec2(fract_x, fract_y);
     w=w*w*w*(10.0 + w*(-15 + 6*w));
 
-    float k0 = a, k1 = b-1, k2 = c-1, k3 = d-c-b+a;
+    float k0 = a, k1 = b-a, k2 = c-a, k3 = d-c-b+a;
 
     return k0+k1*w.x + k2*w.y + k3*w.x*w.y;
 }
 
-float g_disp_factor = 10.0f;
-int octaves = 5;
-float freq = 3.0f;
-float power = 2;
-
-float Perlin(float x, float y)
+float Perlin(float x, float y, float amplitude, int octaves, float freq, float power)
 {
     float persistence = 0.5;
-    float total = 0, frequency = 0.005*freq, amplitude=g_disp_factor;
+    float total = 0, frequency = freq;
 
     for(int i = 0; i < octaves; ++i)
     {
-        frequency *= 2;
+        frequency *= 2.0f;
         amplitude *= persistence;
 
         total += InterpolatedNoise(x*frequency, y*frequency) * amplitude;
