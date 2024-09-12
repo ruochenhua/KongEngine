@@ -32,6 +32,7 @@ void main()
 
     vec4 color;
     vec3 normal = frag_normal;
+    float rock_height = 4*trans;
     if(tes_height <= trans)
     {
         color = sand_color;
@@ -39,7 +40,7 @@ void main()
         sand_normal = normalize(TBN * (sand_normal*2.0-1.0));
         normal = sand_normal;
     }
-    else if(tes_height <= 4*trans)
+    else if(tes_height <= rock_height)
     {
         float alpha = min(1, (tes_height-trans)/trans);
         color = mix(sand_color, grass_color, alpha);
@@ -51,7 +52,7 @@ void main()
     }
     else
     {
-        float alpha = min(1, (tes_height-4*trans)/trans);
+        float alpha = min(1, (tes_height-rock_height)/trans);
         color = mix(grass_color, rock_color, alpha);
         vec3 grass_normal = texture(grass_normal_texture, frag_texcoord*grass_scale).xyz;
         grass_normal = normalize(TBN * (grass_normal*2.0-1.0));

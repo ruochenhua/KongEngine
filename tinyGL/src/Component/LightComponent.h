@@ -30,7 +30,7 @@ namespace Kong
 
         virtual void TurnOnShadowMap(bool b_turn_on) = 0;
     protected:
-        shared_ptr<ShadowMapShader> shadowmap_shader;
+        shared_ptr<Shader> shadowmap_shader;
         GLuint shadowmap_texture = GL_NONE;
         GLuint shadowmap_fbo = GL_NONE;
         
@@ -50,8 +50,17 @@ namespace Kong
 
         void TurnOnShadowMap(bool b_turn_on) override;
         glm::mat4 light_space_mat;
+        // 级联阴影
+        glm::vec2 camera_near_far;
+        vector<float> csm_levels;
+        GLuint csm_texture = GL_NONE;
+        
     private:
         glm::vec3 light_dir;
+        // 计算视锥体范围的AABB在世界坐标下的顶点
+        std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj_view);
+        glm::mat4 CalLightSpaceMatrix(float near, float far);
+        std::vector<glm::mat4> GetLightSpaceMatrices();
     };
 
     // point light
@@ -67,6 +76,8 @@ namespace Kong
         
         void TurnOnShadowMap(bool b_turn_on) override;
     private:
+        void UpdateShadowMapInfo(const glm::mat4& model_mat, const glm::vec2& near_far_plane);
+        
         glm::vec3 light_location;
     };
 }

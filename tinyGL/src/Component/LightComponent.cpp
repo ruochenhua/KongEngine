@@ -1,6 +1,7 @@
 #include "LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Actor.h"
+#include "render.h"
 #include "Scene.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "Shader/Shader.h"
@@ -25,7 +26,7 @@ GLuint CLightComponent::GetShadowMapTexture() const
 CDirectionalLightComponent::CDirectionalLightComponent()
     : CLightComponent(ELightType::directional_light)
 {
-    shadowmap_shader = dynamic_pointer_cast<DirectionalLightShadowMapShader>(ShaderManager::GetShader("directional_light_shadowmap"));
+    shadowmap_shader = ShaderManager::GetShader("directional_light_shadowmap");
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
 }
 
@@ -40,6 +41,9 @@ void CDirectionalLightComponent::RenderShadowMap()
     {
         return;
     }
+
+    vector<mat4> light_space_matrices = GetLightSpaceMatrices();
+    int cascade_shadow_count = light_space_matrices.size();
     
     glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -68,6 +72,13 @@ void CDirectionalLightComponent::RenderShadowMap()
         
         mat4 model_mat = actor->GetModelMatrix();
         shadowmap_shader->SetMat4("model", model_mat);
+#if USE_CSM
+        
+        shadowmap_shader->SetInt("cascade_shadow_count", cascade_shadow_count);
+#else
+        
+#endif
+        
         shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
         render_obj->SimpleDraw();
     }
@@ -92,7 +103,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         glGenFramebuffers(1, &shadowmap_fbo);
         glGenTextures(1, &shadowmap_texture);
         glBindTexture(GL_TEXTURE_2D, shadowmap_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -109,6 +120,27 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+#if USE_CSM
+        camera_near_far = CRender::GetNearFar();
+        float far_plane = camera_near_far.y;
+        csm_levels = {far_plane/100, far_plane/50, far_plane/25, far_plane/5, far_plane/2};
+        glGenTextures(1, &csm_texture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, csm_levels.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border_color);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, csm_texture, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
+        
     }
     else
     {
@@ -118,12 +150,111 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
     }
 }
 
+std::vector<glm::vec4> CDirectionalLightComponent::GetFrustumCornersWorldSpace(const glm::mat4& proj_view)
+{
+    const auto inv = glm::inverse(proj_view);
+
+    // 顶点的世界坐标在projection和view matrix的转换下的坐标范围是[-1,1]
+    // 那么将在[-1,1]这个边界的八个顶点坐标乘以projection和view matrix的逆矩阵则可以得到视锥体边界的顶点的世界坐标
+    vector<vec4> frustum_corners;
+    for(unsigned int i = 0; i < 2; i++)
+    {
+        for(unsigned int j = 0; j < 2; j++)
+        {
+            for(unsigned int k = 0; k < 2; k++)
+            {
+                const vec4 pt = inv * vec4(2.0f*i-1.0f,2.0f*j-1.0f,2.0f*k-1.0f, 1.0f);
+                frustum_corners.push_back(pt / pt.w);
+            }
+        }   
+    }
+    
+    return frustum_corners;
+}
+
+mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
+{
+    auto camera = CRender::GetRender()->GetCamera();
+    float aspect_ratio = camera->m_screenInfo._aspect_ratio;
+    float fov = camera->m_screenInfo._fov;
+
+    const auto camera_view = camera->GetViewMatrix();
+    // 获取小段的视锥体投影矩阵
+    const auto proj = glm::perspective(glm::radians(fov), aspect_ratio, near, far);
+    const auto corners = GetFrustumCornersWorldSpace(proj * camera_view);
+
+    vec3 center = vec3(0.0f);
+    for(const auto& v : corners)
+    {
+        center += vec3(v);
+    }
+    center /= corners.size();   // 获取视锥体的中心点
+
+    const auto light_view = lookAt(center+light_dir, center, vec3(0.0f, 1.0f, 0.0f));
+    float min_x = std::numeric_limits<float>::max();
+    float min_y = std::numeric_limits<float>::max();
+    float min_z = std::numeric_limits<float>::max();
+    float max_x = std::numeric_limits<float>::lowest();
+    float max_y = std::numeric_limits<float>::lowest();
+    float max_z = std::numeric_limits<float>::lowest();
+    for (const auto& v : corners)
+    {
+        const auto trf = light_view * v;
+        min_z = std::min(min_x, trf.x);
+        max_x = std::max(max_x, trf.x);
+        min_y = std::min(min_y, trf.y);
+        max_y = std::max(max_y, trf.y);
+        min_z = std::min(min_z, trf.z);
+        max_z = std::max(max_z, trf.z);
+    }
+    constexpr float z_mult = 10.0f;
+    if (min_z < 0)
+    {
+        min_z *= z_mult;
+    }
+    else
+    {
+        min_z /= z_mult;
+    }
+    if (max_z < 0)
+    {
+        max_z /= z_mult;
+    }
+    else
+    {
+        max_z *= z_mult;
+    }
+
+    const mat4 light_projection = ortho(min_x, max_x, min_y, max_y, min_z, max_z);
+    return light_projection * light_view;
+}
+
+std::vector<glm::mat4> CDirectionalLightComponent::GetLightSpaceMatrices()
+{
+    vector<mat4> ret;
+    for(int i = 0; i < csm_levels.size(); ++i)
+    {
+        if(i == 0)
+        {
+            ret.push_back(CalLightSpaceMatrix(camera_near_far.x, csm_levels[i]));
+        }
+        else if (i < csm_levels.size())
+        {
+            ret.push_back(CalLightSpaceMatrix(csm_levels[i-1], csm_levels[i]));
+        }
+        else
+        {
+            ret.push_back(CalLightSpaceMatrix(csm_levels[i-1], camera_near_far.y));
+        }
+    }
+    return ret;
+}
+
 CPointLightComponent::CPointLightComponent()
     : CLightComponent(ELightType::point_light)
 {
-    shadowmap_shader = dynamic_pointer_cast<PointLightShadowMapShader>(ShaderManager::GetShader("point_light_shadowmap"));
+    shadowmap_shader = ShaderManager::GetShader("point_light_shadowmap");
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
-    
 }
 
 
@@ -165,8 +296,7 @@ void CPointLightComponent::RenderShadowMap()
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
-            shadowmap_shader->UpdateShadowMapRender(GetLightLocation(), model_mat,
-                vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
+            UpdateShadowMapInfo(model_mat, vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
             if(render_vertex.index_buffer == GL_NONE)
@@ -227,4 +357,34 @@ void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
         glDeleteFramebuffers(1, &shadowmap_fbo);
         glDeleteTextures(1, &shadowmap_texture);
     }
+}
+
+void CPointLightComponent::UpdateShadowMapInfo(const mat4& model_mat, const vec2& near_far_plane)
+{
+    // 点光源的阴影贴图
+    GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+    float near_plane = near_far_plane.x;
+    float far_plane = near_far_plane.y;
+    mat4 shadow_proj = perspective(radians(90.f), aspect, near_plane, far_plane);
+    
+    // 方向可以固定是朝向六个方向
+    vector<mat4> shadow_transforms;
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(1,0,0), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(-1,0,0), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(0,1,0), vec3(0,0,1)));
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(0,-1,0), vec3(0,0,-1)));
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(0,0,1), vec3(0,-1,0)));
+    shadow_transforms.push_back(shadow_proj * lookAt(light_location, light_location+vec3(0,0,-1), vec3(0,-1,0)));
+
+    shadowmap_shader->Use();
+    shadowmap_shader->SetFloat("far_plane", far_plane);
+    for(int i = 0; i < 6; ++i)
+    {
+        stringstream shadow_matrices_stream;
+        shadow_matrices_stream <<  "shadow_matrices[" << i << "]";
+        shadowmap_shader->SetMat4(shadow_matrices_stream.str(), shadow_transforms[i]);
+    }
+    shadowmap_shader->SetVec3("light_pos", light_location);
+    // RenderScene();
+    shadowmap_shader->SetMat4("model", model_mat);
 }
