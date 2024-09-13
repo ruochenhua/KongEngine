@@ -84,9 +84,10 @@ void CUIManager::DescribeUIContent(double delta)
 		"hello_pbr_texture",
 		"hello_lots_models",
 		"hello_terrain",
+		"hello_csm"
 	};
 
-	static int item_type = 11;
+	static int item_type = 12;
 	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
