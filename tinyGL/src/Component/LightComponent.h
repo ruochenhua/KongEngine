@@ -25,7 +25,7 @@ namespace Kong
         virtual glm::vec3 GetLightDir() const = 0;
         
         virtual void RenderShadowMap() = 0;
-        GLuint GetShadowMapTexture() const;
+        virtual GLuint GetShadowMapTexture() const;
         bool b_make_shadow = false;
 
         virtual void TurnOnShadowMap(bool b_turn_on) = 0;
@@ -43,7 +43,7 @@ namespace Kong
     {
     public:
         CDirectionalLightComponent();
-
+        virtual GLuint GetShadowMapTexture() const override;
         glm::vec3 GetLightDir() const override;
         void RenderShadowMap() override;
         void SetLightDir(const glm::vec3& rotation);
@@ -52,9 +52,9 @@ namespace Kong
         glm::mat4 light_space_mat;
         // 级联阴影
         glm::vec2 camera_near_far;
-        vector<float> csm_levels;
+        vector<float> csm_distances;
         GLuint csm_texture = GL_NONE;
-        
+        vector<glm::mat4> light_space_matrices;
     private:
         glm::vec3 light_dir;
         // 计算视锥体范围的AABB在世界坐标下的顶点

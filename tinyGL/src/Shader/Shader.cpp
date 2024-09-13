@@ -212,7 +212,11 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 	}
 	else if(shader_name == "directional_light_shadowmap")
 	{
+#if USE_CSM
+		auto shader_data = make_shared<DirectionalLightCSMShader>();
+#else
 		auto shader_data = make_shared<DirectionalLightShadowMapShader>();
+#endif
 		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;

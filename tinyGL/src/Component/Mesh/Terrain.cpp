@@ -175,14 +175,13 @@ void Terrain::InitRenderInfo()
     glEnableVertexAttribArray(1);
 
     glPatchParameteri(GL_PATCH_VERTICES, 4);
-#endif
-    
+#else
     glGenBuffers(1, &terrain_ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrain_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
         height_indices.size() * sizeof(unsigned int),
         &height_indices[0], GL_STATIC_DRAW);
-
+#endif
 }
 
 int Terrain::LoadHeightMap(const string& file_name)

@@ -8,8 +8,8 @@ using namespace glm;
 void DirectionalLightShadowMapShader::InitDefaultShader()
 {
     shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap.frag")}
+        {vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap.vert")},
+        {fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap.frag")}
     };
     
     shader_id = LoadShaders(shader_path_map);
@@ -20,9 +20,9 @@ void DirectionalLightShadowMapShader::InitDefaultShader()
 void DirectionalLightCSMShader::InitDefaultShader()
 {
     shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/csm_shadowmap.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/csm_shadowmap.frag")},
-        {EShaderType::gs, CSceneLoader::ToResourcePath("shader/csm_shadowmap.geom")}
+        {vs, CSceneLoader::ToResourcePath("shader/shadow/csm.vert")},
+        {fs, CSceneLoader::ToResourcePath("shader/shadow/csm.frag")},
+        {gs, CSceneLoader::ToResourcePath("shader/shadow/csm.geom")}
     };
     
     shader_id = LoadShaders(shader_path_map);
@@ -32,9 +32,9 @@ void DirectionalLightCSMShader::InitDefaultShader()
 void PointLightShadowMapShader::InitDefaultShader()
 {
     shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.frag")},
-        {EShaderType::gs, CSceneLoader::ToResourcePath("shader/shadowmap_pointlight.geom")}
+        {vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_pointlight.vert")},
+        {fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_pointlight.frag")},
+        {gs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_pointlight.geom")}
     };
     shader_id = LoadShaders(shader_path_map);
 

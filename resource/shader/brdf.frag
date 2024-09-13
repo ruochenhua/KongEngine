@@ -29,8 +29,11 @@ uniform samplerCube skybox_diffuse_irradiance_texture;
 uniform samplerCube skybox_prefilter_texture;
 uniform sampler2D skybox_brdf_lut_texture;
 
-uniform sampler2D shadow_map;
+uniform sampler2DArray shadow_map;
 uniform samplerCube shadow_map_pointlight[4];
+uniform mat4 light_space_matrices[16];
+uniform float csm_distances[16];
+uniform int csm_level_count;
 
 vec4 GetAlbedo()
 {
@@ -93,32 +96,66 @@ float GetAO()
 }
 
 // 计算阴影
-float ShadowCalculation_DirLight(vec4 pos_light_space, vec3 to_light_dir)
+float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir)
 {
-    // 转换到-1,1的范围，再转到0,1的范围
-    vec3 proj_coords = pos_light_space.xyz / pos_light_space.w;
-    proj_coords = proj_coords* 0.5 + 0.5;
-    // 超出阴影贴图范围，就只返回0
-    if(proj_coords.z > 1.0 || proj_coords.z < -1.0)
-        return 0.0;
+    vec4 frag_pos_view_space = matrix_ubo.view * frag_world_pos;
+    float depthValue = abs(frag_pos_view_space.z);
 
-//    float closet_depth = texture(shadow_map, proj_coords.xy).r;
-    float current_depth = proj_coords.z;
-    float bias = 0.0f;//max(0.005 * (1.0 - dot(frag_normal, to_light_dir)), 0.005);
-//    float shadow = (current_depth - bias) > closet_depth ? 1.0 : 0.0;
-    // 采用pcf柔和阴影锯齿边界
-    // todo: 更多优化方法
+    int layer = -1;
+    for (int i = 0; i < csm_level_count; ++i)
+    {
+        if (depthValue < csm_distances[i])
+        {
+            layer = i;
+            break;
+        }
+    }
+    if (layer == -1)
+    {
+        layer = csm_level_count;
+    }
+
+    // 转换到-1,1的范围，再转到0,1的范围
+    vec4 frag_pos_light_space = light_space_matrices[layer] * frag_world_pos;
+    // perform perspective divide
+    vec3 proj_coord = frag_pos_light_space.xyz / frag_pos_light_space.w;
+    // transform to [0,1] range
+    proj_coord = proj_coord * 0.5 + 0.5;
+
+    // get depth of current fragment from light's perspective
+    float current_depth = proj_coord.z;
+
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+    if (current_depth > 1.0)
+    {
+        return 0.0;
+    }
+    //    // calculate bias (based on depth map resolution and slope)
+    //    vec3 normal = normalize(fs_in.Normal);
+    //    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    //    const float biasModifier = 0.5f;
+    //    if (layer == cascadeCount)
+    //    {
+    //        bias *= 1 / (farPlane * biasModifier);
+    //    }
+    //    else
+    //    {
+    //        bias *= 1 / (cascadePlaneDistances[layer] * biasModifier);
+    //    }
+
+    // PCF
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadow_map, 0);
+    vec2 texel_size = 1.0 / vec2(textureSize(shadow_map, 0));
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texelSize).r;
-            shadow += (current_depth - bias) > pcfDepth ? 1.0 : 0.0;
+            float pcf_depth = texture(shadow_map, vec3(proj_coord.xy + vec2(x, y) * texel_size, layer)).r;
+            shadow += current_depth > pcf_depth ? 1.0 : 0.0;
         }
     }
     shadow /= 9.0;
+
     return shadow;
 }
 
@@ -172,7 +209,7 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, bool calc_
     vec3 light_color = dir_light.light_color.xyz;
     vec3 to_light_dir = -dir_light.light_dir.xyz;
 
-    float shadow = calc_shadow ? ShadowCalculation_DirLight(frag_pos_lightspace, to_light_dir) : 0;
+    float shadow = calc_shadow ? ShadowCalculation_DirLight(vec4(frag_pos,1.0), to_light_dir) : 0;
     return CalcLight(light_color, to_light_dir, normal, view) * (1.0 - shadow);
     //return vec3(shadow);
 }

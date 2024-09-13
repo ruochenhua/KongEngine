@@ -30,6 +30,15 @@ CDirectionalLightComponent::CDirectionalLightComponent()
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
 }
 
+GLuint CDirectionalLightComponent::GetShadowMapTexture() const
+{
+#if USE_CSM
+    return csm_texture;
+#else
+    return shadowmap_texture;
+#endif
+}
+
 glm::vec3 CDirectionalLightComponent::GetLightDir() const
 {
     return light_dir;
@@ -41,10 +50,9 @@ void CDirectionalLightComponent::RenderShadowMap()
     {
         return;
     }
-
-    vector<mat4> light_space_matrices = GetLightSpaceMatrices();
-    int cascade_shadow_count = light_space_matrices.size();
-    
+#if USE_CSM
+    light_space_matrices = GetLightSpaceMatrices();
+#endif
     glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
     
@@ -64,22 +72,36 @@ void CDirectionalLightComponent::RenderShadowMap()
         }
 
         shadowmap_shader->Use();
+        mat4 model_mat = actor->GetModelMatrix();
+        shadowmap_shader->SetMat4("model", model_mat);
+#if USE_CSM
+        for(int i = 0; i < light_space_matrices.size(); ++i)
+        {
+            // if(i == 0)
+            // {
+            // mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
+            //
+            // vec3 light_pos = light_dir * -5.f;
+            // mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
+            // light_space_mat = light_proj * light_view;
+            //    light_space_matrices[i] = light_space_mat;
+            // }
+            
+            stringstream ss;
+            ss << "light_space_matrix[" << i << "]";
+            shadowmap_shader->SetMat4(ss.str(), light_space_matrices[i]);
+        }
+        
+#else
         mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
         
         vec3 light_pos = light_dir * -5.f;
         mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
         light_space_mat = light_proj * light_view;
         
-        mat4 model_mat = actor->GetModelMatrix();
-        shadowmap_shader->SetMat4("model", model_mat);
-#if USE_CSM
-        
-        shadowmap_shader->SetInt("cascade_shadow_count", cascade_shadow_count);
-#else
-        
+        shadowmap_shader->SetMat4("light_space_mat[0]", light_space_mat);
 #endif
         
-        shadowmap_shader->SetMat4("light_space_mat", light_space_mat);
         render_obj->SimpleDraw();
     }
 	
@@ -101,6 +123,30 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
     if(b_make_shadow)
     {
         glGenFramebuffers(1, &shadowmap_fbo);
+        
+        GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
+#if USE_CSM
+        camera_near_far = CRender::GetNearFar();
+        float far_plane = camera_near_far.y;
+        // csm_distances = {far_plane/100};
+        
+        csm_distances = {far_plane/50, far_plane/25, far_plane/10, far_plane/2};
+        glGenTextures(1, &csm_texture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border_color);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, csm_texture, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#else
+        
         glGenTextures(1, &shadowmap_texture);
         glBindTexture(GL_TEXTURE_2D, shadowmap_texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -108,7 +154,6 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
 	   
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
@@ -121,24 +166,6 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-#if USE_CSM
-        camera_near_far = CRender::GetNearFar();
-        float far_plane = camera_near_far.y;
-        csm_levels = {far_plane/100, far_plane/50, far_plane/25, far_plane/5, far_plane/2};
-        glGenTextures(1, &csm_texture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, csm_levels.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border_color);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, csm_texture, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
         
     }
@@ -180,7 +207,7 @@ mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
 
     const auto camera_view = camera->GetViewMatrix();
     // 获取小段的视锥体投影矩阵
-    const auto proj = glm::perspective(glm::radians(fov), aspect_ratio, near, far);
+    const auto proj = perspective(fov, aspect_ratio, near, far);
     const auto corners = GetFrustumCornersWorldSpace(proj * camera_view);
 
     vec3 center = vec3(0.0f);
@@ -190,7 +217,7 @@ mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
     }
     center /= corners.size();   // 获取视锥体的中心点
 
-    const auto light_view = lookAt(center+light_dir, center, vec3(0.0f, 1.0f, 0.0f));
+    const auto light_view = lookAt(center-light_dir, center, vec3(0.0f, 1.0f, 0.0f));
     float min_x = std::numeric_limits<float>::max();
     float min_y = std::numeric_limits<float>::max();
     float min_z = std::numeric_limits<float>::max();
@@ -200,7 +227,7 @@ mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
     for (const auto& v : corners)
     {
         const auto trf = light_view * v;
-        min_z = std::min(min_x, trf.x);
+        min_x = std::min(min_x, trf.x);
         max_x = std::max(max_x, trf.x);
         min_y = std::min(min_y, trf.y);
         max_y = std::max(max_y, trf.y);
@@ -224,7 +251,8 @@ mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
     {
         max_z *= z_mult;
     }
-
+    // mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
+        
     const mat4 light_projection = ortho(min_x, max_x, min_y, max_y, min_z, max_z);
     return light_projection * light_view;
 }
@@ -232,19 +260,19 @@ mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
 std::vector<glm::mat4> CDirectionalLightComponent::GetLightSpaceMatrices()
 {
     vector<mat4> ret;
-    for(int i = 0; i < csm_levels.size(); ++i)
+    for(int i = 0; i < csm_distances.size() + 1; ++i)
     {
         if(i == 0)
         {
-            ret.push_back(CalLightSpaceMatrix(camera_near_far.x, csm_levels[i]));
+            ret.push_back(CalLightSpaceMatrix(camera_near_far.x, csm_distances[i]));
         }
-        else if (i < csm_levels.size())
+        else if (i < csm_distances.size())
         {
-            ret.push_back(CalLightSpaceMatrix(csm_levels[i-1], csm_levels[i]));
+            ret.push_back(CalLightSpaceMatrix(csm_distances[i-1], csm_distances[i]));
         }
         else
         {
-            ret.push_back(CalLightSpaceMatrix(csm_levels[i-1], camera_near_far.y));
+            ret.push_back(CalLightSpaceMatrix(csm_distances[i-1], camera_near_far.y));
         }
     }
     return ret;

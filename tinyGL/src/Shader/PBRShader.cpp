@@ -65,9 +65,29 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneR
 		auto dir_light = scene_render_info.scene_dirlight.lock();
 		// 支持一个平行光源的阴影贴图
 		dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
-	
+#if USE_CSM
+		// csm相关的数据
+		for(int i = 0; i < dir_light->csm_distances.size(); ++i)
+		{
+			stringstream ss;
+			ss << "csm_distances[" << i << "]";
+			SetFloat(ss.str(), dir_light->csm_distances[i]);
+		}
+		SetInt("csm_level_count", dir_light->csm_distances.size());
+		for(int i = 0; i < dir_light->light_space_matrices.size(); ++i)
+		{
+			stringstream ss;
+			ss << "light_space_matrices[" << i << "]";
+			SetMat4(ss.str(), dir_light->light_space_matrices[i]);
+		}
+		SetInt("light_space_matrix_count", dir_light->light_space_matrices.size());
+#endif
 	}
+#if USE_CSM
+	glBindTexture(GL_TEXTURE_2D_ARRAY,  dir_light_shadowmap_id);
+#else
 	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
+#endif
 	
 	int point_light_shadow_num = 0;
 	for(auto light : scene_render_info.scene_pointlights)

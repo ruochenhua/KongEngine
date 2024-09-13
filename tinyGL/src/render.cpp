@@ -276,8 +276,8 @@ int CRender::Init()
 	m_SkyBox.Init();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadowmap_debug.frag")}
+		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.vert")},
+		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.frag")}
 	};
 	shadowmap_debug_shader = make_shared<Shader>();
 
@@ -349,9 +349,9 @@ void CRender::PostUpdate()
 
 void CRender::RenderSceneObject()
 {
+#if !SHADOWMAP_DEBUG
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
-#if !SHADOWMAP_DEBUG
 	ivec2 window_size = Engine::GetEngine().GetWindowSize();
 	
 
@@ -725,17 +725,20 @@ void CRender::RenderShadowMap()
 	}
 
 #if SHADOWMAP_DEBUG
+	
 	glCullFace(GL_BACK);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	auto window_size = Engine::GetEngine().GetWindowSize();
+	int width = window_size.x, height = window_size.y;
+
+	glViewport(0,0,width, height);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// 先只画平行光的
 	CDirectionalLightComponent* dir_light = scene_render_info.scene_dirlight.lock().get();
 	
 	if(!dir_light)
 		return;
-	
-	int width = Engine::GetEngine().GetWindowWidth();
-	int height = Engine::GetEngine().GetWindowHeight();
-	glViewport(0,0,width, height);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	shadowmap_debug_shader->Use();
 	// glUseProgram(m_ShadowMapDebugShaderId);
 	// Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", dir_light->near_plane);
@@ -743,8 +746,11 @@ void CRender::RenderShadowMap()
 	glActiveTexture(GL_TEXTURE0);
 
 	GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+#if USE_CSM
+	glBindTexture(GL_TEXTURE_2D_ARRAY, dir_light_shadowmap_id);
+#else
 	glBindTexture(GL_TEXTURE_2D, dir_light_shadowmap_id);
-
+#endif
 	// renderQuad() renders a 1x1 XY quad in NDC
 	// -----------------------------------------
 	if (m_QuadVAO == 0)
