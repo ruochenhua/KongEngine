@@ -62,6 +62,7 @@ Terrain::Terrain(const string& file_name)
 void Terrain::SimpleDraw()
 {
 #if USE_TCS
+    shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
     GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : CRender::GetNullTexId();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, height_map_id);

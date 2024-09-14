@@ -157,6 +157,14 @@ vec3 CalcPointLight(PointLight point_light, int light_index,
     return point_light_color * attenuation * (1.0 - shadow);
 }
 
+vec3 ApplyFog(vec3 origin_color, float pixel_dist)
+{    
+    vec3 fog_color = vec3(0.5,0.6, 0.7);
+    float fog_fall_off = 0.0015;
+    float fog_amount = 1.0 - exp(-pixel_dist*fog_fall_off);
+
+    return mix(origin_color, fog_color, fog_amount);
+}
 
 void main()
 {
@@ -233,7 +241,16 @@ void main()
     // FragColor = vec4(vec3(env_roughness), 1.0);
     // FragColor = vec4(vec3(env_metallic), 1.0);
     // FragColor = skybox_color;
-    FragColor = vec4(color, 1.0);
+
+    float pixel_dist = length(cam_pos - frag_pos);
+    vec3 final_color = ApplyFog(color, pixel_dist);
+    // vec3 fog_color = vec3(0.5,0.6, 0.7);
+    // float fog_fall_off = 0.0015;
+    // float fog_amount = 1.0 - exp(-pixel_to_cam*fog_fall_off);
+    // vec3 final_color = mix(color.xyz, fog_color, fog_amount);
+    // FragColor = vec4(final_color, 1.0);
+
+    FragColor = vec4(final_color, 1.0);
 //    FragColor = vec4(vec3(ao), 1.0);
 //    FragColor = vec4(texture(ssao_result_texture, TexCoords).xxx, 1.0);
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));

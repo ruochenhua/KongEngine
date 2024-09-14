@@ -708,7 +708,7 @@ void CRender::RenderShadowMap()
 	// todo: 处理内部有开口模型或者平面该如何处理？
 	// note: 剔除front好像shadow bias不填阴影效果也比较正常？
 	glCullFace(GL_FRONT);
-	glViewport(0,0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glViewport(0,0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 
 	// auto scene_lights = CScene::GetScene()->GetSceneLights();
 	if(!scene_render_info.scene_dirlight.expired())

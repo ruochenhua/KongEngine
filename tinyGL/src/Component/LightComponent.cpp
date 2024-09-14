@@ -133,7 +133,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         csm_distances = {far_plane/50, far_plane/25, far_plane/10, far_plane/2};
         glGenTextures(1, &csm_texture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -149,7 +149,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         
         glGenTextures(1, &shadowmap_texture);
         glBindTexture(GL_TEXTURE_2D, shadowmap_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -364,7 +364,7 @@ void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
         for(GLuint i = 0; i < 6; ++i)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-                SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+                SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         }
     
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -390,7 +390,7 @@ void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
 void CPointLightComponent::UpdateShadowMapInfo(const mat4& model_mat, const vec2& near_far_plane)
 {
     // 点光源的阴影贴图
-    GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+    GLfloat aspect = (GLfloat)SHADOW_RESOLUTION / (GLfloat)SHADOW_RESOLUTION;
     float near_plane = near_far_plane.x;
     float far_plane = near_far_plane.y;
     mat4 shadow_proj = perspective(radians(90.f), aspect, near_plane, far_plane);

@@ -1,4 +1,5 @@
 #include "ui.h"
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -8,10 +9,28 @@
 #include "render.h"
 #include "Scene.h"
 #include "Component/LightComponent.h"
+#include <filesystem>
 
 using namespace Kong;
 
 CUIManager* g_uimanager = new CUIManager;
+vector<string> g_scene_files;
+vector<const char*> g_scene_items;
+
+vector<string> GetSceneFiles(const string& directory_path)
+{
+	vector<string> scene_files;
+    
+	for(const auto& entry : std::filesystem::directory_iterator(directory_path))
+	{
+		if(entry.is_regular_file())
+		{
+			scene_files.push_back(entry.path().filename().string());
+		}
+	}
+	
+	return scene_files;
+}
 
 CUIManager* CUIManager::GetUIManager()
 {
@@ -34,6 +53,14 @@ void CUIManager::Init()
 	// 初始化imgui后端
 	ImGui_ImplGlfw_InitForOpenGL(Engine::GetRenderWindow(), true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
+
+	
+	string file_directory = std::filesystem::current_path().parent_path().string() + "/resource/scene";
+	g_scene_files = GetSceneFiles(file_directory);
+	
+	for (size_t i = 0; i < g_scene_files.size(); ++i) {
+		g_scene_items.push_back(g_scene_files[i].c_str());
+	}
 }
 
 void CUIManager::PreRenderUpdate(double delta)
@@ -70,33 +97,18 @@ void CUIManager::DescribeUIContent(double delta)
 	int frame_rate = static_cast<int>(round(1.0/delta));
 	ImVec4 frame_rate_color = GetFrameRateColor(frame_rate);
 	ImGui::TextColored(frame_rate_color, "frame_rate: %d", frame_rate);
-	// Select an item type
-	const char* scene_items[] = {
-		"hello",
-		"hello_brdf",
-		"hello_assimp",
-		"hello_normal_map",
-		"hello_shadow_directionallight",
-		"hello_shadow_pointlight",
-		"hello_instancing",
-		"hello_porsche",
-		"hello_blend",
-		"hello_pbr_texture",
-		"hello_lots_models",
-		"hello_terrain",
-		"hello_csm"
-	};
-
-	static int item_type = 12;
-	ImGui::Combo("Scenes", &item_type, scene_items, IM_ARRAYSIZE(scene_items), IM_ARRAYSIZE(scene_items));
+	
+	static int item_type = g_scene_items.size() - 1;
+	
+	ImGui::Combo("Scenes", &item_type, g_scene_items.data(), g_scene_items.size(), g_scene_items.size());
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
 	auto render_sys = CRender::GetRender();
 	if(ImGui::Button("load scene"))
 	{
 		// Load scene
-		string scene_name = scene_items[item_type];
-		scene_name = "scene/" + scene_name + ".yaml";
+		string scene_name = g_scene_items[item_type];
+		scene_name = "scene/" + scene_name;
 		
 		CScene::GetScene()->LoadScene(scene_name);
 	}
