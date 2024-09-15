@@ -51,8 +51,9 @@ namespace Kong
         void RotateEnd();
 
         float exposure = 0.3f;
+        float move_speed = 5.f;
         
-        SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 500.0f);
+        SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 5000.0f);
     private:
         void UpdateRotation(double delta);
         bool m_updateRotation;
@@ -68,7 +69,6 @@ namespace Kong
         float m_yaw = 0.0;
         float m_pitch = 0.0;
         float rotate_speed = 20.f;
-        float move_speed = 5.f;
 
     };
 }

@@ -130,7 +130,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         float far_plane = camera_near_far.y;
         // csm_distances = {far_plane/100};
         
-        csm_distances = {far_plane/50, far_plane/25, far_plane/10, far_plane/2};
+        csm_distances = {far_plane/500, far_plane/250, far_plane/100, far_plane/50, far_plane/10};
         glGenTextures(1, &csm_texture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);

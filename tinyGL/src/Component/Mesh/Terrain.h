@@ -14,8 +14,8 @@ namespace Kong
         float height_shift_ = 16.0f;
 
         // perlin noise生成数据相关
-        float amplitude = 20.f;
-        int octaves = 5;
+        float amplitude = 12.f;
+        int octaves = 8;
         float freq = 0.002f;
         float power = 2.0f;
         
@@ -35,7 +35,7 @@ namespace Kong
 
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
-        int rez = 20;
+        int rez = 200;
         bool render_wireframe = false;
 
         GLuint grass_albedo_texture = GL_NONE;
@@ -47,6 +47,6 @@ namespace Kong
         GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
 
-        int terrain_width = 1000, terrain_height = 1000;
+        int terrain_width = 10000, terrain_height = 10000;
     };
 }

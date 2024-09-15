@@ -120,7 +120,6 @@ void CUIManager::DescribeUIContent(double delta)
 		}
 
 		ImGui::DragInt("sky display status", &render_sys->render_sky_env_status, 0.1f, 0, 2);
-		//ImGui::Checkbox("render skybox", &render_sys->b_render_skybox);
 		
 		ImGui::TreePop();
 	}
@@ -128,7 +127,8 @@ void CUIManager::DescribeUIContent(double delta)
 	auto main_cam = render_sys->GetCamera();
 	if(main_cam)
 	{
-		ImGui::DragFloat("exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
+		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
+		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f,1.0f, 100.0f);
 	}
 
 	ImGui::Checkbox("ssao", &render_sys->use_ssao);

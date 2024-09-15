@@ -24,7 +24,7 @@ vec3 ApplyFog(vec3 origin_color)
     vec3 cam_to_point = frag_pos - cam_pos;
     float pixel_dist = length(cam_to_point);
     vec3 cam_to_point_dir = normalize(cam_to_point);
-    float fog_fall_off = 0.00015;
+    float fog_fall_off = 0.00005;
 
     // float fog_amount = 1.0 - exp(-pixel_dist*fog_fall_off);
     float fog_amount = exp(-cam_pos.y*fog_fall_off) * (1.0-exp(-pixel_dist*cam_to_point_dir.y*fog_fall_off))/cam_to_point_dir.y;
