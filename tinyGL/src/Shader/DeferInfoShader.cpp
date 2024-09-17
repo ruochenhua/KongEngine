@@ -136,6 +136,9 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 			ss << "light_space_matrices[" << i << "]";
 			SetMat4(ss.str(), dir_light->light_space_matrices[i]);
 		}
+#else
+		SetMat4("light_space_matrices[0]", dir_light->light_space_mat);
+
 #endif
 	}
 #if USE_CSM

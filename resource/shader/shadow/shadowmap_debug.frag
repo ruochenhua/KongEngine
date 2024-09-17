@@ -16,7 +16,7 @@ uniform sampler2DArray shadow_map;
 
 void main()
 {
-    float depth_value = texture(shadow_map, vec3(TexCoords,2)).r;
+    float depth_value = pow(texture(shadow_map, vec3(TexCoords,1)).r*2, 2);
     //FragColor = vec4(vec3(LinearizeDepth(depth_value) / far_plane), 1.0); // perspective
     FragColor = vec4(vec3(depth_value), 1.0); // orthographic
 }

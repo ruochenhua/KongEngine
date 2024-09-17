@@ -64,18 +64,6 @@ float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in
     {
         return 0.0;
     }
-//    // calculate bias (based on depth map resolution and slope)
-//    vec3 normal = normalize(fs_in.Normal);
-//    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-//    const float biasModifier = 0.5f;
-//    if (layer == cascadeCount)
-//    {
-//        bias *= 1 / (farPlane * biasModifier);
-//    }
-//    else
-//    {
-//        bias *= 1 / (cascadePlaneDistances[layer] * biasModifier);
-//    }
 
     // PCF
     float shadow = 0.0;
