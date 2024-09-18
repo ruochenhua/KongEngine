@@ -1,7 +1,7 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
-#include "/common/perlin_noise.glsl"
+#include "/common/noise_gen.glsl"
 // tessellation primitive generator没有shader代码， 它根据tcs的输出数据和tes的输入数据结构设定计算
 // 如下方(quads,fractional_odd_spacing, ccw)代表了细分primitive的设置
 layout(quads, fractional_odd_spacing, ccw) in;

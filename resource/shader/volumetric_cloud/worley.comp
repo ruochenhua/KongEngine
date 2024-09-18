@@ -1,0 +1,34 @@
+#version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/volumetric_cloud/noise_gen_common.glsl"
+
+// 创建3D的WORLEY噪音材质用体积云的侵蚀效果计算
+// 参考 https://github.com/fede-vaccaro/TerrainEngine-OpenGL
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(rgba8, binding = 0) uniform image3D out_vol_tex;
+
+// 噪音生成参考的是https://github.com/sebh/TileableVolumeNoise下介绍的算法
+vec4 Stackable3DNoise(ivec3 pixel)
+{
+    vec3 coord = vec3(float(pixel.x) / 32.0, float(pixel.y) / 32.0, float(pixel.z) / 32.0);
+
+	// 3 octaves
+	float cell_count = 2.0;
+	float worley_noise0 = (1.0f - WorleyNoise3D(coord, cell_count * 1.0));
+	float worley_noise1 = (1.0f - WorleyNoise3D(coord, cell_count * 2.0));
+	float worley_noise2 = (1.0f - WorleyNoise3D(coord, cell_count * 4.0));
+	float worley_noise3 = (1.0f - WorleyNoise3D(coord, cell_count * 8.0));
+	float worleyFBM0 = worley_noise0*0.625f + worley_noise1*0.25f + worley_noise2*0.125f;
+	float worleyFBM1 = worley_noise1*0.625f + worley_noise2*0.25f + worley_noise3*0.125f;
+	float worleyFBM2 = worley_noise2*0.75f + worley_noise3*0.25f;
+	// cellCount=4 -> worleyNoise4 is just noise due to sampling frequency=texel freque. So only take into account 2 frequencies for FBM
+
+	return vec4(worleyFBM0, worleyFBM1, worleyFBM2, 1.0);
+}
+
+void main()
+{
+    ivec3 pixel = ivec3(gl_GlobalInvocationID.xyz);
+    imageStore(out_vol_tex, pixel, Stackable3DNoise(pixel));
+}

@@ -1,0 +1,34 @@
+#version 450 compatibility
+#extension GL_ARB_shading_language_include : require
+#include "/volumetric_cloud/noise_gen_common.glsl"
+
+/*
+    用一张低octave的perlin噪音填充2D材质，用于体积云的天气贴图
+*/
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout (rgba8, binding = 0) uniform image2D outWeatherTex;
+
+uniform float perlin_amplitude = 0.5;
+uniform float perlin_frequency = 0.8;
+uniform float perlin_scale = 100.0;
+uniform int perlinOctaves = 4;
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+
+	vec2 uv = vec2(float(pixel.x + 2.0) / 1024.0, float(pixel.y) / 1024.0);
+	vec2 suv = vec2(uv.x + 5.5, uv.y + 5.5) * perlin_scale * 3.0;
+    float power = 2;
+	//float cloudType = clamp(Perlin(suv, perlinScale*3.0, 0.3, 0.7,10), 0.0, 1.0);
+    float cloud_type = clamp(Perlin(suv.x, suv.y, 0.7, 10, 0.3, power));
+
+	//cloudType = cloudType*0.5 + cloudType_*0.5;
+    uv *= perlin_scale *0.95;
+	float coverage = Perlin(uv.x, uv.y, perlin_amplitude, 4, perlin_frequency, power);
+	vec4 weather = vec4( clamp(coverage, 0, 1), cloud_type, 0, 1);
+
+	imageStore (outWeatherTex, pixel, weather);
+}
