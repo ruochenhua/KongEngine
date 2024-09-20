@@ -55,13 +55,17 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
     if (atmos_hit.x > atmos_hit.y) return vec3(0,0,0);
 
     // 视线和星球做射线检测，取得近处的检测结果（远处的那个光被星球本体遮挡）
-    float planet_hit = ray_sphere_intersection(ray_origin, ray_dir, planet_radius).x;
-    // 这里有几种情况
-    // 1.视线星球有相交结果：观察距离为星球击中点的视线传播长度减去大气进入点的长度
-    // 2.视线和星球无相交结果并穿透大气：光线传播距离为光线大气出射点和大气入射点的长度
-    // 若相机在大气层内并靠近地表，则atmos_hit.x和planet_hit会出现是负值的情况（相交点在方向后面），按照下面的方法也能计算出光线在大气中传播的距离
-    float light_end = min(atmos_hit.y, planet_hit); // 这里用min因为没击中的话plant_hit会是一个很大的值
-    float ds = (light_end - atmos_hit.x) / float(iSteps);
+    vec2 planet_hit = ray_sphere_intersection(ray_origin, ray_dir, planet_radius);
+    float light_distance = atmos_hit.y;
+
+    // hit the planet
+    if(planet_hit.x < planet_hit.y && planet_hit.x > 0.1)
+    {
+        light_distance = planet_hit.x;
+    }
+
+    // light sample length
+    float ds = light_distance / float(iSteps);
 
     // Initialize the primary ray time.
     float iTime = 0.0;
