@@ -40,6 +40,7 @@ namespace Kong
         vs = GL_VERTEX_SHADER,		        // vertex shader
         fs = GL_FRAGMENT_SHADER,	        // fragment shader
         gs = GL_GEOMETRY_SHADER,	        // geometry shader
+        cs = GL_COMPUTE_SHADER,
         tcs = GL_TESS_CONTROL_SHADER,       // tessellation control shader
         tes = GL_TESS_EVALUATION_SHADER,    // tessellation evaluation shader
     };

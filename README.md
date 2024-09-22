@@ -1,9 +1,10 @@
 # 关于KongEngine
 
 这个工程是我用于学习和实践引擎技术的项目。原名是tinyGL，是一个功能较为基础的渲染引擎，现在计划是将他的能力扩展，接入更加先进多样的功能。
-![截图](docs/Hello/KongEngine_PBR.png)
-![截图](docs/Hello/KongEngine_IBL.png)
-
+![PBR](docs/Hello/KongEngine_PBR.png)
+![IBL](docs/Hello/KongEngine_IBL.png)
+![CSM](docs/Hello/KongEngine_CSM.png)
+![Terrain](docs/Hello/KongEngine_Terrain.png)
 目前包括以下几个部分：
 - 渲染：kong engine，主入口，提供渲染能力。目前基于OpenGL接口，使用PBR的渲染框架实现真是的渲染效果。
 - 物理：tap engine，物理模拟能力的库。自己编写实现，作为组建提供真实的物理效果。

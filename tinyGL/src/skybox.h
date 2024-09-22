@@ -2,6 +2,7 @@
 #include "Component/Mesh/BoxShape.h"
 #include "Common.h"
 #include "RenderCommon.h"
+#include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/SkyboxShader.h"
 
 
@@ -40,6 +41,8 @@ namespace Kong
 		// skybox立方体贴图
 		GLuint cube_map_id = GL_NONE;
 
+		shared_ptr<VolumetricCloud> volumetric_cloud_;
+		
 		// skybox渲染用到的mesh信息
 		shared_ptr<CBoxShape> box_mesh;
 		shared_ptr<CQuadShape> quad_shape;

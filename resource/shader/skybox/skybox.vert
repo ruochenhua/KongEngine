@@ -1,9 +1,7 @@
 #version 450 compatibility
 
 layout(location = 0) in vec3 aPosition;
-
 out vec3 uv;
-
 uniform mat4 MVP;
 
 void main(){

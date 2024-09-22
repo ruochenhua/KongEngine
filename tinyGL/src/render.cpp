@@ -298,6 +298,7 @@ int CRender::Init()
 	
 	defer_buffer_.Init(width, height);
 	ssao_helper_.Init(width, height);
+
 	
 	return 0;
 }

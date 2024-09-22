@@ -19,6 +19,7 @@ vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, 
     {
         SetBool("bloom", false);
     }
+    
     auto main_cam = CRender::GetRender()->GetCamera();
     if(main_cam)
     {

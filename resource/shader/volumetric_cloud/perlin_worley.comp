@@ -1,6 +1,6 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
-#include "/volumetric_cloud/noise_gen_common.glsl"
+#include "/common/noise_gen.glsl"
 
 /*
 	用PERLIN-WORLEY噪音和WORLEY噪音填充3D材质，WORLEY噪音用于构建基础形状

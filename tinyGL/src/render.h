@@ -4,6 +4,7 @@
 #include "postprocess.h"
 #include "skybox.h"
 #include "Component/Mesh/Terrain.h"
+#include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/PBRShader.h"
 #include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
@@ -122,9 +123,11 @@ namespace Kong
 		void OnWindowResize(int width, int height);
 						
 		PostProcess post_process;
-		int render_sky_env_status = 0;
+		int render_sky_env_status = 2;
 		bool use_ssao = true;
 		
+		// 场景光源信息
+		SSceneRenderInfo scene_render_info;
 	private:
 		int InitCamera();
 		void InitUBO();
@@ -149,13 +152,7 @@ namespace Kong
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
 
-
-
 		CCamera* mainCamera = nullptr;
-		
-		// 场景光源信息
-		SSceneRenderInfo scene_render_info;
-		
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 *  mat4 model
 		 *  mat4 view

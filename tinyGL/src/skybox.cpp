@@ -9,7 +9,8 @@ using namespace Kong;
 
 unsigned CUBE_MAP_RES = 1024;
 
-#define USE_HDR_SKYBOX 1 
+#define USE_HDR_SKYBOX 1
+#define RENDER_CLOUD 1
 void CSkyBox::Init()
 {
 	box_mesh = make_shared<CBoxShape>();
@@ -148,6 +149,9 @@ void CSkyBox::Init()
 	PreprocessIBL(skybox_res_list[current_skybox_idx]);
 	
 #endif
+	
+	// init volumetric cloud
+	volumetric_cloud_ = make_shared<VolumetricCloud>();
 }
 
 void CSkyBox::PreprocessIBL(const string& hdr_file_path)
@@ -303,6 +307,47 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 	//glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
 	//quad_shape->Draw();
+
+	// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
+	// 我们可以直接在skybox里面画
+#if RENDER_CLOUD
+	// volumetric_cloud_->SimpleDraw();
+	// 计算体积云
+	auto cloud_model_ = volumetric_cloud_->cloud_model_;
+
+	skybox_shader->SetFloat("iTime", glfwGetTime());
+	
+	skybox_shader->SetFloat("coverage_multiplier", cloud_model_->coverage);
+	skybox_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
+	skybox_shader->SetFloat("crispiness", cloud_model_->crispiness);
+	skybox_shader->SetFloat("curliness", cloud_model_->curliness);
+	skybox_shader->SetFloat("absorption", cloud_model_->absorption*0.01);
+	skybox_shader->SetFloat("densityFactor", cloud_model_->density);
+
+	//cloud_compute_shader_.setBool("enablePowder", enablePowder);
+	
+	skybox_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
+	skybox_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
+	skybox_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
+
+	skybox_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
+	skybox_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
+	
+	skybox_shader->SetVec3("skyColorTop", cloud_model_->sky_color_top);
+	skybox_shader->SetVec3("skyColorBottom", cloud_model_->sky_color_bottom);
+
+	skybox_shader->SetInt("cloud", 1);
+	skybox_shader->SetInt("worley32", 2);
+	skybox_shader->SetInt("weatherTex", 3);
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D, cloud_model_->perlin_texture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_3D, cloud_model_->worley32_texture);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
+
+#endif
 	box_mesh->Draw();
 	
 	glCullFace(GL_BACK);

@@ -7,8 +7,12 @@ namespace Kong
     {
     public:
         CloudModel();
-        void Update();
+        void GenerateWeatherMap();
+        
     private:
+        friend class VolumetricCloud;
+        friend class CSkyBox;
+        
         shared_ptr<Shader> perlin_worley_comp_shader;
         shared_ptr<Shader> worley_comp_shader;
         shared_ptr<Shader> weather_compute_shader;
@@ -22,6 +26,9 @@ namespace Kong
 
         glm::vec3 cloud_color_top = glm::vec3(169.f, 149.f, 149.f) * (1.5f/255.f);
         glm::vec3 cloud_color_bottom = glm::vec3(65.f, 70.f, 80.f) * (1.5f/255.f);
+
+        glm::vec3 sky_color_top = glm::vec3(0.5, 0.7, 0.8)*1.05f;
+        glm::vec3 sky_color_bottom = glm::vec3(0.9, 0.9, 0.95);
         glm::vec3 seed = glm::vec3(0), old_seed = glm::vec3(0);
 
         GLuint perlin_texture = 0, worley32_texture = 0, weather_texutre = 0;
@@ -33,17 +40,16 @@ namespace Kong
         VolumetricCloud();
 
         void SimpleDraw() override;
-
-    private:
-        GLuint perlin_texture = GL_NONE;
-        GLuint worly_texture = GL_NONE;
-        GLuint weather_texture = GL_NONE;
-
-        // cloud process
-        GLuint cloud_process_fbo = GL_NONE;
-        GLuint cloud_process_rbo = GL_NONE;
-        GLuint cloud_process_depth_tex = GL_NONE;
         
+        // cloud process
+        GLuint cloud_tex, bloom_tex, alphaness_tex, depth_tex;
+    private:
+        friend class CSkyBox;
+        
+        shared_ptr<CloudModel> cloud_model_;
+        shared_ptr<Shader> cloud_compute_shader_;
+        
+        GLuint GenerateTexture2D(unsigned w, unsigned h);
     };
 }
 
