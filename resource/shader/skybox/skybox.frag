@@ -224,7 +224,9 @@ float threshold(const float v, const float t)
 const vec3 windDirection = normalize(vec3(0.5, 0.0, 0.1));
 
 vec2 getUVProjection(vec3 p){
-    return p.xz/SPHERE_INNER_RADIUS + 0.5;
+    // return p.xz/SPHERE_INNER_RADIUS + 0.5;
+    vec3 dir_vector = normalize(p - sphereCenter);
+    return (dir_vector.xz + 1.0)/2.0;
 }
 
 #define CLOUD_TOP_OFFSET 750.0
