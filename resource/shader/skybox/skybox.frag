@@ -5,7 +5,7 @@ in vec3 uv;
 out vec4 FragColor;
 
 uniform samplerCube skybox;
-int iSteps = 64; 
+int iSteps = 64;
 int jSteps = 32;
 
 uniform int render_sky_status;
@@ -31,12 +31,12 @@ vec3 cameraPosition = matrix_ubo.cam_pos.xyz;
 // Cone sampling random offsets
 uniform vec3 noiseKernel[6u] = vec3[]
 (
-    vec3( 0.38051305,  0.92453449, -0.02111345),
-    vec3(-0.50625799, -0.03590792, -0.86163418),
-    vec3(-0.32509218, -0.94557439,  0.01428793),
-    vec3( 0.09026238, -0.27376545,  0.95755165),
-    vec3( 0.28128598,  0.42443639, -0.86065785),
-    vec3(-0.16852403,  0.14748697,  0.97460106)
+vec3( 0.38051305,  0.92453449, -0.02111345),
+vec3(-0.50625799, -0.03590792, -0.86163418),
+vec3(-0.32509218, -0.94557439,  0.01428793),
+vec3( 0.09026238, -0.27376545,  0.95755165),
+vec3( 0.28128598,  0.42443639, -0.86065785),
+vec3(-0.16852403,  0.14748697,  0.97460106)
 );
 
 
@@ -179,6 +179,7 @@ bool raySphereintersection2(vec3 ro, vec3 rd, float radius, out vec3 startPos){
 
 uniform vec3 skyColorBottom;
 uniform vec3 skyColorTop;
+uniform bool render_cloud;
 
 vec3 getSun(const vec3 d, float powExp){
     float sun = clamp( dot(SUN_DIR,d), 0.0, 1.0 );
@@ -348,10 +349,10 @@ vec3 ambient_light(float heightFrac)
 #define BAYER_FACTOR 1.0/16.0
 uniform float bayerFilter[16u] = float[]
 (
-    0.0*BAYER_FACTOR, 8.0*BAYER_FACTOR, 2.0*BAYER_FACTOR, 10.0*BAYER_FACTOR,
-    12.0*BAYER_FACTOR, 4.0*BAYER_FACTOR, 14.0*BAYER_FACTOR, 6.0*BAYER_FACTOR,
-    3.0*BAYER_FACTOR, 11.0*BAYER_FACTOR, 1.0*BAYER_FACTOR, 9.0*BAYER_FACTOR,
-    15.0*BAYER_FACTOR, 7.0*BAYER_FACTOR, 13.0*BAYER_FACTOR, 5.0*BAYER_FACTOR
+0.0*BAYER_FACTOR, 8.0*BAYER_FACTOR, 2.0*BAYER_FACTOR, 10.0*BAYER_FACTOR,
+12.0*BAYER_FACTOR, 4.0*BAYER_FACTOR, 14.0*BAYER_FACTOR, 6.0*BAYER_FACTOR,
+3.0*BAYER_FACTOR, 11.0*BAYER_FACTOR, 1.0*BAYER_FACTOR, 9.0*BAYER_FACTOR,
+15.0*BAYER_FACTOR, 7.0*BAYER_FACTOR, 13.0*BAYER_FACTOR, 5.0*BAYER_FACTOR
 );
 
 uniform bool enablePowder = false;
@@ -452,8 +453,8 @@ vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, float sphere_r
     if (d < 0.0) return vec2(1e10,-1e10);
     // 击中的话有两个相同或者不同的结果
     return vec2(
-        (-b - sqrt(d))/(2.0*a),
-        (-b + sqrt(d))/(2.0*a)
+    (-b - sqrt(d))/(2.0*a),
+    (-b + sqrt(d))/(2.0*a)
     );
 }
 
@@ -553,7 +554,7 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
             // Increment the secondary ray time.
             jTime += jStepSize;
         }
-        
+
         float surface_height = length(iPos) - planet_radius;
         // 计算这一步的散射的光学深度结果
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
@@ -581,7 +582,7 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
 vec4 computeSkyboxCloud()
 {
     vec4 fragColor_v, bloom_v, alphaness_v, cloudDistance_v;
-  
+
     vec3 worldDir = normalize(uv);
 
     vec3 startPos, endPos;
@@ -693,8 +694,12 @@ void main() {
                 1200, // Mie scale height
                 0.758                           // Mie preferred scattering direction
             );
-            vec4 cloud = computeSkyboxCloud();
-            color += cloud;
+            // do cloud render
+            if(render_cloud)
+            {
+                vec4 cloud = computeSkyboxCloud();
+                color += cloud;
+            }
         }
         FragColor = color;
     }

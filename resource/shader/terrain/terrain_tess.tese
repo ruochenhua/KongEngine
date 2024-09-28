@@ -13,6 +13,10 @@ uniform float freq;
 uniform float power;
 uniform float height_scale;
 uniform float height_shift;
+uniform vec3 cam_pos;
+
+uniform int terrain_size;
+uniform int terrain_res;
 
 // patch的四个uv数据
 in vec2 TextureCoord[];
@@ -25,6 +29,7 @@ out mat3 TBN;
 void main(){
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
+
 
     vec2 t00 = TextureCoord[0];
     vec2 t01 = TextureCoord[1];
@@ -41,14 +46,14 @@ void main(){
     vec3 p00 = gl_in[0].gl_Position.xyz;
     vec3 p01 = gl_in[1].gl_Position.xyz;
     vec3 p10 = gl_in[2].gl_Position.xyz;
-    vec3 p11 = gl_in[3].gl_Position.xyz;
+    vec3 p11 = gl_in[3].gl_Position.xyz ;
     vec3 p_range = p11-p00;
 
     // 得出法线
     vec3 uVec = p01 - p00;
     vec3 vVec = p10 - p00;
     vec3 normal = normalize( cross(vVec.xyz, uVec.xyz));
-    
+
     // lerp得到细分的p点，并根据高度图和法线得到实际的高度（原P点的y为0）
     vec3 p0 = (p01 - p00) * u + p00;    // 当前点和patch上边界相交的点
     vec3 p1 = (p11 - p10) * u + p10;    // 当前点和patch下边界相交的点
@@ -63,12 +68,12 @@ void main(){
 
         // 取两个点    
         vec3 pu = p + vec3(p_range.x / resolution, 0, 0);
-        vec3 pv = p + vec3(0, 0, p_range.z / resolution);     
+        vec3 pv = p + vec3(0, 0, p_range.z / resolution);
         // 取这两个点的高度
-        pu.y = texture(height_map, texCoord+vec2(t_range.x/resolution, 0)).y * height_scale - height_shift;        
-        pv.y = texture(height_map, texCoord+vec2(0, t_range.y/resolution)).y * height_scale - height_shift;        
-         
-        uVec = normalize(pu-p);                
+        pu.y = texture(height_map, texCoord+vec2(t_range.x/resolution, 0)).y * height_scale - height_shift;
+        pv.y = texture(height_map, texCoord+vec2(0, t_range.y/resolution)).y * height_scale - height_shift;
+
+        uVec = normalize(pu-p);
         vVec = normalize(pv-p);
         normal = normalize(cross(vVec, uVec));
 
@@ -79,28 +84,31 @@ void main(){
     {
         p = (p1 - p0) * v + p0;
         p.y = Perlin(p.x, p.z, amplitude, octaves, freq, power);
-        
+
         // 找到附近的两个点，计算高度并计算出normal
         vec3 pu = p + vec3(1, 0, 0);
         vec3 pv = p + vec3(0, 0, 1);
 
-        pu.y = Perlin(pu.x, pu.z, amplitude, octaves, freq, power);       
+        pu.y = Perlin(pu.x, pu.z, amplitude, octaves, freq, power);
         pv.y = Perlin(pv.x, pv.z, amplitude, octaves, freq, power);
-        
+
         tes_height = p.y;
-                 
-        uVec = normalize(pu-p);                
+
+        uVec = normalize(pu-p);
         vVec = normalize(pv-p);
         normal = normalize(cross(vVec, uVec));
 
         TBN = mat3(uVec, vVec, normal);
     }
-    
+
     gl_Position = matrix_ubo.projection * matrix_ubo.view * vec4(p, 1.0);
 
+    vec2 cam_uv_offset = cam_pos.xz / float(terrain_size);
     //frag_texcoord = texCoord;
-    frag_texcoord = gl_TessCoord.xy;
+    frag_texcoord = p.xz / float(terrain_size) * terrain_res;
+    //frag_texcoord = gl_TessCoord.xy;
+
     frag_pos = p;
-    
+
     frag_normal = normal;
 }

@@ -35,7 +35,7 @@ namespace Kong
 
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
-        int rez = 200;
+        int terrain_res = 100;
         bool render_wireframe = false;
 
         GLuint grass_albedo_texture = GL_NONE;
@@ -47,6 +47,6 @@ namespace Kong
         GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
 
-        int terrain_width = 10000, terrain_height = 10000;
+        int terrain_size = 5000;
     };
 }

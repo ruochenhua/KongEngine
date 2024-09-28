@@ -10,7 +10,7 @@ using namespace Kong;
 unsigned CUBE_MAP_RES = 1024;
 
 #define USE_HDR_SKYBOX 1
-#define RENDER_CLOUD 1
+
 void CSkyBox::Init()
 {
 	box_mesh = make_shared<CBoxShape>();
@@ -310,7 +310,6 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 
 	// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
 	// 我们可以直接在skybox里面画
-#if RENDER_CLOUD
 	// volumetric_cloud_->SimpleDraw();
 	// 计算体积云
 	auto cloud_model_ = volumetric_cloud_->cloud_model_;
@@ -336,6 +335,7 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 	skybox_shader->SetVec3("skyColorTop", cloud_model_->sky_color_top);
 	skybox_shader->SetVec3("skyColorBottom", cloud_model_->sky_color_bottom);
 
+	skybox_shader->SetBool("render_cloud", render_cloud);
 	skybox_shader->SetInt("cloud", 1);
 	skybox_shader->SetInt("worley32", 2);
 	skybox_shader->SetInt("weatherTex", 3);
@@ -347,7 +347,6 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
 
-#endif
 	box_mesh->Draw();
 	
 	glCullFace(GL_BACK);

@@ -29,7 +29,8 @@ namespace Kong
 		GLuint GetDiffuseIrradianceTexture() const {return irradiance_tex_id;}
 		GLuint GetPrefilterTexture() const {return prefilter_map_id;}
 		GLuint GetBRDFLutTexture() const {return  brdf_lut_map_id;}
-		
+
+		bool render_cloud = true;
 	private:
 		// skybox渲染相关shader
 		shared_ptr<SkyboxShader> skybox_shader;
