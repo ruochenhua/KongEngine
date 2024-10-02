@@ -41,27 +41,26 @@ vec3(-0.16852403,  0.14748697,  0.97460106)
 
 
 // Cloud types height density gradients
-#define STRATUS_GRADIENT vec4(0.0, 0.1, 0.2, 0.3)
-#define STRATOCUMULUS_GRADIENT vec4(0.02, 0.2, 0.48, 0.625)
-#define CUMULUS_GRADIENT vec4(0.00, 0.1625, 0.88, 0.98)
+const vec4 STRATUS_GRADIENT = vec4(0.0, 0.1, 0.2, 0.3);
+const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.2, 0.48, 0.625);
+const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
 
 
 uniform float earthRadius = 600000.0;
 uniform float sphereInnerRadius = 5000.0;
 uniform float sphereOuterRadius = 17000.0;
 
-#define EARTH_RADIUS earthRadius
-#define SPHERE_INNER_RADIUS (EARTH_RADIUS + sphereInnerRadius)
-#define SPHERE_OUTER_RADIUS (SPHERE_INNER_RADIUS + sphereOuterRadius)
-#define SPHERE_DELTA float(SPHERE_OUTER_RADIUS - SPHERE_INNER_RADIUS)
+const float SPHERE_INNER_RADIUS = earthRadius + sphereInnerRadius;
+const float SPHERE_OUTER_RADIUS = SPHERE_INNER_RADIUS + sphereOuterRadius;
+const float SPHERE_DELTA  = float(SPHERE_OUTER_RADIUS - SPHERE_INNER_RADIUS);
 
 
-#define CLOUDS_MIN_TRANSMITTANCE 1e-1
-#define CLOUDS_TRANSMITTANCE_THRESHOLD 1.0 - CLOUDS_MIN_TRANSMITTANCE
+const float CLOUDS_MIN_TRANSMITTANCE = 1e-1;
+const float CLOUDS_TRANSMITTANCE_THRESHOLD = 1.0 - CLOUDS_MIN_TRANSMITTANCE;
 
-#define SUN_DIR -light_info_ubo.directional_light.light_dir.xyz
-#define SUN_COLOR light_info_ubo.directional_light.light_color.xyz*vec3(1.1,1.1,0.95)
-vec3 sphereCenter = vec3(0.0, -EARTH_RADIUS, 0.0);
+const vec3 SUN_DIR = -light_info_ubo.directional_light.light_dir.xyz;
+const vec3 SUN_COLOR = light_info_ubo.directional_light.light_color.xyz*vec3(1.1,1.1,0.95);
+vec3 sphereCenter = vec3(0.0, -earthRadius, 0.0);
 
 
 float HG( float sundotrd, float g) {
@@ -69,92 +68,8 @@ float HG( float sundotrd, float g) {
     return (1. - gg) / pow( 1. + gg - 2. * g * sundotrd, 1.5);
 }
 
-
-bool intersectCubeMap(vec3 o, vec3 d, out vec3 minT, out vec3 maxT)
+bool raySphereintersection(vec3 ro, vec3 rd, float radius, out vec3 startPos)
 {
-    vec3 cubeMin = vec3(-0.5, -0.5, -0.5);
-    vec3 cubeMax = vec3(0.5, 1 + cubeMin.y, 0.5);
-
-    // compute intersection of ray with all six bbox planes
-    vec3 invR = 1.0 / d;
-    vec3 tbot = invR * (cubeMin - o);
-    vec3 ttop = invR * (cubeMax - o);
-    // re-order intersections to find smallest and largest on each axis
-    vec3 tmin = min (ttop, tbot);
-    vec3 tmax = max (ttop, tbot);
-    // find the largest tmin and the smallest tmax
-    vec2 t0 = max (tmin.xx, tmin.yz);
-    float tnear = max (t0.x, t0.y);
-    t0 = min (tmax.xx, tmax.yz);
-    float tfar = min (t0.x, t0.y);
-
-    // check for hit
-    bool hit;
-    if ((tnear > tfar) || tfar < 0.0)
-    hit = false;
-    else
-    hit = true;
-
-    minT = tnear < 0.0? o : o + d * tnear; // if we are inside the bb, start point is cam pos
-    maxT = o + d * tfar;
-
-    return hit;
-}
-
-void swap(in float a, in float b){
-    float c = a;
-    a = b;
-    b = c;
-}
-
-bool raySphereintersectionSkyMap(vec3 rd, float radius, out vec3 startPos){
-
-    float t;
-
-    vec3 sphereCenter_ = vec3(0.0);
-
-    float radius2 = radius*radius;
-
-    vec3 L = - sphereCenter_;
-    float a = dot(rd, rd);
-    float b = 2.0 * dot(rd, L);
-    float c = dot(L,L) - radius2;
-
-    float discr = b*b - 4.0 * a * c;
-    t = max(0.0, (-b + sqrt(discr))/2);
-
-    startPos = rd*t;
-
-    return true;
-}
-
-
-bool raySphereintersection(vec3 ro, vec3 rd, float radius, out vec3 startPos){
-
-    float t;
-
-    sphereCenter.xz = cameraPosition.xz;
-
-    float radius2 = radius*radius;
-
-    vec3 L = ro - sphereCenter;
-    float a = dot(rd, rd);
-    float b = 2.0 * dot(rd, L);
-    float c = dot(L,L) - radius2;
-
-    float discr = b*b - 4.0 * a * c;
-    if(discr < 0.0) return false;
-    t = max(0.0, (-b + sqrt(discr))/2);
-    if(t == 0.0){
-        return false;
-    }
-    startPos = ro + rd*t;
-
-    return true;
-}
-
-bool raySphereintersection2(vec3 ro, vec3 rd, float radius, out vec3 startPos){
-
     float t;
 
     sphereCenter.xz = cameraPosition.xz;
@@ -242,8 +157,7 @@ float sampleCloudDensity(vec3 p, bool expensive, float lod){
     vec3 animation = heightFraction * windDirection * CLOUD_TOP_OFFSET + windDirection * iTime * CLOUD_SPEED;
     vec2 uv = getUVProjection(p);
     vec2 moving_uv = getUVProjection(p + animation);
-
-
+    
     if(heightFraction < 0.0 || heightFraction > 1.0){
         return 0.0;
     }
@@ -257,12 +171,11 @@ float sampleCloudDensity(vec3 p, bool expensive, float lod){
 
     vec3 weather_data = texture(weatherTex, moving_uv).rgb;
     float cloud_coverage = weather_data.r*coverage_multiplier;
-    // cloud_coverage = weather_data.r;
     float base_cloud_with_coverage = remap(base_cloud , cloud_coverage , 1.0 , 0.0 , 1.0);
     base_cloud_with_coverage *= cloud_coverage;
 
     //bool expensive = true;
-
+    
     if(expensive)
     {
         vec3 erodeCloudNoise = textureLod(worley32, vec3(moving_uv*CLOUD_SCALE, heightFraction)*curliness, lod).rgb;
@@ -284,7 +197,6 @@ float beer(float d){
 
 float powder(float d){
     return (1. - exp(-2.*d));
-
 }
 
 
@@ -299,7 +211,6 @@ uniform float absorption = 0.0035;
 
 float raymarchToLight(vec3 o, float stepSize, vec3 lightDir, float originalDensity, float lightDotEye)
 {
-
     vec3 startPos = o;
     float ds = stepSize * 6.0;
     vec3 rayStep = lightDir * ds;
@@ -320,8 +231,8 @@ float raymarchToLight(vec3 o, float stepSize, vec3 lightDir, float originalDensi
         float heightFraction = getHeightFraction(pos);
         if(heightFraction >= 0)
         {
-
-            float cloudDensity = sampleCloudDensity(pos, density > 0.3, i/16);
+            
+            float cloudDensity = sampleCloudDensity(pos, bool(density > 0.3), i/16);
             if(cloudDensity > 0.0)
             {
                 float Ti = exp(cloudDensity*sigma_ds);
@@ -360,7 +271,7 @@ uniform float bayerFilter[16u] = float[]
 uniform bool enablePowder = false;
 
 uniform float densityFactor = 0.02;
-vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg, out vec4 cloudPos){
+vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
     vec3 path = endPos - startPos;
     float len = length(path);
 
@@ -395,7 +306,6 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg, out vec4 cloudPos){
         if(density_sample > 0.)
         {
             if(!entered){
-                cloudPos = vec4(pos,1.0);
                 entered = true;
             }
             float height = getHeightFraction(pos);
@@ -581,42 +491,42 @@ vec3 atmosphere(vec3 ray_dir, vec3 ray_origin,
     return iSun * (pRlh * kRlh * total_scatter_rlh + pMie * kMie * total_scatter_mie);
 }
 
-vec4 computeSkyboxCloud()
+vec4 computeSkyboxCloud(vec4 sky_color)
 {
-    vec4 fragColor_v, bloom_v, alphaness_v, cloudDistance_v;
+    vec4 fragColor_v, alphaness_v;
 
     vec3 worldDir = normalize(uv);
 
     vec3 startPos, endPos;
 
     //compute background color
-    vec3 stub, cubeMapEndPos;
+    vec3 stub;
     //intersectCubeMap(vec3(0.0, 0.0, 0.0), worldDir, stub, cubeMapEndPos);
-    bool hit = raySphereintersectionSkyMap(worldDir, 0.5, cubeMapEndPos);
 
-    vec4 bg = vec4(0.0, 0.2, 0.6, 1.0);
-    bg = vec4(0,0,0,0);
-    vec3 red = vec3(1.0);
-
-    //bg = mix( mix(red.rgbr, vec4(1.0), SUN_DIR.y), bg, pow( max(cubeMapEndPos.y+0.1, .0), 0.2));
-    //vec4 bg = vec4( TonemapACES(preetham(worldDir)), 1.0);
+    vec4 bg = sky_color;
     int case_ = 0;
     //compute raymarching starting and ending point
     vec3 fogRay;
-    if(cameraPosition.y < SPHERE_INNER_RADIUS - EARTH_RADIUS){
+    if(cameraPosition.y < SPHERE_INNER_RADIUS - earthRadius){
+        // under the cloud
         raySphereintersection(cameraPosition, worldDir, SPHERE_INNER_RADIUS, startPos);
         raySphereintersection(cameraPosition, worldDir, SPHERE_OUTER_RADIUS, endPos);
         fogRay = startPos;
-    }else if(cameraPosition.y > SPHERE_INNER_RADIUS - EARTH_RADIUS && cameraPosition.y < SPHERE_OUTER_RADIUS - EARTH_RADIUS){
+    }else if(cameraPosition.y > SPHERE_INNER_RADIUS - earthRadius && cameraPosition.y < SPHERE_OUTER_RADIUS - earthRadius){
+        // inside the cloud
         startPos = cameraPosition;
         raySphereintersection(cameraPosition, worldDir, SPHERE_OUTER_RADIUS, endPos);
         bool hit = raySphereintersection(cameraPosition, worldDir, SPHERE_INNER_RADIUS, fogRay);
         if(!hit)
-        fogRay = startPos;
+        {
+            fogRay = startPos;
+        }
+        
         case_ = 1;
     }else{
-        raySphereintersection2(cameraPosition, worldDir, SPHERE_OUTER_RADIUS, startPos);
-        raySphereintersection2(cameraPosition, worldDir, SPHERE_INNER_RADIUS, endPos);
+        // on top of the cloud
+        raySphereintersection(cameraPosition, worldDir, SPHERE_OUTER_RADIUS, startPos);
+        raySphereintersection(cameraPosition, worldDir, SPHERE_INNER_RADIUS, endPos);
         raySphereintersection(cameraPosition, worldDir, SPHERE_OUTER_RADIUS, fogRay);
         case_ = 2;
     }
@@ -625,7 +535,6 @@ vec4 computeSkyboxCloud()
     float fogAmount = computeFogAmount(fogRay, 0.00006);
 
     fragColor_v = bg;
-    bloom_v = vec4(getSun(worldDir, 128)*1.3,1.0);
 
     if(fogAmount > 0.965)
     {
@@ -634,10 +543,8 @@ vec4 computeSkyboxCloud()
     }
 
     vec4 v = vec4(0.0);
-    v = raymarchToCloud(startPos,endPos, bg.rgb, cloudDistance_v);
-    cloudDistance_v = vec4(distance(cameraPosition, cloudDistance_v.xyz), 0.0,0.0,0.0);
-    //cloudDistance_v = v;
-
+    v = raymarchToCloud(startPos, endPos, bg.rgb);
+    
     float cloudAlphaness = threshold(v.a, 0.2);
     v.rgb = v.rgb*1.8 - 0.1; // contrast-illumination tuning
 
@@ -663,10 +570,6 @@ vec4 computeSkyboxCloud()
 
     if(cloudAlphaness > 0.1){ //apply fog to bloom buffer
                               float fogAmount = computeFogAmount(startPos, 0.00003);
-
-                              vec3 cloud = mix(vec3(0.0), bloom_v.rgb, clamp(fogAmount,0.,1.));
-                              bloom_v.rgb = bloom_v.rgb*(1.0 - cloudAlphaness) + cloud.rgb;
-
     }
     fragColor_v.a = alphaness_v.r;
     return fragColor_v;
@@ -700,7 +603,7 @@ void main() {
             // do cloud render
             if(render_cloud)
             {
-                vec4 cloud = computeSkyboxCloud();
+                vec4 cloud = computeSkyboxCloud(color);
                 color += cloud;
             }
         }
