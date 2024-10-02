@@ -42,11 +42,11 @@ vector<weak_ptr<CMeshComponent>> CScene::GetMeshes()
     return g_scene->GetSceneMeshes_Implement();
 }
 
-void CScene::UpdateScene(double delta) const
+void CScene::PreRenderUpdate(double delta) const
 {
     for(auto& actor : scene_actors)
     {
-        actor->Update(delta);
+        actor->PreRenderUpdate(delta);
     }
 }
 

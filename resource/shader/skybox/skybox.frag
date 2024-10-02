@@ -257,7 +257,7 @@ float sampleCloudDensity(vec3 p, bool expensive, float lod){
 
     vec3 weather_data = texture(weatherTex, moving_uv).rgb;
     float cloud_coverage = weather_data.r*coverage_multiplier;
-    cloud_coverage = weather_data.r;
+    // cloud_coverage = weather_data.r;
     float base_cloud_with_coverage = remap(base_cloud , cloud_coverage , 1.0 , 0.0 , 1.0);
     base_cloud_with_coverage *= cloud_coverage;
 
@@ -595,9 +595,10 @@ vec4 computeSkyboxCloud()
     bool hit = raySphereintersectionSkyMap(worldDir, 0.5, cubeMapEndPos);
 
     vec4 bg = vec4(0.0, 0.2, 0.6, 1.0);
+    bg = vec4(0,0,0,0);
     vec3 red = vec3(1.0);
 
-    bg = mix( mix(red.rgbr, vec4(1.0), SUN_DIR.y), bg, pow( max(cubeMapEndPos.y+0.1, .0), 0.2));
+    //bg = mix( mix(red.rgbr, vec4(1.0), SUN_DIR.y), bg, pow( max(cubeMapEndPos.y+0.1, .0), 0.2));
     //vec4 bg = vec4( TonemapACES(preetham(worldDir)), 1.0);
     int case_ = 0;
     //compute raymarching starting and ending point

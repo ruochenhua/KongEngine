@@ -26,7 +26,7 @@ namespace Kong
         ~AActor();
         
         void AddComponent(std::shared_ptr<CComponent> component);
-        void Update(double delta);
+        void PreRenderUpdate(double delta);
         template<class T>
         shared_ptr<T> GetComponent();
         glm::mat4 GetModelMatrix() const;

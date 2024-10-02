@@ -26,7 +26,7 @@ namespace Kong
         static vector<shared_ptr<AActor>> GetActors();
         static vector<weak_ptr<CMeshComponent>> GetMeshes();
 
-        void UpdateScene(double delta) const;
+        void PreRenderUpdate(double delta) const;
         void LoadScene(const string& file_path);
         
         vector<shared_ptr<AActor>> GetSceneActors_Implement();

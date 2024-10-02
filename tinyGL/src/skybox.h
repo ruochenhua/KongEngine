@@ -24,6 +24,8 @@ namespace Kong
 		void PreprocessIBL(const string& hdr_file_path);
 		void Render(const glm::mat4& mvp, int render_sky_status);
 		void ChangeSkybox();
+
+		void PreRenderUpdate();
 		
 		GLuint GetSkyBoxTextureId() const {return cube_map_id;}
 		GLuint GetDiffuseIrradianceTexture() const {return irradiance_tex_id;}

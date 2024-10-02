@@ -35,7 +35,7 @@ int main()
 			ui_manager->PreRenderUpdate(delta);
 			render->Update(delta);
 
-			CScene::GetScene()->UpdateScene(delta);
+			CScene::GetScene()->PreRenderUpdate(delta);
 		
 			ui_manager->PostRenderUpdate();
 			render->PostUpdate();

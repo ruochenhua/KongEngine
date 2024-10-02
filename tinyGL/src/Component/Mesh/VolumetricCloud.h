@@ -39,6 +39,8 @@ namespace Kong
     public:
         VolumetricCloud();
 
+        // update ui
+        void PreRenderUpdate() const;
         void SimpleDraw() override;
         
         // cloud process
