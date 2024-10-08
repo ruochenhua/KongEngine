@@ -46,7 +46,7 @@ namespace Kong
         
         GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
-
-        int terrain_size = 5000;
+        
+        int terrain_size = 10000;
     };
 }

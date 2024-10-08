@@ -357,3 +357,8 @@ void CSkyBox::ChangeSkybox()
 	current_skybox_idx = (current_skybox_idx + 1) % skybox_res_list.size();
 	PreprocessIBL(skybox_res_list[current_skybox_idx]);
 }
+
+void CSkyBox::PreRenderUpdate()
+{
+	volumetric_cloud_->PreRenderUpdate();
+}

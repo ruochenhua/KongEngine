@@ -24,7 +24,7 @@ void AActor::AddComponent(std::shared_ptr<CComponent> component)
     components.push_back(component);
 }
 
-void AActor::Update(double delta)
+void AActor::PreRenderUpdate(double delta)
 {
     // actor 更新调用
     // todo：先处理一下点光源和box mesh之间的颜色同步的问题吧，具体其他的还没想好

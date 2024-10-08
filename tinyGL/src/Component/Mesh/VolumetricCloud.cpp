@@ -1,5 +1,7 @@
 #include "VolumetricCloud.h"
 
+#include <imgui.h>
+
 #include "render.h"
 #include "Component/LightComponent.h"
 const int CLOUD_REZ = 16;
@@ -102,6 +104,22 @@ VolumetricCloud::VolumetricCloud()
     bloom_tex = GenerateTexture2D(width, height);
     alphaness_tex = GenerateTexture2D(width, height);
     depth_tex = GenerateTexture2D(width, height);
+}
+
+void VolumetricCloud::PreRenderUpdate() const
+{
+	ImGui::Begin("Volumetric Cloud");
+	ImGui::DragFloat("Coverage", &cloud_model_->coverage, 0.02f, 0.0, 3.0);
+	ImGui::DragFloat("Cloud Speed", &cloud_model_->cloud_speed, 1.0f, 0.0f, 3000.0f);
+	ImGui::DragFloat("Crispiness", &cloud_model_->crispiness, 0.1f, 0.0f, 100.0f);
+	ImGui::DragFloat("curliness", &cloud_model_->curliness, 0.02f, 0.0f, 30.0f);
+	ImGui::DragFloat("Density", &cloud_model_->density, 0.001f, 0.0f, 1.f);
+	ImGui::DragFloat("absorption", &cloud_model_->absorption, 0.02f, 0.0f, 5.0f);
+	ImGui::DragFloat("perlin frequency", &cloud_model_->perlin_frequency, 0.04f, 0.0f, 10.0f);
+
+	
+	
+	ImGui::End();
 }
 
 void VolumetricCloud::SimpleDraw()
