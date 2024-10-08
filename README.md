@@ -30,7 +30,6 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
     - [ ] 阴影效果优化
     - [x] CSM
  - [x] 材质贴图
- - [ ] **目标**： 光线追踪接入
  - [x] SkyMap
  - [x] IBL
  - [x] 实例化渲染
@@ -41,15 +40,22 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
    - [x] 核效果
    - [ ] 后处理效果整合(多种排列组合、参数暴露)
  - [ ] 全局光照
+ - [ ] 屏幕空间反射（screen space reflection）
+ - [ ] 屏幕空间折射（screen space refraction）
  - [x] 环境光遮蔽
  - [ ] 大场景渲染
    - [x] 地形
      - [x] 地形曲面细分
-     - [x] perlin地形
+     - [x] 程序化地形生成
+     - [ ] 高度图
    - [x] 天空大气
    - [ ] 水体
    - [ ] 云层
+      -[ ] 体积云初步支持
 
+ - [ ] 光线追踪能力
+ - [ ] 异线程渲染
+ 
 ## 编辑能力
  - [x] 基础UI
  - [x] 场景加载
@@ -68,4 +74,8 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
  - [x] CMake编译支持
  - [x] 支持组件设计
  - [ ] 支持Tap物理引擎
-
+ - [ ] 渲染能力封装
+ - [ ] 多图形API支持
+   - [x] OpenGL
+   - [ ] Vulkan
+   - [ ] Dx12
