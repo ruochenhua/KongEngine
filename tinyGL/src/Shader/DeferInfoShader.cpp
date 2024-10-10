@@ -182,18 +182,20 @@ void SSAOShader::InitDefaultShader()
 	SetInt("noise_texture", 2);
 }
 
-
-void SSAOShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void SSReflectionShader::InitDefaultShader()
 {
-	// glActiveTexture(GL_TEXTURE0 + 4);
-	// GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
-	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
-	// // 天空盒辐照度贴图
-	// glActiveTexture(GL_TEXTURE0 + 5);
-	// GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
-	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
-	// // 天空盒预滤波贴图
-	// glActiveTexture(GL_TEXTURE0 + 6);
-	// GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
-	// glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/ssr.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/ssr.frag")},
+	};
+
+	shader_id = Shader::LoadShaders(shader_path_map);
+	assert(shader_id, "Shader load failed!");
+
+	Use();
+	SetInt("scene_position", 0);
+	SetInt("scene_normal", 1);
+	SetInt("scene_color", 2);
+	SetInt("orm_texture", 3);
 }
+

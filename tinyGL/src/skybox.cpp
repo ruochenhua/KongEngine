@@ -360,5 +360,8 @@ void CSkyBox::ChangeSkybox()
 
 void CSkyBox::PreRenderUpdate()
 {
-	volumetric_cloud_->PreRenderUpdate();
+	if(render_cloud)
+	{
+		volumetric_cloud_->PreRenderUpdate();	
+	}
 }

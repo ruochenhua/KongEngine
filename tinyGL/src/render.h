@@ -124,7 +124,10 @@ namespace Kong
 						
 		PostProcess post_process;
 		int render_sky_env_status = 2;
+		// 启用屏幕空间环境光遮蔽
 		bool use_ssao = true;
+		// 启用屏幕空间反射
+		bool use_screen_space_reflection = false;
 		CSkyBox m_SkyBox;
 		
 		// 场景光源信息
@@ -138,7 +141,7 @@ namespace Kong
 		void DeferRenderSceneLighting() const;
 
 		void SSAORender() const;
-		
+		void SSReflectionRender() const;
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject();
@@ -172,5 +175,7 @@ namespace Kong
 		SSAOHelper ssao_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
+		// 屏幕空间反射
+		shared_ptr<SSReflectionShader> ssreflection_shader;	
 	};
 }

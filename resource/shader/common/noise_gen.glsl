@@ -249,20 +249,18 @@ float PerlinNoise3D(vec3 pIn, float frequency, int octaveCount)
 }
 
 
-float InterpolatedNoise(float x, float y)
+float InterpolatedNoise(vec2 uv)
 {
-    int integer_x = int(floor(x));
-    float fract_x = fract(x);
-    int integer_y = int(floor(y));
-    float fract_y = fract(y);
-    
-    vec2 random_input = vec2(integer_x, integer_y);
+    vec2 integer = floor(uv);
+    vec2 fract_part = fract(uv);
+
+    vec2 random_input = integer;
     float a = Random2D(random_input);
     float b = Random2D(random_input+vec2(1,0));
     float c = Random2D(random_input+vec2(0,1));
     float d = Random2D(random_input+vec2(1,1));
     
-    vec2 w = vec2(fract_x, fract_y);
+    vec2 w = fract_part;
     w=w*w*w*(10.0 + w*(-15 + 6*w));
 
     float k0 = a, k1 = b-a, k2 = c-a, k3 = d-c-b+a;
@@ -270,17 +268,23 @@ float InterpolatedNoise(float x, float y)
     return k0+k1*w.x + k2*w.y + k3*w.x*w.y;
 }
 
+
+const mat2 m2 = mat2(  0.80,  0.60,
+                      -0.60,  0.80 );
+
 float Perlin(float x, float y, float amplitude, int octaves, float freq, float power)
 {
     float persistence = 0.5;
     float total = 0, frequency = freq;
-
+	vec2 uv = vec2(x, y);
     for(int i = 0; i < octaves; ++i)
     {
         frequency *= 2.0f;
         amplitude *= persistence;
 
-        total += InterpolatedNoise(x*frequency, y*frequency) * amplitude;
+        total += InterpolatedNoise(uv*frequency) * amplitude;
+
+		uv *= m2;
     }
 
     return pow(total, power);

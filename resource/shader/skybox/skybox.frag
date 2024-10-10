@@ -5,8 +5,8 @@ in vec3 uv;
 out vec4 FragColor;
 
 uniform samplerCube skybox;
-int iSteps = 64;
-int jSteps = 32;
+int iSteps = 32;
+int jSteps = 16;
 
 uniform int render_sky_status;
 

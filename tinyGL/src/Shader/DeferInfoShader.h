@@ -25,6 +25,12 @@ namespace Kong
     public:
         SSAOShader() = default;
         virtual void InitDefaultShader() override;
-        void UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info);
+    };
+
+    class SSReflectionShader : public Shader
+    {
+    public:
+        SSReflectionShader() = default;
+        virtual void InitDefaultShader() override;
     };
 }

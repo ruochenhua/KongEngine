@@ -358,7 +358,7 @@ void CRender::RenderSceneObject()
 
 	glViewport(0,0, window_size.x, window_size.y);
 #if USE_DERER_RENDER
-	// 渲染到gbuffer上
+	// 渲染到g buffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -387,11 +387,18 @@ void CRender::RenderSceneObject()
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0, window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #endif
+	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	RenderScene();
 	RenderSkyBox();
-
+	
+	// screen space reflection先放在这里吧
+	if(use_screen_space_reflection)
+	{
+		SSReflectionRender();
+	}
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -496,10 +503,6 @@ void CRender::RenderScene() const
 		{
 			continue;
 		}
-		
-		// matrix_ubo.Bind();
-		// matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
-		// matrix_ubo.EndBind();
 
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		mesh_shader->Use();
@@ -627,6 +630,7 @@ void CRender::DeferRenderSceneLighting() const
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 	
+	// screen space reflection 先放在这里面
 	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
 	quad_shape->Draw();
 }
@@ -659,6 +663,33 @@ void CRender::SSAORender() const
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_result_texture);
 
+	quad_shape->Draw();
+}
+
+void CRender::SSReflectionRender() const
+{
+	// scene color：post_process.screen_quad_texture[0]
+	// scene normal：defer_buffer_.g_normal_
+	// scene reflection mask: defer_buffer_.g_orm_
+	// scene position: defer_buffer_.g_position_
+	// scene depth存在于normal贴图的w分量上
+	// glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.ssao_fbo);
+	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	// glClear(GL_COLOR_BUFFER_BIT);
+
+	ssao_helper_.ssao_shader_->Use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
+	glActiveTexture(GL_TEXTURE0 + 2);
+	// 用给后处理的texture作为scene color
+	glBindTexture(GL_TEXTURE_2D, post_process.screen_quad_texture[0]);
+	glActiveTexture(GL_TEXTURE0 + 3);
+	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
+
+	// ssao_shader_->SetVec2("screen_size");
+	// kernal samples to shader
 	quad_shape->Draw();
 }
 
