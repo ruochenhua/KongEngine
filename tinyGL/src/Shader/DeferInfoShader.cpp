@@ -166,6 +166,12 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 	}
 }
 
+SSAOShader::SSAOShader()
+{
+	InitDefaultShader();
+}
+
+
 void SSAOShader::InitDefaultShader()
 {
 	shader_path_map = {
@@ -180,6 +186,11 @@ void SSAOShader::InitDefaultShader()
 	SetInt("position_texture", 0);
 	SetInt("normal_texture", 1);
 	SetInt("noise_texture", 2);
+}
+
+SSReflectionShader::SSReflectionShader()
+{
+	InitDefaultShader();
 }
 
 void SSReflectionShader::InitDefaultShader()

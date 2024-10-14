@@ -98,7 +98,10 @@ void main()
 {
     // 深度信息存储到position贴图的w值中
     gPosition = frag_pos;
-    gNormal = vec4(GetNormal(), LinearizeDepth(gl_FragCoord.z));
+    vec3 cam_pos = matrix_ubo.cam_pos.xyz;
+    float depth = distance(cam_pos, frag_pos.xyz);
+//    depth = LinearizeDepth(gl_fragcoord.z);   // 算出来和depth不一样，需要选择究竟用哪个？
+    gNormal = vec4(GetNormal(), depth);
     gAlbedo = GetAlbedo();
     gORM = vec4(GetAO(), GetRoughness(), GetMetallic(), 1.0);
 }

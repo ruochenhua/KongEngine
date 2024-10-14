@@ -1,0 +1,79 @@
+scene:
+  - actor: sphere1
+    transform:
+      location:
+        - 0
+        - -1
+        - 2
+      scale:
+        - 0.5
+        - 0.5
+        - 0.5
+      
+    component:
+      - type: sphere
+        shader_type: brdf
+        material:
+          diffuse: textures/pbr/rusted_iron/albedo.png
+          metallic: textures/pbr/rusted_iron/metallic.png
+          normal: textures/pbr/rusted_iron/normal.png
+          roughness: textures/pbr/rusted_iron/roughness.png
+          ao: textures/pbr/rusted_iron/ao.png
+
+  - actor: box2
+    transform:
+      location:
+        - 0
+        - -1
+        - 0
+      scale:
+        - 0.5
+        - 0.5
+        - 0.5
+        
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse: textures/pbr/gold/albedo.png
+          metallic: textures/pbr/gold/metallic.png
+          normal: textures/pbr/gold/normal.png
+          roughness: textures/pbr/gold/roughness.png
+          ao: textures/pbr/gold/ao.png
+
+  - actor: directional_light
+    component:
+      - type: directional_light
+        light_color:
+          - 10
+          - 10
+          - 10
+        
+    transform:
+      rotation:
+        - -130
+        - 75
+        - -70
+
+
+  - actor: floor
+    transform:
+      location:
+        - 0
+        - -3
+        - 0
+      scale:
+        - 200
+        - 1
+        - 200
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.8
+            - 0.8
+            - 0.8
+          metallic: 0.95
+          roughness: 0.02
+          ao: 1

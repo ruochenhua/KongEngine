@@ -128,7 +128,6 @@ void SSAOHelper::Init(int width, int height)
 	glGenFramebuffers(1, &ssao_fbo);
 	
 	ssao_shader_ = make_shared<SSAOShader>();
-	ssao_shader_->InitDefaultShader();
 	// init kernel
 	ssao_kernal_samples.resize(ssao_kernel_count);
 	uniform_real_distribution<GLfloat> random_floats(0.0f, 1.0f);
@@ -299,7 +298,8 @@ int CRender::Init()
 	defer_buffer_.Init(width, height);
 	ssao_helper_.Init(width, height);
 
-	
+	// 屏幕空间反射shader
+	ssreflection_shader = make_shared<SSReflectionShader>();
 	return 0;
 }
 
@@ -630,7 +630,6 @@ void CRender::DeferRenderSceneLighting() const
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 	
-	// screen space reflection 先放在这里面
 	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
 	quad_shape->Draw();
 }
@@ -677,7 +676,7 @@ void CRender::SSReflectionRender() const
 	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	// glClear(GL_COLOR_BUFFER_BIT);
 
-	ssao_helper_.ssao_shader_->Use();
+	ssreflection_shader->Use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
 	glActiveTexture(GL_TEXTURE0 + 1);

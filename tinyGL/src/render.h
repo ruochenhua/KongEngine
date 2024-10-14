@@ -127,7 +127,7 @@ namespace Kong
 		// 启用屏幕空间环境光遮蔽
 		bool use_ssao = true;
 		// 启用屏幕空间反射
-		bool use_screen_space_reflection = false;
+		bool use_screen_space_reflection = true;
 		CSkyBox m_SkyBox;
 		
 		// 场景光源信息

@@ -23,14 +23,16 @@ namespace Kong
     class SSAOShader : public Shader
     {
     public:
-        SSAOShader() = default;
+        SSAOShader();
+    private:
         virtual void InitDefaultShader() override;
     };
 
     class SSReflectionShader : public Shader
     {
     public:
-        SSReflectionShader() = default;
+        SSReflectionShader();
+    private:
         virtual void InitDefaultShader() override;
     };
 }
