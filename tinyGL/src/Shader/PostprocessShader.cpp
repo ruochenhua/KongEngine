@@ -9,10 +9,12 @@ vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, 
     glBindVertexArray(screen_quad_vao);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);  // 原本场景的贴图
-    if(texture_list.size() > 1)
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_list[1]);  // 反射贴图
+    if(texture_list.size() > 2)
     {
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture_list[1]);  // 泛光blur的贴图
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, texture_list[2]);  // 泛光blur的贴图
         SetBool("bloom", true);
     }
     else
@@ -45,7 +47,8 @@ void FinalPostprocessShader::InitDefaultShader()
     
     Use();
     SetInt("scene_texture", 0);
-    SetInt("bright_texture", 1);
+    SetInt("reflection_texture", 1);
+    SetInt("bright_texture", 2);
 }
 
 void FinalPostprocessShader::InitPostProcessShader(unsigned width, unsigned height)

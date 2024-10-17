@@ -23,8 +23,8 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     window_height = height;
 
     // 删掉并释放掉原来的贴图资源
-    glDeleteTextures(2, screen_quad_texture);
-    screen_quad_texture[0] = screen_quad_texture[1] = GL_NONE;
+    glDeleteTextures(3, screen_quad_texture);
+    screen_quad_texture[0] = screen_quad_texture[1] = screen_quad_texture[2] = GL_NONE;
     glDeleteRenderbuffers(1, &scene_rbo);
     scene_rbo = GL_NONE;
     // 重新创建
@@ -40,11 +40,11 @@ void PostProcess::Draw()
         gaussian_blur->SetBlurAmount(bloom_range);
         auto blur_textures = gaussian_blur->Draw({screen_quad_texture[1]},
             screen_quad_vao);
-        final_postprocess->Draw({screen_quad_texture[0], blur_textures[0]}, screen_quad_vao);
+        final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2], blur_textures[0]}, screen_quad_vao);
     }
     else
     {
-        final_postprocess->Draw({screen_quad_texture[0]}, screen_quad_vao);
+        final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
     }
 }
 
@@ -78,10 +78,10 @@ void PostProcess::InitScreenTexture()
     glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
     if(!screen_quad_texture[0])
     {
-        glGenTextures(2, screen_quad_texture);    
+        glGenTextures(3, screen_quad_texture);    
     }
 
-    for(unsigned i = 0; i < 2; ++i)
+    for(unsigned i = 0; i < 3; ++i)
     {
         glBindTexture(GL_TEXTURE_2D, screen_quad_texture[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height,
@@ -107,7 +107,7 @@ void PostProcess::InitScreenTexture()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     // 渲染到两个颜色附件上
-    GLuint color_attachment[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};  
-    glDrawBuffers(2, color_attachment); 
+    GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};  
+    glDrawBuffers(3, color_attachment); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

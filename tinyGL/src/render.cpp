@@ -396,6 +396,7 @@ void CRender::RenderSceneObject()
 	// screen space reflection先放在这里吧
 	if(use_screen_space_reflection)
 	{
+		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
 		SSReflectionRender();
 	}
 	

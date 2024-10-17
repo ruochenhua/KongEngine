@@ -5,16 +5,18 @@ in vec2 TexCoords;
 uniform float exposure;
 
 uniform sampler2D scene_texture;
+uniform sampler2D reflection_texture;
 uniform sampler2D bright_texture;
-uniform sampler2D cloud_tex;
+
 uniform bool bloom;
 const float offset = 1.0 / 300.0;
 void main()
 {
     vec3 scene_value = texture(scene_texture, TexCoords).rgb;
+    vec4 reflection_value = texture(reflection_texture, TexCoords);
     //FragColor = vec4(scene_value, 1.0);
     // Reinhard色调映射
-    vec3 hdr_color = scene_value;
+    vec3 hdr_color = mix(scene_value, reflection_value.rgb, reflection_value.a);
     if(bloom)
     {
         vec3 bloom_value = texture(bright_texture, TexCoords).rgb;
@@ -29,9 +31,7 @@ void main()
     const float gamma = 2.2;
     mapped = pow(mapped, vec3(1.0 / gamma));
     FragColor = vec4(mapped, 1.0);
-    
-/**    vec4 cloud = texture(cloud_tex, TexCoords);
-    FragColor += cloud;*/
+
     // FragColor = vec4(scene_value, 1.0);
     // 黑白效果
 //    vec3 scene_value = texture(scene_texture, TexCoords).rgb;
