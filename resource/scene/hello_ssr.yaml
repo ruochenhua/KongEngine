@@ -45,9 +45,9 @@ scene:
     component:
       - type: directional_light
         light_color:
-          - 10
-          - 10
-          - 10
+          - 50
+          - 50
+          - 50
         
     transform:
       rotation:
@@ -71,9 +71,9 @@ scene:
         shader_type: brdf
         material:
           diffuse:
-            - 0.8
-            - 0.8
-            - 0.8
+            - 1.0
+            - 1.0
+            - 1.0
           metallic: 0.95
-          roughness: 0.02
+          roughness: 0.1
           ao: 1

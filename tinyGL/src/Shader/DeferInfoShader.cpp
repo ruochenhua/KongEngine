@@ -160,7 +160,7 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 			continue;
 		}
 		
-		glActiveTexture(GL_TEXTURE0 + POINTLIGHT_SM_TEX_SHADER_ID + point_light_shadow_num);
+		glActiveTexture(GL_TEXTURE0 + 9 + point_light_shadow_num);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, point_light_ptr->GetShadowMapTexture());
 		point_light_shadow_num++;
 	}

@@ -1,6 +1,7 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
+#include "/common/brdf_common.glsl"
 
 layout(location = 2) out vec4 FragColor;
 in vec2 TexCoords;
@@ -10,9 +11,19 @@ uniform sampler2D scene_normal;
 uniform sampler2D scene_color;
 uniform sampler2D orm_texture;
 vec2 tex_size = textureSize(scene_position, 0).xy;
-float thickness = 0.1;
+float thickness = 0.05;
 
 mat4 inv_vp = inverse(matrix_ubo.projection * matrix_ubo.view);
+
+float rand(float seed)
+{
+    return fract(sin(seed) * 43758.43463452);
+}
+
+vec3 randVec3(float seed)
+{
+    return normalize(vec3(rand(seed), rand(seed+1), rand(seed+2)));
+}
 
 bool campareDepth(vec4 start_screen, vec4 end_screen, vec3 start_world, vec3 end_world, float sample_t, out vec2 uv)
 {
@@ -77,10 +88,10 @@ void main()
     FragColor = s_color;
 
     // 先只在下面这种情况下的pixel上去做反射
-    if(roughness < 0.2 && metallic > 0.8)
+    //if(roughness < 0.2 && metallic > 0.8)
     {
         vec4 normal_depth = texture(scene_normal, TexCoords);
-        vec3 world_normal = normalize(normal_depth.xyz);
+        vec3 world_normal = normalize(normal_depth.xyz + randVec3(TexCoords.x+TexCoords.y)*0.1*roughness);
         // 远近平面
         vec2 near_far = matrix_ubo.near_far.xy;
         vec3 world_pos = texture(scene_position, TexCoords).xyz;
@@ -94,10 +105,12 @@ void main()
 
         vec3 view_dir = normalize(world_pos-cam_pos);
         vec3 rd = normalize(reflect(view_dir, world_normal));
+        vec3 rand_vec = randVec3(rd.x) * 0.0;
+        // rd = normalize(rd + rand_vec * roughness);
         float resolution = 0.5;
 
        // 往相机方向反射的暂时先不管
-        if(dot(view_dir, rd) > 0.0)
+        if(dot(view_dir, rd) > -0.0)
         {
 #if USE_SCREEN_SPACE_MARCH==1
             float max_step_dist = 5.0;
@@ -129,7 +142,7 @@ void main()
 
             vec3 screen_diff = end_screen - start_screen;
             int sample_count = int(max(abs(screen_diff.x), abs(screen_diff.y)) * resolution) ; // 大于1
-
+            sample_count = min(sample_count, 128);
             vec3 delta_screen = screen_diff / float(sample_count);
 
             // 如果sample count为10，则每次采样的前进的长度为总长度的1/10
@@ -238,7 +251,7 @@ void main()
 #endif
             }
 
-            FragColor = reflect_color;
+            FragColor = reflect_color*metallic;
         }
         else
         {

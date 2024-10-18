@@ -382,8 +382,10 @@ void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
     }
     else
     {
-        glDeleteFramebuffers(1, &shadowmap_fbo);
-        glDeleteTextures(1, &shadowmap_texture);
+        if(shadowmap_fbo) glDeleteFramebuffers(1, &shadowmap_fbo);
+        if(shadowmap_texture) glDeleteTextures(1, &shadowmap_texture);
+
+        shadowmap_fbo = shadowmap_texture = 0;
     }
 }
 

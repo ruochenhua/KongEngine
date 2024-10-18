@@ -64,6 +64,7 @@ scene:
         - 0.1
     component:
       - type: point_light
+        make_shadow: true
         light_color:
           - 30
           - 30

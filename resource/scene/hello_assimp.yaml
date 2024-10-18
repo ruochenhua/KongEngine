@@ -14,9 +14,9 @@ scene:
         - 0
         - 0
       scale:
-        - 0.3
-        - 0.3
-        - 0.3
+        - 0.1
+        - 0.1
+        - 0.1
   - actor: point_light1
     transform:
       location:
@@ -29,6 +29,7 @@ scene:
         - 0.1
     component:
       - type: point_light
+        make_shadow: true
         light_color:
           - 30
           - 0
@@ -53,6 +54,7 @@ scene:
         - 0.1
     component:
       - type: point_light
+        make_shadow: true
         light_color:
           - 0
           - 30
@@ -76,6 +78,7 @@ scene:
         - 0.1
     component:
       - type: point_light
+        make_shadow: true
         light_color:
           - 0
           - 0
@@ -95,11 +98,11 @@ scene:
         shader_type: brdf
         material:
           diffuse:
-            - 0.6
-            - 0.3
-            - 0.6
+            - 0.9
+            - 0.9
+            - 0.9
           metallic: 0.9
-          roughness: 0.1
+          roughness: 0.02
           ao: 1
     transform:
       location:
