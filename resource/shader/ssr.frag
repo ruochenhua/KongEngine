@@ -91,7 +91,7 @@ void main()
     //if(roughness < 0.2 && metallic > 0.8)
     {
         vec4 normal_depth = texture(scene_normal, TexCoords);
-        vec3 world_normal = normalize(normal_depth.xyz + randVec3(TexCoords.x+TexCoords.y)*0.1*roughness);
+        vec3 world_normal = normalize(normal_depth.xyz + randVec3(fract(TexCoords.x*12.345)*sin(TexCoords.y)*9876.31)*0.2*roughness);
         // 远近平面
         vec2 near_far = matrix_ubo.near_far.xy;
         vec3 world_pos = texture(scene_position, TexCoords).xyz;
@@ -110,7 +110,7 @@ void main()
         float resolution = 0.5;
 
        // 往相机方向反射的暂时先不管
-        if(dot(view_dir, rd) > -0.0)
+//        if(dot(view_dir, rd) > -0.0)
         {
 #if USE_SCREEN_SPACE_MARCH==1
             float max_step_dist = 5.0;
@@ -253,9 +253,9 @@ void main()
 
             FragColor = reflect_color*metallic;
         }
-        else
-        {
-//            FragColor = vec4(1., 0., 0., 1.0);
-        }
+//        else
+//        {
+////            FragColor = vec4(1., 0., 0., 1.0);
+//        }
     }
 }
