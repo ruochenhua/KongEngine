@@ -97,8 +97,6 @@ void GaussianBlurShader::InitDefaultShader()
     assert(shader_id, "Shader load failed!");
     glUseProgram(shader_id);
     SetInt("bright_texture", 0);
-    
-    glGenFramebuffers(2, blur_fbo);
 }
 
 void GaussianBlurShader::InitPostProcessShader(unsigned width, unsigned height)
@@ -137,4 +135,54 @@ void GaussianBlurShader::GenerateTexture(unsigned width, unsigned height)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture[i], 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+}
+
+void DilatePostprocessShader::InitDefaultShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/dilate_blur.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/dilate_blur.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+
+    glUseProgram(shader_id);
+    SetInt("scene_texture", 0);
+}
+
+void DilatePostprocessShader::InitPostProcessShader(unsigned width, unsigned height)
+{
+    InitDefaultShader();
+    GenerateTexture(width, height);
+}
+
+void DilatePostprocessShader::GenerateTexture(unsigned width, unsigned height)
+{
+    if(blur_fbo == 0)
+    {
+        glGenFramebuffers(1, &blur_fbo);
+    }
+
+    // 原来有贴图就删掉
+    if(blur_texture != 0)
+    {
+        glDeleteTextures(1, &blur_texture);
+    }
+    
+    glGenTextures(1, &blur_texture);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
+
+    glBindTexture(GL_TEXTURE_2D, blur_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
+    0, GL_RGBA, GL_FLOAT, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 }

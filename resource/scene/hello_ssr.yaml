@@ -77,3 +77,8 @@ scene:
           metallic: 0.95
           roughness: 0.1
           ao: 1
+
+setting:
+  skybox:
+    render_sky_env_status: 1
+    render_cloud: false

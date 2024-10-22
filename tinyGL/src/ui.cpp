@@ -132,6 +132,7 @@ void CUIManager::DescribeUIContent(double delta)
 	}
 
 	ImGui::Checkbox("ssao", &render_sys->use_ssao);
+	ImGui::Checkbox("screen space reflection", &render_sys->use_screen_space_reflection);
 	ImGui::Checkbox("render cloud", &render_sys->m_SkyBox.render_cloud);
 	
 	auto& postprocess = render_sys->post_process;

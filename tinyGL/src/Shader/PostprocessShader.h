@@ -44,5 +44,21 @@ namespace Kong
     private:
         unsigned blur_amount = 10;
     };
+
+    // dilate blur, 用于景深
+    class DilatePostprocessShader : public PostprocessShader
+    {
+    public:
+        DilatePostprocessShader() = default;
+        virtual void InitDefaultShader() override;
+        virtual void InitPostProcessShader(unsigned width, unsigned height) override;
+        void SetBlurAmount(unsigned amount) {blur_amount = amount;}
+        virtual void GenerateTexture(unsigned width, unsigned height) override;
+    
+    protected:
+        unsigned blur_amount = 10;
+        GLuint blur_texture = 0;
+        GLuint blur_fbo = 0;
+    };
     
 }

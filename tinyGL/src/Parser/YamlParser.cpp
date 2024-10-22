@@ -3,6 +3,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Actor.h"
+#include "render.h"
 #include "Component/Mesh/ModelMeshComponent.h"
 #include "Scene.h"
 #include "Component/LightComponent.h"
@@ -410,6 +411,27 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
 
             ParseComponent(actor, new_actor);
             scene_actors.push_back(new_actor);
+        }
+    }
+
+    if(scene_node["setting"])
+    {
+        auto render_sys = CRender::GetRender();
+        auto setting = scene_node["setting"];
+        if(setting["skybox"])
+        {
+            auto skybox_node = setting["skybox"];
+            if(skybox_node["render_sky_env_status"])
+            {
+                auto render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
+                render_sys->render_sky_env_status = render_sky_env_status;
+            }
+
+            if(skybox_node["render_cloud"])
+            {
+                auto render_cloud = skybox_node["render_cloud"].as<bool>();
+                render_sys->m_SkyBox.render_cloud = render_cloud;
+            }
         }
     }
 }
