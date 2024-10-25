@@ -54,11 +54,17 @@ namespace Kong
         virtual void InitPostProcessShader(unsigned width, unsigned height) override;
         void SetBlurAmount(unsigned amount) {blur_amount = amount;}
         virtual void GenerateTexture(unsigned width, unsigned height) override;
-    
+
+        vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
+        void SetParam(int dilate_size, float dilate_separation);
+
     protected:
         unsigned blur_amount = 10;
         GLuint blur_texture = 0;
         GLuint blur_fbo = 0;
+
+        int dilate_size = 0;
+        float dilate_separation = 1.0f;
     };
     
 }

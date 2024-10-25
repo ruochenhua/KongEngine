@@ -12,9 +12,15 @@ namespace Kong
         void OnWindowResize(unsigned width, unsigned height);
         
         void Draw();
+        void RenderUI();
         
-        bool bloom = false;
+        bool enable_bloom = false;
+        bool enable_dilate = false;
         int bloom_range = 10;
+        
+        int dilate_size = 3;
+        float dilate_separation = 0.5;
+        
         // 0: 正常场景；1：bloom颜色；2：反射颜色
         GLuint screen_quad_texture[3] = {GL_NONE, GL_NONE, GL_NONE};
     protected:
@@ -32,6 +38,9 @@ namespace Kong
         shared_ptr<FinalPostprocessShader> final_postprocess;
         // 高斯模糊阶段
         shared_ptr<GaussianBlurShader> gaussian_blur;
+        // 膨胀模糊效果
+        shared_ptr<DilatePostprocessShader> dilate_blur;
+        
         // 渲染到屏幕的texture
         // 0: scene texture
         // 1: bright texture(for bloom effect)

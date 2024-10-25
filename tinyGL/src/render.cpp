@@ -337,7 +337,8 @@ int CRender::Update(double delta)
 	CollectLightInfo();
 	m_SkyBox.PreRenderUpdate();
 	RenderShadowMap();			
-	RenderSceneObject();	
+	RenderSceneObject();
+	post_process.RenderUI();
 	return 1;
 }
 

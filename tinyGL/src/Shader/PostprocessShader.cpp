@@ -186,3 +186,28 @@ void DilatePostprocessShader::GenerateTexture(unsigned width, unsigned height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
+
+vector<GLuint> DilatePostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+{
+    Use();
+    glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
+    SetInt("size", dilate_size);
+    SetFloat("separation", dilate_separation);
+    glActiveTexture(GL_TEXTURE0);
+    // bind texture of other framebuffer (or scene if first iteration) screen_quad_texture[1]
+    glBindTexture(GL_TEXTURE_2D, texture_list[0]);
+    glBindVertexArray(screen_quad_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(GL_NONE);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 这个是输出的贴图
+    return {blur_texture};
+}
+
+void DilatePostprocessShader::SetParam(int d_size, float d_separation)
+{
+    dilate_size = d_size;
+    dilate_separation = d_separation;
+}

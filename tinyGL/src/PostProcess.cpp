@@ -1,4 +1,6 @@
 #include "PostProcess.h"
+
+#include <imgui.h>
 using namespace Kong;
 
 void PostProcess::Init()
@@ -12,6 +14,8 @@ void PostProcess::Init()
     final_postprocess->InitPostProcessShader(window_width, window_height);
     gaussian_blur = make_shared<GaussianBlurShader>();
     gaussian_blur->InitPostProcessShader(window_width, window_height);
+    dilate_blur = make_shared<DilatePostprocessShader>();
+    dilate_blur->InitPostProcessShader(window_width, window_height);
     
     InitQuad();
     InitScreenTexture();
@@ -31,21 +35,53 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     InitScreenTexture();
 
     gaussian_blur->GenerateTexture(window_width, window_height);
+    dilate_blur->GenerateTexture(window_width, window_height);
 }
 
 void PostProcess::Draw()
 {
-    if(bloom)
+    if(enable_bloom)
     {
         gaussian_blur->SetBlurAmount(bloom_range);
         auto blur_textures = gaussian_blur->Draw({screen_quad_texture[1]},
             screen_quad_vao);
+        
         final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2], blur_textures[0]}, screen_quad_vao);
+    }
+    else if(enable_dilate)
+    {
+        dilate_blur->SetParam(dilate_size, dilate_separation);
+        // dilate就先不走bloom了
+        auto dilate_textures = dilate_blur->Draw({screen_quad_texture[0]}, screen_quad_vao);
+        final_postprocess->Draw({dilate_textures[0], screen_quad_texture[2]}, screen_quad_vao);
     }
     else
     {
         final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
     }
+}
+
+void PostProcess::RenderUI()
+{
+    ImGui::Begin("Post Process");
+    ImGui::PushItemWidth(100);
+    // 两个只开一个
+    // dilate data
+    ImGui::Checkbox("dilate", &enable_dilate);
+    ImGui::DragInt("dilate size", &dilate_size, 0.1f, 0, 10);
+    ImGui::DragFloat("dilate separation", &dilate_separation, 0.1f, 0.0, 5.0);
+    
+    // bloom data
+    if(!enable_dilate)
+    {
+        ImGui::Checkbox("bloom", &enable_bloom);
+        ImGui::DragInt("bloom range", &bloom_range, 1, 1, 500);
+    }
+    else
+    {
+        enable_bloom = false;
+    }
+    ImGui::End();
 }
 
 void PostProcess::InitQuad()

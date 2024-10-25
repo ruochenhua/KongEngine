@@ -109,6 +109,7 @@ VolumetricCloud::VolumetricCloud()
 void VolumetricCloud::PreRenderUpdate() const
 {
 	ImGui::Begin("Volumetric Cloud");
+	ImGui::PushItemWidth(80);
 	ImGui::DragFloat("Coverage", &cloud_model_->coverage, 0.02f, 0.0, 3.0);
 	ImGui::DragFloat("Cloud Speed", &cloud_model_->cloud_speed, 1.0f, 0.0f, 3000.0f);
 	ImGui::DragFloat("Crispiness", &cloud_model_->crispiness, 0.1f, 0.0f, 100.0f);
@@ -116,8 +117,6 @@ void VolumetricCloud::PreRenderUpdate() const
 	ImGui::DragFloat("Density", &cloud_model_->density, 0.001f, 0.0f, 1.f);
 	ImGui::DragFloat("absorption", &cloud_model_->absorption, 0.02f, 0.0f, 5.0f);
 	ImGui::DragFloat("perlin frequency", &cloud_model_->perlin_frequency, 0.04f, 0.0f, 10.0f);
-
-	
 	
 	ImGui::End();
 }
