@@ -15,7 +15,7 @@ float max_threshold = 0.3;
 void main()
 {
     vec2 tex_size = vec2(textureSize(scene_texture, 0).xy);
-    FragColor = texture(scene_texture, TexCoords);
+    FragColor = vec4(texture(scene_texture, TexCoords).rgb, 1.0);
 
     // 后续size开放可调
     if(size <= 0) return;
