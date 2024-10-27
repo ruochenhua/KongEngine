@@ -1,6 +1,7 @@
 ﻿#include "Terrain.h"
 
 #include "render.h"
+#include "Scene.h"
 #include "stb_image.h"
 #include "Component/LightComponent.h"
 

@@ -1,6 +1,7 @@
 #include "DeferInfoShader.h"
 
 #include "render.h"
+#include "Scene.h"
 #include "Component/LightComponent.h"
 
 using namespace Kong;

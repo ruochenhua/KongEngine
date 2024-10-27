@@ -1,6 +1,7 @@
 #include "BlendShader.h"
 
 #include "render.h"
+#include "Scene.h"
 
 using namespace Kong;
 

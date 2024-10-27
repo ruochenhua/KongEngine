@@ -1,6 +1,7 @@
 #include "PostprocessShader.h"
 
 #include "render.h"
+#include "Scene.h"
 using namespace Kong;
 
 vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
@@ -210,4 +211,90 @@ void DilatePostprocessShader::SetParam(int d_size, float d_separation)
 {
     dilate_size = d_size;
     dilate_separation = d_separation;
+}
+
+void DOFPostprocessShader::InitDefaultShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/DOF.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/DOF.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+
+    glUseProgram(shader_id);
+    SetInt("scene_texture", 0);
+    SetInt("dilate_texture", 1);
+    SetInt("position_texture", 2);
+}
+
+void DOFPostprocessShader::InitPostProcessShader(unsigned width, unsigned height)
+{
+    InitDefaultShader();
+    GenerateTexture(width, height);
+}
+
+void DOFPostprocessShader::SetFocusDistance(float distance, const vec2& threshold)
+{
+    focus_distance = distance;
+    focus_threshold = threshold;
+}
+
+void DOFPostprocessShader::GenerateTexture(unsigned width, unsigned height)
+{
+    if(DOF_fbo == 0)
+    {
+        glGenFramebuffers(1, &DOF_fbo);
+    }
+
+    // 原来有贴图就删掉
+    if(DOF_texture != 0)
+    {
+        glDeleteTextures(1, &DOF_texture);
+    }
+    
+    glGenTextures(1, &DOF_texture);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, DOF_fbo);
+
+    glBindTexture(GL_TEXTURE_2D, DOF_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
+    0, GL_RGBA, GL_FLOAT, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, DOF_texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+vector<GLuint> DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+{
+    Use();
+    glBindFramebuffer(GL_FRAMEBUFFER, DOF_fbo);
+    SetFloat("focus_distance", focus_distance);
+    SetVec2("focus_threshold", focus_threshold);
+    
+    assert(texture_list.size() == 3);
+    // 场景渲染贴图
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_list[0]);
+    // dilate模糊贴图
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_list[1]);
+    // 位置贴图
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texture_list[2]);
+    
+    
+    glBindVertexArray(screen_quad_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(GL_NONE);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 这个是输出的贴图
+    return {DOF_texture};
 }

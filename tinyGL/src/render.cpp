@@ -339,6 +339,7 @@ int CRender::Update(double delta)
 	RenderShadowMap();			
 	RenderSceneObject();
 	post_process.RenderUI();
+	post_process.SetPositionTexture(defer_buffer_.g_position_);	//先放这
 	return 1;
 }
 

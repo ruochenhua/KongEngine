@@ -1,5 +1,7 @@
 #include "SkyboxShader.h"
 
+#include "Scene.h"
+
 using namespace Kong;
 
 SkyboxShader::SkyboxShader()

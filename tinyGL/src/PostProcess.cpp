@@ -1,6 +1,8 @@
 #include "PostProcess.h"
 
 #include <imgui.h>
+
+#include "Engine.h"
 using namespace Kong;
 
 void PostProcess::Init()
@@ -16,6 +18,8 @@ void PostProcess::Init()
     gaussian_blur->InitPostProcessShader(window_width, window_height);
     dilate_blur = make_shared<DilatePostprocessShader>();
     dilate_blur->InitPostProcessShader(window_width, window_height);
+    dof_process = make_shared<DOFPostprocessShader>();
+    dof_process->InitPostProcessShader(window_width, window_height);
     
     InitQuad();
     InitScreenTexture();
@@ -48,12 +52,14 @@ void PostProcess::Draw()
         
         final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2], blur_textures[0]}, screen_quad_vao);
     }
-    else if(enable_dilate)
+    else if(enable_DOF)
     {
         dilate_blur->SetParam(dilate_size, dilate_separation);
         // dilate就先不走bloom了
         auto dilate_textures = dilate_blur->Draw({screen_quad_texture[0]}, screen_quad_vao);
-        final_postprocess->Draw({dilate_textures[0], screen_quad_texture[2]}, screen_quad_vao);
+        dof_process->SetFocusDistance(focus_distance, focus_threshold);
+        auto dof_textures = dof_process->Draw({screen_quad_texture[0], dilate_textures[0], position_texture}, screen_quad_vao);
+        final_postprocess->Draw({dof_textures[0], screen_quad_texture[2]}, screen_quad_vao);
     }
     else
     {
@@ -67,12 +73,16 @@ void PostProcess::RenderUI()
     ImGui::PushItemWidth(100);
     // 两个只开一个
     // dilate data
-    ImGui::Checkbox("dilate", &enable_dilate);
+    ImGui::Checkbox("Depth of Field", &enable_DOF);
+    ImGui::DragFloat("focus distance", &focus_distance, 0.1f, 0.1f, 100.0);
+    ImGui::DragFloat("focus threshold min", &focus_threshold.x, 0.1f, 0.1f, focus_threshold.y);
+    ImGui::DragFloat("focus threshold max", &focus_threshold.y, 0.1f, focus_threshold.x, 100.0);
+    
     ImGui::DragInt("dilate size", &dilate_size, 0.1f, 0, 10);
-    ImGui::DragFloat("dilate separation", &dilate_separation, 0.1f, 0.0, 5.0);
+    ImGui::DragFloat("dilate separation", &dilate_separation, 0.03f, 0.0, 5.0);
     
     // bloom data
-    if(!enable_dilate)
+    if(!enable_DOF)
     {
         ImGui::Checkbox("bloom", &enable_bloom);
         ImGui::DragInt("bloom range", &bloom_range, 1, 1, 500);

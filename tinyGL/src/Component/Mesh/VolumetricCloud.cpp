@@ -2,7 +2,9 @@
 
 #include <imgui.h>
 
+#include "Engine.h"
 #include "render.h"
+#include "Scene.h"
 #include "Component/LightComponent.h"
 const int CLOUD_REZ = 16;
 using namespace Kong;

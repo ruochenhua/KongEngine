@@ -61,7 +61,7 @@ void CCamera::UpdateRotation(double delta)
 	m_yaw -= delta_x*delta*rotate_speed;
 	m_pitch += delta_y*delta*rotate_speed;
 
-	m_pitch = clamp(m_pitch, -89.f, 89.f);
+	m_pitch = glm::clamp(m_pitch, -89.f, 89.f);
 	// printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);
 	// printf("pitch value %f, ypos %f, delta %f\n", m_pitch, y_pos, delta_y);
 	

@@ -1,19 +1,22 @@
 #include "Shader.h"
 
 #include <regex>
+#include <set>
 
 #include "BlendShader.h"
 #include "PBRShader.h"
 #include "DeferInfoShader.h"
 #include "EmitShader.h"
+#include "Engine.h"
 #include "render.h"
+#include "Scene.h"
 #include "ShadowMapShader.h"
 
 using namespace Kong;
 using namespace glm;
 
 ShaderManager* g_shader_manager = new ShaderManager;
-std::set<string> shader_include_set;
+set<string> shader_include_set;
 
 Shader::Shader(const map<EShaderType, string>& shader_paths)
 {

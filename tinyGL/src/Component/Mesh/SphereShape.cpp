@@ -1,5 +1,7 @@
 #include "SphereShape.h"
 
+#include "Scene.h"
+
 using namespace Kong;
 
 string SphereShape::sphere_model_path = "Engine/sphere/sphere.obj";

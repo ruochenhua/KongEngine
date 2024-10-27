@@ -45,26 +45,46 @@ namespace Kong
         unsigned blur_amount = 10;
     };
 
-    // dilate blur, 用于景深
+    // dilate blur
     class DilatePostprocessShader : public PostprocessShader
     {
     public:
         DilatePostprocessShader() = default;
         virtual void InitDefaultShader() override;
         virtual void InitPostProcessShader(unsigned width, unsigned height) override;
-        void SetBlurAmount(unsigned amount) {blur_amount = amount;}
+        
         virtual void GenerateTexture(unsigned width, unsigned height) override;
 
         vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
         void SetParam(int dilate_size, float dilate_separation);
 
     protected:
-        unsigned blur_amount = 10;
         GLuint blur_texture = 0;
         GLuint blur_fbo = 0;
 
         int dilate_size = 0;
         float dilate_separation = 1.0f;
+    };
+
+    // 景深计算shader
+    class DOFPostprocessShader : public PostprocessShader
+    {
+    public:
+        DOFPostprocessShader() = default;
+        virtual void InitDefaultShader() override;
+        virtual void InitPostProcessShader(unsigned width, unsigned height) override;
+        void SetFocusDistance(float distance, const glm::vec2& threshold);
+
+        // todo generate texture 可以合并一下 
+        virtual void GenerateTexture(unsigned width, unsigned height) override;
+        vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
+        
+        
+    protected:
+        GLuint DOF_texture = 0;
+        GLuint DOF_fbo = 0;
+        float focus_distance = 3.0f;
+        glm::vec2 focus_threshold = glm::vec2(1.0, 5.0); 
     };
     
 }

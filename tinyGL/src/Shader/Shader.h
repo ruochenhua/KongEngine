@@ -1,10 +1,7 @@
 #pragma once
-#include <set>
 
 #include "Common.h"
-#include "Engine.h"
 #include "RenderCommon.h"
-#include "Scene.h"
 
 namespace Kong
 {

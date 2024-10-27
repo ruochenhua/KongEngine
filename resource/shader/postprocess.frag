@@ -16,6 +16,7 @@ void main()
     vec4 reflection_value = texture(reflection_texture, TexCoords);
     //FragColor = vec4(scene_value, 1.0);
     // Reinhard色调映射
+    // todo: reflection可能不应该放在这，要放在景深处理之前
     vec3 hdr_color = scene_value + reflection_value.rgb * reflection_value.a;
 //    vec3 hdr_color = mix(scene_value,  reflection_value.rgb, reflection_value.a);
     if(bloom)
