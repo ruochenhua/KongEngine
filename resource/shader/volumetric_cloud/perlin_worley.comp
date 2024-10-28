@@ -24,7 +24,7 @@ vec4 Stackable3DNoise(ivec3 pixel)
 	vec3 coord = vec3(float(pixel.x) / 128.0, float(pixel.y) / 128.0, float(pixel.z) / 128.0);
 
 	// Perlin FBM noise
-	int octaveCount = 3;
+	int octaveCount = 7;
 	float frequency = 8.0;
 	float perlin_noise = PerlinNoise3D(coord, frequency, octaveCount);
 
@@ -62,7 +62,6 @@ vec4 Stackable3DNoise(ivec3 pixel)
 
 	return vec4(perlin_worley_noise * perlin_worley_noise, worleyFBM0, worleyFBM1, worleyFBM2);
 }
-
 
 void main()
 {

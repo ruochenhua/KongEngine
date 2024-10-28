@@ -31,8 +31,8 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     window_height = height;
 
     // 删掉并释放掉原来的贴图资源
-    glDeleteTextures(3, screen_quad_texture);
-    screen_quad_texture[0] = screen_quad_texture[1] = screen_quad_texture[2] = GL_NONE;
+    glDeleteTextures(2, screen_quad_texture);
+    screen_quad_texture[0] = screen_quad_texture[1] = GL_NONE;
     glDeleteRenderbuffers(1, &scene_rbo);
     scene_rbo = GL_NONE;
     // 重新创建
@@ -40,6 +40,7 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
 
     gaussian_blur->GenerateTexture(window_width, window_height);
     dilate_blur->GenerateTexture(window_width, window_height);
+    dof_process->GenerateTexture(window_width, window_height);
 }
 
 void PostProcess::Draw()
@@ -50,7 +51,7 @@ void PostProcess::Draw()
         auto blur_textures = gaussian_blur->Draw({screen_quad_texture[1]},
             screen_quad_vao);
         
-        final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2], blur_textures[0]}, screen_quad_vao);
+        final_postprocess->Draw({screen_quad_texture[0], blur_textures[0]}, screen_quad_vao);
     }
     else if(enable_DOF)
     {
@@ -59,11 +60,11 @@ void PostProcess::Draw()
         auto dilate_textures = dilate_blur->Draw({screen_quad_texture[0]}, screen_quad_vao);
         dof_process->SetFocusDistance(focus_distance, focus_threshold);
         auto dof_textures = dof_process->Draw({screen_quad_texture[0], dilate_textures[0], position_texture}, screen_quad_vao);
-        final_postprocess->Draw({dof_textures[0], screen_quad_texture[2]}, screen_quad_vao);
+        final_postprocess->Draw({dof_textures[0]}, screen_quad_vao);
     }
     else
     {
-        final_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
+        final_postprocess->Draw({screen_quad_texture[0]}, screen_quad_vao);
     }
 }
 
@@ -124,10 +125,10 @@ void PostProcess::InitScreenTexture()
     glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
     if(!screen_quad_texture[0])
     {
-        glGenTextures(3, screen_quad_texture);    
+        glGenTextures(2, screen_quad_texture);    
     }
 
-    for(unsigned i = 0; i < 3; ++i)
+    for(unsigned i = 0; i < 2; ++i)
     {
         glBindTexture(GL_TEXTURE_2D, screen_quad_texture[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height,

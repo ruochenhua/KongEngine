@@ -1,6 +1,7 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
+
 in vec3 uv;
 out vec4 FragColor;
 
@@ -496,12 +497,7 @@ vec4 computeSkyboxCloud(vec4 sky_color)
     vec4 fragColor_v, alphaness_v;
 
     vec3 worldDir = normalize(uv);
-
     vec3 startPos, endPos;
-
-    //compute background color
-    vec3 stub;
-    //intersectCubeMap(vec3(0.0, 0.0, 0.0), worldDir, stub, cubeMapEndPos);
 
     vec4 bg = sky_color;
     int case_ = 0;
@@ -532,7 +528,7 @@ vec4 computeSkyboxCloud(vec4 sky_color)
     }
 
     //compute fog amount and early exit if over a certain value
-    float fogAmount = computeFogAmount(fogRay, 0.00006);
+    float fogAmount = computeFogAmount(fogRay, 0.0006);
 
     fragColor_v = bg;
 
@@ -544,8 +540,9 @@ vec4 computeSkyboxCloud(vec4 sky_color)
 
     vec4 v = vec4(0.0);
     v = raymarchToCloud(startPos, endPos, bg.rgb);
-    
-    float cloudAlphaness = threshold(v.a, 0.2);
+    float res_t = 0.0;
+
+//    float cloudAlphaness = threshold(v.a, 0.2);
     v.rgb = v.rgb*1.8 - 0.1; // contrast-illumination tuning
 
     // apply atmospheric fog to far away clouds
@@ -560,18 +557,16 @@ vec4 computeSkyboxCloud(vec4 sky_color)
     v.rgb += s*v.a;
 
     // blend clouds and background
-
     bg.rgb = bg.rgb*(1.0 - v.a) + v.rgb;
     bg.a = 1.0;
 
-
     fragColor_v = bg;
-    alphaness_v = vec4(cloudAlphaness, 0.0, 0.0, 1.0); // alphaness buffer
+//    if(cloudAlphaness > 0.1)
+//    { //apply fog to bloom buffer
+//        float fogAmount = computeFogAmount(startPos, 0.00003);
+//    }
 
-    if(cloudAlphaness > 0.1){ //apply fog to bloom buffer
-                              float fogAmount = computeFogAmount(startPos, 0.00003);
-    }
-    fragColor_v.a = alphaness_v.r;
+//    fragColor_v.a = cloudAlphaness;
     return fragColor_v;
 }
 
@@ -603,8 +598,7 @@ void main() {
             // do cloud render
             if(render_cloud)
             {
-                vec4 cloud = computeSkyboxCloud(color);
-                color += cloud;
+                color = computeSkyboxCloud(color);
             }
         }
         FragColor = color;
