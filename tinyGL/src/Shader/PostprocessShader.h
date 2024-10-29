@@ -15,6 +15,21 @@ namespace Kong
         virtual void InitPostProcessShader(unsigned width, unsigned height) = 0;
         virtual void GenerateTexture(unsigned width, unsigned height) = 0;
     };
+
+    // 预后处理shader，将一些数据在这里整合
+    class PrePostProcessShader : public PostprocessShader
+    {
+    public:
+        PrePostProcessShader() = default;
+        virtual vector<GLuint> Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
+        virtual void InitDefaultShader() override;
+        virtual void GenerateTexture(unsigned width, unsigned height) override;
+        virtual void InitPostProcessShader(unsigned width, unsigned height) override;
+        
+    protected:
+        GLuint result_fbo = 0;
+        GLuint result_texture = 0;
+    };
     
     class FinalPostprocessShader : public PostprocessShader
     {

@@ -3,7 +3,7 @@
 #include "/common/common.glsl"
 #include "/common/brdf_common.glsl"
 
-layout(location = 0) out vec4 FragColor;
+layout(location = 2) out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D scene_position;
@@ -248,7 +248,7 @@ void main()
 #endif
         }
 
-        reflect_color = reflect_color*metallic;
-        FragColor.rgb = FragColor.rgb + reflect_color.rgb*reflect_color.a;
+        FragColor = reflect_color*metallic;
+
     }
 }

@@ -1,7 +1,8 @@
 #pragma once
-#include "assimp/code/AssetLib/glTF2/glTF2Exporter.h"
 #include "Shader/PostprocessShader.h"
 #include "Shader/Shader.h"
+
+static constexpr unsigned PP_TEXTURE_COUNT = 3;
 
 namespace Kong
 {
@@ -26,8 +27,8 @@ namespace Kong
         int dilate_size = 3;
         float dilate_separation = 0.5;
         
-        // 0: 正常场景；1：bloom颜色；
-        GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
+        // 0: 正常场景；1：bloom颜色；2：反射颜色
+        GLuint screen_quad_texture[PP_TEXTURE_COUNT] = {GL_NONE};
     protected:
         // 渲染到屏幕的顶点数据，可以共用        
         GLuint screen_quad_vao = GL_NONE;
@@ -42,14 +43,17 @@ namespace Kong
     private:
         void InitQuad();
         void InitScreenTexture();
-        // 后处理最后阶段
-        shared_ptr<FinalPostprocessShader> final_postprocess;
+
+        // 预后处理阶段
+        shared_ptr<PrePostProcessShader> pre_postprocess;
         // 高斯模糊阶段
         shared_ptr<GaussianBlurShader> gaussian_blur;
         // 膨胀模糊效果
         shared_ptr<DilatePostprocessShader> dilate_blur;
         // 景深效果
         shared_ptr<DOFPostprocessShader> dof_process;
+        // 后处理最后阶段
+        shared_ptr<FinalPostprocessShader> final_postprocess;
         
         // 渲染到屏幕的texture
         // 0: scene texture

@@ -4,6 +4,77 @@
 #include "Scene.h"
 using namespace Kong;
 
+vector<GLuint> PrePostProcessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+{
+
+    Use();
+    glBindFramebuffer(GL_FRAMEBUFFER, result_fbo);
+    glBindVertexArray(screen_quad_vao);
+
+    for(int i = 0; i < texture_list.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, texture_list[i]);
+    }
+    
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+    glBindVertexArray(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return {result_texture};
+}
+
+void PrePostProcessShader::InitDefaultShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+    
+    Use();
+    SetInt("scene_texture", 0);
+    SetInt("reflection_texture", 1);
+}
+
+void PrePostProcessShader::GenerateTexture(unsigned width, unsigned height)
+{
+    if(!result_fbo)
+    {
+        glGenFramebuffers(1, &result_fbo);
+    }
+
+    // 原来有贴图就删掉
+    if(result_texture)
+    {
+        glDeleteTextures(1, &result_texture);
+    }
+    
+    glGenTextures(1, &result_texture);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, result_fbo);
+
+    glBindTexture(GL_TEXTURE_2D, result_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
+    0, GL_RGBA, GL_FLOAT, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, result_texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void PrePostProcessShader::InitPostProcessShader(unsigned width, unsigned height)
+{
+    InitDefaultShader();
+    GenerateTexture(width, height);
+}
+
 vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     Use();
@@ -12,7 +83,7 @@ vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, 
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);  // 原本场景的贴图
     if(texture_list.size() > 1)
     {
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture_list[1]);  // 泛光blur的贴图
         SetBool("bloom", true);
     }
@@ -46,8 +117,7 @@ void FinalPostprocessShader::InitDefaultShader()
     
     Use();
     SetInt("scene_texture", 0);
-    SetInt("reflection_texture", 1);
-    SetInt("bright_texture", 2);
+    SetInt("bright_texture", 1);
 }
 
 void FinalPostprocessShader::InitPostProcessShader(unsigned width, unsigned height)

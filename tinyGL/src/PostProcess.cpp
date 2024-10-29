@@ -11,7 +11,9 @@ void PostProcess::Init()
     glm::ivec2 window_size = engine.GetWindowSize();
     window_width = window_size.x;
     window_height = window_size.y;
-    
+
+    pre_postprocess = make_shared<PrePostProcessShader>();
+    pre_postprocess->InitPostProcessShader(window_width, window_height);
     final_postprocess = make_shared<FinalPostprocessShader>();
     final_postprocess->InitPostProcessShader(window_width, window_height);
     gaussian_blur = make_shared<GaussianBlurShader>();
@@ -31,13 +33,18 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     window_height = height;
 
     // 删掉并释放掉原来的贴图资源
-    glDeleteTextures(2, screen_quad_texture);
-    screen_quad_texture[0] = screen_quad_texture[1] = GL_NONE;
+    glDeleteTextures(PP_TEXTURE_COUNT, screen_quad_texture);
+    for(int i = 0; i < PP_TEXTURE_COUNT; ++i)
+    {
+        screen_quad_texture[i] = GL_NONE;    
+    }
+    
     glDeleteRenderbuffers(1, &scene_rbo);
     scene_rbo = GL_NONE;
     // 重新创建
     InitScreenTexture();
 
+    pre_postprocess->GenerateTexture(window_width, window_height);
     gaussian_blur->GenerateTexture(window_width, window_height);
     dilate_blur->GenerateTexture(window_width, window_height);
     dof_process->GenerateTexture(window_width, window_height);
@@ -45,26 +52,29 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
 
 void PostProcess::Draw()
 {
+    // 先将一些结果整合起来
+    auto preprocess_rst = pre_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
+
     if(enable_bloom)
     {
         gaussian_blur->SetBlurAmount(bloom_range);
         auto blur_textures = gaussian_blur->Draw({screen_quad_texture[1]},
             screen_quad_vao);
         
-        final_postprocess->Draw({screen_quad_texture[0], blur_textures[0]}, screen_quad_vao);
+        final_postprocess->Draw({preprocess_rst[0], blur_textures[0]}, screen_quad_vao);
     }
     else if(enable_DOF)
     {
         dilate_blur->SetParam(dilate_size, dilate_separation);
         // dilate就先不走bloom了
-        auto dilate_textures = dilate_blur->Draw({screen_quad_texture[0]}, screen_quad_vao);
+        auto dilate_textures = dilate_blur->Draw({preprocess_rst[0]}, screen_quad_vao);
         dof_process->SetFocusDistance(focus_distance, focus_threshold);
-        auto dof_textures = dof_process->Draw({screen_quad_texture[0], dilate_textures[0], position_texture}, screen_quad_vao);
+        auto dof_textures = dof_process->Draw({preprocess_rst[0], dilate_textures[0], position_texture}, screen_quad_vao);
         final_postprocess->Draw({dof_textures[0]}, screen_quad_vao);
     }
     else
     {
-        final_postprocess->Draw({screen_quad_texture[0]}, screen_quad_vao);
+        final_postprocess->Draw({preprocess_rst[0]}, screen_quad_vao);
     }
 }
 
@@ -125,10 +135,10 @@ void PostProcess::InitScreenTexture()
     glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
     if(!screen_quad_texture[0])
     {
-        glGenTextures(2, screen_quad_texture);    
+        glGenTextures(PP_TEXTURE_COUNT, screen_quad_texture);    
     }
 
-    for(unsigned i = 0; i < 2; ++i)
+    for(unsigned i = 0; i < PP_TEXTURE_COUNT; ++i)
     {
         glBindTexture(GL_TEXTURE_2D, screen_quad_texture[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height,
