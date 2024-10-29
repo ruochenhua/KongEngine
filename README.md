@@ -40,7 +40,7 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
    - [x] 核效果
    - [ ] 后处理效果整合(多种排列组合、参数暴露)
  - [ ] 全局光照
- - [ ] 屏幕空间反射（screen space reflection）
+ - [x] 屏幕空间反射（screen space reflection）
  - [ ] 屏幕空间折射（screen space refraction）
  - [x] 环境光遮蔽
  - [ ] 大场景渲染
@@ -51,7 +51,9 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
    - [x] 天空大气
    - [ ] 水体
    - [ ] 云层
-      -[ ] 体积云初步支持
+     - [x] 体积云初步支持
+     - [ ] 体积云阴影
+     - [ ] god ray 
 
  - [ ] 光线追踪能力
  - [ ] 异线程渲染
@@ -63,10 +65,9 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
  - [ ] 场景修改
     - [ ] 增加/删除Object
     - [x] 移动/旋转/缩放Object
- - [ ] 场景序列化/反序列化
-    - [x] 场景序列化(JSON)加载
-    - [x] 场景序列化(YAML)加载
-    - [ ] 场景反序列化
+ - [ ] 场景序列化/反序列化    
+    - [x] 场景反序列化(YAML)加载
+    - [ ] 场景序列化(YAML)
 
 
 ## 引擎能力
