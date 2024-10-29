@@ -6,10 +6,10 @@ layout(vertices=4) out;
 in vec2 out_tex[];
 out vec2 TextureCoord[];
 
-const int MIN_TESS_LEVEL = 4;
-const int MAX_TESS_LEVEL = 32;
+const int MIN_TESS_LEVEL = 8;
+const int MAX_TESS_LEVEL = 64;
 const float MIN_DISTANCE = 20;
-const float MAX_DISTANCE = 2500;
+const float MAX_DISTANCE = 1500;
 void main(){
     mat4 view = matrix_ubo.view;
 

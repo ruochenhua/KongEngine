@@ -81,18 +81,21 @@ vec3 ApplyFog(vec3 origin_color)
 {
     vec3 cam_to_point = frag_pos - cam_pos;
     float pixel_dist = length(cam_to_point);
+
     vec3 cam_to_point_dir = normalize(cam_to_point);
-    float fog_fall_off = 0.00005;
+    float fog_fall_off = 0.0005;
 
     // float fog_amount = 1.0 - exp(-pixel_dist*fog_fall_off);
+    // 根据高度积累的雾密度，高海拔和低海拔的雾密度是不一样的
     float fog_amount = exp(-cam_pos.y*fog_fall_off) * (1.0-exp(-pixel_dist*cam_to_point_dir.y*fog_fall_off))/cam_to_point_dir.y;
     // fog_amount = clamp(fog_amount, 0, 1);
     vec3 light_dir = light_info_ubo.directional_light.light_dir.xyz;
     float sum_amount = max(dot(cam_to_point_dir, -light_dir), 0.0);
 
-    vec3 fog_color = mix(vec3(0.5, 0.6, 0.7), vec3(1.0, 0.9, 0.7), pow(sum_amount, 8.0));
+    fog_amount = smoothstep(0.0, 1.0, fog_amount);
     // vec3 fog_color = vec3(0.5, 0.6, 0.7);
-
+    vec3 fog_color = mix(vec3(0.5, 0.6, 0.7), vec3(1.0, 0.9, 0.7), pow(sum_amount, 4.0));
+//    fog_color /= (pixel_dist*fog_amount*0.0001);
     return mix(origin_color, fog_color, fog_amount);
 }
 

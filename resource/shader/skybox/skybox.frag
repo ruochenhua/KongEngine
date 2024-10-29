@@ -21,8 +21,8 @@ uniform float coverage_multiplier = 1.0;
 uniform float cloudSpeed;
 uniform float crispiness = 0.4;
 
-uniform vec3 cloudColorTop = (vec3(169., 149., 149.)*(1.5/255.));
-uniform vec3 cloudColorBottom =  (vec3(65., 70., 80.)*(1.5/255.));
+uniform vec3 cloudColorTop = vec3(0.95, 0.88, 0.88);
+uniform vec3 cloudColorBottom =  vec3(0.35, 0.37, 0.36);
 
 #define CLOUDS_AMBIENT_COLOR_TOP cloudColorTop
 #define CLOUDS_AMBIENT_COLOR_BOTTOM cloudColorBottom
@@ -294,24 +294,16 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
 
     float T = 1.0;
     float sigma_ds = -ds*densityFactor;
-    bool expensive = true;
-    bool entered = false;
-
-    int zero_density_sample = 0;
 
     for(int i = 0; i < nSteps; ++i)
     {
-        //if( pos.y >= cameraPosition.y - SPHERE_DELTA*1.5 ){
-
-        float density_sample = sampleCloudDensity(pos, true, i/16);
+        float density_sample = sampleCloudDensity(pos, true, 0);
         if(density_sample > 0.)
         {
-            if(!entered){
-                entered = true;
-            }
             float height = getHeightFraction(pos);
-            vec3 ambientLight = CLOUDS_AMBIENT_COLOR_BOTTOM; //mix( CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, height );
+            vec3 ambientLight = mix(CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, height);
             float light_density = raymarchToLight(pos, ds*0.1, SUN_DIR, density_sample, lightDotEye);
+
             float scattering = mix(HG(lightDotEye, -0.08), HG(lightDotEye, 0.08), clamp(lightDotEye*0.5 + 0.5, 0.0, 1.0));
             //scattering = 0.6;
             scattering = max(scattering, 1.0);
@@ -324,13 +316,11 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
             vec3 Sint = (S - S * dTrans) * (1. / density_sample);
             col.rgb += T * Sint;
             T *= dTrans;
-
         }
 
         if( T <= CLOUDS_MIN_TRANSMITTANCE ) break;
 
         pos += dir;
-        //}
     }
     //col.rgb += ambientlight*0.02;
     col.a = 1.0 - T;
@@ -540,9 +530,7 @@ vec4 computeSkyboxCloud(vec4 sky_color)
 
     vec4 v = vec4(0.0);
     v = raymarchToCloud(startPos, endPos, bg.rgb);
-    float res_t = 0.0;
 
-//    float cloudAlphaness = threshold(v.a, 0.2);
     v.rgb = v.rgb*1.8 - 0.1; // contrast-illumination tuning
 
     // apply atmospheric fog to far away clouds
@@ -561,12 +549,7 @@ vec4 computeSkyboxCloud(vec4 sky_color)
     bg.a = 1.0;
 
     fragColor_v = bg;
-//    if(cloudAlphaness > 0.1)
-//    { //apply fog to bloom buffer
-//        float fogAmount = computeFogAmount(startPos, 0.00003);
-//    }
 
-//    fragColor_v.a = cloudAlphaness;
     return fragColor_v;
 }
 

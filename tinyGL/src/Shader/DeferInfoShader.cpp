@@ -21,10 +21,10 @@ void DeferInfoShader::InitDefaultShader()
     SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);
     SetInt("metallic_texture", METALLIC_TEX_SHADER_ID);
     SetInt("ao_texture", AO_TEX_SHADER_ID);
-    SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
-    SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
-    SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
-    SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
+    // SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
+    // SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
+    // SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
+    // SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 }
 
 void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)

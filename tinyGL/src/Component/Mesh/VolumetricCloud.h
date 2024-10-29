@@ -17,7 +17,7 @@ namespace Kong
         shared_ptr<Shader> worley_comp_shader;
         shared_ptr<Shader> weather_compute_shader;
         // control parameter
-        float coverage = 1.f, cloud_speed = 450.f, crispiness = 40.f, curliness = 0.1f, density = 0.02f, absorption = 0.35f;
+        float coverage = 0.3f, cloud_speed = 200.f, crispiness = 50.f, curliness = 3.0f, density = 0.02f, absorption = 0.35f;
         float earth_radius = 6471.0e2, sphere_inner_radius = 15.0e2f, sphere_outer_radius = 60.0e2f;
         float perlin_frequency = 1.8f;
         bool enable_god_rays = false;
