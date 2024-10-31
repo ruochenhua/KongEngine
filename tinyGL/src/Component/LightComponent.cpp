@@ -46,7 +46,7 @@ glm::vec3 CDirectionalLightComponent::GetLightDir() const
 
 void CDirectionalLightComponent::RenderShadowMap()
 {
-    if(!b_make_shadow)
+    if(!enable_shadowmap)
     {
         return;
     }
@@ -55,6 +55,7 @@ void CDirectionalLightComponent::RenderShadowMap()
 #endif
     glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
+
     
     auto actors = CScene::GetActors();
     for(auto actor : actors)
@@ -74,19 +75,10 @@ void CDirectionalLightComponent::RenderShadowMap()
         shadowmap_shader->Use();
         mat4 model_mat = actor->GetModelMatrix();
         shadowmap_shader->SetMat4("model", model_mat);
+        shadowmap_shader->SetFloat("light_intensity", light_intensity);
 #if USE_CSM
         for(int i = 0; i < light_space_matrices.size(); ++i)
         {
-            // if(i == 0)
-            // {
-            // mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
-            //
-            // vec3 light_pos = light_dir * -5.f;
-            // mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
-            // light_space_mat = light_proj * light_view;
-            //    light_space_matrices[i] = light_space_mat;
-            // }
-            
             stringstream ss;
             ss << "light_space_matrix[" << i << "]";
             shadowmap_shader->SetMat4(ss.str(), light_space_matrices[i]);
@@ -102,9 +94,47 @@ void CDirectionalLightComponent::RenderShadowMap()
         shadowmap_shader->SetMat4("light_space_mat[0]", light_space_mat);
 #endif
         
-        render_obj->SimpleDraw();
+        render_obj->SimpleDraw(shadowmap_shader);
     }
-	
+    // 渲染rsm信息
+    if(enable_rsm)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        auto actors = CScene::GetActors();
+        for(auto actor : actors)
+        {
+            auto render_obj = actor->GetComponent<CMeshComponent>();
+            if(!render_obj)
+            {
+                continue;
+            }
+            // 光源actor里面的mesh就不要渲染shadowmap了
+            auto light_component = actor->GetComponent<CLightComponent>();
+            if(light_component)
+            {
+                continue;
+            }
+
+            rsm_shader->Use();
+            mat4 model_mat = actor->GetModelMatrix();
+            rsm_shader->SetMat4("model", model_mat);
+            rsm_shader->SetFloat("light_intensity", light_intensity);
+            
+            mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
+            vec3 light_pos = light_dir * -10.f;
+            mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
+            light_space_mat = light_proj * light_view;
+            rsm_shader->SetMat4("light_space_mat", light_space_matrices[0]);
+        
+            render_obj->SimpleDraw(rsm_shader);
+        }
+    }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
@@ -118,9 +148,9 @@ void CDirectionalLightComponent::SetLightDir(const glm::vec3& rotation)
 
 void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
 {
-    b_make_shadow = b_turn_on;
+    enable_shadowmap = b_turn_on;
 
-    if(b_make_shadow)
+    if(enable_shadowmap)
     {
         glGenFramebuffers(1, &shadowmap_fbo);
         
@@ -130,7 +160,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         float far_plane = camera_near_far.y;
         // csm_distances = {far_plane/100};
         
-        csm_distances = {far_plane/500, far_plane/250, far_plane/100, far_plane/50, far_plane/10};
+        csm_distances = {far_plane/300, far_plane/100, far_plane/50, far_plane/10};
         glGenTextures(1, &csm_texture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -142,8 +172,8 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
 
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, csm_texture, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
+        // glDrawBuffer(GL_NONE);
+        // glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #else
         
@@ -174,6 +204,68 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         // 删掉阴影资源
         glDeleteBuffers(1, &shadowmap_fbo);
         glDeleteTextures(1, &shadowmap_texture);
+    }
+}
+
+void CDirectionalLightComponent::TurnOnReflectiveShadowMap(bool b_turn_on)
+{
+    enable_rsm = b_turn_on;
+    
+    if(enable_shadowmap && enable_rsm)
+    {
+        map<EShaderType, string> shader_path_map = {
+            {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.vert")},
+            {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.frag")}
+        };
+        rsm_shader = make_shared<Shader>(shader_path_map);
+        
+        glGenFramebuffers(1, &rsm_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo);
+
+        // 位置数据
+        glGenTextures(1, &rsm_world_position);
+        glBindTexture(GL_TEXTURE_2D, rsm_world_position);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rsm_world_position, 0);
+        
+        // 法线数据
+        glGenTextures(1, &rsm_world_normal);
+        glBindTexture(GL_TEXTURE_2D, rsm_world_normal);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rsm_world_normal, 0);
+        
+        // flux数据
+        glGenTextures(1, &rsm_world_flux);
+        glBindTexture(GL_TEXTURE_2D, rsm_world_flux);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, rsm_world_flux, 0);
+
+        // 生成renderbuffer
+        glGenRenderbuffers(1, &rsm_depth);
+        glBindRenderbuffer(GL_RENDERBUFFER, rsm_depth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rsm_depth);
+        glEnable(GL_DEPTH_TEST);
+        
+        GLuint g_attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2}; 
+        glDrawBuffers(3, g_attachments);
+        // Check that the framebuffer is complete.
+        if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+            printf("[Deferred Rendering] Framebuffer not complete!");
+        glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     }
 }
 
@@ -294,7 +386,7 @@ vec3 CPointLightComponent::GetLightDir() const
 
 void CPointLightComponent::RenderShadowMap()
 {
-    if(!b_make_shadow)
+    if(!enable_shadowmap)
     {
         return;
     }
@@ -354,8 +446,8 @@ void CPointLightComponent::SetLightLocation(const glm::vec3& in_light_location)
 
 void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
 {
-    b_make_shadow = b_turn_on;
-    if(b_make_shadow)
+    enable_shadowmap = b_turn_on;
+    if(enable_shadowmap)
     {
         glGenFramebuffers(1, &shadowmap_fbo);
         // 创建点光源阴影贴图

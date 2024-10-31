@@ -22,6 +22,10 @@ uniform samplerCube skybox_prefilter_texture;
 uniform sampler2D skybox_brdf_lut_texture;
 
 uniform sampler2DArray shadow_map;
+uniform sampler2D rsm_world_pos;
+uniform sampler2D rsm_world_normal;
+uniform sampler2D rsm_world_flux;
+
 uniform samplerCube shadow_map_pointlight[4];
 uniform mat4 light_space_matrices[16];
 uniform float csm_distances[16];
@@ -30,7 +34,7 @@ uniform int csm_level_count;
 uniform bool use_ssao;
 uniform sampler2D ssao_result_texture;
 // 计算阴影
-float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in_normal)
+float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in_normal, out vec3 env_color)
 {
     vec4 frag_pos_view_space = matrix_ubo.view * frag_world_pos;
     float depthValue = abs(frag_pos_view_space.z);
@@ -77,7 +81,33 @@ float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in
         }
     }
     shadow /= 9.0;
-        
+
+    // 只计算layer是0的rsm效果
+    float step_size = 1.0 / 512;
+    float rsm_intensity = 0.1;
+    if(layer==0)
+    {
+        // todo: 先简单用平均周边的矩形采样，后续需要更新为重要性采样
+        int size = 8;
+        for(int i = -size; i <= size; ++i)
+        {
+            for(int j = -size; j <= size; ++j)
+            {
+                vec2 uv = proj_coord.xy + vec2(i, j)*step_size;
+                vec3 flux = texture(rsm_world_flux, uv).rgb;
+                vec3 x_p = texture(rsm_world_pos, uv).xyz;
+                vec3 n_p = texture(rsm_world_normal, uv).xyz;
+
+                vec3 r = frag_world_pos.xyz - x_p;
+                float d2 = dot(r, r);
+                vec3 e_p = flux * (max(0.0, dot(n_p, r)) * max(0.0, dot(in_normal, -r)));
+                e_p *= pow(i*step_size/d2, 2);
+                env_color += e_p;
+            }
+        }
+        env_color *= rsm_intensity;
+    }
+
     return shadow;
 }
 
@@ -122,8 +152,9 @@ vec3 CalcDirLight(DirectionalLight dir_light, vec3 normal, vec3 view, vec3 frag_
 {
     vec3 light_color = dir_light.light_color.xyz;
     vec3 to_light_dir = -dir_light.light_dir.xyz;
-    float shadow = ShadowCalculation_DirLight(vec4(frag_pos,1.0), to_light_dir, normal);
-    return CalcLight(light_color, to_light_dir, normal, view, material) * (1.0 - shadow);
+    vec3 env_color = vec3(0);
+    float shadow = ShadowCalculation_DirLight(vec4(frag_pos,1.0), to_light_dir, normal, env_color);
+    return CalcLight(light_color, to_light_dir, normal, view, material) * (1.0 - shadow) + env_color;
 }
 
 vec3 CalcPointLight(PointLight point_light, int light_index, 
@@ -224,23 +255,11 @@ void main()
         color *= occlusion;
     }
 
-
-    /// FragColor = env_albedo;
-    // FragColor = vec4(vec3(env_roughness), 1.0);
-    // FragColor = vec4(vec3(env_metallic), 1.0);
-    // FragColor = skybox_color;
-
     float pixel_dist = length(cam_pos - frag_pos);
     vec3 final_color = ApplyFog(color, pixel_dist);
-    // vec3 fog_color = vec3(0.5,0.6, 0.7);
-    // float fog_fall_off = 0.0015;
-    // float fog_amount = 1.0 - exp(-pixel_to_cam*fog_fall_off);
-    // vec3 final_color = mix(color.xyz, fog_color, fog_amount);
-    // FragColor = vec4(final_color, 1.0);
 
     FragColor = vec4(final_color, 1.0);
-//    FragColor = vec4(vec3(ao), 1.0);
-//    FragColor = vec4(texture(ssao_result_texture, TexCoords).xxx, 1.0);
+
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
     {
@@ -252,4 +271,11 @@ void main()
         // 否则在blend开启的情况下会导致alpha为0的时候被遮挡的高亮穿透模型在场景中显现
         BrightColor = vec4(0,0,0,1);
     }
+
+
+//    FragColor = texture(rsm_world_flux, TexCoords)/100.0;
+//    FragColor = texture(rsm_world_pos, TexCoords);
+//    FragColor = vec4(texture(rsm_world_normal, TexCoords).rgb*0.5+0.5, 1.0);
+
+    //FragColor = vec4(frag_normal*0.5+0.5,1.0);
 }

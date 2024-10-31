@@ -16,12 +16,23 @@ void CMeshComponent::BeginPlay()
 	InitRenderInfo();
 }
 
-void CMeshComponent::SimpleDraw()
+void CMeshComponent::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
 		auto& render_vertex = mesh.m_RenderInfo.vertex;
-		
+		if(simple_draw_shader)
+		{
+			if(use_override_material)
+			{
+				simple_draw_shader->SetVec4("albedo", override_render_info.material.albedo);	
+			}
+			else
+			{
+				simple_draw_shader->SetVec4("albedo", mesh.m_RenderInfo.material.albedo);		
+			}
+			
+		}
 		glBindVertexArray(render_vertex.vertex_array_id);
 		// Draw the triangle !
 		// if no index, use draw array

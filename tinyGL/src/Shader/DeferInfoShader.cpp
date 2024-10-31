@@ -81,72 +81,101 @@ void DeferredBRDFShader::InitDefaultShader()
     SetInt("skybox_brdf_lut_texture", 7);
     
     SetInt("shadow_map", 8);
+	SetInt("rsm_world_pos", 9);
+	SetInt("rsm_world_normal", 10);
+	SetInt("rsm_world_flux", 11);
+	
     for(unsigned int i = 0; i < 4; ++i)
     {
         stringstream ss;
         ss << "shadow_map_pointlight[" << i << "]";
-        SetInt(ss.str(), 9 + i);
+        SetInt(ss.str(), 12 + i);
     }
 
 	// ssao结果数据
-	SetInt("ssao_result_texture", 13);
+	SetInt("ssao_result_texture", 16);
 }
 
 void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
 {
 	GLuint null_tex_id = CRender::GetNullTexId();
 	SetVec3("cam_pos", scene_render_info.camera_pos);
-	// todo: 天空盒贴图需要每次都更新吗？
+	int texture_idx = 4;
+	// 贴图0-3分别是position/normal/albedo/orm, 下面的从4开始算
+	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧
 	// 添加天空盒贴图
-	glActiveTexture(GL_TEXTURE0 + 4);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
 	// 天空盒辐照度贴图
-	glActiveTexture(GL_TEXTURE0 + 5);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
 	// 天空盒预滤波贴图
-	glActiveTexture(GL_TEXTURE0 + 6);
+	glActiveTexture(GL_TEXTURE0 +	texture_idx++);
 	GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
 	// 天空盒brdf lut贴图
-	glActiveTexture(GL_TEXTURE0 + 7);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	GLuint skybox_brdf_lut_tex_id = CRender::GetRender()->GetSkyboxBRDFLutTexture();
 	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
-	GLuint dir_light_shadowmap_id = null_tex_id;
-	glActiveTexture(GL_TEXTURE0 + 8);
+	
+	GLuint dir_light_shadowmap_id, rsm_world_pos, rsm_world_normal, rsm_world_flux;
+	dir_light_shadowmap_id = rsm_world_pos = rsm_world_normal = rsm_world_flux = null_tex_id;
+	
 	if(has_dir_light)
 	{
 		auto dir_light = scene_render_info.scene_dirlight.lock();
-		// 支持一个平行光源的阴影贴图
-		dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+		if(dir_light->enable_shadowmap)
+		{
+			// 支持一个平行光源的阴影贴图
+			dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
 #if USE_CSM
-		// csm相关的数据
-		for(int i = 0; i < dir_light->csm_distances.size(); ++i)
-		{
-			stringstream ss;
-			ss << "csm_distances[" << i << "]";
-			SetFloat(ss.str(), dir_light->csm_distances[i]);
-		}
-		SetInt("csm_level_count", dir_light->csm_distances.size());
-		for(int i = 0; i < dir_light->light_space_matrices.size(); ++i)
-		{
-			stringstream ss;
-			ss << "light_space_matrices[" << i << "]";
-			SetMat4(ss.str(), dir_light->light_space_matrices[i]);
-		}
+			// csm相关的数据
+			for(int i = 0; i < dir_light->csm_distances.size(); ++i)
+			{
+				stringstream ss;
+				ss << "csm_distances[" << i << "]";
+				SetFloat(ss.str(), dir_light->csm_distances[i]);
+			}
+			SetInt("csm_level_count", dir_light->csm_distances.size());
+			for(int i = 0; i < dir_light->light_space_matrices.size(); ++i)
+			{
+				stringstream ss;
+				ss << "light_space_matrices[" << i << "]";
+				SetMat4(ss.str(), dir_light->light_space_matrices[i]);
+			}
 #else
-		SetMat4("light_space_matrices[0]", dir_light->light_space_mat);
-
+			SetMat4("light_space_matrices[0]", dir_light->light_space_mat);
 #endif
+			// rsm相关信息
+			if(dir_light->enable_rsm)
+			{
+				rsm_world_pos = dir_light->rsm_world_position;
+				rsm_world_normal = dir_light->rsm_world_normal;
+				rsm_world_flux = dir_light->rsm_world_flux;
+			}
+		}
 	}
+	
 #if USE_CSM
-	glBindTexture(GL_TEXTURE_2D_ARRAY,  dir_light_shadowmap_id);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, dir_light_shadowmap_id);
+
 #else
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
 #endif
+	// rsm相关贴图数据
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_pos);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_normal);
+	glActiveTexture(GL_TEXTURE0 + texture_idx++);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_flux);
+
 	
 	int point_light_shadow_num = 0;
 	for(auto light : scene_render_info.scene_pointlights)
@@ -156,12 +185,12 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 			continue;
 		}
 		auto point_light_ptr = light.lock();
-		if(!point_light_ptr->b_make_shadow)
+		if(!point_light_ptr->enable_shadowmap)
 		{
 			continue;
 		}
 		
-		glActiveTexture(GL_TEXTURE0 + 9 + point_light_shadow_num);
+		glActiveTexture(GL_TEXTURE0 + texture_idx++);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, point_light_ptr->GetShadowMapTexture());
 		point_light_shadow_num++;
 	}

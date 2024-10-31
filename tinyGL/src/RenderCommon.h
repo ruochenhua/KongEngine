@@ -24,7 +24,10 @@ namespace Kong
     constexpr unsigned SKYBOX_PREFILTER_TEX_SHADER_ID = 7;
     constexpr unsigned SKYBOX_BRDF_LUT_TEX_SHADER_ID = 8;
     constexpr unsigned DIRLIGHT_SM_TEX_SHADER_ID = 9;
-    constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 10;
+    constexpr unsigned DIRLIGHT_RSM_WORLD_POS = 10;
+    constexpr unsigned DIRLIGHT_RSM_WORLD_NORMAL = 11;
+    constexpr unsigned DIRLIGHT_RSM_WORLD_FLUX = 12;
+    constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 13;
 
     enum ETextureType
     {

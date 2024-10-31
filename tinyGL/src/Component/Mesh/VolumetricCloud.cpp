@@ -123,7 +123,7 @@ void VolumetricCloud::PreRenderUpdate() const
 	ImGui::End();
 }
 
-void VolumetricCloud::SimpleDraw()
+void VolumetricCloud::SimpleDraw(shared_ptr<Shader> simple_shader)
 {
     // 计算cloud texture
 	// 有太阳光才计算这个，没有就跳过

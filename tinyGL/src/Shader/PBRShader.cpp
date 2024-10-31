@@ -58,36 +58,54 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneR
 	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
-	GLuint dir_light_shadowmap_id = null_tex_id;
-	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SM_TEX_SHADER_ID);
+	GLuint dir_light_shadowmap_id, rsm_world_pos, rsm_world_normal, rsm_world_flux;
+	dir_light_shadowmap_id = rsm_world_pos = rsm_world_normal = rsm_world_flux = null_tex_id;
 	if(has_dir_light)
 	{
 		auto dir_light = scene_render_info.scene_dirlight.lock();
-		// 支持一个平行光源的阴影贴图
-		dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
+		if(dir_light->enable_shadowmap)
+		{
+			// 支持一个平行光源的阴影贴图
+			dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
 #if USE_CSM
-		// csm相关的数据
-		for(int i = 0; i < dir_light->csm_distances.size(); ++i)
-		{
-			stringstream ss;
-			ss << "csm_distances[" << i << "]";
-			SetFloat(ss.str(), dir_light->csm_distances[i]);
-		}
-		SetInt("csm_level_count", dir_light->csm_distances.size());
-		for(int i = 0; i < dir_light->light_space_matrices.size(); ++i)
-		{
-			stringstream ss;
-			ss << "light_space_matrices[" << i << "]";
-			SetMat4(ss.str(), dir_light->light_space_matrices[i]);
-		}
-		SetInt("light_space_matrix_count", dir_light->light_space_matrices.size());
+			// csm相关的数据
+			for(int i = 0; i < dir_light->csm_distances.size(); ++i)
+			{
+				stringstream ss;
+				ss << "csm_distances[" << i << "]";
+				SetFloat(ss.str(), dir_light->csm_distances[i]);
+			}
+			SetInt("csm_level_count", dir_light->csm_distances.size());
+			for(int i = 0; i < dir_light->light_space_matrices.size(); ++i)
+			{
+				stringstream ss;
+				ss << "light_space_matrices[" << i << "]";
+				SetMat4(ss.str(), dir_light->light_space_matrices[i]);
+			}
+			SetInt("light_space_matrix_count", dir_light->light_space_matrices.size());
 #endif
+			if(dir_light->enable_rsm)
+			{
+				rsm_world_pos = dir_light->rsm_world_position;
+				rsm_world_normal = dir_light->rsm_world_normal;
+				rsm_world_flux = dir_light->rsm_world_flux;
+			}
+		}
 	}
+	
 #if USE_CSM
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SM_TEX_SHADER_ID);
 	glBindTexture(GL_TEXTURE_2D_ARRAY,  dir_light_shadowmap_id);
 #else
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_SM_TEX_SHADER_ID);
 	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
 #endif
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_RSM_WORLD_POS);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_pos);
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_RSM_WORLD_NORMAL);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_normal);
+	glActiveTexture(GL_TEXTURE0 + DIRLIGHT_RSM_WORLD_FLUX);
+	glBindTexture(GL_TEXTURE_2D, rsm_world_flux);
 	
 	int point_light_shadow_num = 0;
 	for(auto light : scene_render_info.scene_pointlights)
@@ -97,7 +115,7 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneR
 			continue;
 		}
 		auto point_light_ptr = light.lock();
-		if(!point_light_ptr->b_make_shadow)
+		if(!point_light_ptr->enable_shadowmap)
 		{
 			continue;
 		}
@@ -130,6 +148,10 @@ void PBRShader::InitDefaultShader()
 	SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
 	SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
+	SetInt("rsm_world_pos", DIRLIGHT_RSM_WORLD_POS);
+	SetInt("rsm_world_normal", DIRLIGHT_RSM_WORLD_NORMAL);
+	SetInt("rsm_world_flux", DIRLIGHT_RSM_WORLD_FLUX);
+	
 	for(unsigned int i = 0; i < POINT_LIGHT_SHADOW_MAX; ++i)
 	{
 		stringstream ss;

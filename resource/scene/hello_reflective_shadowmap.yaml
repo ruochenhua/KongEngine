@@ -1,0 +1,130 @@
+scene:
+  - actor: box1
+    transform:
+      location:
+        - 0
+        - -5
+        - 0
+      scale:
+        - 4
+        - 1
+        - 4
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.6
+            - 0.6
+            - 0.6
+          metallic: 0.0
+          roughness: 0.5
+          ao: 1
+
+  - actor: box2
+    transform:
+      location:
+        - 5
+        - 0
+        - 0
+      scale:
+        - 1
+        - 4
+        - 4
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.6
+            - 0.0
+            - 0.0
+          metallic: 0.0
+          roughness: 0.5
+          ao: 1
+
+  - actor: box3
+    transform:
+      location:
+        - 0
+        - 0
+        - 5
+      scale:
+        - 4
+        - 4
+        - 1
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.0
+            - 0.6
+            - 0.0
+          metallic: 0.0
+          roughness: 0.5
+          ao: 1
+
+  - actor: box4
+    transform:
+      location:
+        - 0
+        - 0
+        - -5
+      scale:
+        - 4
+        - 4
+        - 1
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.0
+            - 0.0
+            - 0.6
+          metallic: 0.0
+          roughness: 0.5
+          ao: 1
+
+  - actor: box_center
+    transform:
+      location:
+        - 0
+        - 1
+        - 0
+      scale:
+        - 1
+        - 1
+        - 1
+    component:
+      - type: box
+        shader_type: brdf
+        material:
+          diffuse:
+            - 0.6
+            - 0.6
+            - 0.6
+          metallic: 0.2
+          roughness: 0.5
+          ao: 1
+
+  - actor: dir_light
+    transform:
+      rotation:
+        - 65
+        - -20
+        - 0
+    component:
+      - type: directional_light
+        light_color:
+          - 1
+          - 1
+          - 1
+        light_intensity: 10
+        reflective_shadow_map: true
+
+setting:
+  skybox:
+    render_sky_env_status: 0
+    render_cloud: false

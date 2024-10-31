@@ -30,6 +30,10 @@ uniform samplerCube skybox_prefilter_texture;
 uniform sampler2D skybox_brdf_lut_texture;
 
 uniform sampler2DArray shadow_map;
+uniform sampler2D rsm_world_pos;
+uniform sampler2D rsm_world_normal;
+uniform sampler2D rsm_world_flux;
+
 uniform samplerCube shadow_map_pointlight[4];
 uniform mat4 light_space_matrices[16];
 uniform float csm_distances[16];

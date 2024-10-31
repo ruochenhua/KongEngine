@@ -136,6 +136,8 @@ std::vector<std::string> Shader::FindIncludeFiles(const string& code_content)
 void Shader::Init(const map<EShaderType, string>& shader_path_cache)
 {
     shader_id = Shader::LoadShaders(shader_path_cache);
+	
+	assert(shader_id, "Shader load failed!");
 }
 
 void Shader::Use() const

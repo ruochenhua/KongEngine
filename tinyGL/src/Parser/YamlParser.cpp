@@ -172,104 +172,6 @@ namespace YamlParser
             mesh_component->use_override_material = true;
         }
     }
-    
-    SRenderResourceDesc ParseRenderObjInfo(YAML::Node in_node)
-    {
-        SRenderResourceDesc render_resource_desc;
-        if(in_node["shader_type"])
-        {
-            render_resource_desc.shader_type = in_node["shader_type"].as<string>();
-        }
-        else if(in_node["shader_path"])
-        {
-            auto shader_node = in_node["shader_path"];
-            if(shader_node["vs"])
-            {
-                render_resource_desc.shader_paths.emplace(EShaderType::vs,
-                    CSceneLoader::ToResourcePath(shader_node["vs"].as<string>()));
-            }
-
-            if(shader_node["fs"])
-            {
-                render_resource_desc.shader_paths.emplace(EShaderType::fs,
-                    CSceneLoader::ToResourcePath(shader_node["fs"].as<string>()));
-            }
-        }
-
-        if(in_node["model_path"])
-        {
-            render_resource_desc.model_path = CSceneLoader::ToResourcePath(in_node["model_path"].as<string>());
-        }
-
-        if(in_node["texture_path"])
-        {
-            auto texture_node = in_node["texture_path"];
-            if(texture_node["diffuse"])
-            {
-                render_resource_desc.texture_paths.emplace(ETextureType::diffuse,
-                    CSceneLoader::ToResourcePath(texture_node["diffuse"].as<string>()));        
-            }
-        
-            if(texture_node["normal"])
-            {
-                render_resource_desc.texture_paths.emplace(ETextureType::normal,
-                    CSceneLoader::ToResourcePath(texture_node["normal"].as<string>()));   
-            }
-
-            if(texture_node["metallic"])
-            {
-                render_resource_desc.texture_paths.emplace(ETextureType::metallic,
-                    CSceneLoader::ToResourcePath(texture_node["metallic"].as<string>()));   
-            }
-
-            if(texture_node["roughness"])
-            {
-                render_resource_desc.texture_paths.emplace(ETextureType::roughness,
-                    CSceneLoader::ToResourcePath(texture_node["roughness"].as<string>()));   
-            }
-
-            if(texture_node["ao"])
-            {
-                render_resource_desc.texture_paths.emplace(ETextureType::ambient_occlusion,
-                    CSceneLoader::ToResourcePath(texture_node["ao"].as<string>()));   
-            }
-        }
-
-        if(in_node["material"])
-        {
-            render_resource_desc.bOverloadMaterial = true;
-            auto material_node = in_node["material"];
-            if(material_node["albedo"])
-            {
-                if(material_node["albedo"].IsSequence())
-                {
-                    render_resource_desc.material.albedo = glm::vec4(ParseVec3(material_node["albedo"].as<vector<float>>()), 1.0);    
-                }
-                else
-                {
-                    render_resource_desc.texture_paths.emplace(ETextureType::diffuse,
-                        CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>()));     
-                }
-            }
-
-            if(material_node["metallic"])
-            {
-                render_resource_desc.material.metallic = material_node["metallic"].as<float>();    
-            }
-
-            if(material_node["roughness"])
-            {
-                render_resource_desc.material.roughness = material_node["roughness"].as<float>();    
-            }
-
-            if(material_node["ao"])
-            {
-                render_resource_desc.material.ao = material_node["ao"].as<float>();    
-            }
-        }
-    
-        return render_resource_desc;
-    }
 
     void ParseComponent(YAML::Node actor, shared_ptr<AActor> new_actor)
     {        
@@ -329,7 +231,8 @@ namespace YamlParser
                 if(component["light_intensity"])
                 {
                     // 填了光的强度的话，需要乘上去
-                    dirlight_comp->light_color *= component["light_intensity"].as<float>();
+                    dirlight_comp->light_intensity = component["light_intensity"].as<float>(); 
+                    dirlight_comp->light_color *= dirlight_comp->light_intensity;
                 }
 
                 // 平行光默认打开阴影贴图
@@ -341,6 +244,12 @@ namespace YamlParser
                 {
                     dirlight_comp->TurnOnShadowMap(true);
                 }
+
+                if(component["reflective_shadow_map"])
+                {
+                    dirlight_comp->TurnOnReflectiveShadowMap(component["reflective_shadow_map"].as<bool>());    
+                }
+                
                 new_actor->AddComponent(dirlight_comp);
             }
             else if(component_type == "point_light")

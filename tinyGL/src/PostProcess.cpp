@@ -144,10 +144,12 @@ void PostProcess::InitScreenTexture()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height,
         0, GL_RGBA, GL_FLOAT, NULL);
 
+        // 为啥一定要执行前两句？
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+
         
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, screen_quad_texture[i], 0);
     }

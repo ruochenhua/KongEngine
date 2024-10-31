@@ -62,7 +62,7 @@ Terrain::Terrain(const string& file_name)
     LoadHeightMap(file_name);
 }
 
-void Terrain::SimpleDraw()
+void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 {
 #if USE_TCS
     shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
@@ -148,7 +148,7 @@ void Terrain::Draw(const SSceneRenderInfo& scene_render_info)
     shader_data->SetFloat("height_shift", height_shift_);
     shader_data->SetInt("terrain_size", terrain_size);
     shader_data->SetInt("terrain_res", terrain_res);
-    SimpleDraw();
+    SimpleDraw(nullptr);
     
     glEnable(GL_CULL_FACE);
 }

@@ -220,7 +220,7 @@ void SSAOHelper::GenerateSSAOTextures(int width, int height)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, ssao_blur_texture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_texture, 0);
 
 	ssao_shader_->Use();
 	ssao_shader_->SetVec2("screen_size", vec2(width, height));
@@ -380,7 +380,7 @@ void CRender::RenderSceneObject()
 #if USE_DERER_RENDER
 	defer_buffer_.defer_render_shader->Use();
 	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
-	glActiveTexture(GL_TEXTURE0 + 13);
+	glActiveTexture(GL_TEXTURE0 + 16);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
 	DeferRenderSceneLighting();
 	
@@ -470,7 +470,7 @@ void CRender::RenderScene() const
 		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
 
 		light_info.point_lights[point_light_count] = point_light;
-		if(point_light_ptr->b_make_shadow && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
+		if(point_light_ptr->enable_shadowmap && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
 		{
 			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
 			++point_light_shadow_count;
@@ -596,7 +596,7 @@ void CRender::DeferRenderSceneLighting() const
 		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
 
 		light_info.point_lights[point_light_count] = point_light;
-		if(point_light_ptr->b_make_shadow && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
+		if(point_light_ptr->enable_shadowmap && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
 		{
 			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
 			++point_light_shadow_count;

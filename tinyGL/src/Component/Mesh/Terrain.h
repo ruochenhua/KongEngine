@@ -9,7 +9,7 @@ namespace Kong
     public:
         Terrain();
         Terrain(const string &file_name);
-        void SimpleDraw() override;
+        void SimpleDraw(shared_ptr<Shader> simple_draw_shader) override;
         float height_scale_ = 64.0f;
         float height_shift_ = 16.0f;
 

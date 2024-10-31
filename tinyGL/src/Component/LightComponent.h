@@ -20,13 +20,14 @@ namespace Kong
         CLightComponent(ELightType in_type);
         
         glm::vec3 light_color = glm::vec3(0);
+        float light_intensity = 1.0f;
         
         ELightType GetLightType() const { return light_type; }
         virtual glm::vec3 GetLightDir() const = 0;
         
         virtual void RenderShadowMap() = 0;
         virtual GLuint GetShadowMapTexture() const;
-        bool b_make_shadow = false;
+        bool enable_shadowmap = false;
 
         virtual void TurnOnShadowMap(bool b_turn_on) = 0;
     protected:
@@ -49,12 +50,26 @@ namespace Kong
         void SetLightDir(const glm::vec3& rotation);
 
         void TurnOnShadowMap(bool b_turn_on) override;
+        void TurnOnReflectiveShadowMap(bool b_turn_on);
         glm::mat4 light_space_mat;
+        vector<glm::mat4> light_space_matrices;
+        
         // 级联阴影
         glm::vec2 camera_near_far;
         vector<float> csm_distances;
         GLuint csm_texture = GL_NONE;
-        vector<glm::mat4> light_space_matrices;
+
+        // 当前仅平行光源支持
+        // rsm基于shadowmap之上，若shadowmap不开启rsm也不应该开启
+        // 反射阴影贴图（RSM）的一些信息
+        //是否开启rsm，为了性能考虑默认关闭，在yaml场景文件中可配置
+        bool enable_rsm = false;
+        GLuint rsm_fbo = GL_NONE;
+        GLuint rsm_world_position = GL_NONE;    //世界位置
+        GLuint rsm_world_normal = GL_NONE;      //法线
+        GLuint rsm_world_flux = GL_NONE;        //辐射量, 先直接使用albedo和光照强度相乘
+        GLuint rsm_depth = GL_NONE;
+        shared_ptr<Shader> rsm_shader;
     private:
         glm::vec3 light_dir;
         // 计算视锥体范围的AABB在世界坐标下的顶点
