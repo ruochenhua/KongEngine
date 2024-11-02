@@ -14,5 +14,5 @@ void main()
 {
 	world_pos = frag_pos;
     world_normal = vec4(frag_normal, 1);
-    world_flux = albedo * light_intensity;
+    world_flux = albedo;// * light_intensity;
 }

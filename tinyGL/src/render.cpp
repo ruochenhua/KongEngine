@@ -380,6 +380,8 @@ void CRender::RenderSceneObject()
 #if USE_DERER_RENDER
 	defer_buffer_.defer_render_shader->Use();
 	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
+	defer_buffer_.defer_render_shader->SetBool("use_rsm", use_rsm);
+	defer_buffer_.defer_render_shader->SetFloat("rsm_intensity", rsm_intensity);
 	glActiveTexture(GL_TEXTURE0 + 16);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
 	DeferRenderSceneLighting();

@@ -133,6 +133,9 @@ void CUIManager::DescribeUIContent(double delta)
 
 	ImGui::Checkbox("ssao", &render_sys->use_ssao);
 	ImGui::Checkbox("screen space reflection", &render_sys->use_screen_space_reflection);
+	ImGui::Checkbox("reflective shadowmap(rsm)", &render_sys->use_rsm);
+	ImGui::DragFloat("rsm intensity", &render_sys->rsm_intensity, 0.005f, 0., 1.0);
+	
 	ImGui::Checkbox("render cloud", &render_sys->m_SkyBox.render_cloud);
 	
 	if(ImGui::TreeNode("scene"))
