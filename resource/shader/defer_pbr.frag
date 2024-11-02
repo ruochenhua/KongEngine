@@ -37,6 +37,8 @@ uniform sampler2D ssao_result_texture;
 
 uniform bool use_rsm;
 uniform float rsm_intensity;
+uniform int rsm_sample_count;
+uniform vec4 rsm_samples_and_weights[32];
 // 计算阴影
 float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in_normal, out vec3 env_color)
 {
@@ -89,24 +91,42 @@ float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in
     if(use_rsm)
     {
         // 只计算layer是0的rsm效果
-        float step_size = 1.0 / 128;
         if (layer == 0)
         {
-            for (int i = 0; i < N_SAMPLES; ++i) 
+            float texel_size = 1.0 / 2048.0;
+//            for (int i = 0; i < N_SAMPLES; ++i) 
+//            {
+//
+//                vec2 uv = proj_coord.xy + R_MAX * rsm_sample_offsets[i];
+//                vec3 flux = texture(rsm_world_flux, uv).rgb;
+//                vec3 x_p = texture(rsm_world_pos, uv).xyz;
+//                vec3 n_p = texture(rsm_world_normal, uv).xyz;
+//
+//                vec3 r = frag_world_pos.xyz - x_p;
+//                float d2 = dot(r, r);
+//                vec3 e_p = flux * (max(0.0, dot(n_p, r)) * max(0.0, dot(in_normal, -r)));
+//                e_p *= pow(rsm_sample_offsets[i].x / d2, 2);
+//                env_color += e_p;
+//            }
+//
+//             env_color *= rsm_intensity;
+            float max_sample_radius = 128.;
+            for (int i = 0; i < rsm_sample_count; ++i) 
             {
-                
-                vec2 uv = proj_coord.xy + R_MAX * rsm_sample_offsets[i];
+                vec3 rsm_sample_and_weight = rsm_samples_and_weights[i].xyz;
+                vec2 uv = proj_coord.xy + max_sample_radius * rsm_sample_and_weight.xy * texel_size;
                 vec3 flux = texture(rsm_world_flux, uv).rgb;
                 vec3 x_p = texture(rsm_world_pos, uv).xyz;
                 vec3 n_p = texture(rsm_world_normal, uv).xyz;
 
-                vec3 r = frag_world_pos.xyz - x_p;
+                vec3 r = normalize(frag_world_pos.xyz - x_p);
+
                 float d2 = dot(r, r);
-                vec3 e_p = flux * (max(0.0, dot(n_p, r)) * max(0.0, dot(in_normal, -r)));
-                e_p *= pow(rsm_sample_offsets[i].x / d2, 2);
+                vec3 e_p = flux * (max(0.0, dot(n_p, r)) * max(0.0, dot(in_normal, -r))) * rsm_sample_and_weight.z;
+                //e_p *= pow(rsm_sample_offsets[i].x / d2, 2);
                 env_color += e_p;
             }
-            env_color *= rsm_intensity;
+            env_color /= rsm_sample_count;
         }
     }
     

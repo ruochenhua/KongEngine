@@ -129,6 +129,8 @@ namespace Kong
 		// 启用反射阴影贴图
 		bool use_rsm = false;
 		float rsm_intensity = 0.04f;
+		int rsm_sample_count = 32;
+		vector<glm::vec4> rsm_samples_and_weights;
 		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;

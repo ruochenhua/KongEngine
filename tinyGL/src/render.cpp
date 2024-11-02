@@ -300,6 +300,18 @@ int CRender::Init()
 
 	// 屏幕空间反射shader
 	ssreflection_shader = make_shared<SSReflectionShader>();
+
+	// rsm采样点初始化
+	std::default_random_engine e;
+	std::uniform_real_distribution<float> u(0.0, 1.0);
+	float pi_num = pi<float>();
+	for(int i = 0; i < rsm_sample_count; i++)
+	{
+		float xi1 = u(e);
+		float xi2 = u(e);
+		
+		rsm_samples_and_weights.push_back(vec4(xi1*sin(2*pi_num*xi2), xi1*cos(2*pi_num*xi2), xi1*xi1, 0.0));
+	}
 	return 0;
 }
 
@@ -382,6 +394,14 @@ void CRender::RenderSceneObject()
 	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
 	defer_buffer_.defer_render_shader->SetBool("use_rsm", use_rsm);
 	defer_buffer_.defer_render_shader->SetFloat("rsm_intensity", rsm_intensity);
+	defer_buffer_.defer_render_shader->SetInt("rsm_sample_count", rsm_sample_count);
+	for(int i = 0; i < rsm_sample_count; i++)
+	{
+		stringstream rsm_stream;
+		rsm_stream <<  "rsm_samples_and_weights[" << i << "]";
+		defer_buffer_.defer_render_shader->SetVec4(rsm_stream.str(), rsm_samples_and_weights[i]);
+	}
+	
 	glActiveTexture(GL_TEXTURE0 + 16);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
 	DeferRenderSceneLighting();
