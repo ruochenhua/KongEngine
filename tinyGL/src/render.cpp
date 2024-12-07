@@ -392,6 +392,7 @@ void CRender::RenderSceneObject()
 #if USE_DERER_RENDER
 	defer_buffer_.defer_render_shader->Use();
 	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
+	// rsm
 	defer_buffer_.defer_render_shader->SetBool("use_rsm", use_rsm);
 	defer_buffer_.defer_render_shader->SetFloat("rsm_intensity", rsm_intensity);
 	defer_buffer_.defer_render_shader->SetInt("rsm_sample_count", rsm_sample_count);
@@ -401,6 +402,12 @@ void CRender::RenderSceneObject()
 		rsm_stream <<  "rsm_samples_and_weights[" << i << "]";
 		defer_buffer_.defer_render_shader->SetVec4(rsm_stream.str(), rsm_samples_and_weights[i]);
 	}
+
+	// pcss
+	defer_buffer_.defer_render_shader->SetBool("use_pcss", use_pcss);
+	defer_buffer_.defer_render_shader->SetFloat("pcss_radius", pcss_radius);
+	defer_buffer_.defer_render_shader->SetFloat("pcss_light_scale", pcss_light_scale);
+	defer_buffer_.defer_render_shader->SetInt("pcss_sample_count", pcss_sample_count);
 	
 	glActiveTexture(GL_TEXTURE0 + 16);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);

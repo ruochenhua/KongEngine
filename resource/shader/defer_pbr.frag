@@ -3,6 +3,7 @@
 #include "/common/common.glsl"
 #include "/common/brdf_common.glsl"
 #include "/shadow/rsm_sample_points.glsl"
+#include "/shadow/pcss.glsl"
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
@@ -39,6 +40,11 @@ uniform bool use_rsm;
 uniform float rsm_intensity;
 uniform int rsm_sample_count;
 uniform vec4 rsm_samples_and_weights[32];
+
+uniform bool use_pcss = false;
+uniform float pcss_radius = 1.0;
+uniform float pcss_light_scale = 0.1;
+uniform int pcss_sample_count = 36;
 // 计算阴影
 float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in_normal, out vec3 env_color)
 {
@@ -74,20 +80,54 @@ float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir, vec3 in
     {
         return 0.0;
     }
-
-    // PCF
-    float shadow = 0.0;
-    vec2 texel_size = 1.0 / vec2(textureSize(shadow_map, 0));
-    for(int x = -1; x <= 1; ++x)
+    
+    float shadow = 0.0f;
+    // PCSS（只在csm最低级别开启）
+    if(use_pcss && layer == 0)
     {
-        for(int y = -1; y <= 1; ++y)
+        float d_recv = current_depth;
+
+        float d_blocker = FindBlockerDepth(shadow_map, proj_coord.xy, d_recv, pcss_radius);
+        float blocker_radius = EstimateBlockerSearchRadius(proj_coord.xy, d_recv, d_blocker, pcss_light_scale);
+        vec2 texel_size = 1.0 / vec2(textureSize(shadow_map, 0));
+        // 阻挡区域小就回退到PCF方法
+        if(blocker_radius < texel_size.x)
         {
-            float pcf_depth = texture(shadow_map, vec3(proj_coord.xy + vec2(x, y) * texel_size, layer)).r;
-            shadow += current_depth > pcf_depth ? 1.0 : 0.0;
+//            shadow = d_recv > TextureProjBilinear(shadow_map, proj_coord.xy) ? 1.0 : 0.0;
+            shadow = CalculatePCFShadow(current_depth, shadow_map, layer, proj_coord.xy, 1);
+        }
+        else
+        {
+            float shadow_sum = 0.0f;
+            for(int pcss_i = 0; pcss_i < pcss_sample_count; pcss_i++)
+            {
+                // 可以使用泊松采样盘等方法获取更自然的采样点位置，这里简单均匀采样
+                vec2 offset = vec2(cos(float(pcss_i) * 2.0 * 3.1415926 / float(pcss_sample_count)),
+                sin(float(pcss_i) * 2.0 * 3.1415926 / float(pcss_sample_count))) * blocker_radius;
+
+                vec4 sampleLightSpacePos = vec4(proj_coord.xy + offset, proj_coord.z, 1.0);
+                float sampleDepth = TextureProjBilinear(shadow_map, proj_coord.xy+offset);
+                shadow_sum += sampleDepth < d_recv? 1.0 : 0.0;
+            }
+            shadow = shadow_sum / pcss_sample_count;
         }
     }
-    shadow /= 9.0;
-
+    else
+    {
+        // PCF
+//        vec2 texel_size = 1.0 / vec2(textureSize(shadow_map, 0));
+//        for (int x = -1; x <= 1; ++x)
+//        {
+//            for (int y = -1; y <= 1; ++y)
+//            {
+//                float pcf_depth = texture(shadow_map, vec3(proj_coord.xy + vec2(x, y) * texel_size, layer)).r;
+//                shadow += current_depth > pcf_depth ? 1.0 : 0.0;
+//            }
+//        }
+//        shadow /= 9.0;
+        shadow = CalculatePCFShadow(current_depth, shadow_map, layer, proj_coord.xy, 1);
+    }
+    
     if(use_rsm)
     {
         // 只计算layer是0的rsm效果

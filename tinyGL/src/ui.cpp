@@ -137,6 +137,15 @@ void CUIManager::DescribeUIContent(double delta)
 	ImGui::DragFloat("rsm intensity", &render_sys->rsm_intensity, 0.005f, 0., 1.0);
 	
 	ImGui::Checkbox("render cloud", &render_sys->m_SkyBox.render_cloud);
+
+	if (ImGui::TreeNode("Percentage-Closer Soft Shadows"))
+	{
+		ImGui::Checkbox("Use PCSS", &render_sys->use_pcss);
+		ImGui::DragFloat("PCSS radius", &render_sys->pcss_radius, 0.01f, 0.1f, 10.0f);
+		ImGui::DragFloat("PCSS light scale", &render_sys->pcss_light_scale, 0.01f, 0.1f, 1.0f);
+		ImGui::DragInt("PCSS sample count", &render_sys->pcss_sample_count, 0.1f, 8, 64);
+		ImGui::TreePop();
+	}
 	
 	if(ImGui::TreeNode("scene"))
 	{

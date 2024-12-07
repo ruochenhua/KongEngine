@@ -131,6 +131,11 @@ namespace Kong
 		float rsm_intensity = 0.04f;
 		int rsm_sample_count = 32;
 		vector<glm::vec4> rsm_samples_and_weights;
+		// 启用PCSS
+		bool use_pcss = false;
+		float pcss_radius = 1.0f;
+		float pcss_light_scale = 0.1f;
+		int pcss_sample_count = 36;
 		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
