@@ -51,7 +51,6 @@ float FindBlockerDepth(sampler2DArray shadowmap, vec2 uv, float d_receiver, floa
 float EstimateBlockerSearchRadius(vec2 uv, float d_receiver, float d_blocker, float light_size)
 {
     if (d_blocker == 0.0) return 0.0;
-//    return 2.0;
     return (d_receiver - d_blocker) * (light_size / d_blocker);
 }
 
@@ -67,7 +66,7 @@ float CalculatePCFShadow(float current_depth, sampler2DArray shadow_map, int lay
             shadow += current_depth > pcf_depth ? 1.0 : 0.0;
         }
     }
-    shadow /= pow((radius+2),2.0);
+    shadow /= pow((1+radius*2),2.0);
     return shadow;
 }
 

@@ -1,6 +1,7 @@
 # 关于KongEngine
 
 这个工程是我用于学习和实践引擎技术的项目。原名是tinyGL，是一个功能较为基础的渲染引擎，现在计划是将他的能力扩展，接入更加先进多样的功能。
+![softshadow and ssr](docs/Hello/KongEngine_softshadow_and_ssr.png)
 ![PBR](docs/Hello/KongEngine_PBR.png)
 ![IBL](docs/Hello/KongEngine_IBL.png)
 ![CSM](docs/Hello/KongEngine_CSM.png)
@@ -27,7 +28,9 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
  - [ ] 阴影
     - [x] 平行光源阴影
     - [x] 点光源阴影
-    - [ ] 阴影效果优化
+    - [x] 阴影效果优化
+      - [x] PCF
+      - [x] PCSS
     - [x] CSM
  - [x] 材质贴图
  - [x] SkyMap
@@ -40,6 +43,7 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
    - [x] 核效果
    - [ ] 后处理效果整合(多种排列组合、参数暴露)
  - [ ] 全局光照
+   - [x] 反射阴影贴图 (reflective shadow map)
  - [x] 屏幕空间反射（screen space reflection）
  - [ ] 屏幕空间折射（screen space refraction）
  - [x] 环境光遮蔽
