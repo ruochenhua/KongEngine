@@ -6,7 +6,7 @@ namespace Kong
     class CQuadShape : public CMeshComponent
     {
     public:
-        CQuadShape() = default;
+        CQuadShape();
         virtual void Draw(const SSceneRenderInfo& scene_render_info) override;
         void Draw();
         virtual void InitRenderInfo() override;

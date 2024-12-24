@@ -5,6 +5,11 @@
 using namespace Kong;
 using namespace std;
 
+CQuadShape::CQuadShape()
+{
+    InitRenderInfo();
+}
+
 void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
 {
     shader_data->Use();

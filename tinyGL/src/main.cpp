@@ -33,10 +33,11 @@ int main()
 		if(delta > FRAME_TIME_CAP)
 		{
 			ui_manager->PreRenderUpdate(delta);
-			render->Update(delta);
-
+			
 			CScene::GetScene()->PreRenderUpdate(delta);
-		
+			
+			render->Update(delta);
+			
 			ui_manager->PostRenderUpdate();
 			render->PostUpdate();
 			current_time = new_time;

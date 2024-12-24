@@ -12,6 +12,7 @@
 #include "Shader/Shader.h"
 #include "stb_image.h"
 #include "Component/Mesh/QuadShape.h"
+#include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
 
 using namespace Kong;
@@ -271,7 +272,7 @@ int CRender::Init()
 	render_window = Engine::GetRenderWindow();
 	InitCamera();
 	quad_shape = make_shared<CQuadShape>();
-	quad_shape->InitRenderInfo();
+	// quad_shape->InitRenderInfo();
 	m_SkyBox.Init();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
@@ -317,10 +318,72 @@ int CRender::Init()
 
 int CRender::InitCamera()
 {
-	mainCamera = new CCamera(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+	mainCamera = new CCamera(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, 1.0f, 0.0f));
 
 	mainCamera->InitControl();
 	return 0;
+}
+
+void CRender::UpdateSceneRenderInfo()
+{
+	// 更新光源UBO
+	SceneLightInfo light_info;
+	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
+	if(has_dir_light)
+	{
+		light_info.has_dir_light = ivec4(1);
+		auto dir_light = scene_render_info.scene_dirlight.lock();
+		light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
+		light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
+		light_info.directional_light.light_space_mat = dir_light->light_space_mat;
+	}
+	else
+	{
+		light_info.has_dir_light = ivec4(0);
+	}
+			
+	int point_light_count = 0;
+	int point_light_shadow_count = 0;
+	light_info.point_light_shadow_index = ivec4(-1);
+	for(auto light : scene_render_info.scene_pointlights)
+	{
+		if(point_light_count >= POINT_LIGHT_MAX)
+		{
+			break;
+		}
+				
+		if(light.expired())
+		{
+			continue;
+		}
+		auto point_light_ptr = light.lock();
+		PointLight point_light;
+		point_light.light_pos = vec4(point_light_ptr->GetLightLocation(), 1.0);
+		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
+
+		light_info.point_lights[point_light_count] = point_light;
+		if(point_light_ptr->enable_shadowmap && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
+		{
+			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
+			++point_light_shadow_count;
+		}
+		
+		++point_light_count;
+	}
+			
+	light_info.point_light_count = ivec4(point_light_count);
+	
+	scene_light_ubo.Bind();
+	scene_light_ubo.UpdateData(light_info, "light_info");
+	scene_light_ubo.EndBind();
+	
+	// 更新UBO里的矩阵数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
+	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
+	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
+	matrix_ubo.EndBind();
 }
 
 
@@ -348,8 +411,12 @@ int CRender::Update(double delta)
 	// RenderSkyBox();
 	CollectLightInfo();
 	m_SkyBox.PreRenderUpdate();
-	RenderShadowMap();			
+	RenderShadowMap();
+
+	// main render function
 	RenderSceneObject();
+
+	
 	post_process.RenderUI();
 	post_process.SetPositionTexture(defer_buffer_.g_position_);	//先放这
 	return 1;
@@ -365,13 +432,16 @@ void CRender::PostUpdate()
 void CRender::RenderSceneObject()
 {
 #if !SHADOWMAP_DEBUG
+	
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
 	ivec2 window_size = Engine::GetEngine().GetWindowSize();
-	
 
+	UpdateSceneRenderInfo();
+	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
+	GLuint render_scene_buffer = post_process.GetScreenFrameBuffer();
 	glViewport(0,0, window_size.x, window_size.y);
-#if USE_DERER_RENDER
+
 	// 渲染到g buffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -382,14 +452,13 @@ void CRender::RenderSceneObject()
 		// 处理SSAO效果
 		SSAORender();
 	}
-#endif
 	
 	// 渲染到后处理framebuffer上
-	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+	glBindFramebuffer(GL_FRAMEBUFFER, render_scene_buffer);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-#if USE_DERER_RENDER
+
 	defer_buffer_.defer_render_shader->Use();
 	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
 	// rsm
@@ -408,20 +477,25 @@ void CRender::RenderSceneObject()
 	defer_buffer_.defer_render_shader->SetFloat("pcss_radius", pcss_radius);
 	defer_buffer_.defer_render_shader->SetFloat("pcss_light_scale", pcss_light_scale);
 	defer_buffer_.defer_render_shader->SetInt("pcss_sample_count", pcss_sample_count);
+
+	if (use_ssao)
+	{
+		glActiveTexture(GL_TEXTURE0 + 16);
+		glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
+	}
 	
-	glActiveTexture(GL_TEXTURE0 + 16);
-	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
+	// 渲染光照
 	DeferRenderSceneLighting();
-	
 	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
-	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0, window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-#endif
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_scene_buffer);
+	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
+		window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	RenderScene();
+	
+	RenderNonDeferSceneObjects();
 	RenderSkyBox();
 	
 	// screen space reflection先放在这里吧
@@ -430,6 +504,8 @@ void CRender::RenderSceneObject()
 		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
 		SSReflectionRender();
 	}
+	
+	RenderWater();
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
@@ -458,68 +534,11 @@ void CRender::RenderSkyBox()
 	m_SkyBox.Render(mvp, render_sky_env_status);
 }
 
-void CRender::RenderScene() const
+void CRender::RenderNonDeferSceneObjects() const
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
-	// 更新光源UBO
-	SceneLightInfo light_info;
-	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
-	if(has_dir_light)
-	{
-		light_info.has_dir_light = ivec4(1);
-		auto dir_light = scene_render_info.scene_dirlight.lock();
-		light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
-		light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
-		light_info.directional_light.light_space_mat = dir_light->light_space_mat;
-	}
-	else
-	{
-		light_info.has_dir_light = ivec4(0);
-	}
-			
-	int point_light_count = 0;
-	int point_light_shadow_count = 0;
-	light_info.point_light_shadow_index = ivec4(-1);
-	for(auto light : scene_render_info.scene_pointlights)
-	{
-		if(point_light_count >= POINT_LIGHT_MAX)
-		{
-			break;
-		}
-				
-		if(light.expired())
-		{
-			continue;
-		}
-		auto point_light_ptr = light.lock();
-		PointLight point_light;
-		point_light.light_pos = vec4(point_light_ptr->GetLightLocation(), 1.0);
-		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
-
-		light_info.point_lights[point_light_count] = point_light;
-		if(point_light_ptr->enable_shadowmap && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
-		{
-			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
-			++point_light_shadow_count;
-		}
-		
-		++point_light_count;
-	}
-			
-	light_info.point_light_count = ivec4(point_light_count);
-	
-	scene_light_ubo.Bind();
-	scene_light_ubo.UpdateData(light_info, "light_info");
-	scene_light_ubo.EndBind();
-	
-	// 更新UBO里的矩阵数据
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
-	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
-	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
-	matrix_ubo.EndBind();
 	
 	auto actors = CScene::GetActors();
 	for(auto actor : actors)
@@ -530,8 +549,8 @@ void CRender::RenderScene() const
 			continue;
 		}
 		auto mesh_shader = mesh_component->shader_data;
-		// 跳过延迟渲染的mesh
-		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader))
+		// 跳过延迟渲染的mesh和水体的部分
+		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<Water>(mesh_component))
 		{
 			continue;
 		}
@@ -550,13 +569,6 @@ void CRender::DeferRenderSceneToGBuffer() const
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 	
-	// 更新UBO里的矩阵数据
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
-	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
-	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
-	matrix_ubo.EndBind();
-	
 	auto actors = CScene::GetActors();
 	for(auto actor : actors)
 	{
@@ -570,10 +582,6 @@ void CRender::DeferRenderSceneToGBuffer() const
 		{
 			continue;
 		}
-		
-		// matrix_ubo.Bind();
-		// matrix_ubo.UpdateData(actor->GetModelMatrix(), "model");
-		// matrix_ubo.EndBind();
 
 		mesh_shader->Use();
 		// 等于1代表渲染skybox，会需要用到环境贴图
@@ -585,67 +593,6 @@ void CRender::DeferRenderSceneToGBuffer() const
 
 void CRender::DeferRenderSceneLighting() const
 {
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
-	// glEnable(GL_DEPTH_TEST);
-	// 更新光源UBO
-	SceneLightInfo light_info;
-	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
-	if(has_dir_light)
-	{
-		light_info.has_dir_light = ivec4(1);
-		auto dir_light = scene_render_info.scene_dirlight.lock();
-		light_info.directional_light.light_dir = vec4(dir_light->GetLightDir(), 1.0);
-		light_info.directional_light.light_color = vec4(dir_light->light_color, 1.0);
-		light_info.directional_light.light_space_mat = dir_light->light_space_mat;
-	}
-	else
-	{
-		light_info.has_dir_light = ivec4(0);
-	}
-			
-	int point_light_count = 0;
-	int point_light_shadow_count = 0;
-	light_info.point_light_shadow_index = ivec4(-1);
-	for(auto light : scene_render_info.scene_pointlights)
-	{
-		if(point_light_count >= POINT_LIGHT_MAX)
-		{
-			break;
-		}
-				
-		if(light.expired())
-		{
-			continue;
-		}
-
-		auto point_light_ptr = light.lock();
-		PointLight point_light;
-		point_light.light_pos = vec4(point_light_ptr->GetLightLocation(), 1.0);
-		point_light.light_color = vec4(point_light_ptr->light_color, 1.0);
-
-		light_info.point_lights[point_light_count] = point_light;
-		if(point_light_ptr->enable_shadowmap && point_light_shadow_count<POINT_LIGHT_SHADOW_MAX)
-		{
-			light_info.point_light_shadow_index[point_light_shadow_count] = point_light_count;
-			++point_light_shadow_count;
-		}
-		++point_light_count;
-	}
-			
-	light_info.point_light_count = ivec4(point_light_count);
-	
-	scene_light_ubo.Bind();
-	scene_light_ubo.UpdateData(light_info, "light_info");
-	scene_light_ubo.EndBind();
-	
-	// // 更新UBO里的矩阵数据
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
-	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
-	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
-	matrix_ubo.EndBind();
-	
 	defer_buffer_.defer_render_shader->Use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
@@ -662,8 +609,32 @@ void CRender::DeferRenderSceneLighting() const
 
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 	
-	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
+	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material,
+		scene_render_info);
 	quad_shape->Draw();
+}
+
+void CRender::RenderWater() const
+{
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
+	auto actors = CScene::GetActors();
+	for(auto actor : actors)
+	{
+		auto water_comp = actor->GetComponent<Water>();
+		if(!water_comp)
+		{
+			continue;
+		}
+		auto mesh_shader = water_comp->shader_data;
+
+		mesh_shader->Use();
+		// 等于1代表渲染skybox，会需要用到环境贴图
+		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetMat4("model", actor->GetModelMatrix());
+		water_comp->Draw(scene_render_info);
+	}
 }
 
 void CRender::SSAORender() const
@@ -704,10 +675,10 @@ void CRender::SSReflectionRender() const
 	// scene reflection mask: defer_buffer_.g_orm_
 	// scene position: defer_buffer_.g_position_
 	// scene depth存在于normal贴图的w分量上
-	// glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.ssao_fbo);
-	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	// glClear(GL_COLOR_BUFFER_BIT);
 
+	// 这里要关掉深度测试，否则会影响后面的水体渲染的流程
+	glDisable(GL_DEPTH_TEST);
+	
 	ssreflection_shader->Use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
@@ -718,9 +689,7 @@ void CRender::SSReflectionRender() const
 	glBindTexture(GL_TEXTURE_2D, post_process.screen_quad_texture[0]);
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
-
-	// ssao_shader_->SetVec2("screen_size");
-	// kernal samples to shader
+	
 	quad_shape->Draw();
 }
 
@@ -740,7 +709,9 @@ void CRender::CollectLightInfo()
 			continue;
 		}
 
-		auto dir_light = std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
+		auto dir_light =
+			std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
+		
 		if(dir_light)
 		{
 			dir_light->SetLightDir(actor->rotation);

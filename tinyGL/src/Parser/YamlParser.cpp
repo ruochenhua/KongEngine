@@ -8,8 +8,10 @@
 #include "Scene.h"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/BoxShape.h"
+#include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/SphereShape.h"
 #include "Component/Mesh/Terrain.h"
+#include "Component/Mesh/Water.h"
 #include "glm/gtc/random.hpp"
 
 using namespace Kong;
@@ -191,6 +193,12 @@ namespace YamlParser
                 ParseMeshMaterial(component, mesh_comp);
                 new_actor->AddComponent(mesh_comp);
             }
+            else if(component_type == "quad")
+            {
+                auto mesh_comp = make_shared<CQuadShape>();
+                ParseMeshMaterial(component, mesh_comp);
+                new_actor->AddComponent(mesh_comp);
+            }
             else if(component_type == "mesh")
             {
                 string model_path = component["model_path"].as<string>();
@@ -214,6 +222,11 @@ namespace YamlParser
                 
                 new_actor->AddComponent(terrain_comp);
                 
+            }
+            else if (component_type == "water")
+            {
+                shared_ptr<Water> water_comp = make_shared<Water>();
+                new_actor->AddComponent(water_comp);
             }
             else if(component_type == "directional_light")
             {

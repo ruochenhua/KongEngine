@@ -145,12 +145,19 @@ namespace Kong
 		SSceneRenderInfo scene_render_info;
 	private:
 		int InitCamera();
+		// 更新场景的渲染信息（光照、相机等等）
+		void UpdateSceneRenderInfo();
 		void InitUBO();
 		void RenderSkyBox();
-		void RenderScene() const;
+		// 渲染不支持延迟渲染的物体
+		void RenderNonDeferSceneObjects() const;
+		// 延迟渲染，将场景渲染到GBuffer上
 		void DeferRenderSceneToGBuffer() const;
+		// 利用GBuffer的信息，渲染光照
 		void DeferRenderSceneLighting() const;
-
+		// 渲染水
+		void RenderWater() const;
+		
 		void SSAORender() const;
 		void SSReflectionRender() const;
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源

@@ -165,7 +165,7 @@ void PostProcess::InitScreenTexture()
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene_rbo);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    // 渲染到两个颜色附件上
+    // 渲染到多个颜色附件上
     GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};  
     glDrawBuffers(3, color_attachment); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

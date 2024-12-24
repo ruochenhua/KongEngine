@@ -6,7 +6,6 @@
 #include "glm/vec3.hpp"
 
 #define SHADOWMAP_DEBUG 0
-#define USE_DERER_RENDER 1
 #define USE_CSM 1
 
 namespace Kong
