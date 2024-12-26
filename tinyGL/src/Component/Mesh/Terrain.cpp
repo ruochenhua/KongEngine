@@ -135,9 +135,9 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
     
 }
 
-void Terrain::Draw(const SSceneRenderInfo& scene_render_info)
+void Terrain::Draw(const SSceneLightInfo& scene_render_info)
 {
-    glDisable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
     shader_data->Use();
     glBindVertexArray(terrain_vao);
     shader_data->SetInt("octaves", octaves);
@@ -150,7 +150,7 @@ void Terrain::Draw(const SSceneRenderInfo& scene_render_info)
     shader_data->SetInt("terrain_res", terrain_res);
     SimpleDraw(nullptr);
     
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
 }
 
 void Terrain::InitRenderInfo()

@@ -80,9 +80,9 @@ namespace Kong
 		shared_ptr<DeferredBRDFShader> defer_render_shader;
 	};
 
+	// ssao渲染相关
 	struct SSAOHelper
 	{
-		// SSAO相关
 		unsigned ssao_kernel_count = 64;
 		unsigned ssao_noise_size = 4;
 		vector<glm::vec3> ssao_kernal_samples;
@@ -98,6 +98,17 @@ namespace Kong
 
 		void Init(int width, int height);
 		void GenerateSSAOTextures(int width, int height);
+	};
+
+	// water渲染相关
+	struct WaterRenderHelper
+	{
+		GLuint water_scene_fbo = GL_NONE;
+		GLuint water_scene_rbo = GL_NONE;
+		GLuint water_scene_texture = GL_NONE;
+		
+		void Init(int width, int height);
+		void GenerateWaterRenderTextures(int width, int height);
 	};
 	
 	class CRender
@@ -118,10 +129,17 @@ namespace Kong
 		int Init();
 		int Update(double delta);
 		void PostUpdate();
+		void DoPostProcess();
+		
 		CCamera* GetCamera() {return mainCamera;}
+
+
 		void ChangeSkybox();
 		void OnWindowResize(int width, int height);
-						
+
+		void SetRenderWater(bool render_water) {b_render_water = render_water;}
+		
+		
 		PostProcess post_process;
 		int render_sky_env_status = 2;
 		// 启用屏幕空间环境光遮蔽
@@ -130,6 +148,8 @@ namespace Kong
 		bool use_rsm = false;
 		float rsm_intensity = 0.04f;
 		int rsm_sample_count = 32;
+		// 有水需要渲染
+		bool b_render_water = false;
 		vector<glm::vec4> rsm_samples_and_weights;
 		// 启用PCSS
 		bool use_pcss = false;
@@ -142,7 +162,7 @@ namespace Kong
 		CSkyBox m_SkyBox;
 		
 		// 场景光源信息
-		SSceneRenderInfo scene_render_info;
+		SSceneLightInfo scene_render_info;
 	private:
 		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
@@ -162,7 +182,7 @@ namespace Kong
 		void SSReflectionRender() const;
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
-		void RenderSceneObject();
+		void RenderSceneObject(bool water_reflection);
 		
 		void RenderShadowMap();
 	private:
@@ -190,7 +210,10 @@ namespace Kong
 
 		// 延迟渲染
 		DeferBuffer defer_buffer_;
+		// ssao实现
 		SSAOHelper ssao_helper_;
+		// 水体渲染实现
+		WaterRenderHelper water_render_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
 		// 屏幕空间反射

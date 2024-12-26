@@ -20,6 +20,7 @@ set<string> shader_include_set;
 
 Shader::Shader(const map<EShaderType, string>& shader_paths)
 {
+	shader_path_map = shader_paths;
     Init(shader_paths);
 }
 
@@ -146,7 +147,7 @@ void Shader::Use() const
     glUseProgram(shader_id);
 }
 
-void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);

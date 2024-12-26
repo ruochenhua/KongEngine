@@ -6,7 +6,7 @@
 using namespace Kong;
 
 
-void BlendShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void BlendShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
     // 材质属性
     SetVec4("albedo", render_material.albedo);

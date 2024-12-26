@@ -27,7 +27,7 @@ void DeferInfoShader::InitDefaultShader()
     // SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 }
 
-void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
@@ -96,10 +96,9 @@ void DeferredBRDFShader::InitDefaultShader()
 	SetInt("ssao_result_texture", 16);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
 	GLuint null_tex_id = CRender::GetNullTexId();
-	SetVec3("cam_pos", scene_render_info.camera_pos);
 	int texture_idx = 4;
 	// 贴图0-3分别是position/normal/albedo/orm, 下面的从4开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧

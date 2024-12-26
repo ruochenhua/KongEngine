@@ -38,6 +38,11 @@ namespace Kong
         vec3 GetDirection() const;
         vec3 GetPosition() const;
         vec2 GetNearFar() const;
+
+        void SetPosition(const vec3& position);
+        void InvertPitch();
+
+        void ForceUpdate();
     public:
         //camera control
         void InitControl();
@@ -66,8 +71,8 @@ namespace Kong
 
         vec3 m_moveVec;
 
-        float m_yaw = 0.0;
-        float m_pitch = 0.0;
+        double m_yaw = 0.0;
+        double m_pitch = 0.0;
         float rotate_speed = 20.f;
 
     };

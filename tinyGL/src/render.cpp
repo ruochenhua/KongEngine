@@ -228,6 +228,48 @@ void SSAOHelper::GenerateSSAOTextures(int width, int height)
 }
 
 
+void WaterRenderHelper::Init(int width, int height)
+{
+	// water scene buffer 初始化
+	glGenFramebuffers(1, &water_scene_fbo);
+
+	GenerateWaterRenderTextures(width, height);
+}
+
+void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, water_scene_fbo);
+	
+	if(water_scene_texture)
+	{
+		glDeleteTextures(1, &water_scene_texture);
+	}
+	
+	glGenTextures(1, &water_scene_texture);
+	glBindTexture(GL_TEXTURE_2D, water_scene_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_scene_texture, 0);
+
+	if (!water_scene_rbo)
+	{
+		glGenRenderbuffers(1, &water_scene_rbo);
+	}
+	glBindRenderbuffer(GL_RENDERBUFFER, water_scene_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, water_scene_rbo);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		printf("water framebuffer error\n");
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 CRender* CRender::GetRender()
 {
 	return g_render;
@@ -298,6 +340,7 @@ int CRender::Init()
 	
 	defer_buffer_.Init(width, height);
 	ssao_helper_.Init(width, height);
+	water_render_helper_.Init(width, height);
 
 	// 屏幕空间反射shader
 	ssreflection_shader = make_shared<SSReflectionShader>();
@@ -377,13 +420,6 @@ void CRender::UpdateSceneRenderInfo()
 	scene_light_ubo.Bind();
 	scene_light_ubo.UpdateData(light_info, "light_info");
 	scene_light_ubo.EndBind();
-	
-	// 更新UBO里的矩阵数据
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(scene_render_info.camera_view, "view");
-	matrix_ubo.UpdateData(scene_render_info.camera_proj, "projection");
-	matrix_ubo.UpdateData(scene_render_info.camera_pos, "cam_pos");
-	matrix_ubo.EndBind();
 }
 
 
@@ -408,13 +444,60 @@ void CRender::InitUBO()
 int CRender::Update(double delta)
 {
 	mainCamera->Update(delta);		
-	// RenderSkyBox();
+	
+	// 更新光照
+	// todo: 这两个合起来
 	CollectLightInfo();
+	UpdateSceneRenderInfo();
+	
 	m_SkyBox.PreRenderUpdate();
 	RenderShadowMap();
+	
+	// 更新UBO里的相机数据
+	matrix_ubo.Bind();
+	matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+	matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+	matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+	matrix_ubo.EndBind();
+		
+	// 普通渲染场景
+	RenderSceneObject(false);
 
-	// main render function
-	RenderSceneObject();
+	// 有水体，需要做一次从下往上的渲染获取反射的内容
+	if (b_render_water)
+	{
+		vec3 origin_cam_pos = mainCamera->GetPosition();
+		mainCamera->SetPosition(origin_cam_pos * vec3(1,-1, 1));
+		mainCamera->InvertPitch();
+		mainCamera->ForceUpdate();
+		
+		matrix_ubo.Bind();
+		matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+		matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+		matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+		matrix_ubo.EndBind();
+		RenderSceneObject(true);
+		
+		// // 渲染水
+		glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+		
+		// 恢复回来
+		mainCamera->SetPosition(origin_cam_pos);
+		mainCamera->InvertPitch();
+		mainCamera->ForceUpdate();
+		
+		matrix_ubo.Bind();
+		matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+		matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+		matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+		matrix_ubo.EndBind();
+		
+		RenderWater();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	// do post process
+	DoPostProcess();
 
 	
 	post_process.RenderUI();
@@ -429,7 +512,15 @@ void CRender::PostUpdate()
 	glfwPollEvents();
 }
 
-void CRender::RenderSceneObject()
+void CRender::DoPostProcess()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	post_process.Draw();
+}
+
+void CRender::RenderSceneObject(bool water_reflection)
 {
 #if !SHADOWMAP_DEBUG
 	
@@ -437,9 +528,20 @@ void CRender::RenderSceneObject()
 	glDisable(GL_BLEND);
 	ivec2 window_size = Engine::GetEngine().GetWindowSize();
 
-	UpdateSceneRenderInfo();
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
-	GLuint render_scene_buffer = post_process.GetScreenFrameBuffer();
+	
+	GLuint render_scene_buffer = 0;
+	// 正常渲染到后处理的buffer上
+	if (!water_reflection)
+	{
+		render_scene_buffer = post_process.GetScreenFrameBuffer();
+	}
+	else
+	{
+		// 水体反射的渲染到water scene fbo上
+		render_scene_buffer = water_render_helper_.water_scene_fbo;
+	}
+	
 	glViewport(0,0, window_size.x, window_size.y);
 
 	// 渲染到g buffer上
@@ -447,13 +549,14 @@ void CRender::RenderSceneObject()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	DeferRenderSceneToGBuffer();
-	if(use_ssao)
+	// 水面反射不做SSAO
+	if(use_ssao && !water_reflection)
 	{
 		// 处理SSAO效果
 		SSAORender();
 	}
 	
-	// 渲染到后处理framebuffer上
+	// 渲染到当前的scene framebuffer上
 	glBindFramebuffer(GL_FRAMEBUFFER, render_scene_buffer);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -499,20 +602,25 @@ void CRender::RenderSceneObject()
 	RenderSkyBox();
 	
 	// screen space reflection先放在这里吧
-	if(use_screen_space_reflection)
+	// 水面反射不做这个
+	if(use_screen_space_reflection && !water_reflection)
 	{
 		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
 		SSReflectionRender();
 	}
-	
-	RenderWater();
-	
+
+	// // render water
+	// {
+	// 	// 复制postprocess的scene texture使用，否则一边读texture一边写入会出问题。
+	// 	glBindFramebuffer(GL_READ_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+	// 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, water_render_helper_.water_scene_fbo);
+	// 	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
+	// 		window_size.x, window_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	//
+	// 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+	// 	RenderWater();
+	// }
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	post_process.Draw();
 #endif
 }
 
@@ -616,9 +724,13 @@ void CRender::DeferRenderSceneLighting() const
 
 void CRender::RenderWater() const
 {
+	
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
+
+	// glEnable(GL_CLIP_DISTANCE0);
+	// todo: 想办法加上clipping，目前terrain是用tesselation实现的不能直接用ClipDistance
 	auto actors = CScene::GetActors();
 	for(auto actor : actors)
 	{
@@ -630,8 +742,10 @@ void CRender::RenderWater() const
 		auto mesh_shader = water_comp->shader_data;
 
 		mesh_shader->Use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_scene_texture);
 		// 等于1代表渲染skybox，会需要用到环境贴图
-		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		water_comp->Draw(scene_render_info);
 	}
@@ -670,7 +784,7 @@ void CRender::SSAORender() const
 
 void CRender::SSReflectionRender() const
 {
-	// scene color：post_process.screen_quad_texture[0]
+	// scene color：post_process.GetScreenTexture()
 	// scene normal：defer_buffer_.g_normal_
 	// scene reflection mask: defer_buffer_.g_orm_
 	// scene position: defer_buffer_.g_position_
@@ -686,7 +800,7 @@ void CRender::SSReflectionRender() const
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
 	glActiveTexture(GL_TEXTURE0 + 2);
 	// 用给后处理的texture作为scene color
-	glBindTexture(GL_TEXTURE_2D, post_process.screen_quad_texture[0]);
+	glBindTexture(GL_TEXTURE_2D, post_process.GetScreenTexture());
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 	
@@ -729,11 +843,6 @@ void CRender::CollectLightInfo()
 			}
 		}
 	}
-
-	scene_render_info.camera_pos = mainCamera->GetPosition();
-	scene_render_info.camera_view = mainCamera->GetViewMatrix();
-	scene_render_info.camera_proj = mainCamera->GetProjectionMatrix();
-		
 }
 
 void CRender::RenderShadowMap()
@@ -818,4 +927,5 @@ void CRender::OnWindowResize(int width, int height)
 	post_process.OnWindowResize(width, height);
 	defer_buffer_.GenerateDeferRenderTextures(width, height);
 	ssao_helper_.GenerateSSAOTextures(width, height);
+	water_render_helper_.GenerateWaterRenderTextures(width, height);
 }

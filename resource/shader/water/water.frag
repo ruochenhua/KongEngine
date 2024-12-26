@@ -8,7 +8,18 @@ in vec2 out_texcoord;
 
 layout (location=0) out vec4 FragColor;
 
+uniform sampler2D scene_texture;
+
 void main()
 {
-	FragColor = vec4(0.2, 0.7, 0.1, 1.0);
+	float texture_size = textureSize(scene_texture, 0).x;
+	if(texture_size > 1.0)
+	{
+		FragColor = vec4(texture(scene_texture, out_texcoord).xyz, 1.0);
+	}
+	else
+	{
+		FragColor = vec4(out_texcoord, 0.0, 1.0);
+	}
+
 }

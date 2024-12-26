@@ -9,7 +9,7 @@ namespace Kong
     public:
         BlendShader() = default;
         
-        void UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info) override;
+        void UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info) override;
         virtual void InitDefaultShader() override;
     };
 }

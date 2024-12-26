@@ -11,6 +11,7 @@ namespace Kong
     public:
         void Init();
         GLuint GetScreenFrameBuffer() const {return screen_quad_fbo;}
+        GLuint GetScreenTexture() const {return screen_quad_texture[0];}
         void OnWindowResize(unsigned width, unsigned height);
         
         void Draw();

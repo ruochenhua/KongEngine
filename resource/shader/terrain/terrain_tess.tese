@@ -32,8 +32,8 @@ void main(){
 
 
     vec2 t00 = TextureCoord[0];
-    vec2 t01 = TextureCoord[1];
-    vec2 t10 = TextureCoord[2];
+    vec2 t10 = TextureCoord[1];
+    vec2 t01 = TextureCoord[2];
     vec2 t11 = TextureCoord[3];
     vec2 t_range = t11 - t00;
 
@@ -44,8 +44,8 @@ void main(){
 
     // 获取patch的四个顶点
     vec3 p00 = gl_in[0].gl_Position.xyz;
-    vec3 p01 = gl_in[1].gl_Position.xyz;
-    vec3 p10 = gl_in[2].gl_Position.xyz;
+    vec3 p10 = gl_in[1].gl_Position.xyz;
+    vec3 p01 = gl_in[2].gl_Position.xyz;
     vec3 p11 = gl_in[3].gl_Position.xyz ;
     vec3 p_range = p11-p00;
 

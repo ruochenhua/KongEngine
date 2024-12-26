@@ -153,12 +153,8 @@ namespace Kong
         SMaterial material;
     };
 
-    struct SSceneRenderInfo
+    struct SSceneLightInfo
     {
-        glm::vec3 camera_pos;
-        glm::mat4 camera_view;
-        glm::mat4 camera_proj;
-        
         // 场景光源信息
         std::weak_ptr<CDirectionalLightComponent> scene_dirlight;
         std::vector<std::weak_ptr<CPointLightComponent>> scene_pointlights;
@@ -168,7 +164,7 @@ namespace Kong
             scene_pointlights.clear();
         }
     };
-
+    
     struct DirectionalLight
     {
         glm::vec4 light_dir;

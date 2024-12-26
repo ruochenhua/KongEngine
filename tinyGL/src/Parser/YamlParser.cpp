@@ -220,13 +220,25 @@ namespace YamlParser
                     terrain_comp = make_shared<Terrain>();
                 }
                 
-                new_actor->AddComponent(terrain_comp);
+                if (component["size"])
+                {
+                    terrain_comp->terrain_size = component["size"].as<int>();    
+                }
+
+                if (component["resolution"])
+                {
+                    terrain_comp->terrain_res = component["resolution"].as<int>();
+                }
                 
+                new_actor->AddComponent(terrain_comp);
             }
             else if (component_type == "water")
             {
                 shared_ptr<Water> water_comp = make_shared<Water>();
                 new_actor->AddComponent(water_comp);
+
+                auto render_sys = CRender::GetRender();
+                render_sys->SetRenderWater(true);
             }
             else if(component_type == "directional_light")
             {

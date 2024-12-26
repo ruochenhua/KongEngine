@@ -11,7 +11,7 @@ namespace Kong
 
         void SimpleDraw(shared_ptr<Shader> simple_draw_shader) override;
         
-        void Draw(const SSceneRenderInfo& scene_render_info) override;
+        void Draw(const SSceneLightInfo& scene_render_info) override;
 
     private:
         // 水相关的渲染数据

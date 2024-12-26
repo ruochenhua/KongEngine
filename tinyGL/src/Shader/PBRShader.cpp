@@ -8,7 +8,7 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
-void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneRenderInfo& scene_render_info)
+void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {	
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);

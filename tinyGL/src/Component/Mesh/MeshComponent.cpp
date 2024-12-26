@@ -67,7 +67,7 @@ void CMeshComponent::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 	}
 }
 
-void CMeshComponent::Draw(const SSceneRenderInfo& scene_render_info)
+void CMeshComponent::Draw(const SSceneLightInfo& scene_render_info)
 {
 	shader_data->Use();
 	for(auto& mesh : mesh_resource->mesh_list)

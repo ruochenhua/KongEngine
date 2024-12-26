@@ -21,7 +21,7 @@ namespace Kong
 		void BeginPlay() override;
 		// 简单调用一下draw，不管shader（可能用其他的shader）
 		virtual void SimpleDraw(shared_ptr<Shader> simple_draw_shader);
-		virtual void Draw(const SSceneRenderInfo& scene_render_info);
+		virtual void Draw(const SSceneLightInfo& scene_render_info);
 		virtual void InitRenderInfo();
 		bool IsBlend();
 

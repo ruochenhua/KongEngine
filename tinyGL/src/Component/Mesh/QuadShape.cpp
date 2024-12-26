@@ -10,7 +10,7 @@ CQuadShape::CQuadShape()
     InitRenderInfo();
 }
 
-void CQuadShape::Draw(const SSceneRenderInfo& scene_render_info)
+void CQuadShape::Draw(const SSceneLightInfo& scene_render_info)
 {
     shader_data->Use();
     auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;

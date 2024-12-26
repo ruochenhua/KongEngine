@@ -42,13 +42,31 @@ vec2 CCamera::GetNearFar() const
 	return glm::vec2(m_screenInfo._near, m_screenInfo._far);
 }
 
+void CCamera::SetPosition(const vec3& position)
+{
+	m_center = position;
+}
+
+void CCamera::InvertPitch()
+{
+	m_pitch = -m_pitch;
+}
+
+void CCamera::ForceUpdate()
+{
+	bool tmp_val = m_updateRotation;
+	m_updateRotation = true;
+	UpdateRotation(0.0);
+	m_updateRotation = tmp_val;
+}
+
 void CCamera::UpdateRotation(double delta)
 {
 	auto window = Engine::GetRenderWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);	
 	double delta_x = x_pos - m_cursorX;
-	float delta_y = y_pos - m_cursorY;
+	double delta_y = y_pos - m_cursorY;
 	
 	m_cursorX = x_pos;
 	m_cursorY = y_pos;
@@ -61,7 +79,7 @@ void CCamera::UpdateRotation(double delta)
 	m_yaw -= delta_x*delta*rotate_speed;
 	m_pitch += delta_y*delta*rotate_speed;
 
-	m_pitch = glm::clamp(m_pitch, -89.f, 89.f);
+	m_pitch = glm::clamp(m_pitch, -89., 89.);
 	// printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);
 	// printf("pitch value %f, ypos %f, delta %f\n", m_pitch, y_pos, delta_y);
 	

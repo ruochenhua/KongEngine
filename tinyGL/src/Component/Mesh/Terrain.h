@@ -19,9 +19,11 @@ namespace Kong
         float freq = 0.002f;
         float power = 2.0f;
         
-        void Draw(const SSceneRenderInfo& scene_render_info) override;
+        void Draw(const SSceneLightInfo& scene_render_info) override;
         void InitRenderInfo() override;
         
+        int terrain_size = 10000;
+        int terrain_res = 100;
     private:
         // 读取高度图
         int LoadHeightMap(const string &file_name);
@@ -35,7 +37,6 @@ namespace Kong
 
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
-        int terrain_res = 100;
         bool render_wireframe = false;
 
         GLuint grass_albedo_texture = GL_NONE;
@@ -47,6 +48,5 @@ namespace Kong
         GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
         
-        int terrain_size = 10000;
     };
 }

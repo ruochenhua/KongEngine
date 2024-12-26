@@ -14,7 +14,7 @@ CBoxShape::CBoxShape()
 
 // LoadOverloadTexture(render_resource_desc);
 
-void CBoxShape::Draw(const SSceneRenderInfo& scene_render_info)
+void CBoxShape::Draw(const SSceneLightInfo& scene_render_info)
 {
     CMeshComponent::Draw(scene_render_info);
 }

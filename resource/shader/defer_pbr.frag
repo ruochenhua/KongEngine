@@ -10,7 +10,6 @@ layout(location = 1) out vec4 BrightColor;
 
 in vec2 TexCoords;
 
-uniform vec3 cam_pos;
 uniform bool b_render_skybox;
 
 uniform sampler2D position_texture;
@@ -264,6 +263,8 @@ void main()
     material.albedo = env_albedo;
 	material.specular_factor = 1.0;
     material.ao = ao;
+
+    vec3 cam_pos = matrix_ubo.cam_pos.xyz;
 
     vec3 view = normalize(cam_pos - frag_pos);  //to_view
 

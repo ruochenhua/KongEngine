@@ -7,7 +7,7 @@ using namespace glm;
 using namespace std;
 
 void EmitShader::UpdateRenderData(const SMaterial& render_material,
-			const SSceneRenderInfo& scene_render_info)
+			const SSceneLightInfo& scene_render_info)
 {
 	SetVec4("albedo", render_material.albedo);
 	// GLuint null_tex_id = CRender::GetNullTexId();
