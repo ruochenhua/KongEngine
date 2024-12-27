@@ -2,8 +2,8 @@
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
 
-//in vec3 out_pos;
-//in vec3 out_normal;
+in vec3 out_pos;
+in vec3 out_normal;
 in vec2 out_texcoord;
 
 in vec4 clip_space;
@@ -15,7 +15,7 @@ uniform sampler2D refraction_texture;
 uniform sampler2D dudv_map;
 uniform float move_factor;
 
-const float wave_strength = 0.02;
+const float wave_strength = 0.05;
 
 void main()
 {
@@ -38,7 +38,9 @@ void main()
 	vec4 reflection_color = vec4(texture(reflection_texture, reflection_coord).xyz, 1.0);
 	vec4 refraction_color = vec4(texture(refraction_texture, refraction_coord).xyz, 1.0);
 
+	float fresnel_blend = clamp(dot(out_normal, normalize(matrix_ubo.cam_pos.xyz-out_pos)), 0.0, 1.0);
+
 
 	vec4 blue_color = vec4(0.0, 0.2, 0.6, 1.0);	// add some blue color
-	FragColor = mix(mix(reflection_color, refraction_color, 0.5), blue_color, 0.1);
+	FragColor = mix(mix(reflection_color, refraction_color, fresnel_blend), blue_color, 0.1);
 }

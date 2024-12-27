@@ -99,7 +99,7 @@ vec3 ApplyFog(vec3 origin_color)
     return mix(origin_color, fog_color, fog_amount);
 }
 
-int trans = 20;
+int trans = 5;
 void main()
 {
     float grass_scale = 12.f;
