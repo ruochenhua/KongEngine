@@ -19,7 +19,7 @@ AActor::~AActor()
     component_cache.clear();
 }
 
-void AActor::AddComponent(std::shared_ptr<CComponent> component)
+void AActor::AddComponent(const std::shared_ptr<CComponent>& component)
 {
     components.push_back(component);
 }

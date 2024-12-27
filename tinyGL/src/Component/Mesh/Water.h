@@ -13,12 +13,9 @@ namespace Kong
         
         void Draw(const SSceneLightInfo& scene_render_info) override;
 
+        void LoadDudvMapTexture(const string& texture_path);
     private:
-        // 水相关的渲染数据
-        GLuint render_scene_texture = 0;
-        
-        GLuint refraction_texture = 0;
-        GLuint reflection_texture = 0;
+		// dudv贴图
         GLuint dudv_texture = 0;
     };    
 }

@@ -25,7 +25,7 @@ namespace Kong
         AActor() = default;
         ~AActor();
         
-        void AddComponent(std::shared_ptr<CComponent> component);
+        void AddComponent(const std::shared_ptr<CComponent>& component);
         void PreRenderUpdate(double delta);
         template<class T>
         shared_ptr<T> GetComponent();

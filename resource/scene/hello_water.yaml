@@ -15,21 +15,22 @@ scene:
   - actor: terrain1
     component:
       - type: terrain
-        size: 500
-        resolution: 10
+        size: 1000
+        resolution: 20
 
   - actor: water_plane
     component:
         # replace with water type later
         - type: water
+          dudv_map_path: textures/dudv.jpg
           material:
             diffuse: [0.2, 0.4, 0.6]
             metallic: 0.3
             roughness: 0.2
             ao: 1
     transform:
-      location: [0, 0.3, 0]
-      scale: [20, 20, 1]
+      location: [0, 2, 0]
+      scale: [50, 50, 1]
       rotation: [-90, 0, 0]
 
 

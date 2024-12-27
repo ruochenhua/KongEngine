@@ -2,6 +2,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <random>
+#include <utility>
 
 #include "Actor.h"
 #include "Component/CameraComponent.h"
@@ -230,43 +231,67 @@ void SSAOHelper::GenerateSSAOTextures(int width, int height)
 
 void WaterRenderHelper::Init(int width, int height)
 {
-	// water scene buffer 初始化
-	glGenFramebuffers(1, &water_scene_fbo);
+	// water相关的buffer初始化
+	glGenFramebuffers(1, &water_reflection_fbo);
+	glGenFramebuffers(1, &water_refraction_fbo);
 
 	GenerateWaterRenderTextures(width, height);
 }
 
 void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, water_scene_fbo);
+	// 水面反射相关的buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, water_reflection_fbo);
 	
-	if(water_scene_texture)
+	if(water_reflection_texture)
 	{
-		glDeleteTextures(1, &water_scene_texture);
+		glDeleteTextures(1, &water_reflection_texture);
 	}
 	
-	glGenTextures(1, &water_scene_texture);
-	glBindTexture(GL_TEXTURE_2D, water_scene_texture);
+	glGenTextures(1, &water_reflection_texture);
+	glBindTexture(GL_TEXTURE_2D, water_reflection_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_scene_texture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_reflection_texture, 0);
 
-	if (!water_scene_rbo)
+	if (!water_reflection_rbo)
 	{
-		glGenRenderbuffers(1, &water_scene_rbo);
+		glGenRenderbuffers(1, &water_reflection_rbo);
 	}
-	glBindRenderbuffer(GL_RENDERBUFFER, water_scene_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, water_reflection_rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, water_scene_rbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, water_reflection_rbo);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf("water framebuffer error\n");
+		printf("water reflection framebuffer error\n");
 	}
+
+	// 水面折射相关的buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, water_refraction_fbo);
+	
+	if(water_refraction_texture)
+	{
+		glDeleteTextures(1, &water_refraction_texture);
+	}
+	
+	glGenTextures(1, &water_refraction_texture);
+	glBindTexture(GL_TEXTURE_2D, water_refraction_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_refraction_texture, 0);
+	
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		printf("water refraction framebuffer error\n");
+	}
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -346,15 +371,15 @@ int CRender::Init()
 	ssreflection_shader = make_shared<SSReflectionShader>();
 
 	// rsm采样点初始化
-	std::default_random_engine e;
+	std::default_random_engine random_engine;
 	std::uniform_real_distribution<float> u(0.0, 1.0);
 	float pi_num = pi<float>();
 	for(int i = 0; i < rsm_sample_count; i++)
 	{
-		float xi1 = u(e);
-		float xi2 = u(e);
+		float xi1 = u(random_engine);
+		float xi2 = u(random_engine);
 		
-		rsm_samples_and_weights.push_back(vec4(xi1*sin(2*pi_num*xi2), xi1*cos(2*pi_num*xi2), xi1*xi1, 0.0));
+		rsm_samples_and_weights.emplace_back(xi1*sin(2*pi_num*xi2), xi1*cos(2*pi_num*xi2), xi1*xi1, 0.0);
 	}
 	return 0;
 }
@@ -464,36 +489,55 @@ int CRender::Update(double delta)
 	RenderSceneObject(false);
 
 	// 有水体，需要做一次从下往上的渲染获取反射的内容
-	if (b_render_water)
+	if (water_render_helper_.water_actor.lock())
 	{
+		auto water_actor = water_render_helper_.water_actor.lock();
+		
 		vec3 origin_cam_pos = mainCamera->GetPosition();
-		mainCamera->SetPosition(origin_cam_pos * vec3(1,-1, 1));
-		mainCamera->InvertPitch();
-		mainCamera->ForceUpdate();
+		// camera在水面之上
+		float height_diff = origin_cam_pos.y - water_actor->location.y;
+		if (height_diff > 0.0f)
+		{
+			// 复制普通场景渲染中postprocess的scene texture作为折射贴图使用
+			ivec2 window_size = Engine::GetEngine().GetWindowSize();
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, water_render_helper_.water_refraction_fbo);
+			glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
+				window_size.x, window_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		
-		matrix_ubo.Bind();
-		matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-		matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-		matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-		matrix_ubo.EndBind();
-		RenderSceneObject(true);
+			// 处理水面折射
+			mainCamera->SetPosition(origin_cam_pos + vec3(0,-height_diff, 0));
+			mainCamera->InvertPitch();
+			mainCamera->ForceUpdate();
 		
-		// // 渲染水
-		glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
+			matrix_ubo.Bind();
+			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+			matrix_ubo.EndBind();
+			RenderSceneObject(true);
+			
+			// // 渲染水面mesh
+			glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 		
-		// 恢复回来
-		mainCamera->SetPosition(origin_cam_pos);
-		mainCamera->InvertPitch();
-		mainCamera->ForceUpdate();
+			// 渲染水需要恢复相机位置
+			mainCamera->SetPosition(origin_cam_pos);
+			mainCamera->InvertPitch();
+			mainCamera->ForceUpdate();
 		
-		matrix_ubo.Bind();
-		matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-		matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-		matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-		matrix_ubo.EndBind();
-		
-		RenderWater();
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			matrix_ubo.Bind();
+			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+			matrix_ubo.EndBind();
+			
+			RenderWater(delta);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		else
+		{
+			// todo: 水下
+		}
 	}
 
 	// do post process
@@ -539,7 +583,7 @@ void CRender::RenderSceneObject(bool water_reflection)
 	else
 	{
 		// 水体反射的渲染到water scene fbo上
-		render_scene_buffer = water_render_helper_.water_scene_fbo;
+		render_scene_buffer = water_render_helper_.water_reflection_fbo;
 	}
 	
 	glViewport(0,0, window_size.x, window_size.y);
@@ -722,13 +766,15 @@ void CRender::DeferRenderSceneLighting() const
 	quad_shape->Draw();
 }
 
-void CRender::RenderWater() const
+void CRender::RenderWater(float delta)
 {
 	
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
+	water_render_helper_.total_move += delta;
+	
 	// glEnable(GL_CLIP_DISTANCE0);
 	// todo: 想办法加上clipping，目前terrain是用tesselation实现的不能直接用ClipDistance
 	auto actors = CScene::GetActors();
@@ -743,10 +789,15 @@ void CRender::RenderWater() const
 
 		mesh_shader->Use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_scene_texture);
+		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
+		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
+		mesh_shader->SetFloat("move_factor",
+			fmodf(water_render_helper_.total_move*water_render_helper_.move_speed, 1.0));
 		water_comp->Draw(scene_render_info);
 	}
 }
@@ -928,4 +979,9 @@ void CRender::OnWindowResize(int width, int height)
 	defer_buffer_.GenerateDeferRenderTextures(width, height);
 	ssao_helper_.GenerateSSAOTextures(width, height);
 	water_render_helper_.GenerateWaterRenderTextures(width, height);
+}
+
+void CRender::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
+{
+	water_render_helper_.water_actor = render_water_actor;
 }

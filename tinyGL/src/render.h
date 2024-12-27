@@ -5,6 +5,7 @@
 #include "skybox.h"
 #include "Component/Mesh/Terrain.h"
 #include "Component/Mesh/VolumetricCloud.h"
+#include "Component/Mesh/Water.h"
 #include "Shader/PBRShader.h"
 #include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
@@ -103,12 +104,21 @@ namespace Kong
 	// water渲染相关
 	struct WaterRenderHelper
 	{
-		GLuint water_scene_fbo = GL_NONE;
-		GLuint water_scene_rbo = GL_NONE;
-		GLuint water_scene_texture = GL_NONE;
+		weak_ptr<AActor> water_actor;
+		// 反射部分，需要变换相机角度重新渲染
+		GLuint water_reflection_fbo = GL_NONE;
+		GLuint water_reflection_rbo = GL_NONE;
+		GLuint water_reflection_texture = GL_NONE;
+
+		// 折射部分，先使用延迟渲染的结果复制过来
+		GLuint water_refraction_fbo = GL_NONE;
+		GLuint water_refraction_texture = GL_NONE;
 		
 		void Init(int width, int height);
 		void GenerateWaterRenderTextures(int width, int height);
+
+		float total_move = 0.0f;
+		float move_speed = 0.01f;
 	};
 	
 	class CRender
@@ -137,7 +147,7 @@ namespace Kong
 		void ChangeSkybox();
 		void OnWindowResize(int width, int height);
 
-		void SetRenderWater(bool render_water) {b_render_water = render_water;}
+		void SetRenderWater(const weak_ptr<AActor>& water_actor);
 		
 		
 		PostProcess post_process;
@@ -148,8 +158,7 @@ namespace Kong
 		bool use_rsm = false;
 		float rsm_intensity = 0.04f;
 		int rsm_sample_count = 32;
-		// 有水需要渲染
-		bool b_render_water = false;
+		
 		vector<glm::vec4> rsm_samples_and_weights;
 		// 启用PCSS
 		bool use_pcss = false;
@@ -176,7 +185,7 @@ namespace Kong
 		// 利用GBuffer的信息，渲染光照
 		void DeferRenderSceneLighting() const;
 		// 渲染水
-		void RenderWater() const;
+		void RenderWater(float delta);
 		
 		void SSAORender() const;
 		void SSReflectionRender() const;

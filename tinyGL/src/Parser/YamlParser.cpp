@@ -235,10 +235,15 @@ namespace YamlParser
             else if (component_type == "water")
             {
                 shared_ptr<Water> water_comp = make_shared<Water>();
+                if (component["dudv_map_path"])
+                {
+                    water_comp->LoadDudvMapTexture(component["dudv_map_path"].as<string>());
+                }
+                
                 new_actor->AddComponent(water_comp);
 
                 auto render_sys = CRender::GetRender();
-                render_sys->SetRenderWater(true);
+                render_sys->SetRenderWater(new_actor);
             }
             else if(component_type == "directional_light")
             {
