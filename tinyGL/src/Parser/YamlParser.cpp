@@ -239,6 +239,11 @@ namespace YamlParser
                 {
                     water_comp->LoadDudvMapTexture(component["dudv_map_path"].as<string>());
                 }
+
+                if (component["normal_map_path"])
+                {
+                    water_comp->LoadNormalTexture(component["normal_map_path"].as<string>());
+                }
                 
                 new_actor->AddComponent(water_comp);
 

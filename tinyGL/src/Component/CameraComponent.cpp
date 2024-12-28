@@ -50,14 +50,7 @@ void CCamera::SetPosition(const vec3& position)
 void CCamera::InvertPitch()
 {
 	m_pitch = -m_pitch;
-}
-
-void CCamera::ForceUpdate()
-{
-	bool tmp_val = m_updateRotation;
-	m_updateRotation = true;
-	UpdateRotation(0.0);
-	m_updateRotation = tmp_val;
+	OnPYRUpdated();
 }
 
 void CCamera::UpdateRotation(double delta)
@@ -80,22 +73,17 @@ void CCamera::UpdateRotation(double delta)
 	m_pitch += delta_y*delta*rotate_speed;
 
 	m_pitch = glm::clamp(m_pitch, -89., 89.);
-	// printf("=====\n yaw value %f, xpos %f, delta %f\n", m_yaw, x_pos, delta_x);
-	// printf("pitch value %f, ypos %f, delta %f\n", m_pitch, y_pos, delta_y);
-	
+	OnPYRUpdated();
+}
+
+void CCamera::OnPYRUpdated()
+{
 	vec3 front;
 	front.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
 	front.y = sin(glm::radians(m_pitch));
 	front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
 
 	m_front = normalize(front);
-	
-	// glm::mat4 rot_mat = glm::identity<mat4>();
-	// rot_mat = glm::rotate(rot_mat, (float)(-delta_x * delta), vec3(0.0, 1.0, 0.0));
-	//
-	// vec3 dir = m_front;
-	// vec3 right = cross(dir, m_up);
-	// rot_mat = glm::rotate(rot_mat, (float)(-delta_y * delta), normalize(right));
 }
 
 void CCamera::Update(double delta)

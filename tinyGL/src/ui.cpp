@@ -141,7 +141,7 @@ void CUIManager::DescribeUIContent(double delta)
 	if (ImGui::TreeNode("Percentage-Closer Soft Shadows"))
 	{
 		ImGui::Checkbox("Use PCSS", &render_sys->use_pcss);
-		ImGui::DragFloat("PCSS radius", &render_sys->pcss_radius, 0.01f, 0.1f, 10.0f);
+		ImGui::DragFloat("PCSS radius", &render_sys->pcss_radius, 0.01f, 0.1f, 50.0f);
 		ImGui::DragFloat("PCSS light scale", &render_sys->pcss_light_scale, 0.01f, 0.1f, 1.0f);
 		ImGui::DragInt("PCSS sample count", &render_sys->pcss_sample_count, 0.1f, 8, 64);
 		ImGui::TreePop();

@@ -20,6 +20,7 @@ Water::Water()
     shader_data->SetInt("reflection_texture", 0);
     shader_data->SetInt("refraction_texture", 1);
     shader_data->SetInt("dudv_map", 2);
+    shader_data->SetInt("normal_map", 3);
 }
 
 void Water::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
@@ -34,6 +35,9 @@ void Water::Draw(const SSceneLightInfo& scene_render_info)
 
     glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
     glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());
+
+    glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
+    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
     
     glBindVertexArray(render_info.vertex_array_id);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -43,4 +47,9 @@ void Water::Draw(const SSceneLightInfo& scene_render_info)
 void Water::LoadDudvMapTexture(const string& texture_path)
 {
     dudv_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+}
+
+void Water::LoadNormalTexture(const string& texture_path)
+{
+    normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
 }

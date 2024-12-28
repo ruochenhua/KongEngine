@@ -41,8 +41,7 @@ namespace Kong
 
         void SetPosition(const vec3& position);
         void InvertPitch();
-
-        void ForceUpdate();
+    
     public:
         //camera control
         void InitControl();
@@ -61,6 +60,7 @@ namespace Kong
         SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 5000.0f);
     private:
         void UpdateRotation(double delta);
+        void OnPYRUpdated();   // 更新pitch yaw roll
         bool m_updateRotation;
         double m_cursorX = 512.0;
         double m_cursorY = 384.0;

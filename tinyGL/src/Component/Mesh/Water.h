@@ -14,9 +14,12 @@ namespace Kong
         void Draw(const SSceneLightInfo& scene_render_info) override;
 
         void LoadDudvMapTexture(const string& texture_path);
+        void LoadNormalTexture(const string& texture_path);
     private:
 		// dudv贴图
         GLuint dudv_texture = 0;
+        // normal map
+        GLuint normal_texture = 0;
     };    
 }
 

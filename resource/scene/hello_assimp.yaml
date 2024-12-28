@@ -98,11 +98,11 @@ scene:
         shader_type: brdf
         material:
           diffuse:
-            - 0.9
-            - 0.9
-            - 0.9
-          metallic: 0.9
-          roughness: 0.02
+            - 0.3
+            - 0.3
+            - 0.3
+          metallic: 0.99
+          roughness: 0.01
           ao: 1
     transform:
       location:

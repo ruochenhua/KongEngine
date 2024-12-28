@@ -88,7 +88,7 @@ void main()
     FragColor = s_color;
 
     vec4 normal_depth = texture(scene_normal, TexCoords);
-    vec3 world_normal = normalize(normal_depth.xyz + randVec3(fract(TexCoords.x*12.345)*sin(TexCoords.y)*9876.31)*0.2*roughness);
+    vec3 world_normal = normalize(normal_depth.xyz + randVec3(fract(TexCoords.x*12.345)*sin(TexCoords.y)*9876.31)*0.02*roughness);
     // 远近平面
     vec2 near_far = matrix_ubo.near_far.xy;
     vec3 world_pos = texture(scene_position, TexCoords).xyz;
@@ -109,13 +109,11 @@ void main()
    // 往相机方向反射的暂时先不管
 //        if(dot(view_dir, rd) > -0.0)
     {
-#if USE_SCREEN_SPACE_MARCH==1
-        float max_step_dist = 5.0;
-#else
-        float max_step_dist = 5.0;
-#endif
+
+        float max_step_dist = 15.0;
         // 在屏幕空间进行光线步进
         // 起始点和结束点
+#if USE_SCREEN_SPACE_MARCH==1
         vec3 start_pos_world = world_pos  + rd*0.1;
         vec3 end_pos_world = world_pos + max_step_dist*rd;
         // 在屏幕空间上的从起始点到结束点的坐标[0, resolution]
@@ -134,12 +132,11 @@ void main()
         end_screen.xy = (end_ndc.xy + 1) / 2 * tex_size;
         end_screen.z = (near_far.y - near_far.x) * 0.5 * end_ndc.z + (near_far.x + near_far.y) * 0.5;
 
-#if USE_SCREEN_SPACE_MARCH==1
         int step_count = 32;
 
         vec3 screen_diff = end_screen - start_screen;
         int sample_count = int(max(abs(screen_diff.x), abs(screen_diff.y)) * resolution) ; // 大于1
-        sample_count = min(sample_count, 128);
+        sample_count = min(sample_count, 512);
         vec3 delta_screen = screen_diff / float(sample_count);
 
         // 如果sample count为10，则每次采样的前进的长度为总长度的1/10

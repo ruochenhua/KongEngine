@@ -508,7 +508,6 @@ int CRender::Update(double delta)
 			// 处理水面折射
 			mainCamera->SetPosition(origin_cam_pos + vec3(0,-height_diff, 0));
 			mainCamera->InvertPitch();
-			mainCamera->ForceUpdate();
 		
 			matrix_ubo.Bind();
 			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
@@ -523,7 +522,6 @@ int CRender::Update(double delta)
 			// 渲染水需要恢复相机位置
 			mainCamera->SetPosition(origin_cam_pos);
 			mainCamera->InvertPitch();
-			mainCamera->ForceUpdate();
 		
 			matrix_ubo.Bind();
 			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
