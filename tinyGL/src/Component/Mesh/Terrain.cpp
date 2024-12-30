@@ -189,7 +189,6 @@ void Terrain::InitRenderInfo()
 #endif
     if(terrain_vao) glDeleteBuffers(1, &terrain_vao);
     if(terrain_vbo) glDeleteBuffers(1, &terrain_vbo);
-    if(terrain_ebo) glDeleteBuffers(1, &terrain_ebo);
 
     glGenVertexArrays(1, &terrain_vao);
     glBindVertexArray(terrain_vao);
@@ -208,6 +207,7 @@ void Terrain::InitRenderInfo()
 
     glPatchParameteri(GL_PATCH_VERTICES, 4);
 #else
+    if(terrain_ebo) glDeleteBuffers(1, &terrain_ebo);
     glGenBuffers(1, &terrain_ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrain_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,

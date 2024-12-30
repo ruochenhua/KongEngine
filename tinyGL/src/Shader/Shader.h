@@ -35,6 +35,13 @@ namespace Kong
 	    { 
 	        glUniform1f(glGetUniformLocation(shader_id, name.c_str()), value); 
 	    }
+
+    	// ------------------------------------------------------------------------
+    	void SetDouble(const std::string &name, double value)
+    	{ 
+    		glUniform1d(glGetUniformLocation(shader_id, name.c_str()), value); 
+    	}
+    	
 	    // ------------------------------------------------------------------------
 	    void SetVec2(const std::string &name, const glm::vec2 &value)
 	    { 

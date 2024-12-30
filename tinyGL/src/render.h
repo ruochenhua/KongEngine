@@ -148,7 +148,8 @@ namespace Kong
 		void OnWindowResize(int width, int height);
 
 		void SetRenderWater(const weak_ptr<AActor>& water_actor);
-		
+
+		double render_time = 0.0;
 		
 		PostProcess post_process;
 		int render_sky_env_status = 2;
@@ -185,7 +186,7 @@ namespace Kong
 		// 利用GBuffer的信息，渲染光照
 		void DeferRenderSceneLighting() const;
 		// 渲染水
-		void RenderWater(float delta);
+		void RenderWater();
 		
 		void SSAORender() const;
 		void SSReflectionRender() const;

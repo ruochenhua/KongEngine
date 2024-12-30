@@ -469,7 +469,7 @@ void CRender::InitUBO()
 int CRender::Update(double delta)
 {
 	mainCamera->Update(delta);		
-	
+	render_time += delta;
 	// 更新光照
 	// todo: 这两个合起来
 	CollectLightInfo();
@@ -477,7 +477,6 @@ int CRender::Update(double delta)
 	
 	m_SkyBox.PreRenderUpdate();
 	RenderShadowMap();
-	
 	// 更新UBO里的相机数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
@@ -529,7 +528,7 @@ int CRender::Update(double delta)
 			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
 			matrix_ubo.EndBind();
 			
-			RenderWater(delta);
+			RenderWater();
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else
@@ -709,6 +708,7 @@ void CRender::RenderNonDeferSceneObjects() const
 		mesh_shader->Use();
 		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
+		mesh_shader->SetDouble("iTime", render_time);
 		mesh_component->Draw(scene_render_info);
 	}
 }
@@ -764,17 +764,16 @@ void CRender::DeferRenderSceneLighting() const
 	quad_shape->Draw();
 }
 
-void CRender::RenderWater(float delta)
+void CRender::RenderWater()
 {
 	
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	water_render_helper_.total_move += delta;
+	water_render_helper_.total_move = render_time;
 	
 	// glEnable(GL_CLIP_DISTANCE0);
-	// todo: 想办法加上clipping，目前terrain是用tesselation实现的不能直接用ClipDistance
 	auto actors = CScene::GetActors();
 	for(auto actor : actors)
 	{

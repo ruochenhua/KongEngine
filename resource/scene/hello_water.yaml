@@ -12,23 +12,29 @@ scene:
         - 75
         - -70
 
-  - actor: terrain1
-    component:
-      - type: terrain
-        size: 1000
-        resolution: 20
+#  - actor: terrain1
+#    component:
+#      - type: terrain
+#        size: 1000
+#        resolution: 20
 
-  - actor: water_plane
-    component:
-        # replace with water type later
-        - type: water
-          dudv_map_path: textures/water/waterDUDV.png
-          normal_map_path: textures/water/waterNormal.png
-          
-    transform:
-      location: [0, 6.6, 0]
-      scale: [100, 100, 1]
-      rotation: [-90, 0, 0]
+#  - actor: water_plane
+#    component:
+#        # replace with water type later
+#        - type: water
+#          dudv_map_path: textures/water/waterDUDV.png
+#          normal_map_path: textures/water/waterNormal.png
+#
+#    transform:
+#      location: [0, 6.6, 0]
+#      scale: [100, 100, 1]
+#      rotation: [-90, 0, 0]
 
+
+  - actor: gerstner_water_plane
+    component:
+        - type: gerstner_wave_water
+          size: 500
+          resolution: 20
 
 

@@ -8,6 +8,7 @@
 #include "Scene.h"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/BoxShape.h"
+#include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/SphereShape.h"
 #include "Component/Mesh/Terrain.h"
@@ -232,6 +233,7 @@ namespace YamlParser
                 
                 new_actor->AddComponent(terrain_comp);
             }
+            // 普通的水, simple water
             else if (component_type == "water")
             {
                 shared_ptr<Water> water_comp = make_shared<Water>();
@@ -249,6 +251,23 @@ namespace YamlParser
 
                 auto render_sys = CRender::GetRender();
                 render_sys->SetRenderWater(new_actor);
+            }
+            // 带有gerstner wave模拟的水
+            else if (component_type == "gerstner_wave_water")
+            {
+                shared_ptr<GerstnerWaveWater> water_comp = make_shared<GerstnerWaveWater>();
+
+                if (component["size"])
+                {
+                    water_comp->water_size = component["size"].as<int>();
+                }
+
+                if (component["resolution"])
+                {
+                    water_comp->water_resolution = component["resolution"].as<int>();
+                }
+                
+                new_actor->AddComponent(water_comp);
             }
             else if(component_type == "directional_light")
             {
