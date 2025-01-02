@@ -55,9 +55,9 @@ scene:
     component:
       - type: directional_light
         light_color:
-          - 60
-          - 60
-          - 60
+          - 1
+          - 1
+          - 1
       - type: sphere
         shader_type: emit
     transform:

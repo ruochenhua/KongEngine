@@ -7,10 +7,10 @@
 layout(quads, fractional_odd_spacing, ccw) in;
 
 uniform sampler2D height_map;
-uniform int octaves;
-uniform float amplitude;
-uniform float freq;
-uniform float power;
+//uniform int octaves;
+//uniform float amplitude;
+//uniform float freq;
+//uniform float power;
 uniform float height_scale;
 uniform float height_shift;
 uniform vec3 cam_pos;
@@ -19,14 +19,15 @@ uniform double iTime;
 uniform int terrain_size;
 uniform int terrain_res;
 
-const int wave_num = 3;
+const int wave_num = 8;
 
 // patch的四个uv数据
 in vec2 TextureCoord[];
-out float tes_height;
+//out float tes_height;
 out vec2 frag_texcoord;
 out vec3 frag_pos;
 out vec3 frag_normal;
+out vec4 clip_space;
 
 vec3 GerstnerWave(vec3 p, vec4 wave_variables, float speed_factor, inout vec3 binormal, inout vec3 tangent)
 {
@@ -107,9 +108,15 @@ void main(){
     vec3 binormal = vec3(0, 0, 1);
 
     vec4 wave_list[wave_num] = vec4[wave_num](
-        vec4(1.0, 2.0, 0.75, 70),
-        vec4(0.5, -1.5, 0.5, 40),
-        vec4(0.5, 0, 0.25, 15)
+            // direction.x, direction.y, steepness, wave_length
+        vec4(0.5, 0.5, 0.05, 201),
+        vec4(6.0, 2.0, 0.10, 153),
+        vec4(1.0, 5.0, 0.13, 98),
+        vec4(0.5, 1.5, 0.22, 73),
+        vec4(3.5, 1.5, 0.23, 52),
+        vec4(2.5, 5.0, 0.32, 37),
+        vec4(4.5, 2.4, 0.37, 13),
+        vec4(0.75, 1.2, 0.08, 3.3)
     );
     float total_steepness = 0.0;
     for(int i = 0; i < wave_num; i++)
@@ -127,6 +134,7 @@ void main(){
         float speed_factor = 1.0;
         p += GerstnerWave(grid_point, wave_list[i], speed_factor, binormal, tangent);
     }
+    p.y = p.y * height_scale + height_shift;
 
     normal = normalize(cross(binormal, tangent));
     // 找到附近的两个点，计算高度并计算出normal
@@ -136,13 +144,11 @@ void main(){
 //    pu = GernsterWave(pu.xz);
 //    pv = GernsterWave(pv.xz);
 
-    tes_height = p.y;
+//    tes_height = p.y;
 
 //    uVec = normalize(pu-p);
 //    vVec = normalize(pv-p);
 //    normal = normalize(cross(vVec, uVec));
-
-
 
     gl_Position = matrix_ubo.projection * matrix_ubo.view * vec4(p, 1.0);
 
@@ -152,6 +158,6 @@ void main(){
     //frag_texcoord = gl_TessCoord.xy;
 
     frag_pos = p;
-
+    clip_space = gl_Position;
     frag_normal = normal;
 }

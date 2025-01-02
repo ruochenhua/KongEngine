@@ -17,21 +17,34 @@ GerstnerWaveWater::GerstnerWaveWater()
     };
 
     shader_data = make_shared<Shader>(shader_path_map);
+
+    shader_data->Use();
+    shader_data->SetInt("reflection_texture", 0);
+    shader_data->SetInt("refraction_texture", 1);
+    shader_data->SetInt("dudv_map", 2);
+    shader_data->SetInt("normal_map", 3);
 }
 
 void GerstnerWaveWater::Draw(const SSceneLightInfo& scene_render_info)
 {
     // glDisable(GL_CULL_FACE);
-    shader_data->Use();
+    shader_data->Use();    
     glBindVertexArray(gerstner_wave_vao);
-    shader_data->SetInt("octaves", octaves);
-    shader_data->SetFloat("amplitude", amplitude);
-    shader_data->SetFloat("freq", freq);
-    shader_data->SetFloat("power", power);
+    // shader_data->SetInt("octaves", octaves);
+    // shader_data->SetFloat("amplitude", amplitude);
+    // shader_data->SetFloat("freq", freq);
+    // shader_data->SetFloat("power", power);
     shader_data->SetFloat("height_scale", height_scale_);
     shader_data->SetFloat("height_shift", height_shift_);
     shader_data->SetInt("terrain_size", water_size);
     shader_data->SetInt("terrain_res", water_resolution);
+
+    glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
+    glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());
+
+    glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
+    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
+    
     SimpleDraw(nullptr);
 }
 
@@ -110,4 +123,13 @@ void GerstnerWaveWater::InitRenderInfo()
 
 }
 
+void GerstnerWaveWater::LoadDudvMapTexture(const string& texture_path)
+{
+    dudv_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+}
+
+void GerstnerWaveWater::LoadNormalTexture(const string& texture_path)
+{
+    normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+}
 

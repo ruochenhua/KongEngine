@@ -68,9 +68,8 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view, BRDFMaterial material)
 {
-    const float PI_Val = 3.14159265359;
     vec3 h = normalize(to_light_dir + view);
-    vec3 radiance = light_color;
+    vec3 radiance = light_color * 180.0 / PI;   //修正一下light_color的值，免得需要的值太大了
 
     float NDF = DistributionGGX(normal, h, material.roughness);
     float G = GeometrySmith(normal, view, to_light_dir, material.roughness);
@@ -94,7 +93,7 @@ vec3 CalcLight_BRDF(vec3 light_color, vec3 to_light_dir, vec3 normal, vec3 view,
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     //return material.specular_factor;
-    return (KD*material.albedo.xyz / PI_Val + specular)*radiance*NdotL;
+    return (KD*material.albedo.xyz / PI + specular)*radiance*NdotL;
     //return specular;
 }
 #endif  // _BRDF_COMMON_GLSL_

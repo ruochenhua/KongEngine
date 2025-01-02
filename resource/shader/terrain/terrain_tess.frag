@@ -155,7 +155,7 @@ void main()
         vec3 light_dir = -light_info_ubo.directional_light.light_dir.xyz;
         vec4 light_color = light_info_ubo.directional_light.light_color;
 
-        vec3 view = matrix_ubo.cam_pos.xyz - frag_pos;
+//        vec3 view = matrix_ubo.cam_pos.xyz - frag_pos;
         float diffuse_factor = max(0, dot(light_dir, normal));
         color = diffuse_factor * light_color * color;
 

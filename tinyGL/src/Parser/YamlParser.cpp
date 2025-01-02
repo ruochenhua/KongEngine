@@ -230,6 +230,16 @@ namespace YamlParser
                 {
                     terrain_comp->terrain_res = component["resolution"].as<int>();
                 }
+
+                if (component["height_scale"])
+                {
+                    terrain_comp->height_scale_ = component["height_scale"].as<float>();
+                }
+
+                if (component["height_shift"])
+                {
+                    terrain_comp->height_shift_ = component["height_shift"].as<float>();
+                }
                 
                 new_actor->AddComponent(terrain_comp);
             }
@@ -266,8 +276,31 @@ namespace YamlParser
                 {
                     water_comp->water_resolution = component["resolution"].as<int>();
                 }
+
+                if (component["height_scale"])
+                {
+                    water_comp->height_scale_ = component["height_scale"].as<float>();
+                }
+
+                if (component["height_shift"])
+                {
+                    water_comp->height_shift_ = component["height_shift"].as<float>();
+                    new_actor->location.y = water_comp->height_shift_;  // 需要记录shift来决定reflection相机的位置
+                }
+
+                if (component["dudv_map_path"])
+                {
+                    water_comp->LoadDudvMapTexture(component["dudv_map_path"].as<string>());
+                }
+
+                if (component["normal_map_path"])
+                {
+                    water_comp->LoadNormalTexture(component["normal_map_path"].as<string>());
+                }
                 
                 new_actor->AddComponent(water_comp);
+                auto render_sys = CRender::GetRender();
+                render_sys->SetRenderWater(new_actor);
             }
             else if(component_type == "directional_light")
             {

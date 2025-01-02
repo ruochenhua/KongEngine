@@ -31,7 +31,7 @@ scene:
       - type: point_light
         make_shadow: true
         light_color:
-          - 30
+          - 3
           - 0
           - 0
     
@@ -57,7 +57,7 @@ scene:
         make_shadow: true
         light_color:
           - 0
-          - 30
+          - 3
           - 0
       - type: box
         shader_type: emit
@@ -82,7 +82,7 @@ scene:
         light_color:
           - 0
           - 0
-          - 30
+          - 3
       - type: box
         shader_type: emit
         material:

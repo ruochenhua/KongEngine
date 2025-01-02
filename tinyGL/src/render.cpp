@@ -12,6 +12,7 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
+#include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
@@ -483,7 +484,7 @@ int CRender::Update(double delta)
 	matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
 	matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
 	matrix_ubo.EndBind();
-		
+	
 	// 普通渲染场景
 	RenderSceneObject(false);
 
@@ -505,7 +506,7 @@ int CRender::Update(double delta)
 				window_size.x, window_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		
 			// 处理水面折射
-			mainCamera->SetPosition(origin_cam_pos + vec3(0,-height_diff, 0));
+			mainCamera->SetPosition(origin_cam_pos + vec3(0,-2*height_diff, 0));
 			mainCamera->InvertPitch();
 		
 			matrix_ubo.Bind();
@@ -564,7 +565,6 @@ void CRender::DoPostProcess()
 void CRender::RenderSceneObject(bool water_reflection)
 {
 #if !SHADOWMAP_DEBUG
-	
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
 	ivec2 window_size = Engine::GetEngine().GetWindowSize();
@@ -699,7 +699,9 @@ void CRender::RenderNonDeferSceneObjects() const
 		}
 		auto mesh_shader = mesh_component->shader_data;
 		// 跳过延迟渲染的mesh和水体的部分
-		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<Water>(mesh_component))
+		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
+			|| dynamic_pointer_cast<Water>(mesh_component)
+			|| dynamic_pointer_cast<GerstnerWaveWater>(mesh_component))
 		{
 			continue;
 		}
@@ -772,16 +774,19 @@ void CRender::RenderWater()
 	glEnable(GL_DEPTH_TEST);
 
 	water_render_helper_.total_move = render_time;
+	if (water_render_helper_.water_actor.expired())
+	{
+		return;
+	}
+
+	shared_ptr<AActor> water_actor = water_render_helper_.water_actor.lock();
 	
 	// glEnable(GL_CLIP_DISTANCE0);
-	auto actors = CScene::GetActors();
-	for(auto actor : actors)
+	// auto actors = CScene::GetActors();
+	//for(auto actor : actors)
+	auto water_comp = water_actor->GetComponent<Water>();
+	if(water_comp)
 	{
-		auto water_comp = actor->GetComponent<Water>();
-		if(!water_comp)
-		{
-			continue;
-		}
 		auto mesh_shader = water_comp->shader_data;
 
 		mesh_shader->Use();
@@ -792,10 +797,32 @@ void CRender::RenderWater()
 		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-		mesh_shader->SetMat4("model", actor->GetModelMatrix());
+		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
 		mesh_shader->SetFloat("move_factor",
 			fmodf(water_render_helper_.total_move*water_render_helper_.move_speed, 1.0));
 		water_comp->Draw(scene_render_info);
+	}
+	else
+	{
+		auto gerstner_water = water_actor->GetComponent<GerstnerWaveWater>();
+		if(!gerstner_water)
+		{
+			return;
+		}
+
+		auto mesh_shader = gerstner_water->shader_data;
+
+		mesh_shader->Use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
+		
+		// 等于1代表渲染skybox，会需要用到环境贴图
+		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
+		mesh_shader->SetDouble("iTime", render_time);
+		gerstner_water->Draw(scene_render_info);
 	}
 }
 
@@ -853,6 +880,7 @@ void CRender::SSReflectionRender() const
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
 	
 	quad_shape->Draw();
+	glEnable(GL_DEPTH_TEST);
 }
 
 void CRender::CollectLightInfo()

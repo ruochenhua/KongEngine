@@ -83,9 +83,9 @@ scene:
     component:
       - type: directional_light
         light_color:
-          - 20
-          - 20
-          - 20
+          - 1
+          - 1
+          - 1
 
   - actor: point_light1
     transform:

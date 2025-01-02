@@ -64,9 +64,9 @@ scene:
     component:
       - type: directional_light
         light_color:
-          - 10
-          - 10
-          - 10
+          - 1
+          - 1
+          - 1
         
     transform:
       rotation:

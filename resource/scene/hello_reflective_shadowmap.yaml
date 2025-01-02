@@ -121,7 +121,7 @@ scene:
           - 1
           - 1
           - 1
-        light_intensity: 10
+        light_intensity: 1
         reflective_shadow_map: true
 
 setting:
