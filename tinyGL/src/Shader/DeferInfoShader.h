@@ -20,6 +20,14 @@ namespace Kong
         void UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info) override;
     };
 
+    class DeferredTerrainInfoShader : public Shader
+    {
+    public:
+        DeferredTerrainInfoShader();
+    private:
+        void InitDefaultShader() override;
+    };
+    
     class SSAOShader : public Shader
     {
     public:

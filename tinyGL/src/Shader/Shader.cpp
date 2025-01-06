@@ -24,10 +24,10 @@ Shader::Shader(const map<EShaderType, string>& shader_paths)
     Init(shader_paths);
 }
 
-GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
+GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_paths)
 {
     vector<GLuint> shader_id_list;
-    for(auto& shader_path_pair : shader_path_map)
+    for(auto& shader_path_pair : shader_paths)
     {
     	auto shader_type = shader_path_pair.first;
     	auto shader_path = shader_path_pair.second;
@@ -91,7 +91,7 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_path_map)
     	glDetachShader(prog_id, shader_id);
 		glDeleteShader(shader_id);
     }
-
+	
 	return prog_id;
 }
 

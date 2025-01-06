@@ -13,7 +13,6 @@ uniform float freq;
 uniform float power;
 uniform float height_scale;
 uniform float height_shift;
-uniform vec3 cam_pos;
 
 uniform int terrain_size;
 uniform int terrain_res;
@@ -103,7 +102,6 @@ void main(){
 
     gl_Position = matrix_ubo.projection * matrix_ubo.view * vec4(p, 1.0);
 
-    vec2 cam_uv_offset = cam_pos.xz / float(terrain_size);
     //frag_texcoord = texCoord;
     frag_texcoord = p.xz / float(terrain_size) * terrain_res;
     //frag_texcoord = gl_TessCoord.xy;

@@ -17,7 +17,7 @@ namespace Kong
     	Shader(const map<EShaderType, string>& shader_paths);
 	    virtual ~Shader() = default;
 	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
-    	static GLuint LoadShaders(const map<EShaderType, string>& shader_path_map);
+    	static GLuint LoadShaders(const map<EShaderType, string>& shader_paths);
     	static void IncludeShader(const string& include_path);
     	static std::vector<std::string> FindIncludeFiles(const string& code_content);
     	

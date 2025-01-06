@@ -54,7 +54,7 @@ void main()
 	distorted_texcoords = frag_texcoord + vec2(distorted_texcoords.x, distorted_texcoords.y + move_factor);
 	vec2 dudv_distort = (texture(dudv_map, distorted_texcoords).rg * 2.0 - 1.0) * wave_strength;
 
-	vec2 total_distort = frag_normal.xz * 0.1 + dudv_distort;
+	vec2 total_distort = frag_normal.xz * 0.03 + dudv_distort;
 
 	reflection_coord += total_distort;
 	reflection_coord.x = clamp(reflection_coord.x, 0.001, 0.999);

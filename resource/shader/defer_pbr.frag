@@ -238,7 +238,7 @@ vec3 CalcPointLight(PointLight point_light, int light_index,
 }
 
 vec3 ApplyFog(vec3 origin_color, float pixel_dist)
-{    
+{
     vec3 fog_color = vec3(0.5,0.6, 0.7);
     float fog_fall_off = 0.0015;
     float fog_amount = 1.0 - exp(-pixel_dist*fog_fall_off);
@@ -251,6 +251,10 @@ void main()
     vec3 frag_pos = texture(position_texture, TexCoords).xyz;
     vec3 frag_normal = texture(normal_texture, TexCoords).rgb;
     vec4 env_albedo = texture(albedo_texture, TexCoords);
+
+//    FragColor = vec4(frag_pos, 1.0);
+////    FragColor = env_albedo;
+//    return;
 
     vec3 orm = texture(orm_texture, TexCoords).rgb;
     float ao = orm.x;
@@ -311,7 +315,7 @@ void main()
     }
 
     // 仅仅作用于ambient light的话太不明显了是什么原因？
-    vec3 color = ambient + (dir_light_color + point_light_color);
+    vec3 color = ambient + dir_light_color + point_light_color;
     if(use_ssao)
     {
         float occlusion = texture(ssao_result_texture, TexCoords).x;

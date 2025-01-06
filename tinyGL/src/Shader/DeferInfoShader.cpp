@@ -195,6 +195,33 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 	}
 }
 
+DeferredTerrainInfoShader::DeferredTerrainInfoShader()
+{
+	InitDefaultShader();
+}
+
+void DeferredTerrainInfoShader::InitDefaultShader()
+{
+	Shader::InitDefaultShader();
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.frag")},
+		{tcs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tesc")},
+		{tes, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tese")}
+	};
+
+    shader_id = LoadShaders(shader_path_map);
+	Use();
+	SetInt("height_map", 0);
+	SetInt("csm", 1);
+	SetInt("grass_texture", 2);
+	SetInt("grass_normal_texture", 3);
+	SetInt("sand_texture", 4);
+	SetInt("sand_normal_texture", 5);
+	SetInt("rock_texture", 6);
+	SetInt("rock_normal_texture", 7);
+}
+
 SSAOShader::SSAOShader()
 {
 	InitDefaultShader();

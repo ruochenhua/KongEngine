@@ -26,6 +26,9 @@ void main()
 	vec2 reflection_coord = vec2(ndc.x, -ndc.y);
 	vec2 refraction_coord = ndc;
 
+//	FragColor = vec4(texture(refraction_texture, refraction_coord).xyz, 1.0);
+////	FragColor = vec4(texture(reflection_texture, reflection_coord).xyz, 1.0);
+//	return;
 //	vec2 distortion1 = (texture(dudv_map, out_texcoord + move_factor).rg * 2.0 - 1.0) * wave_strength;
 //	vec2 distortion2 = (texture(dudv_map, out_texcoord*-1 - move_factor*2.0).rg * 2.0 - 1.0) * wave_strength;
 //	vec2 total_distort = distortion1 + distortion2;
@@ -52,12 +55,12 @@ void main()
 	{
 		vec4 normal_map_color = texture(normal_map, distorted_texcoords);
 		vec3 normal = normalize(vec3(normal_map_color.r * 2.0 - 1.0, normal_map_color.b, normal_map_color.g * 2.0 - 1.0));
-		
+
 //		fresnel_blend = clamp(dot(normal, view_vector), 0.0, 1.0);
-		
+
 		vec3 light_dir = light_info_ubo.directional_light.light_dir.xyz;
 		vec3 light_color = light_info_ubo.directional_light.light_color.xyz;
-		
+
 		vec3 reflected_light = reflect(light_dir, normal);
 		float specular = max(dot(reflected_light, view_vector), 0.0);
 		float shine_damper = 100.0;
@@ -66,6 +69,9 @@ void main()
 		specular_highlights = light_color * specular * reflectivity;
 	}
 	
-	vec4 blue_color = vec4(0.0, 0.2, 0.6, 1.0);	// add some blue color
-	FragColor = mix(mix(reflection_color, refraction_color, fresnel_blend), blue_color, 0.1) + vec4(specular_highlights, 0.0);
+	vec4 blue_color = vec4(0.1, 0.2, 0.6, 1.0);	// add some blue color
+	FragColor = mix(
+		mix(reflection_color, refraction_color, fresnel_blend)		//*0.5	// 稍微暗一点dim a little bit
+		, blue_color
+		, 0.2) + vec4(specular_highlights, 0.0);
 }

@@ -1,17 +1,25 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl"
-
+#define DEFER_RENDER 1
 in vec2 frag_texcoord;
 in vec3 frag_pos;
 in vec3 frag_normal;
 
 in float tes_height;
+
+#if DEFER_RENDER==1
+layout(location = 0) out vec4 gPosition;
+layout(location = 1) out vec4 gNormal;
+layout(location = 2) out vec4 gAlbedo;
+layout(location = 3) out vec4 gORM;
+#else
 out vec4 FragColor;
+#endif
 
 in mat3 TBN;
 
-uniform vec3 cam_pos;
+
 uniform sampler2DArray csm;
 uniform sampler2D grass_texture;
 uniform sampler2D grass_normal_texture;
@@ -19,13 +27,14 @@ uniform sampler2D sand_texture;
 uniform sampler2D sand_normal_texture;
 uniform sampler2D rock_texture;
 uniform sampler2D rock_normal_texture;
-
-// for csm calculation
+uniform mat4 model;
+//
+//// for csm calculation
 uniform mat4 light_space_matrices[16];
 uniform float csm_distances[16];
 uniform int csm_level_count;
-
-// 计算阴影
+//
+//// 计算阴影
 float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir)
 {
     vec4 frag_pos_view_space = matrix_ubo.view * frag_world_pos;
@@ -79,6 +88,7 @@ float ShadowCalculation_DirLight(vec4 frag_world_pos, vec3 to_light_dir)
 
 vec3 ApplyFog(vec3 origin_color)
 {
+    vec3 cam_pos = matrix_ubo.cam_pos.xyz;
     vec3 cam_to_point = frag_pos - cam_pos;
     float pixel_dist = length(cam_to_point);
 
@@ -150,6 +160,18 @@ void main()
         normal = rock_normal;
     }
 
+#if DEFER_RENDER==1
+        // 深度信息存储到position贴图的w值中
+    gPosition = model * vec4(frag_pos, 1.0);
+    vec3 cam_pos = matrix_ubo.cam_pos.xyz;
+    float depth = distance(cam_pos, frag_pos.xyz);
+//    depth = LinearizeDepth(gl_fragcoord.z);   // 算出来和depth不一样，需要选择究竟用哪个？
+    gNormal = vec4(normal, depth);
+    gAlbedo = pow(color, vec4(2.2));
+    gORM = vec4(0.02, 0.8, 0.1, 1.0);
+
+#else
+
     if(light_info_ubo.has_dir_light.x > 0.0)
     {
         vec3 light_dir = -light_info_ubo.directional_light.light_dir.xyz;
@@ -165,4 +187,6 @@ void main()
 
     vec3 final_color = ApplyFog(color.xyz);
     FragColor = vec4(final_color, 1.0);
+#endif
+
 }

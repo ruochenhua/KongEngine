@@ -20,7 +20,7 @@
 using namespace Kong;
 using namespace glm;
 using namespace std;
-
+#define DEFER_TERRAIN true
 
 CRender* g_render = new CRender;
 
@@ -251,9 +251,11 @@ void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 	
 	glGenTextures(1, &water_reflection_texture);
 	glBindTexture(GL_TEXTURE_2D, water_reflection_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_reflection_texture, 0);
 
@@ -282,9 +284,11 @@ void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 	
 	glGenTextures(1, &water_refraction_texture);
 	glBindTexture(GL_TEXTURE_2D, water_refraction_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_refraction_texture, 0);
 	
@@ -571,7 +575,7 @@ void CRender::RenderSceneObject(bool water_reflection)
 
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
 	
-	GLuint render_scene_buffer = 0;
+	GLuint render_scene_buffer;
 	// 正常渲染到后处理的buffer上
 	if (!water_reflection)
 	{
@@ -700,6 +704,9 @@ void CRender::RenderNonDeferSceneObjects() const
 		auto mesh_shader = mesh_component->shader_data;
 		// 跳过延迟渲染的mesh和水体的部分
 		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
+#if DEFER_TERRAIN
+			|| dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader)
+#endif
 			|| dynamic_pointer_cast<Water>(mesh_component)
 			|| dynamic_pointer_cast<GerstnerWaveWater>(mesh_component))
 		{
@@ -730,7 +737,11 @@ void CRender::DeferRenderSceneToGBuffer() const
 			continue;
 		}
 		auto mesh_shader = mesh_component->shader_data;
-		if(!dynamic_pointer_cast<DeferInfoShader>(mesh_shader))
+		if(!dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
+#if DEFER_TERRAIN
+			&& !dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader)
+#endif
+			)
 		{
 			continue;
 		}

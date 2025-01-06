@@ -11,17 +11,21 @@ using namespace Kong;
 Terrain::Terrain()
 {
 #if USE_TCS
-    map<EShaderType, string> shader_path_map = {
-        {vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.vert")},
-        {fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.frag")},
-        {tcs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tesc")},
-        {tes, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tese")}
-    };
+    // map<EShaderType, string> shader_path_map = {
+    //     {vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.vert")},
+    //     {fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.frag")},
+    //     {tcs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tesc")},
+    //     {tes, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tese")}
+    // };
+    //
+    shader_data = make_shared<DeferredTerrainInfoShader>();
 #else
     map<EShaderType, string> shader_path_map = {
         {vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_cpu.vert")},
         {fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_cpu.frag")},
     };
+    
+    shader_data = make_shared<Shader>(shader_path_map);
 #endif
 
     string grass_dir = "textures/terrain/grass/";
@@ -44,7 +48,6 @@ Terrain::Terrain()
     sand_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_albedo_path));
     sand_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_normal_path));
     
-    shader_data = make_shared<Shader>(shader_path_map);
     shader_data->Use();
     shader_data->SetInt("height_map", 0);
     shader_data->SetInt("csm", 1);
@@ -65,9 +68,9 @@ Terrain::Terrain(const string& file_name)
 void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 {
 #if USE_TCS
-    shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
+    // shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
     GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : CRender::GetNullTexId();
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0); 
     glBindTexture(GL_TEXTURE_2D, height_map_id);
     GLuint csm_id = CRender::GetNullTexId();
     auto dir_light = CRender::GetRender()->scene_render_info.scene_dirlight;
@@ -148,6 +151,7 @@ void Terrain::Draw(const SSceneLightInfo& scene_render_info)
     shader_data->SetFloat("height_shift", height_shift_);
     shader_data->SetInt("terrain_size", terrain_size);
     shader_data->SetInt("terrain_res", terrain_res);
+    shader_data->SetMat4("model", mat4(1.0));
     SimpleDraw(nullptr);
     
     // glEnable(GL_CULL_FACE);
