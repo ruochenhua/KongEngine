@@ -22,7 +22,8 @@ namespace Kong
 		void Init();
 		// IBL预处理HDR相关
 		void PreprocessIBL(const string& hdr_file_path);
-		void Render(const glm::mat4& mvp, int render_sky_status);
+		void Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_texture);
+		void RenderCloud(GLuint depth_texture);
 		void ChangeSkybox();
 
 		void PreRenderUpdate();
@@ -36,6 +37,8 @@ namespace Kong
 	private:
 		// skybox渲染相关shader
 		shared_ptr<SkyboxShader> skybox_shader;
+		shared_ptr<AtmosphereShader> atmosphere_shader;
+		
 		shared_ptr<EquirectangularToCubemapShader> equirectangular_to_cubemap_shader;
 		shared_ptr<IrradianceCalculationShader> irradiance_calculation_shader;
 		shared_ptr<PrefilterCalculationShader> prefilter_calculation_shader;

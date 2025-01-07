@@ -1,12 +1,13 @@
 #version 450 compatibility
 #extension GL_ARB_shading_language_include : require
-#include "/common/noise_gen.glsl"
+#include "/common/cloud_noise_gen.glsl"
 
 // 创建3D的WORLEY噪音材质用体积云的侵蚀效果计算
 // 参考 https://github.com/fede-vaccaro/TerrainEngine-OpenGL
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(rgba8, binding = 0) uniform image3D out_vol_tex;
+
 
 // 噪音生成参考的是https://github.com/sebh/TileableVolumeNoise下介绍的算法
 vec4 Stackable3DNoise(ivec3 pixel)

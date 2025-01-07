@@ -1,4 +1,6 @@
 #include "skybox.h"
+
+#include "Engine.h"
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
@@ -21,6 +23,7 @@ void CSkyBox::Init()
 	quad_shape->BeginPlay();
 	
 	skybox_shader = make_shared<SkyboxShader>();
+	atmosphere_shader = make_shared<AtmosphereShader>();
 	equirectangular_to_cubemap_shader = make_shared<EquirectangularToCubemapShader>();
 	irradiance_calculation_shader = make_shared<IrradianceCalculationShader>();
 	prefilter_calculation_shader = make_shared<PrefilterCalculationShader>();
@@ -292,66 +295,92 @@ void CSkyBox::PreprocessIBL(const string& hdr_file_path)
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status)
+void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_texture)
 {
-	//glDisable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
-	// glDisable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	skybox_shader->Use();
-	skybox_shader->SetMat4("MVP", mvp);
-	skybox_shader->SetInt("skybox", 0);
-	skybox_shader->SetInt("render_sky_status", render_sky_status);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-	//glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
-	//quad_shape->Draw();
-
-	if (render_sky_status == 2)
+	switch (render_sky_status)
 	{
-		// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
-		// 我们可以直接在skybox里面画
-		// volumetric_cloud_->SimpleDraw();
-		// 计算体积云
-		auto cloud_model_ = volumetric_cloud_->cloud_model_;
-
-		skybox_shader->SetFloat("iTime", glfwGetTime());
+	case 1:
+		{
+			// 绘制天空盒
+			glCullFace(GL_FRONT);
+			glDepthFunc(GL_LEQUAL);
+			skybox_shader->Use();
+			skybox_shader->SetMat4("MVP", mvp);
+			skybox_shader->SetInt("skybox", 0);
 	
-		skybox_shader->SetFloat("coverage_multiplier", cloud_model_->coverage);
-		skybox_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
-		skybox_shader->SetFloat("crispiness", cloud_model_->crispiness);
-		skybox_shader->SetFloat("curliness", cloud_model_->curliness);
-		skybox_shader->SetFloat("absorption", cloud_model_->absorption*0.01);
-		skybox_shader->SetFloat("densityFactor", cloud_model_->density);
-
-		//cloud_compute_shader_.setBool("enablePowder", enablePowder);
-	
-		skybox_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
-		skybox_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
-		skybox_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
-
-		skybox_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
-		skybox_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
-	
-		skybox_shader->SetVec3("skyColorTop", cloud_model_->sky_color_top);
-		skybox_shader->SetVec3("skyColorBottom", cloud_model_->sky_color_bottom);
-
-		skybox_shader->SetBool("render_cloud", render_cloud);
-		skybox_shader->SetInt("cloud", 1);
-		skybox_shader->SetInt("worley32", 2);
-		skybox_shader->SetInt("weatherTex", 3);
-	
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_3D, cloud_model_->perlin_texture);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_3D, cloud_model_->worley32_texture);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
+			
+			box_mesh->Draw();
+		}
+		break;
+	case 2:
+		// 绘制天空大气
+		if (render_cloud)
+		{
+			// 渲染天空大气的时候需要关掉修改深度缓存，否则在这之后的渲染（如水）会因为深度问题被裁切掉。
+			glDepthMask(GL_FALSE);
+			RenderCloud(depth_texture);
+			glDepthMask(GL_TRUE);
+		}
+		
+		break;
+	default:
+		break;
 	}
+}
+
+void CSkyBox::RenderCloud(GLuint depth_texture)
+{
+	// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
+	// 我们可以直接在skybox里面画
+	// volumetric_cloud_->SimpleDraw();
+	// 计算体积云
+	mat4 inv_view = inverse(CRender::GetRender()->GetCamera()->GetViewMatrix());
+	mat4 inv_proj = inverse(CRender::GetRender()->GetCamera()->GetProjectionMatrix());
+	atmosphere_shader->Use();
+	auto cloud_model_ = volumetric_cloud_->cloud_model_;
 	
-	box_mesh->Draw();
-	glCullFace(GL_BACK);
+	atmosphere_shader->SetFloat("iTime", glfwGetTime());
+	
+	atmosphere_shader->SetFloat("coverage_multiplier", cloud_model_->coverage);
+	atmosphere_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
+	atmosphere_shader->SetFloat("crispiness", cloud_model_->crispiness);
+	atmosphere_shader->SetFloat("curliness", cloud_model_->curliness);
+	atmosphere_shader->SetFloat("absorption", cloud_model_->absorption*0.01f);
+	atmosphere_shader->SetFloat("densityFactor", cloud_model_->density);
+
+	atmosphere_shader->SetBool("enablePowder", cloud_model_->enable_powder);
+	
+	atmosphere_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
+	atmosphere_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
+	atmosphere_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
+
+	atmosphere_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
+	atmosphere_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
+	
+	atmosphere_shader->SetVec3("skyColorTop", cloud_model_->sky_color_top);
+	atmosphere_shader->SetVec3("skyColorBottom", cloud_model_->sky_color_bottom);
+
+	atmosphere_shader->SetMat4("inv_view", inv_view);
+	atmosphere_shader->SetMat4("inv_proj", inv_proj);
+	atmosphere_shader->SetVec2("iResolution", Engine::GetEngine().GetWindowSize());
+	
+	atmosphere_shader->SetInt("depth_map", 0);
+	atmosphere_shader->SetInt("cloud", 1);
+	atmosphere_shader->SetInt("worley32", 2);
+	atmosphere_shader->SetInt("weatherTex", 3);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depth_texture);	
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D, cloud_model_->perlin_texture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_3D, cloud_model_->worley32_texture);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
+
+	quad_shape->Draw();
 }
 
 void CSkyBox::ChangeSkybox()

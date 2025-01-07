@@ -644,7 +644,7 @@ void CRender::RenderSceneObject(bool water_reflection)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	RenderNonDeferSceneObjects();
-	RenderSkyBox();
+	RenderSkyBox(defer_buffer_.g_normal_);
 	
 	// screen space reflection先放在这里吧
 	// 水面反射不做这个
@@ -654,17 +654,6 @@ void CRender::RenderSceneObject(bool water_reflection)
 		SSReflectionRender();
 	}
 
-	// // render water
-	// {
-	// 	// 复制postprocess的scene texture使用，否则一边读texture一边写入会出问题。
-	// 	glBindFramebuffer(GL_READ_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
-	// 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, water_render_helper_.water_scene_fbo);
-	// 	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
-	// 		window_size.x, window_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	//
-	// 	glBindFramebuffer(GL_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
-	// 	RenderWater();
-	// }
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 }
@@ -674,7 +663,7 @@ void CRender::ChangeSkybox()
 	m_SkyBox.ChangeSkybox();
 }
 
-void CRender::RenderSkyBox()
+void CRender::RenderSkyBox(GLuint depth_texture)
 {
 	if(render_sky_env_status == 0)
 	{
@@ -684,7 +673,8 @@ void CRender::RenderSkyBox()
 	mat4 projection = mainCamera->GetProjectionMatrix();
 	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
 	//mat4 mvp = projection * mainCamera->GetViewMatrix(); //
-	m_SkyBox.Render(mvp, render_sky_env_status);
+
+	m_SkyBox.Render(mvp, render_sky_env_status, depth_texture);
 }
 
 void CRender::RenderNonDeferSceneObjects() const

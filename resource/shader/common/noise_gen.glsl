@@ -7,59 +7,59 @@ float Random2D(vec2 st)
     return fract(sin(dot(st.xy, vec2(31.091145, 87.289) + seed)) * 28524.238524);
 }
 
-float Hash(int n)
-{
-    return fract(sin(float(n) + 1.951) * 43758.434536);
-}
+//float Hash(int n)
+//{
+//    return fract(sin(float(n) + 1.951) * 43758.434536);
+//}
+////
+//float Noise(vec3 x)
+//{
+//    vec3 p = floor(x);
+//    vec3 f = fract(x);
+//
+//    f = f*f*(vec3(3.0) - vec3(2.0)*f);
+//    float a = 57.0;
+//    float b = 129.0;
+//    float c = a + b;
+//    float n = p.x + p.y*a + p.z*b;
+//    return mix(
+//            mix(
+//                mix(Hash(int(n)), Hash(int(n+1)), f.x),
+//                mix(Hash(int(n+a)), Hash(int(n+a+1)), f.x),
+//                f.y),
+//            mix(
+//                mix(Hash(int(n+b)), Hash(int(n+b+1)), f.x),
+//                mix(Hash(int(n+c)), Hash(int(n+c+1)), f.x),
+//                f.y),
+//        f.z
+//    );
+//}
+//
+//float Cells(vec3 p, float cell_count)
+//{
+//    vec3 p_cell = p * cell_count;
+//    float d = 1.0e10;
+//    for(int xo = -1; xo < 2; ++xo)
+//    {
+//        for(int yo = -1; yo < 2; ++yo)
+//        {
+//            for(int zo = -1; zo < 2; ++zo)
+//            {
+//                vec3 tp = floor(p_cell) + vec3(xo, yo, zo);
+//                tp = p_cell - tp - Noise(mod(tp, cell_count));
+//                d = min(d, dot(tp, tp));
+//            }
+//        }
+//    }
+//
+//    d = clamp(d, 0.0, 1.0);
+//    return d;
+//}
 
-float Noise(vec3 x)
-{
-    vec3 p = floor(x);
-    vec3 f = fract(x);
-
-    f = f*f*(vec3(3.0) - vec3(2.0)*f);
-    float a = 57.0;
-    float b = 129.0;
-    float c = a + b;
-    float n = p.x + p.y*a + p.z*b;
-    return mix(
-            mix(
-                mix(Hash(int(n)), Hash(int(n+1)), f.x),
-                mix(Hash(int(n+a)), Hash(int(n+a+1)), f.x),
-                f.y),
-            mix(
-                mix(Hash(int(n+b)), Hash(int(n+b+1)), f.x),
-                mix(Hash(int(n+c)), Hash(int(n+c+1)), f.x),
-                f.y),
-        f.z
-    );
-}
-
-float Cells(vec3 p, float cell_count)
-{
-    vec3 p_cell = p * cell_count;
-    float d = 1.0e10;
-    for(int xo = -1; xo < 2; ++xo)
-    {
-        for(int yo = -1; yo < 2; ++yo)
-        {
-            for(int zo = -1; zo < 2; ++zo)
-            {
-                vec3 tp = floor(p_cell) + vec3(xo, yo, zo);
-                tp = p_cell - tp - Noise(mod(tp, cell_count));
-                d = min(d, dot(tp, tp));
-            }
-        }
-    }
-
-    d = clamp(d, 0.0, 1.0);
-    return d;
-}
-
-float WorleyNoise3D(vec3 p, float cell_count)
-{
-    return Cells(p, cell_count);
-}
+//float WorleyNoise3D(vec3 p, float cell_count)
+//{
+//    return Cells(p, cell_count);
+//}
 
 
 ///////////////////////////
@@ -91,19 +91,19 @@ float noise(in vec3 x)
     return res;
 }
 
-float PerlinNoise3D(vec3 p, float frequency, int octaves)
-{
-    float noise_val = 0.0;
-    float amp = 0.5;
-    float freq = frequency;
-    for(int i = 0; i < octaves; ++i)
-    {
-        noise_val += noise(p*freq) * amp;
-        amp*= 0.5;
-        freq *= 2.0;
-    }
-    return noise_val;
-}
+//float PerlinNoise3D(vec3 p, float frequency, int octaves)
+//{
+//    float noise_val = 0.0;
+//    float amp = 0.5;
+//    float freq = frequency;
+//    for(int i = 0; i < octaves; ++i)
+//    {
+//        noise_val += noise(p*freq) * amp;
+//        amp*= 0.5;
+//        freq *= 2.0;
+//    }
+//    return noise_val;
+//}
 //////////////////
 
 float InterpolatedNoise(vec2 uv)

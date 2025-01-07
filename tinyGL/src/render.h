@@ -178,7 +178,7 @@ namespace Kong
 		// 更新场景的渲染信息（光照、相机等等）
 		void UpdateSceneRenderInfo();
 		void InitUBO();
-		void RenderSkyBox();
+		void RenderSkyBox(GLuint depth_texture = 0);
 		// 渲染不支持延迟渲染的物体
 		void RenderNonDeferSceneObjects() const;
 		// 延迟渲染，将场景渲染到GBuffer上

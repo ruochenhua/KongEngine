@@ -10,6 +10,12 @@ namespace Kong
         SkyboxShader();
     };
 
+    class AtmosphereShader : public Shader
+    {
+    public:
+        AtmosphereShader();
+    };
+    
     // 等距柱状投影图到立方体贴图转换计算
     class EquirectangularToCubemapShader : public Shader
     {

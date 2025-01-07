@@ -241,7 +241,7 @@ vec3 ApplyFog(vec3 origin_color, float pixel_dist)
 {
     vec3 fog_color = vec3(0.5,0.6, 0.7);
     float fog_fall_off = 0.0015;
-    float fog_amount = 1.0 - exp(-pixel_dist*fog_fall_off);
+    float fog_amount = clamp(1.0 - exp(-pixel_dist*fog_fall_off), 0.0, 1.0);
 
     return mix(origin_color, fog_color, fog_amount);
 }
