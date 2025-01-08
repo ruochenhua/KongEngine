@@ -1,6 +1,8 @@
 # 关于KongEngine
 
 这个工程是我用于学习和实践引擎技术的项目。原名是tinyGL，是一个功能较为基础的渲染引擎，现在计划是将他的能力扩展，接入更加先进多样的功能。
+![terrain cloud](docs/Hello/kong_terrain_cloud.png)
+![water](docs/Hello/kong_water.png)
 ![softshadow and ssr](docs/Hello/KongEngine_softshadow_and_ssr.png)
 ![PBR](docs/Hello/KongEngine_PBR.png)
 ![IBL](docs/Hello/KongEngine_IBL.png)
@@ -25,7 +27,7 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
  - [x] PBR(BRDF)基础能力实现
  - [x] 延迟渲染
  - [x] 法线贴图
- - [ ] 阴影
+ - [x] 阴影
     - [x] 平行光源阴影
     - [x] 点光源阴影
     - [x] 阴影效果优化
@@ -53,7 +55,7 @@ UI基于[ImGui](https://github.com/ocornut/imgui)
      - [x] 程序化地形生成
      - [ ] 高度图
    - [x] 天空大气
-   - [ ] 水体
+   - [x] 水体
    - [ ] 云层
      - [x] 体积云初步支持
      - [ ] 体积云阴影

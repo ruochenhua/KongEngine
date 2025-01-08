@@ -52,6 +52,7 @@ void main()
 	
 	vec3 view_vector = normalize(matrix_ubo.cam_pos.xyz-out_pos);
 	float fresnel_blend = clamp(dot(out_normal, view_vector), 0.0, 1.0);
+	fresnel_blend = pow(fresnel_blend, 2.2);
 	
 	vec3 specular_highlights = vec3(0);
 	if(light_info_ubo.has_dir_light.r != 0)
@@ -76,5 +77,5 @@ void main()
 	FragColor = mix(
 		mix(reflection_color, refraction_color, fresnel_blend)		//*0.5	// 稍微暗一点dim a little bit
 		, blue_color
-		, 0.2) + vec4(specular_highlights, 0.0);
+		, 0.1) + vec4(specular_highlights, 0.0);
 }
