@@ -154,7 +154,7 @@ namespace Kong
 		PostProcess post_process;
 		int render_sky_env_status = 2;
 		// 启用屏幕空间环境光遮蔽
-		bool use_ssao = true;
+		bool use_ssao = false;
 		// 启用反射阴影贴图
 		bool use_rsm = false;
 		float rsm_intensity = 0.04f;

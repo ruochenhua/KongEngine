@@ -312,6 +312,7 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_t
 			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
 			
 			box_mesh->Draw();
+			glCullFace(GL_BACK);
 		}
 		break;
 	case 2:

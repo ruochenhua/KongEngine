@@ -204,6 +204,20 @@ float powder(float d){
     return (1. - exp(-2.*d));
 }
 
+// Beer's law inverted equation for edges
+float powder(float density, float ca)
+{
+	float f = 1.0 - exp(-density * 2.0);
+	return mix(1.0, f, clamp(-ca * 0.5 + 0.5, 0.0, 1.0));
+	//return f;
+}
+
+float henyeyGreenstein(vec3 l, vec3 v, float g, float ca)
+{
+	float g2 = g * g;
+
+	return ((1.0 - g2) / pow((1.0 + g2 - 2.0 * g * ca), 1.5 )) * (1.0 / (4.0 * 3.1415));
+}
 
 float phase(vec3 inLightVec, vec3 inViewVec, float g) {
     float costheta = dot(inLightVec, inViewVec) / length(inLightVec) / length(inViewVec);
@@ -214,43 +228,92 @@ vec3 eye = cameraPosition;
 
 uniform float absorption = 0.0035;
 
-float raymarchToLight(vec3 o, float stepSize, vec3 lightDir, float originalDensity, float lightDotEye)
+// Full cloud light energy equation
+float lightEnergy(vec3 l, vec3 v, float ca, float coneDensity)
 {
-    vec3 startPos = o;
-    float ds = stepSize * 6.0;
+	return 50.0 * beer(coneDensity) * powder(coneDensity, ca) * henyeyGreenstein(l, v, 0.2, ca);
+}
+
+float maxRenderDist = 1000000.0f;
+
+float raymarchToLight(vec3 origin_pos, float stepSize, vec3 view_dir, float originalDensity, float lightDotEye)
+{
+    vec3 startPos = origin_pos;
+    float ds = stepSize * 0.7;
+    vec3 lightDir = SUN_DIR;
     vec3 rayStep = lightDir * ds;
     const float CONE_STEP = 1.0/6.0;
     float coneRadius = 1.0;
     float density = 0.0;
     float coneDensity = 0.0;
-    float invDepth = 1.0/ds;
-    float sigma_ds = -ds*absorption;
-    vec3 pos;
+    float invDepth = 1.0/(stepSize*6);
+//    float sigma_ds = -ds*absorption;
 
     float T = 1.0;
 
     for(int i = 0; i < 6; i++)
     {
-        pos = startPos + coneRadius*noiseKernel[i]*float(i);
+        // Get position inside cone
+		vec3 posInCone = startPos + lightDir + coneRadius * noiseKernel[i] * float(i);
 
-        float heightFraction = getHeightFraction(pos);
-        if(heightFraction >= 0)
-        {
+		float deltaDist = clamp(length(posInCone - cameraPosition) / maxRenderDist, 0.0, 1.0);
 
-            float cloudDensity = sampleCloudDensity(pos, bool(density > 0.3), i/16);
-            if(cloudDensity > 0.0)
-            {
-                float Ti = exp(cloudDensity*sigma_ds);
-                T *= Ti;
-                density += cloudDensity;
-            }
-        }
-        startPos += rayStep;
-        coneRadius += CONE_STEP;
+		// By advancing towards the light we might go outside the atmosphere
+		float heightFraction = getHeightFraction(posInCone);
+		if(heightFraction <= 1.0)
+		{
+			// sample the expensive way if we hare near borders (where density is low, like 0.3 or below)
+			float cloudDensity = sampleCloudDensity(posInCone, coneDensity < 0.3, heightFraction);
+			if(cloudDensity > 0.0)
+			{
+				density += cloudDensity;
+				float transmittance = 1.0 - (density * invDepth);
+				coneDensity += (cloudDensity * transmittance);
+			}
+		}
+
+		startPos += rayStep;
+		coneRadius += CONE_STEP;
+
+        // terrain method
+//        vec3 pos = startPos + coneRadius*noiseKernel[i]*float(i);
+//
+//        float heightFraction = getHeightFraction(pos);
+//        if(heightFraction >= 0)
+//        {
+//
+//            float cloudDensity = sampleCloudDensity(pos, bool(density > 0.3), i/16);
+//            if(cloudDensity > 0.0)
+//            {
+//                float Ti = exp(cloudDensity*sigma_ds);
+//                T *= Ti;
+//                density += cloudDensity;
+//            }
+//        }
+//        startPos += rayStep;
+//        coneRadius += CONE_STEP;
     }
 
     //return 2.0*T*powder((originalDensity));//*powder(originalDensity, 0.0);
-    return T;
+
+    // 1 far sample for shadowing
+	origin_pos += (rayStep * 8.0);
+	float heightFraction = getHeightFraction(origin_pos);
+	float cloudDensity = sampleCloudDensity(origin_pos, false, heightFraction);
+	if(cloudDensity > 0.0)
+	{
+		density += cloudDensity;
+		float transmittance = 1.0 - (density * invDepth);
+		coneDensity += (cloudDensity * transmittance);
+	}
+
+	float ca = dot(lightDir, view_dir);
+
+	// Compute light energy arriving at point
+	return lightEnergy(lightDir, view_dir, ca, coneDensity);
+
+    // terrain method
+//    return T;
 }
 
 #define BAYER_FACTOR 1.0/16.0
@@ -264,22 +327,37 @@ uniform float bayerFilter[16u] = float[]
 
 uniform bool enablePowder = false;
 
+vec3 ambientLight(vec3 bg)
+{
+    float light_factor = clamp(dot(vec3(0,1,0), SUN_DIR), 0.0, 1.0);
+    vec3 real_light_color = SUN_COLOR;
+    real_light_color.y *= light_factor * 0.85;
+    real_light_color.z *= light_factor * 0.55;
+
+	return mix(real_light_color, bg, 0.65) * light_factor * 0.65;
+}
+
 uniform float densityFactor = 0.02;
 vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
     vec3 path = endPos - startPos;
     float len = length(path);
 
-    const int nSteps = 64;
-    float ds = len/nSteps;
-    vec3 dir = path/len;
-    dir *= ds;
+//    const int nSteps = 64;
+    const int nSteps = int(ceil(mix(48.0, 96.0, clamp(len/(SPHERE_OUTER_RADIUS-SPHERE_INNER_RADIUS), 0.0, 1.0))));
+
+    float ds = len / float(nSteps-1);
+    vec3 view_dir = path/len;
+    vec3 dir = view_dir * ds;
+
     vec4 col = vec4(0.0);
+
     vec2 fragCoord = gl_FragCoord.xy;
     int a = int(fragCoord.x) % 4;
     int b = int(fragCoord.y) % 4;
-    startPos += dir * bayerFilter[a * 4 + b];
+
     //startPos += dir*abs(Random2D(vec3(a,b,a+b)))*.5;
     vec3 pos = startPos;
+    pos += dir * bayerFilter[a * 4 + b];
 
     float density = 0.0;
 
@@ -293,22 +371,36 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
         float density_sample = sampleCloudDensity(pos, true, 0);
         if(density_sample > 0.)
         {
+            density += density_sample;
+
             float height = getHeightFraction(pos);
-            vec3 ambientLight = mix(CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, height);
-            float light_density = raymarchToLight(pos, ds*0.1, SUN_DIR, density_sample, lightDotEye);
+            float light_energy = raymarchToLight(pos, ds, view_dir, density_sample, lightDotEye);
+            vec3 ambient_c = mix(CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, height);
+            vec3 ambient_color = ambientLight(ambient_c);
 
-            float scattering = mix(HG(lightDotEye, -0.08), HG(lightDotEye, 0.08), clamp(lightDotEye*0.5 + 0.5, 0.0, 1.0));
-            //scattering = 0.6;
-            scattering = max(scattering, 1.0);
-            float powderTerm =  powder(density_sample);
-            if(!enablePowder)
-            powderTerm = 1.0;
+			vec4 src = vec4(light_energy*vec3(0.5) + ambient_color, density_sample); // ACCUMULATE
+			src.rgb *= src.a;
+			col = (1.0 - col.a) * src + col;
 
-            vec3 S = 0.6*( mix( mix(ambientLight*1.8, bg, 0.2), scattering*SUN_COLOR, powderTerm*light_density)) * density_sample;
-            float dTrans = exp(density_sample*sigma_ds);
-            vec3 Sint = (S - S * dTrans) * (1. / density_sample);
-            col.rgb += T * Sint;
-            T *= dTrans;
+			if(col.a >= 0.99) // EARLY EXIT ON FULL OPACITY
+				break;
+
+            // 原terrain方法
+//            float scattering = mix(HG(lightDotEye, -0.08), HG(lightDotEye, 0.08), clamp(lightDotEye*0.5 + 0.5, 0.0, 1.0));
+//            //scattering = 0.6;
+//            scattering = max(scattering, 1.0);
+//
+//            float powderTerm =  powder(density_sample);
+//            if(!enablePowder)
+//            {
+//                powderTerm = 1.0;
+//            }
+//
+//            vec3 S = 0.6*( mix( mix(ambientLight*1.8, bg, 0.2), scattering*SUN_COLOR, powderTerm* light_energy)) * density_sample;
+//            float dTrans = exp(density_sample*sigma_ds);
+//            vec3 Sint = (S - S * dTrans) * (1. / density_sample);
+//            col.rgb += T * Sint;
+//            T *= dTrans;
         }
 
         if( T <= CLOUDS_MIN_TRANSMITTANCE ) break;
@@ -316,8 +408,7 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
         pos += dir;
     }
     //col.rgb += ambientlight*0.02;
-    col.a = 1.0 - T;
-
+//    col.a = 1.0 - T;
     //col = vec4( vec3(getHeightFraction(startPos)), 1.0);
 
     return col;
@@ -337,10 +428,8 @@ vec3 computeClipSpaceCoord(vec2 fragCoord){
 	return vec3(ray_nds, 1.0);
 }
 
-vec4 computeSkyboxCloud(vec4 sky_color, vec3 worldDir)
+vec3 computeSkyboxCloud(vec4 sky_color, vec3 worldDir)
 {
-    vec4 fragColor_v, alphaness_v;
-
     vec3 startPos, endPos;
 
     vec4 bg = sky_color;
@@ -372,15 +461,15 @@ vec4 computeSkyboxCloud(vec4 sky_color, vec3 worldDir)
     }
 
     //compute fog amount and early exit if over a certain value
-    float fogAmount = computeFogAmount(fogRay, 0.00006);
+    float fogAmount = computeFogAmount(fogRay, 0.0006);
 
-    fragColor_v = bg;
 
-    if(fogAmount > 0.965)
-    {
-        fragColor_v = bg;
-        return fragColor_v; //early exit
-    }
+//    if(fogAmount > 0.999965)
+//    {
+//        fragColor_v = bg;
+//        return vec3(1,0,0);
+//        return fragColor_v.xyz; //early exit
+//    }
 
     vec4 v = vec4(0.0);
     v = raymarchToCloud(startPos, endPos, bg.rgb);
@@ -402,9 +491,8 @@ vec4 computeSkyboxCloud(vec4 sky_color, vec3 worldDir)
     bg.rgb = bg.rgb*(1.0 - v.a) + v.rgb;
     bg.a = 1.0;
 
-    fragColor_v = bg;
-
-    return fragColor_v;
+//    return vec3(0.2, 0.3, 1.0);
+    return bg.xyz;
 }
 
 // 默认球心在原点
@@ -579,7 +667,7 @@ void main()
             0.758                           // Mie preferred scattering direction
         );
 //        color.xyz = normalize(worldDir)*0.5 + 0.5;
-        color = computeSkyboxCloud(color, worldDir);
+        color.xyz = computeSkyboxCloud(color, worldDir);
     }
     FragColor = color;
 }

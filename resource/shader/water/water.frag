@@ -26,8 +26,8 @@ void main()
 	vec2 reflection_coord = vec2(ndc.x, -ndc.y);
 	vec2 refraction_coord = ndc;
 
-//	FragColor = vec4(texture(refraction_texture, refraction_coord).xyz, 1.0);
-////	FragColor = vec4(texture(reflection_texture, reflection_coord).xyz, 1.0);
+//	FragColor = vec4(texture(refraction_texture, refraction_coord).xyz/2.0, 1.0);
+//	FragColor = vec4(texture(reflection_texture, reflection_coord).xyz/2.0, 1.0);
 //	return;
 //	vec2 distortion1 = (texture(dudv_map, out_texcoord + move_factor).rg * 2.0 - 1.0) * wave_strength;
 //	vec2 distortion2 = (texture(dudv_map, out_texcoord*-1 - move_factor*2.0).rg * 2.0 - 1.0) * wave_strength;
@@ -44,8 +44,11 @@ void main()
 	refraction_coord += total_distort;
 	refraction_coord = clamp(refraction_coord, 0.001, 0.999);
 
-	vec4 reflection_color = vec4(texture(reflection_texture, reflection_coord).xyz, 1.0);
-	vec4 refraction_color = vec4(texture(refraction_texture, refraction_coord).xyz, 1.0);
+	// fixme 为什么这里在terrain是延迟渲染的时候需要将颜色除以二？
+	float color_factor = 0.5;
+
+	vec4 reflection_color = vec4(texture(reflection_texture, reflection_coord).xyz*color_factor, 1.0);
+	vec4 refraction_color = vec4(texture(refraction_texture, refraction_coord).xyz*color_factor, 1.0);
 	
 	vec3 view_vector = normalize(matrix_ubo.cam_pos.xyz-out_pos);
 	float fresnel_blend = clamp(dot(out_normal, view_vector), 0.0, 1.0);
