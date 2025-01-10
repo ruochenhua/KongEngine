@@ -8,7 +8,8 @@ in vec2 out_texcoord;
 
 in vec4 clip_space;
 
-layout (location=0) out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;
 
 uniform sampler2D reflection_texture;
 uniform sampler2D refraction_texture;
@@ -74,8 +75,23 @@ void main()
 	}
 	
 	vec4 blue_color = vec4(0.1, 0.2, 0.6, 1.0);	// add some blue color
-	FragColor = mix(
+	vec4 color = mix(
 		mix(reflection_color, refraction_color, fresnel_blend)		//*0.5	// 稍微暗一点dim a little bit
 		, blue_color
 		, 0.1) + vec4(specular_highlights, 0.0);
+
+	FragColor = color;
+
+	vec3 luminance_mask = vec3(0.2126, 0.7152, 0.0722); //人眼对不同颜色的敏感度不同
+    float brightness = dot(color.xyz, luminance_mask);
+    if(brightness > 1.0)
+    {
+        BrightColor = vec4(color.xyz, 1.0);
+    }
+    else
+    {
+        // 低于阈值的要设置成黑色（或者其他背景色）
+        // 否则在blend开启的情况下会导致alpha为0的时候被遮挡的高亮穿透模型在场景中显现
+        BrightColor = vec4(0,0,0,1);
+    }
 }

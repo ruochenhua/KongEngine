@@ -327,8 +327,9 @@ void main()
 
     FragColor = vec4(final_color, 1.0);
 
-    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
+    vec3 luminance_mask = vec3(0.2126, 0.7152, 0.0722); //人眼对不同颜色的敏感度不同
+    float brightness = dot(color, luminance_mask);
+    if(brightness > 8.0)
     {
         BrightColor = vec4(color, 1.0);
     }

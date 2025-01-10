@@ -20,6 +20,11 @@ void main()
     {
         vec3 bloom_value = texture(bright_texture, TexCoords).rgb;
         hdr_color += bloom_value;
+//        // bloom debug
+//        if(length(bloom_value)> 0)
+//        {
+//            hdr_color = vec3(1,0,1);
+//        }
     }
 
 //    vec3 mapped = hdr_color / (hdr_color + vec3(1.0));
