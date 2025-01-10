@@ -21,6 +21,9 @@ namespace Kong
         bool enable_bloom = false;
         // 开启和关闭景深
         bool enable_DOF = false;
+        // 开启和关闭god_ray
+        bool enable_god_ray = false;
+        
         int bloom_range = 10;
 
         float focus_distance = 5.f; //景深focus的位置
@@ -46,13 +49,16 @@ namespace Kong
         void InitScreenTexture();
 
         // 预后处理阶段
-        shared_ptr<PrePostProcessShader> pre_postprocess;
+        shared_ptr<CombineProcessShader> combine_process;
         // 高斯模糊阶段
         shared_ptr<GaussianBlurShader> gaussian_blur;
         // 膨胀模糊效果
         shared_ptr<DilatePostprocessShader> dilate_blur;
         // 景深效果
         shared_ptr<DOFPostprocessShader> dof_process;
+        // 径向模糊效果
+        shared_ptr<RadicalBlurShader> radical_blur;
+        
         // 后处理最后阶段
         shared_ptr<FinalPostprocessShader> final_postprocess;
         

@@ -12,8 +12,8 @@ void PostProcess::Init()
     window_width = window_size.x;
     window_height = window_size.y;
 
-    pre_postprocess = make_shared<PrePostProcessShader>();
-    pre_postprocess->InitPostProcessShader(window_width, window_height);
+    combine_process = make_shared<CombineProcessShader>();
+    combine_process->InitPostProcessShader(window_width, window_height);
     final_postprocess = make_shared<FinalPostprocessShader>();
     final_postprocess->InitPostProcessShader(window_width, window_height);
     gaussian_blur = make_shared<GaussianBlurShader>();
@@ -22,6 +22,8 @@ void PostProcess::Init()
     dilate_blur->InitPostProcessShader(window_width, window_height);
     dof_process = make_shared<DOFPostprocessShader>();
     dof_process->InitPostProcessShader(window_width, window_height);
+    radical_blur = make_shared<RadicalBlurShader>();
+    radical_blur->InitPostProcessShader(window_width, window_height);
     
     InitQuad();
     InitScreenTexture();
@@ -44,38 +46,47 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     // 重新创建
     InitScreenTexture();
 
-    pre_postprocess->GenerateTexture(window_width, window_height);
+    combine_process->GenerateTexture(window_width, window_height);
     gaussian_blur->GenerateTexture(window_width, window_height);
     dilate_blur->GenerateTexture(window_width, window_height);
     dof_process->GenerateTexture(window_width, window_height);
+    radical_blur->GenerateTexture(window_width, window_height);
 }
 
 void PostProcess::Draw()
 {
-    // 先将一些结果整合起来
-    auto preprocess_rst = pre_postprocess->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
+    // 先将屏幕空间反射和主场景渲染的内容整合
+    combine_process->SetCombineMode(CombineProcessShader::Alpha);
+    auto postprocess_rst = combine_process->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
 
     if(enable_bloom)
     {
         gaussian_blur->SetBlurAmount(bloom_range);
-        auto blur_textures = gaussian_blur->Draw({screen_quad_texture[1]},
+        auto blur_texture = gaussian_blur->Draw({screen_quad_texture[1]},
             screen_quad_vao);
-        
-        final_postprocess->Draw({preprocess_rst[0], blur_textures[0]}, screen_quad_vao);
+        combine_process->SetCombineMode(CombineProcessShader::Add);
+        postprocess_rst = combine_process->Draw({postprocess_rst, blur_texture}, screen_quad_vao);
     }
-    else if(enable_DOF)
+
+    if (enable_god_ray)
+    {
+        auto radical_blur_texture = radical_blur->Draw({screen_quad_texture[1]}, screen_quad_vao);
+        postprocess_rst = radical_blur_texture;
+        // combine_process->SetCombineMode(CombineProcessShader::Add);
+        // postprocess_rst = combine_process->Draw({postprocess_rst, radical_blur_texture}, screen_quad_vao);
+    }
+    
+    if(enable_DOF)
     {
         dilate_blur->SetParam(dilate_size, dilate_separation);
-        // dilate就先不走bloom了
-        auto dilate_textures = dilate_blur->Draw({preprocess_rst[0]}, screen_quad_vao);
+        
+        auto dilate_textures = dilate_blur->Draw({postprocess_rst}, screen_quad_vao);
         dof_process->SetFocusDistance(focus_distance, focus_threshold);
-        auto dof_textures = dof_process->Draw({preprocess_rst[0], dilate_textures[0], position_texture}, screen_quad_vao);
-        final_postprocess->Draw({dof_textures[0]}, screen_quad_vao);
+        postprocess_rst = dof_process->Draw({postprocess_rst, dilate_textures, position_texture}, screen_quad_vao);
     }
-    else
-    {
-        final_postprocess->Draw({preprocess_rst[0]}, screen_quad_vao);
-    }
+
+
+    final_postprocess->Draw({postprocess_rst}, screen_quad_vao);
 }
 
 void PostProcess::RenderUI()
@@ -102,6 +113,9 @@ void PostProcess::RenderUI()
     {
         enable_bloom = false;
     }
+
+    ImGui::Checkbox("god ray", &enable_god_ray);
+    // todo god ray相关的参数
     ImGui::End();
 }
 

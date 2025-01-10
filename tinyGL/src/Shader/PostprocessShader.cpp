@@ -4,13 +4,14 @@
 #include "Scene.h"
 using namespace Kong;
 
-vector<GLuint> PrePostProcessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+GLuint CombineProcessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
 
     Use();
     glBindFramebuffer(GL_FRAMEBUFFER, result_fbo);
     glBindVertexArray(screen_quad_vao);
 
+    SetInt("combine_mode", combine_mode);
     for(int i = 0; i < texture_list.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -22,10 +23,10 @@ vector<GLuint> PrePostProcessShader::Draw(const vector<GLuint>& texture_list, GL
     glBindVertexArray(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    return {result_texture};
+    return result_texture;
 }
 
-void PrePostProcessShader::InitDefaultShader()
+void CombineProcessShader::InitDefaultShader()
 {
     shader_path_map = {
         {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.vert")},
@@ -36,10 +37,10 @@ void PrePostProcessShader::InitDefaultShader()
     
     Use();
     SetInt("scene_texture", 0);
-    SetInt("reflection_texture", 1);
+    SetInt("added_texture", 1);
 }
 
-void PrePostProcessShader::GenerateTexture(unsigned width, unsigned height)
+void CombineProcessShader::GenerateTexture(unsigned width, unsigned height)
 {
     if(!result_fbo)
     {
@@ -69,13 +70,13 @@ void PrePostProcessShader::GenerateTexture(unsigned width, unsigned height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PrePostProcessShader::InitPostProcessShader(unsigned width, unsigned height)
+void CombineProcessShader::InitPostProcessShader(unsigned width, unsigned height)
 {
     InitDefaultShader();
     GenerateTexture(width, height);
 }
 
-vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+GLuint FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     Use();
     glBindVertexArray(screen_quad_vao);
@@ -103,7 +104,7 @@ vector<GLuint> FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, 
     
     glBindVertexArray(GL_NONE);
 
-    return vector<GLuint>();
+    return 0;
 }
 
 void FinalPostprocessShader::InitDefaultShader()
@@ -130,7 +131,7 @@ void FinalPostprocessShader::GenerateTexture(unsigned width, unsigned height)
 {
 }
 
-vector<GLuint> GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+GLuint GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     bool horizontal = true, first_iteration = true;
     Use();
@@ -153,7 +154,7 @@ vector<GLuint> GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLui
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     //blur_texture[!horizontal]; // 这个是输出的贴图
-    return {blur_texture[!horizontal]};
+    return blur_texture[!horizontal];
 }
 
 void GaussianBlurShader::InitDefaultShader()
@@ -256,7 +257,7 @@ void DilatePostprocessShader::GenerateTexture(unsigned width, unsigned height)
 
 }
 
-vector<GLuint> DilatePostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+GLuint DilatePostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     Use();
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
@@ -272,7 +273,7 @@ vector<GLuint> DilatePostprocessShader::Draw(const vector<GLuint>& texture_list,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 这个是输出的贴图
-    return {blur_texture};
+    return blur_texture;
 }
 
 void DilatePostprocessShader::SetParam(int d_size, float d_separation)
@@ -338,7 +339,7 @@ void DOFPostprocessShader::GenerateTexture(unsigned width, unsigned height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-vector<GLuint> DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+GLuint DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
     Use();
     glBindFramebuffer(GL_FRAMEBUFFER, DOF_fbo);
@@ -364,5 +365,72 @@ vector<GLuint> DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GL
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 这个是输出的贴图
-    return {DOF_texture};
+    return DOF_texture;
+}
+
+void RadicalBlurShader::InitDefaultShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/radical_blur.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/radical_blur.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+    glUseProgram(shader_id);
+    SetInt("bright_texture", 0);
+}
+
+void RadicalBlurShader::InitPostProcessShader(unsigned width, unsigned height)
+{
+    InitDefaultShader();
+    GenerateTexture(width, height);
+}
+
+void RadicalBlurShader::GenerateTexture(unsigned width, unsigned height)
+{
+    if(!blur_fbo)
+    {
+        glGenFramebuffers(1, &blur_fbo);
+    }
+
+    // 原来有贴图就删掉
+    if(blur_texture)
+    {
+        glDeleteTextures(1, &blur_texture);
+    }
+    
+    glGenTextures(1, &blur_texture);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
+
+    glBindTexture(GL_TEXTURE_2D, blur_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
+    0, GL_RGBA, GL_FLOAT, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+GLuint RadicalBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
+{
+    Use();
+    SetFloat("blur_amount", blur_amount);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
+    glActiveTexture(GL_TEXTURE0);
+    // bind texture of other framebuffer (or scene if first iteration) screen_quad_texture[1]
+    glBindTexture(GL_TEXTURE_2D, texture_list[0]);
+    glBindVertexArray(screen_quad_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(GL_NONE);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 这个是输出的贴图
+    return blur_texture;
 }
