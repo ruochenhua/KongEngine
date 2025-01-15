@@ -14,8 +14,12 @@ GLuint CombineProcessShader::Draw(const vector<GLuint>& texture_list, GLuint scr
     SetInt("combine_mode", combine_mode);
     for(int i = 0; i < texture_list.size(); i++)
     {
+#if USE_DSA
+        glBindTextureUnit(i, texture_list[i]);
+#else
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, texture_list[i]);
+#endif
     }
     
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -80,12 +84,20 @@ GLuint FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint s
 {
     Use();
     glBindVertexArray(screen_quad_vao);
+#if USE_DSA
+    glBindTextureUnit(0, texture_list[0]);
+#else
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);  // 原本场景的贴图
+#endif
     if(texture_list.size() > 1)
     {
+#if USE_DSA
+        glBindTextureUnit(1, texture_list[1]);
+#else
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture_list[1]);  // 泛光blur的贴图
+#endif
         SetBool("bloom", true);
     }
     else
@@ -140,9 +152,13 @@ GLuint GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint scree
         glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo[horizontal]);
         //SetInt("horizontal", horizontal);
         glUniform1i(glGetUniformLocation(shader_id, "horizontal"), horizontal);
+#if USE_DSA
+        glBindTextureUnit(0, first_iteration ? texture_list[0] : blur_texture[!horizontal]);
+#else
         glActiveTexture(GL_TEXTURE0);
         // bind texture of other framebuffer (or scene if first iteration) screen_quad_texture[1]
         glBindTexture(GL_TEXTURE_2D, first_iteration ? texture_list[0] : blur_texture[!horizontal]);
+#endif
         glBindVertexArray(screen_quad_vao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBindVertexArray(GL_NONE);
@@ -263,9 +279,13 @@ GLuint DilatePostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint 
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
     SetInt("size", dilate_size);
     SetFloat("separation", dilate_separation);
+#if USE_DSA
+    glBindTextureUnit(0, texture_list[0]);
+#else
     glActiveTexture(GL_TEXTURE0);
     // bind texture of other framebuffer (or scene if first iteration) screen_quad_texture[1]
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);
+#endif
     glBindVertexArray(screen_quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);
@@ -347,6 +367,11 @@ GLuint DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint scr
     SetVec2("focus_threshold", focus_threshold);
     
     assert(texture_list.size() == 3);
+#if USE_DSA
+    glBindTextureUnit(0, texture_list[0]);
+    glBindTextureUnit(1, texture_list[1]);
+    glBindTextureUnit(2, texture_list[2]);
+#else
     // 场景渲染贴图
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);
@@ -356,7 +381,7 @@ GLuint DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint scr
     // 位置贴图
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, texture_list[2]);
-    
+#endif
     
     glBindVertexArray(screen_quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -422,9 +447,13 @@ GLuint RadicalBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen
     SetFloat("blur_amount", blur_amount);
     
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
+#if USE_DSA
+    glBindTextureUnit(0, texture_list[0]);
+#else
     glActiveTexture(GL_TEXTURE0);
     // bind texture of other framebuffer (or scene if first iteration) screen_quad_texture[1]
     glBindTexture(GL_TEXTURE_2D, texture_list[0]);
+#endif
     glBindVertexArray(screen_quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);

@@ -1,6 +1,8 @@
 #include "render.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <chrono>
+#include <iostream>
 #include <random>
 #include <utility>
 
@@ -37,12 +39,16 @@ void UBOHelper::Init(GLuint in_binding)
 
 void UBOHelper::Bind() const
 {
+#if !USE_DSA
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo_idx);
+#endif
 }
 
 void UBOHelper::EndBind() const
 {
+#if !USE_DSA
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+#endif
 }
 
 void DeferBuffer::Init(unsigned width, unsigned height)
@@ -502,6 +508,8 @@ int CRender::Update(double delta)
 		float height_diff = origin_cam_pos.y - water_actor->location.y;
 		if (height_diff > 0.0f)
 		{
+			
+			auto blit_start = std::chrono::high_resolution_clock::now();
 			// 复制普通场景渲染中postprocess的scene texture作为折射贴图使用
 			ivec2 window_size = Engine::GetEngine().GetWindowSize();
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
@@ -532,8 +540,12 @@ int CRender::Update(double delta)
 			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
 			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
 			matrix_ubo.EndBind();
-			
+
 			RenderWater();
+			auto blit_end = std::chrono::high_resolution_clock::now();
+			auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+
+			// std::cout << "代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else
@@ -554,7 +566,14 @@ int CRender::Update(double delta)
 void CRender::PostUpdate()
 {
 	// Swap buffers
+	
+	auto blit_start = std::chrono::high_resolution_clock::now();
 	glfwSwapBuffers(render_window);
+	auto blit_end = std::chrono::high_resolution_clock::now();
+	auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+	blit_start = blit_end;
+	// std::cout << "glfwSwapBuffers 执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+
 	glfwPollEvents();
 }
 
@@ -628,17 +647,27 @@ void CRender::RenderSceneObject(bool water_reflection)
 
 	if (use_ssao)
 	{
+#if USE_DSA
+		glBindTextureUnit(16, ssao_helper_.ssao_blur_texture);
+#else
 		glActiveTexture(GL_TEXTURE0 + 16);
 		glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
+#endif
 	}
 	
 	// 渲染光照
 	DeferRenderSceneLighting();
+	auto blit_start = std::chrono::high_resolution_clock::now();
 	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_scene_buffer);
 	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
 		window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+	auto blit_end = std::chrono::high_resolution_clock::now();
+	auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start).count();
+
+	// printf("Blit time: %lld ms\n", blit_duration);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -747,6 +776,12 @@ void CRender::DeferRenderSceneToGBuffer() const
 void CRender::DeferRenderSceneLighting() const
 {
 	defer_buffer_.defer_render_shader->Use();
+#if USE_DSA
+	glBindTextureUnit(0, defer_buffer_.g_position_);
+	glBindTextureUnit(1, defer_buffer_.g_normal_);
+	glBindTextureUnit(2, defer_buffer_.g_albedo_);
+	glBindTextureUnit(3, defer_buffer_.g_orm_);
+#else
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
 
@@ -759,7 +794,7 @@ void CRender::DeferRenderSceneLighting() const
 
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
-
+#endif
 	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 	
 	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material,
@@ -791,11 +826,16 @@ void CRender::RenderWater()
 		auto mesh_shader = water_comp->shader_data;
 
 		mesh_shader->Use();
+#if USE_DSA
+		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
+		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
+		
+#else
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
-		
+#endif		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
@@ -814,10 +854,15 @@ void CRender::RenderWater()
 		auto mesh_shader = gerstner_water->shader_data;
 
 		mesh_shader->Use();
+#if USE_DSA
+		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
+		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
+#else
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
+#endif
 		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
@@ -835,13 +880,18 @@ void CRender::SSAORender() const
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	ssao_helper_.ssao_shader_->Use();
+#if USE_DSA
+	glBindTextureUnit(0, defer_buffer_.g_position_);
+	glBindTextureUnit(1, defer_buffer_.g_normal_);
+	glBindTextureUnit(2, ssao_helper_.ssao_noise_texture);
+#else
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_noise_texture);
-
+#endif
 	// ssao_shader_->SetVec2("screen_size");
 	// kernal samples to shader
 	quad_shape->Draw();
@@ -852,9 +902,12 @@ void CRender::SSAORender() const
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	ssao_helper_.ssao_blur_shader_->Use();
+#if USE_DSA
+	glBindTextureUnit(0, ssao_helper_.ssao_result_texture);
+#else
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_result_texture);
-
+#endif
 	quad_shape->Draw();
 }
 

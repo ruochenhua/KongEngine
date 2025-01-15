@@ -9,7 +9,7 @@ uniform float blur_amount;
 uniform sampler2D bright_texture;
 
 // 光源在屏幕空间的位置（归一化坐标，范围 0 到 1）
-uniform vec2 lightPos = vec2(0.5, 0.5);
+uniform vec2 lightPos = vec2(0.5, 1.0);
 
 // 光线散射强度，用于控制 God Ray 效果的明显程度
 uniform float scatteringStrength = 0.1;
@@ -18,8 +18,9 @@ uniform float scatteringStrength = 0.1;
 uniform int maxRayDistance = 200;
 
 // 计算光线方向向量
-vec2 calculateRayDirection(vec2 pixelPos) {
-    return normalize(lightPos - pixelPos);
+vec2 calculateRayDirection(vec2 pixelPos, out float to_light_dist) {
+    to_light_dist = length(lightPos - pixelPos);
+    return (lightPos - pixelPos) / to_light_dist;
 }
 
 // 计算光散射强度（简单的线性衰减示例，可替换为更复杂的物理模型）
@@ -36,17 +37,22 @@ void main()
     vec4 pixelColor = texture(bright_texture, TexCoords);
 
     // 计算从当前像素指向光源的光线方向
-    vec2 rayDirection = calculateRayDirection(TexCoords);
+    float to_light_dist = 1.0;
+    vec2 rayDirection = calculateRayDirection(TexCoords, to_light_dist);
+    to_light_dist *= 1024;
 
     // 用于累积光线散射贡献的颜色
     vec4 accumulatedColor = vec4(0.0);
     // 当前光线传播的距离
     float currentDistance = 0.0;
 
+    float march_dist = min(maxRayDistance, to_light_dist);
+//    maxRayDistance = min(maxRayDistance, to_light_dist);
+
     // 沿着光线方向进行采样
-    while (currentDistance < maxRayDistance) {
+    while (currentDistance < march_dist) {
         // 计算当前采样点的纹理坐标
-        vec2 sampleCoords = TexCoords + rayDirection * currentDistance * texelSize;
+        vec2 sampleCoords = TexCoords + rayDirection * currentDistance * texelSize.x;
 
         // 获取采样点的颜色
         vec4 sampleColor = texture(bright_texture, sampleCoords);
@@ -62,5 +68,5 @@ void main()
     }
 
     // 将原始像素颜色和累积的光线散射颜色混合
-    FragColor = accumulatedColor / maxRayDistance * 10.0;
+    FragColor = vec4(accumulatedColor.xyz, clamp(accumulatedColor.w, 0.0, 1.0));
 }

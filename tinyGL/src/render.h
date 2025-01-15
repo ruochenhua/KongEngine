@@ -49,7 +49,24 @@ namespace Kong
 		size_t size = sizeof(T);
 		next_offset += size;
 	}
+#if USE_DSA
+	template <class T>
+	void UBOHelper::UpdateData(const T& data, const std::string& name) const
+	{
+		auto find_iter = data_offset_cache.find(name);
+		if(find_iter == data_offset_cache.end())
+		{
+			assert(false, "update data failed");
+			return;
+		}
 
+		unsigned offset = find_iter->second;
+		size_t size = sizeof(T);
+		// glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
+		glNamedBufferSubData(ubo_idx, offset, size, &data);
+	}
+
+#else
 	template <class T>
 	void UBOHelper::UpdateData(const T& data, const std::string& name) const
 	{
@@ -64,7 +81,8 @@ namespace Kong
 		size_t size = sizeof(T);
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
-
+#endif
+	
 	// 延迟渲染的数据结构
 	struct DeferBuffer
 	{

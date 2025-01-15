@@ -1,4 +1,7 @@
 //tiny openGL project
+#include <chrono>
+#include <iostream>
+
 #include "render.h"
 #include "Engine.h"
 #include "Scene.h"
@@ -8,6 +11,9 @@ using namespace glm;
 using namespace std;
 using namespace Kong;
 constexpr double FRAME_TIME_CAP = 1.0/200.0;
+
+#define PROFILE_SCENE 0
+
 int main()
 {
 	// Open a window and create its OpenGL context
@@ -32,16 +38,53 @@ int main()
 		double delta = new_time - current_time;
 		if(delta > FRAME_TIME_CAP)
 		{
+			
+			auto blit_start = std::chrono::high_resolution_clock::now();
+
 			ui_manager->PreRenderUpdate(delta);
+#if PROFILE_SCENE
+			auto blit_end = std::chrono::high_resolution_clock::now();
+			auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+			blit_start = blit_end;
+			std::cout << "ui manager PreRenderUpdate 代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+#endif
 			
 			CScene::GetScene()->PreRenderUpdate(delta);
+#if PROFILE_SCENE
+			blit_end = std::chrono::high_resolution_clock::now();
+			blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+			blit_start = blit_end;
+			std::cout << "scene PreRenderUpdate 代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+#endif
 			
 			render->Update(delta);
+#if PROFILE_SCENE
+			blit_end = std::chrono::high_resolution_clock::now();
+			blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+			blit_start = blit_end;
+			std::cout << "render update 代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+#endif
 			
 			ui_manager->PostRenderUpdate();
+#if PROFILE_SCENE
+			blit_end = std::chrono::high_resolution_clock::now();
+			blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+			blit_start = blit_end;
+			std::cout << "ui PostRenderUpdate 代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+#endif
+			
 			render->PostUpdate();
+#if PROFILE_SCENE
+			blit_end = std::chrono::high_resolution_clock::now();
+			blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
+			blit_start = blit_end;
+			std::cout << "render PostUpdate 代码执行时间: " << blit_duration.count() << " 毫秒\n====================" << std::endl;
+#endif
+			
 			current_time = new_time;
 		}
+
+		
 		new_time = glfwGetTime();
 	}
 

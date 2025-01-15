@@ -61,6 +61,12 @@ void CUIManager::Init()
 	for (size_t i = 0; i < g_scene_files.size(); ++i) {
 		g_scene_items.push_back(g_scene_files[i].c_str());
 	}
+
+	for (int i = 0; i < TIME_RECORD_COUNT; ++i)
+	{
+		process_time[i] = 0;
+	}
+	
 }
 
 void CUIManager::PreRenderUpdate(double delta)
@@ -89,14 +95,29 @@ void CUIManager::Destroy()
 
 void CUIManager::DescribeUIContent(double delta)
 {
-	//ImGui::ShowDemoWindow(); // Show demo window! :)
-
+	// ImGui::ShowDemoWindow(); // Show demo window! :)
 	// Rendering
 	// render your GUI
 	ImGui::Begin("Main");
 	int frame_rate = static_cast<int>(round(1.0/delta));
 	ImVec4 frame_rate_color = GetFrameRateColor(frame_rate);
 	ImGui::TextColored(frame_rate_color, "frame_rate: %d", frame_rate);
+
+//////////////////
+	float average = 0.0f;
+	for (int n = 0; n < TIME_RECORD_COUNT; n++)
+		average += process_time[n];
+	average /= (float)(TIME_RECORD_COUNT);
+	char overlay[32];
+	sprintf(overlay, "avg %f", average);
+	
+	process_time[process_time_offset] = delta;
+	ImGui::PlotLines("Lines", process_time, IM_ARRAYSIZE(process_time), process_time_offset
+		, overlay, 0.0f, 0.1f, ImVec2(0, 100));
+	
+	process_time_offset = (process_time_offset + 1) % TIME_RECORD_COUNT;
+
+////////////////
 	
 	static int item_type = g_scene_items.size() - 1;
 	

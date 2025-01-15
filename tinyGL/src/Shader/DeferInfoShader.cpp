@@ -102,6 +102,13 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 	int texture_idx = 4;
 	// 贴图0-3分别是position/normal/albedo/orm, 下面的从4开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧
+	
+#if USE_DSA
+	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxTexture());
+	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture());
+	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxPrefilterTexture());
+	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxBRDFLutTexture());
+#else
 	// 添加天空盒贴图
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
@@ -118,6 +125,8 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	GLuint skybox_brdf_lut_tex_id = CRender::GetRender()->GetSkyboxBRDFLutTexture();
 	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
+#endif
+	
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
 	
@@ -160,21 +169,38 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 	}
 	
 #if USE_CSM
+	
+#if USE_DSA
+	glBindTextureUnit(texture_idx++, dir_light_shadowmap_id);
+#else
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, dir_light_shadowmap_id);
+#endif
+	
+#else
 
+#if USE_DSA
+	glBindTextureUnit(texture_idx++, dir_light_shadowmap_id);
 #else
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D,  dir_light_shadowmap_id);
 #endif
+
+#endif
+
 	// rsm相关贴图数据
+#if USE_DSA
+	glBindTextureUnit(texture_idx++, rsm_world_pos);
+	glBindTextureUnit(texture_idx++, rsm_world_normal);
+	glBindTextureUnit(texture_idx++, rsm_world_flux);
+#else
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D, rsm_world_pos);
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D, rsm_world_normal);
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);
 	glBindTexture(GL_TEXTURE_2D, rsm_world_flux);
-
+#endif
 	
 	int point_light_shadow_num = 0;
 	for(auto light : scene_render_info.scene_pointlights)
@@ -188,9 +214,12 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 		{
 			continue;
 		}
-		
+#if USE_DSA
+		glBindTextureUnit(texture_idx++, point_light_ptr->GetShadowMapTexture());	
+#else
 		glActiveTexture(GL_TEXTURE0 + texture_idx++);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, point_light_ptr->GetShadowMapTexture());
+#endif
 		point_light_shadow_num++;
 	}
 }

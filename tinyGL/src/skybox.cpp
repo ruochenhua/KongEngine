@@ -307,10 +307,12 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_t
 			skybox_shader->Use();
 			skybox_shader->SetMat4("MVP", mvp);
 			skybox_shader->SetInt("skybox", 0);
-	
+#if USE_DSA
+			glBindTextureUnit(0, cube_map_id);
+#else
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-			
+#endif		
 			box_mesh->Draw();
 			glCullFace(GL_BACK);
 		}
@@ -337,40 +339,70 @@ void CSkyBox::RenderCloud(GLuint depth_texture)
 	// 我们可以直接在skybox里面画
 	// volumetric_cloud_->SimpleDraw();
 	// 计算体积云
-	mat4 inv_view = inverse(CRender::GetRender()->GetCamera()->GetViewMatrix());
-	mat4 inv_proj = inverse(CRender::GetRender()->GetCamera()->GetProjectionMatrix());
+	
 	atmosphere_shader->Use();
 	auto cloud_model_ = volumetric_cloud_->cloud_model_;
 	
 	atmosphere_shader->SetFloat("iTime", glfwGetTime());
-	
-	atmosphere_shader->SetFloat("coverage_multiplier", cloud_model_->coverage);
-	atmosphere_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
-	atmosphere_shader->SetFloat("crispiness", cloud_model_->crispiness);
-	atmosphere_shader->SetFloat("curliness", cloud_model_->curliness);
-	atmosphere_shader->SetFloat("absorption", cloud_model_->absorption*0.01f);
-	atmosphere_shader->SetFloat("densityFactor", cloud_model_->density);
+	//
+	atmosphere_shader->SetVec4("cloud_stat_1", vec4(cloud_model_->coverage
+		, cloud_model_->cloud_speed
+		, cloud_model_->crispiness
+		, cloud_model_->curliness));
+	//
+	// atmosphere_shader->SetFloat("coverage", cloud_model_->coverage);
+	// atmosphere_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
+	// atmosphere_shader->SetFloat("crispiness", cloud_model_->crispiness);
+	// atmosphere_shader->SetFloat("curliness", cloud_model_->curliness);
 
+	atmosphere_shader->SetVec2("cloud_stat_2", vec2(cloud_model_->absorption*0.01f, cloud_model_->density));
+	// atmosphere_shader->SetFloat("absorption", cloud_model_->absorption*0.01f);
+	// atmosphere_shader->SetFloat("densityFactor", cloud_model_->density);
+	
 	atmosphere_shader->SetBool("enablePowder", cloud_model_->enable_powder);
-	
-	atmosphere_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
-	atmosphere_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
-	atmosphere_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
 
+	atmosphere_shader->SetVec3("earth_stat", vec3(cloud_model_->earth_radius, cloud_model_->sphere_inner_radius, cloud_model_->sphere_outer_radius));
+	// atmosphere_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
+	// atmosphere_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
+	// atmosphere_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
+	//
 	atmosphere_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
 	atmosphere_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
 	
-	atmosphere_shader->SetVec3("skyColorTop", cloud_model_->sky_color_top);
-	atmosphere_shader->SetVec3("skyColorBottom", cloud_model_->sky_color_bottom);
-
-	atmosphere_shader->SetMat4("inv_view", inv_view);
-	atmosphere_shader->SetMat4("inv_proj", inv_proj);
 	atmosphere_shader->SetVec2("iResolution", Engine::GetEngine().GetWindowSize());
 	
-	atmosphere_shader->SetInt("depth_map", 0);
-	atmosphere_shader->SetInt("cloud", 1);
-	atmosphere_shader->SetInt("worley32", 2);
-	atmosphere_shader->SetInt("weatherTex", 3);
+	
+	// atmosphere_shader->atmos_data.coverage = cloud_model_->coverage;
+	// atmosphere_shader->atmos_data.cloud_speed = cloud_model_->cloud_speed;
+	// atmosphere_shader->atmos_data.crispiness = cloud_model_->crispiness;
+	// atmosphere_shader->atmos_data.curliness = cloud_model_->curliness;
+	// atmosphere_shader->atmos_data.absorption = cloud_model_->absorption*0.01f;
+	// atmosphere_shader->atmos_data.density = cloud_model_->density;
+	//
+	// atmosphere_shader->atmos_data.enable_powder = cloud_model_->enable_powder;
+	//
+	// atmosphere_shader->atmos_data.earth_radius = cloud_model_->earth_radius;
+	// atmosphere_shader->atmos_data.sphere_inner_radius = cloud_model_->sphere_inner_radius;
+	// atmosphere_shader->atmos_data.sphere_outer_radius = cloud_model_->sphere_outer_radius;
+	//
+	// atmosphere_shader->atmos_data.earth_radius = cloud_model_->earth_radius;
+	// atmosphere_shader->atmos_data.cloud_color_top = cloud_model_->cloud_color_top;
+	// atmosphere_shader->atmos_data.cloud_color_bottom = cloud_model_->cloud_color_bottom;
+	//
+	// atmosphere_shader->atmos_data.sky_color_top = cloud_model_->sky_color_top;
+	// atmosphere_shader->atmos_data.sky_color_bottom = cloud_model_->sky_color_bottom;
+	//
+	// atmosphere_shader->atmos_data.inv_view = inv_view;
+	// atmosphere_shader->atmos_data.inv_proj = inv_proj;
+	// atmosphere_shader->atmos_data.iResolution = Engine::GetEngine().GetWindowSize();
+	// atmosphere_shader->UpdateSSBOData();
+	
+#if USE_DSA
+	glBindTextureUnit(0, depth_texture);
+	glBindTextureUnit(1, cloud_model_->perlin_texture);
+	glBindTextureUnit(2, cloud_model_->worley32_texture);
+	glBindTextureUnit(3, cloud_model_->weather_texutre);
+#else
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depth_texture);	
 	
@@ -380,7 +412,7 @@ void CSkyBox::RenderCloud(GLuint depth_texture)
 	glBindTexture(GL_TEXTURE_3D, cloud_model_->worley32_texture);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
-
+#endif
 	quad_shape->Draw();
 }
 

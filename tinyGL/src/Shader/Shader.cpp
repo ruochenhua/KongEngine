@@ -170,6 +170,18 @@ void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneLigh
 	glBindTexture(GL_TEXTURE_2D, normal_map_id);
 }
 
+GLint Shader::GetVariableLocation(const string& variable_name)
+{
+	if (variable_location_map_.find(variable_name) != variable_location_map_.end())
+	{
+		return variable_location_map_[variable_name];
+	}
+
+	GLint location = glGetUniformLocation(shader_id, variable_name.c_str());
+	variable_location_map_.emplace(variable_name, location);
+	return location;
+}
+
 shared_ptr<Shader> ShaderManager::GetShader(const string& shader_name)
 {
 	return g_shader_manager->GetShaderFromTypeName(shader_name);

@@ -4,28 +4,42 @@
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
+
 in vec2 TexCoords;
 
 uniform sampler2D depth_map;
-
-uniform int render_sky_status;
 
 uniform float iTime;
 
 uniform sampler3D cloud;
 uniform sampler3D worley32;
 uniform sampler2D weatherTex;
-uniform mat4 inv_view;
-uniform mat4 inv_proj;
+
+
+in mat4 inv_view;
+in mat4 inv_proj;
 
 uniform vec2 iResolution = vec2(1024.0, 768.0);
 
-uniform float coverage_multiplier = 1.0;
-uniform float cloudSpeed;
-uniform float crispiness = 0.4;
+uniform vec4 cloud_stat_1;
+float coverage = cloud_stat_1.x;
+float cloudSpeed = cloud_stat_1.y;
+float crispiness = cloud_stat_1.z;
+float curliness = cloud_stat_1.w;
+
+uniform vec2 cloud_stat_2;
+float absorption = cloud_stat_2.x;
+float densityFactor = cloud_stat_2.y;
 
 uniform vec3 cloudColorTop = vec3(0.95, 0.88, 0.88);
 uniform vec3 cloudColorBottom =  vec3(0.35, 0.37, 0.36);
+
+uniform vec3 earth_stat;
+float earthRadius = earth_stat.x;
+float sphereInnerRadius = earth_stat.y;
+float sphereOuterRadius = earth_stat.z;
+
+uniform bool enablePowder = false;
 
 #define CLOUDS_AMBIENT_COLOR_TOP cloudColorTop
 #define CLOUDS_AMBIENT_COLOR_BOTTOM cloudColorBottom
@@ -51,11 +65,6 @@ int jSteps = 16;
 const vec4 STRATUS_GRADIENT = vec4(0.0, 0.1, 0.2, 0.3);
 const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.2, 0.48, 0.625);
 const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
-
-
-uniform float earthRadius = 600000.0;
-uniform float sphereInnerRadius = 5000.0;
-uniform float sphereOuterRadius = 17000.0;
 
 const float SPHERE_INNER_RADIUS = earthRadius + sphereInnerRadius;
 const float SPHERE_OUTER_RADIUS = SPHERE_INNER_RADIUS + sphereOuterRadius;
@@ -99,8 +108,6 @@ bool raySphereintersection(vec3 ro, vec3 rd, float radius, out vec3 startPos)
     return true;
 }
 
-uniform vec3 skyColorBottom;
-uniform vec3 skyColorTop;
 
 vec3 getSun(const vec3 d, float powExp){
     float sun = clamp( dot(SUN_DIR,d), 0.0, 1.0 );
@@ -155,7 +162,6 @@ vec2 getUVProjection(vec3 p){
 #define CLOUD_SCALE crispiness
 #define CLOUD_SPEED cloudSpeed
 
-uniform float curliness;
 
 float sampleCloudDensity(vec3 p, bool expensive, float lod){
 
@@ -176,7 +182,7 @@ float sampleCloudDensity(vec3 p, bool expensive, float lod){
     base_cloud *= (density/heightFraction);
 
     vec3 weather_data = texture(weatherTex, moving_uv).rgb;
-    float cloud_coverage = weather_data.r*coverage_multiplier;
+    float cloud_coverage = weather_data.r*coverage;
     float base_cloud_with_coverage = remap(base_cloud , cloud_coverage , 1.0 , 0.0 , 1.0);
     base_cloud_with_coverage *= cloud_coverage;
 
@@ -227,7 +233,6 @@ float phase(vec3 inLightVec, vec3 inViewVec, float g) {
 
 vec3 eye = cameraPosition;
 
-uniform float absorption = 0.0035;
 
 // Full cloud light energy equation
 float lightEnergy(vec3 l, vec3 v, float ca, float coneDensity)
@@ -326,7 +331,6 @@ uniform float bayerFilter[16u] = float[]
 15.0*BAYER_FACTOR, 7.0*BAYER_FACTOR, 13.0*BAYER_FACTOR, 5.0*BAYER_FACTOR
 );
 
-uniform bool enablePowder = false;
 
 vec3 ambientLight(vec3 bg)
 {
@@ -338,13 +342,12 @@ vec3 ambientLight(vec3 bg)
 	return mix(real_light_color, bg, 0.65) * light_factor * 0.65;
 }
 
-uniform float densityFactor = 0.02;
 vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
     vec3 path = endPos - startPos;
     float len = length(path);
 
 //    const int nSteps = 64;
-    const int nSteps = int(ceil(mix(48.0, 96.0, clamp(len/(SPHERE_OUTER_RADIUS-SPHERE_INNER_RADIUS), 0.0, 1.0))));
+    const int nSteps = int(ceil(mix(16.0, 64.0, clamp(len/(SPHERE_OUTER_RADIUS-SPHERE_INNER_RADIUS), 0.0, 1.0))));
 
     float ds = len / float(nSteps-1);
     vec3 view_dir = path/len;

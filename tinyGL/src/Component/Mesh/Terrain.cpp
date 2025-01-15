@@ -3,6 +3,7 @@
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
+#include "texture.h"
 #include "Component/LightComponent.h"
 
 using namespace Kong;
@@ -11,13 +12,6 @@ using namespace Kong;
 Terrain::Terrain()
 {
 #if USE_TCS
-    // map<EShaderType, string> shader_path_map = {
-    //     {vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.vert")},
-    //     {fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.frag")},
-    //     {tcs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tesc")},
-    //     {tes, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.tese")}
-    // };
-    //
     shader_data = make_shared<DeferredTerrainInfoShader>();
 #else
     map<EShaderType, string> shader_path_map = {
@@ -70,8 +64,12 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 #if USE_TCS
     // shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
     GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : CRender::GetNullTexId();
+#if USE_DSA
+    glBindTextureUnit(0, height_map_id);
+#else
     glActiveTexture(GL_TEXTURE0); 
     glBindTexture(GL_TEXTURE_2D, height_map_id);
+#endif
     GLuint csm_id = CRender::GetNullTexId();
     auto dir_light = CRender::GetRender()->scene_render_info.scene_dirlight;
     if(!dir_light.expired())
@@ -94,6 +92,15 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
         }
         shader_data->SetInt("light_space_matrix_count", dir_light_ptr->light_space_matrices.size());
     }
+#if USE_DSA
+    glBindTextureUnit(1, csm_id);
+    glBindTextureUnit(2, grass_albedo_texture);
+    glBindTextureUnit(3, grass_normal_texture);
+    glBindTextureUnit(4, sand_albedo_texture);
+    glBindTextureUnit(5, sand_normal_texture);
+    glBindTextureUnit(6, rock_albedo_texture);
+    glBindTextureUnit(7, rock_normal_texture);
+#else
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, csm_id);
     
@@ -114,6 +121,7 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
     
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D, rock_normal_texture);
+#endif
     
     if(render_wireframe)
     {
@@ -226,15 +234,16 @@ int Terrain::LoadHeightMap(const string& file_name)
     unsigned char *data = stbi_load(file_name.c_str(), &width, &height, &nrChannels, 0);
 #if USE_TCS
     if(terrain_height_map) glDeleteTextures(1, &terrain_height_map);
-    glGenTextures(1, &terrain_height_map);
-    glBindTexture(GL_TEXTURE_2D, terrain_height_map);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terrain_size, terrain_size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    terrain_height_map = CTexture2D(width, height, GL_RGBA, data).GetTextureId();
+    // glGenTextures(1, &terrain_height_map);
+    // glBindTexture(GL_TEXTURE_2D, terrain_height_map);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terrain_size, terrain_size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    // glGenerateMipmap(GL_TEXTURE_2D);
     
 #else
     
