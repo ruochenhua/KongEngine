@@ -19,7 +19,7 @@ KongWindow::KongWindow()
     }
 
     // 初始化opengl
-    glfwWindowHint(GLFW_SAMPLES, 4);    // 抗锯齿
+    glfwWindowHint(GLFW_SAMPLES, 2);    // 抗锯齿
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

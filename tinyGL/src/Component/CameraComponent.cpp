@@ -4,10 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
-#include "Engine.h"
-#include "message.h"
+#include "Utils.hpp"
 #include "window.hpp"
-// #include "message.h"
 
 using namespace Kong;
 using namespace glm;
@@ -21,11 +19,6 @@ mat4 CCamera::GetProjectionMatrix() const
 mat4 CCamera::GetViewMatrix() const
 {
 	return lookAt(m_center, m_center+m_front, m_up);
-}
-
-mat4 CCamera::GetViewMatrixNoTranslate() const
-{
-	return lookAt(vec3(0, 0, 0), m_front, m_up);
 }
 
 vec3 CCamera::GetDirection() const

@@ -1,5 +1,6 @@
 #pragma once
 #include "render.h"
+#include "Scene.h"
 #include "ui.h"
 #include "window.hpp"
 
@@ -20,5 +21,6 @@ namespace Kong
         KongWindow& m_Window;
         KongUIManager& m_UIManager;
         KongRenderModule& m_RenderModule;
+        KongSceneManager& m_SceneManager;
     };
 }

@@ -2,6 +2,7 @@
 #include "Component/CameraComponent.h"
 #include "Common.h"
 #include "postprocess.h"
+#include "RenderSystem.hpp"
 #include "skybox.h"
 #include "Component/Mesh/Terrain.h"
 #include "Component/Mesh/VolumetricCloud.h"
@@ -147,17 +148,18 @@ namespace Kong
 		static glm::vec2 GetNearFar();
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
-		GLFWwindow* render_window;
 		KongRenderModule() = default;
 
 		GLuint GetSkyboxTexture() const;
 		GLuint GetSkyboxDiffuseIrradianceTexture() const;
 		GLuint GetSkyboxPrefilterTexture() const;
 		GLuint GetSkyboxBRDFLutTexture() const;
+		
+		GLuint GetLatestDepthTexture() const;
 		int Init();
 		int Update(double delta);
 		void RenderUI(double delta);
-		void PostUpdate();
+		
 		void DoPostProcess();
 		
 		CCamera* GetCamera() {return mainCamera;}
@@ -188,7 +190,7 @@ namespace Kong
 		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
-		CSkyBox m_SkyBox;
+		SkyboxRenderSystem m_SkyBox;
 		
 		// 场景光源信息
 		SSceneLightInfo scene_render_info;
@@ -246,6 +248,8 @@ namespace Kong
 
 		shared_ptr<CQuadShape> quad_shape;
 		// 屏幕空间反射
-		shared_ptr<SSReflectionShader> ssreflection_shader;	
+		shared_ptr<SSReflectionShader> ssreflection_shader;
+
+		std::vector<KongRenderSystem> m_renderSystems;
 	};
 }

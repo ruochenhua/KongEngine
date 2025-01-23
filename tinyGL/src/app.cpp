@@ -10,6 +10,7 @@ KongApp::KongApp()
     : m_Window{KongWindow::GetWindowModule()}
     , m_UIManager{KongUIManager::GetUIManager()}
     , m_RenderModule{KongRenderModule::GetRenderModule()}
+    , m_SceneManager{KongSceneManager::GetSceneManager()}
 {
     m_UIManager.Init(m_Window.GetWindow());
     m_RenderModule.Init();
@@ -38,12 +39,13 @@ void KongApp::Run()
         if(delta > FRAME_TIME_CAP)
         {
             m_UIManager.PreRenderUpdate(delta);
-            // CScene::GetScene()->PreRenderUpdate(delta);
+            m_SceneManager.PreRenderUpdate(delta);
+            
             m_RenderModule.Update(delta);
 			
             m_UIManager.PostRenderUpdate();
             
-            m_RenderModule.PostUpdate();
+            glfwSwapBuffers(m_Window.GetWindow());
             
             current_time = new_time;
         }

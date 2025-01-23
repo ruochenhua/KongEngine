@@ -8,21 +8,20 @@ namespace Kong
 
 namespace Kong
 {
-    class CLightComponent;
     class CMeshComponent;
     class CSceneLoader
     {
     public:
         static bool LoadScene(const string& file_path, vector<shared_ptr<AActor>>& scene_actors);
 
-        static string ToResourcePath(const string& file_path);
+        static string ToResourcePath(const string& in_path);
 
     };
 
-    class CScene
+    class KongSceneManager
     {
     public:
-        static CScene* GetScene();
+        static KongSceneManager& GetSceneManager();
         static vector<shared_ptr<AActor>> GetActors();
         static vector<weak_ptr<CMeshComponent>> GetMeshes();
 

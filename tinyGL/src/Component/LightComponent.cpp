@@ -57,7 +57,7 @@ void CDirectionalLightComponent::RenderShadowMap()
     glClear(GL_DEPTH_BUFFER_BIT);
 
     
-    auto actors = CScene::GetActors();
+    auto actors = KongSceneManager::GetActors();
     for(auto actor : actors)
     {
         auto render_obj = actor->GetComponent<CMeshComponent>();
@@ -105,7 +105,7 @@ void CDirectionalLightComponent::RenderShadowMap()
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
-        auto actors = CScene::GetActors();
+        auto actors = KongSceneManager::GetActors();
         for(auto actor : actors)
         {
             auto render_obj = actor->GetComponent<CMeshComponent>();
@@ -394,7 +394,7 @@ void CPointLightComponent::RenderShadowMap()
     glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
     glClear(GL_DEPTH_BUFFER_BIT);
     
-    auto actors = CScene::GetActors();
+    auto actors = KongSceneManager::GetActors();
     for(auto actor : actors)
     {
         auto render_obj = actor->GetComponent<CMeshComponent>();

@@ -2,7 +2,6 @@
 
 #include "Component/Mesh/MeshComponent.h"
 #include "Component/LightComponent.h"
-#include "Component/Mesh/BoxShape.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/euler_angles.hpp"
 using namespace Kong;

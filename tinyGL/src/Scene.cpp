@@ -1,12 +1,12 @@
 #include "Scene.h"
-#include "Engine.h"
+#include "Utils.hpp"
 #include "Component/Mesh/MeshComponent.h"
 
 #include "Actor.h"
 #include "Parser/YamlParser.h"
 
 using namespace Kong;
-CScene* g_scene = new CScene;
+KongSceneManager g_SceneManager;
 
 string CSceneLoader::ToResourcePath(const string& in_path)
 {
@@ -16,7 +16,7 @@ string CSceneLoader::ToResourcePath(const string& in_path)
 
 bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<AActor>>& scene_actors)
 {
-    std::string scene_file_content = Engine::ReadFile(ToResourcePath(file_path));
+    std::string scene_file_content = Utils::ReadFile(ToResourcePath(file_path));
     auto yaml_file = file_path.find(".yaml");
     if(yaml_file != std::string::npos)
     {
@@ -27,22 +27,22 @@ bool CSceneLoader::LoadScene(const string& file_path, vector<shared_ptr<AActor>>
     return true;
 }
 
-CScene* CScene::GetScene()
+KongSceneManager& KongSceneManager::GetSceneManager()
 {
-    return g_scene;
+    return g_SceneManager;
 }
 
-vector<shared_ptr<AActor>> CScene::GetActors()
+vector<shared_ptr<AActor>> KongSceneManager::GetActors()
 {
-    return g_scene->GetSceneActors_Implement();
+    return g_SceneManager.GetSceneActors_Implement();
 }
 
-vector<weak_ptr<CMeshComponent>> CScene::GetMeshes()
+vector<weak_ptr<CMeshComponent>> KongSceneManager::GetMeshes()
 {
-    return g_scene->GetSceneMeshes_Implement();
+    return g_SceneManager.GetSceneMeshes_Implement();
 }
 
-void CScene::PreRenderUpdate(double delta) const
+void KongSceneManager::PreRenderUpdate(double delta) const
 {
     for(auto& actor : scene_actors)
     {
@@ -50,14 +50,14 @@ void CScene::PreRenderUpdate(double delta) const
     }
 }
 
-vector<weak_ptr<CMeshComponent>> CScene::GetSceneMeshes_Implement()
+vector<weak_ptr<CMeshComponent>> KongSceneManager::GetSceneMeshes_Implement()
 {
-    if(!g_scene->scene_meshes.empty())
+    if(!g_SceneManager.scene_meshes.empty())
     {
-        return g_scene->scene_meshes;
+        return g_SceneManager.scene_meshes;
     }
     
-    auto actors = g_scene->GetSceneActors_Implement();
+    auto actors = g_SceneManager.GetSceneActors_Implement();
     for(auto& actor : actors)
     {
         shared_ptr<CMeshComponent> mesh = actor->GetComponent<CMeshComponent>();
@@ -66,18 +66,18 @@ vector<weak_ptr<CMeshComponent>> CScene::GetSceneMeshes_Implement()
             continue;
         }
 
-        g_scene->scene_meshes.push_back(mesh);
+        g_SceneManager.scene_meshes.push_back(mesh);
     }
     
-    return g_scene->scene_meshes;
+    return g_SceneManager.scene_meshes;
 }
 
-vector<shared_ptr<AActor>> CScene::GetSceneActors_Implement()
+vector<shared_ptr<AActor>> KongSceneManager::GetSceneActors_Implement()
 {
     return scene_actors;
 }
 
-void CScene::LoadScene(const string& file_path)
+void KongSceneManager::LoadScene(const string& file_path)
 {
     for(auto& actor : scene_actors)
     {

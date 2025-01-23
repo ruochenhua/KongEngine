@@ -5,7 +5,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include "Actor.h"
-#include "Engine.h"
+#include "Utils.hpp"
 #include "Scene.h"
 #include "Component/LightComponent.h"
 #include <filesystem>
@@ -139,12 +139,12 @@ void KongUIManager::DescribeUIContent(double delta)
 		string scene_name = g_scene_items[item_type];
 		scene_name = "scene/" + scene_name;
 		
-		CScene::GetScene()->LoadScene(scene_name);
+		KongSceneManager::GetSceneManager().LoadScene(scene_name);
 	}
 
 	if(ImGui::TreeNode("scene"))
 	{
-		auto actors = CScene::GetActors();
+		auto actors = KongSceneManager::GetActors();
 		unsigned actor_count = actors.size();
 		for(auto actor : actors)
 		{

@@ -2,6 +2,7 @@
 #include "Component/Mesh/BoxShape.h"
 #include "Common.h"
 #include "RenderCommon.h"
+#include "RenderSystem.hpp"
 #include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/SkyboxShader.h"
 
@@ -16,13 +17,14 @@ namespace Kong
 		atmosphere,
 	};
 	
-	class CSkyBox
+	class SkyboxRenderSystem : public KongRenderSystem
 	{
 	public:
-		void Init();
+		void Init() override;
+		void Draw(double delta, KongRenderModule* render_module) override;
 		// IBL预处理HDR相关
 		void PreprocessIBL(const string& hdr_file_path);
-		void Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_texture);
+		void Render( int render_sky_status, GLuint depth_texture);
 		void RenderCloud(GLuint depth_texture);
 		void ChangeSkybox();
 

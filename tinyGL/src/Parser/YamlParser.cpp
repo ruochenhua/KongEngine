@@ -259,7 +259,7 @@ namespace YamlParser
                 
                 new_actor->AddComponent(water_comp);
 
-                auto render_sys = KongRenderModule::GetRenderModule();
+                auto& render_sys = KongRenderModule::GetRenderModule();
                 render_sys.SetRenderWater(new_actor);
             }
             // 带有gerstner wave模拟的水
@@ -299,7 +299,7 @@ namespace YamlParser
                 }
                 
                 new_actor->AddComponent(water_comp);
-                auto render_sys = KongRenderModule::GetRenderModule();
+                auto& render_sys = KongRenderModule::GetRenderModule();
                 render_sys.SetRenderWater(new_actor);
             }
             else if(component_type == "directional_light")
@@ -412,7 +412,7 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
 
     if(scene_node["setting"])
     {
-        auto render_sys = KongRenderModule::GetRenderModule();
+        auto& render_sys = KongRenderModule::GetRenderModule();
         auto setting = scene_node["setting"];
         if(setting["skybox"])
         {

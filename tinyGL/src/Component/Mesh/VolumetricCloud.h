@@ -11,7 +11,7 @@ namespace Kong
         
     private:
         friend class VolumetricCloud;
-        friend class CSkyBox;
+        friend class SkyboxRenderSystem;
         
         shared_ptr<Shader> perlin_worley_comp_shader;
         shared_ptr<Shader> worley_comp_shader;
@@ -46,7 +46,7 @@ namespace Kong
         // cloud process
         GLuint cloud_tex, bloom_tex, alphaness_tex, depth_tex;
     private:
-        friend class CSkyBox;
+        friend class SkyboxRenderSystem;
         
         shared_ptr<CloudModel> cloud_model_;
         shared_ptr<Shader> cloud_compute_shader_;

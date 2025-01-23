@@ -1,6 +1,6 @@
 #include "skybox.h"
 
-#include "Engine.h"
+#include "Utils.hpp"
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
@@ -14,7 +14,7 @@ unsigned CUBE_MAP_RES = 1024;
 
 #define USE_HDR_SKYBOX 1
 
-void CSkyBox::Init()
+void SkyboxRenderSystem::Init()
 {
 	box_mesh = make_shared<CBoxShape>();
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
@@ -158,7 +158,17 @@ void CSkyBox::Init()
 	volumetric_cloud_ = make_shared<VolumetricCloud>();
 }
 
-void CSkyBox::PreprocessIBL(const string& hdr_file_path)
+void SkyboxRenderSystem::Draw(double delta, KongRenderModule* render_module)
+{
+	if (render_module == nullptr || render_module->render_sky_env_status == 0)
+	{
+		return;
+	}
+	
+	Render(render_module->render_sky_env_status, render_module->GetLatestDepthTexture());
+}
+
+void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
 {
 	int width, height, nr_component;
 	stbi_set_flip_vertically_on_load(true);
@@ -296,7 +306,7 @@ void CSkyBox::PreprocessIBL(const string& hdr_file_path)
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_texture)
+void SkyboxRenderSystem::Render(int render_sky_status, GLuint depth_texture)
 {
 	switch (render_sky_status)
 	{
@@ -306,7 +316,6 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_t
 			glCullFace(GL_FRONT);
 			glDepthFunc(GL_LEQUAL);
 			skybox_shader->Use();
-			skybox_shader->SetMat4("MVP", mvp);
 			skybox_shader->SetInt("skybox", 0);
 #if USE_DSA
 			glBindTextureUnit(0, cube_map_id);
@@ -334,7 +343,7 @@ void CSkyBox::Render(const glm::mat4& mvp, int render_sky_status, GLuint depth_t
 	}
 }
 
-void CSkyBox::RenderCloud(GLuint depth_texture)
+void SkyboxRenderSystem::RenderCloud(GLuint depth_texture)
 {
 	// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
 	// 我们可以直接在skybox里面画
@@ -417,13 +426,13 @@ void CSkyBox::RenderCloud(GLuint depth_texture)
 	quad_shape->Draw();
 }
 
-void CSkyBox::ChangeSkybox()
+void SkyboxRenderSystem::ChangeSkybox()
 {
 	current_skybox_idx = (current_skybox_idx + 1) % skybox_res_list.size();
 	PreprocessIBL(skybox_res_list[current_skybox_idx]);
 }
 
-void CSkyBox::PreRenderUpdate()
+void SkyboxRenderSystem::PreRenderUpdate()
 {
 	if(render_cloud)
 	{

@@ -7,7 +7,7 @@
 #include "PBRShader.h"
 #include "DeferInfoShader.h"
 #include "EmitShader.h"
-#include "Engine.h"
+#include "Utils.hpp"
 #include "render.h"
 #include "Scene.h"
 #include "ShadowMapShader.h"
@@ -36,7 +36,7 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_paths)
     	GLuint shader_id = glCreateShader(shader_type);
 
     	// Read the Shader code from the file
-    	std::string shader_code = Engine::ReadFile(shader_path);
+    	std::string shader_code = Utils::ReadFile(shader_path);
 
     	GLint result = GL_FALSE;
     	int info_log_length;
@@ -105,7 +105,7 @@ void Shader::IncludeShader(const string& include_path)
 	
 	// include 文件名需要以“/”开头，要不然会报错，为什么？？
 	string full_path = CSceneLoader::ToResourcePath("/shader"+include_path);
-	string include_content_str = Engine::ReadFile(full_path);
+	string include_content_str = Utils::ReadFile(full_path);
 	
 	glNamedStringARB(GL_SHADER_INCLUDE_ARB,
 	include_path.size(),

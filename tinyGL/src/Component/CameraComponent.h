@@ -34,7 +34,6 @@ namespace Kong
 
         mat4 GetProjectionMatrix() const;
         mat4 GetViewMatrix() const;
-        mat4 GetViewMatrixNoTranslate() const;
         vec3 GetDirection() const;
         vec3 GetPosition() const;
         vec2 GetNearFar() const;

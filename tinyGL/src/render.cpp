@@ -9,7 +9,7 @@
 
 #include "Actor.h"
 #include "Component/CameraComponent.h"
-#include "Engine.h"
+#include "Utils.hpp"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Scene.h"
@@ -347,12 +347,25 @@ GLuint KongRenderModule::GetSkyboxBRDFLutTexture() const
 	return m_SkyBox.GetBRDFLutTexture();
 }
 
+// 获取最新的深度纹理
+GLuint KongRenderModule::GetLatestDepthTexture() const
+{
+	// todo:要看情况更新
+	return defer_buffer_.g_normal_;
+}
 int KongRenderModule::Init()
 {
-	render_window = KongWindow::GetWindowModule().GetWindow();
+	
 	InitCamera();
 	quad_shape = make_shared<CQuadShape>();
 	// quad_shape->InitRenderInfo();
+	// add render system
+
+	for (auto& render_sys : m_renderSystems)
+	{
+		render_sys.Init();
+	}
+	
 	m_SkyBox.Init();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
@@ -479,6 +492,8 @@ void KongRenderModule::InitUBO()
 	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
 }
 
+
+
 int KongRenderModule::Update(double delta)
 {
 	mainCamera->Update(delta);		
@@ -487,6 +502,13 @@ int KongRenderModule::Update(double delta)
 	// todo: 这两个合起来
 	CollectLightInfo();
 	UpdateSceneRenderInfo();
+
+	// render system update
+	for (auto& render_sys : m_renderSystems)
+	{
+		render_sys.Draw(delta, this);
+	}
+	
 	
 	m_SkyBox.PreRenderUpdate();
 	RenderShadowMap();
@@ -602,20 +624,6 @@ void KongRenderModule::RenderUI(double delta)
 	}
 	
 	post_process.RenderUI();
-}
-
-void KongRenderModule::PostUpdate()
-{
-	// Swap buffers
-	
-	auto blit_start = std::chrono::high_resolution_clock::now();
-	glfwSwapBuffers(render_window);
-	auto blit_end = std::chrono::high_resolution_clock::now();
-	auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
-	blit_start = blit_end;
-	// std::cout << "glfwSwapBuffers 执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
-
-	// glfwPollEvents();
 }
 
 void KongRenderModule::DoPostProcess()
@@ -739,12 +747,8 @@ void KongRenderModule::RenderSkyBox(GLuint depth_texture)
 	{
 		return;
 	}
-	
-	mat4 projection = mainCamera->GetProjectionMatrix();
-	mat4 mvp = projection * mainCamera->GetViewMatrixNoTranslate(); //
-	//mat4 mvp = projection * mainCamera->GetViewMatrix(); //
 
-	m_SkyBox.Render(mvp, render_sky_env_status, depth_texture);
+	m_SkyBox.Render(render_sky_env_status, depth_texture);
 }
 
 void KongRenderModule::RenderNonDeferSceneObjects() const
@@ -753,7 +757,7 @@ void KongRenderModule::RenderNonDeferSceneObjects() const
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 	
-	auto actors = CScene::GetActors();
+	auto actors = KongSceneManager::GetActors();
 	for(auto actor : actors)
 	{
 		auto mesh_component = actor->GetComponent<CMeshComponent>();
@@ -788,7 +792,7 @@ void KongRenderModule::DeferRenderSceneToGBuffer() const
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 	
-	auto actors = CScene::GetActors();
+	auto actors = KongSceneManager::GetActors();
 	for(auto actor : actors)
 	{
 		auto mesh_component = actor->GetComponent<CMeshComponent>();
@@ -985,7 +989,7 @@ void KongRenderModule::CollectLightInfo()
 	// scene_dirlight.reset();
 	// scene_pointlights.clear();
 	//
-	auto actors = CScene::GetActors();
+	auto actors = KongSceneManager::GetActors();
 	for(auto actor: actors)
 	{
 		auto light_component = actor->GetComponent<CLightComponent>();
