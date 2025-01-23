@@ -160,7 +160,7 @@ void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneLigh
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
-	GLuint null_tex_id = CRender::GetNullTexId();
+	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
 	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);

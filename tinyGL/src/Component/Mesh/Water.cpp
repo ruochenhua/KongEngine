@@ -33,8 +33,8 @@ void Water::Draw(const SSceneLightInfo& scene_render_info)
     shader_data->Use();
     auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
 #if USE_DSA
-    glBindTextureUnit(2, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());
-    glBindTextureUnit(3, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
+    glBindTextureUnit(2, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
+    glBindTextureUnit(3, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());
 #else
     glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
     glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());

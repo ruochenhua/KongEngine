@@ -105,7 +105,7 @@ GLuint FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint s
         SetBool("bloom", false);
     }
     
-    auto main_cam = CRender::GetRender()->GetCamera();
+    auto main_cam = KongRenderModule::GetRenderModule().GetCamera();
     if(main_cam)
     {
         SetFloat("exposure", main_cam->exposure);    

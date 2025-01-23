@@ -2,6 +2,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
+#include <imgui.h>
 #include <iostream>
 #include <random>
 #include <utility>
@@ -14,6 +15,7 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
+#include "window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
@@ -24,7 +26,7 @@ using namespace glm;
 using namespace std;
 #define DEFER_TERRAIN true
 
-CRender* g_render = new CRender;
+static KongRenderModule g_renderModule;
 
 void UBOHelper::Init(GLuint in_binding)
 {
@@ -306,48 +308,48 @@ void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-CRender* CRender::GetRender()
+KongRenderModule& KongRenderModule::GetRenderModule()
 {
-	return g_render;
+	return g_renderModule;
 }
-GLuint CRender::GetNullTexId()
+GLuint KongRenderModule::GetNullTexId()
 {
-	return g_render->null_tex_id;
-}
-
-vec2 CRender::GetNearFar()
-{
-	return g_render->mainCamera->GetNearFar();
+	return g_renderModule.null_tex_id;
 }
 
-shared_ptr<CQuadShape> CRender::GetScreenShape()
+vec2 KongRenderModule::GetNearFar()
 {
-	return g_render->quad_shape;
+	return g_renderModule.mainCamera->GetNearFar();
 }
 
-GLuint CRender::GetSkyboxTexture() const
+shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
+{
+	return g_renderModule.quad_shape;
+}
+
+GLuint KongRenderModule::GetSkyboxTexture() const
 {
 	return m_SkyBox.GetSkyBoxTextureId();
 }
 
-GLuint CRender::GetSkyboxDiffuseIrradianceTexture() const
+GLuint KongRenderModule::GetSkyboxDiffuseIrradianceTexture() const
 {
 	return m_SkyBox.GetDiffuseIrradianceTexture();
 }
 
-GLuint CRender::GetSkyboxPrefilterTexture() const
+GLuint KongRenderModule::GetSkyboxPrefilterTexture() const
 {
 	return m_SkyBox.GetPrefilterTexture();
 }
 
-GLuint CRender::GetSkyboxBRDFLutTexture() const
+GLuint KongRenderModule::GetSkyboxBRDFLutTexture() const
 {
 	return m_SkyBox.GetBRDFLutTexture();
 }
 
-int CRender::Init()
+int KongRenderModule::Init()
 {
-	render_window = Engine::GetRenderWindow();
+	render_window = KongWindow::GetWindowModule().GetWindow();
 	InitCamera();
 	quad_shape = make_shared<CQuadShape>();
 	// quad_shape->InitRenderInfo();
@@ -370,7 +372,7 @@ int CRender::Init()
 
 	InitUBO();
 	post_process.Init();
-	glm::ivec2 window_size = Engine::GetEngine().GetWindowSize();
+	glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 	int width = window_size.x;
 	int height = window_size.y;
 	
@@ -395,7 +397,7 @@ int CRender::Init()
 	return 0;
 }
 
-int CRender::InitCamera()
+int KongRenderModule::InitCamera()
 {
 	mainCamera = new CCamera(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
@@ -404,7 +406,7 @@ int CRender::InitCamera()
 	return 0;
 }
 
-void CRender::UpdateSceneRenderInfo()
+void KongRenderModule::UpdateSceneRenderInfo()
 {
 	// 更新光源UBO
 	SceneLightInfo light_info;
@@ -459,7 +461,7 @@ void CRender::UpdateSceneRenderInfo()
 }
 
 
-void CRender::InitUBO()
+void KongRenderModule::InitUBO()
 {
 	// 初始化UBO数据
 //	matrix_ubo.AppendData(glm::mat4(), "model");
@@ -477,7 +479,7 @@ void CRender::InitUBO()
 	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
 }
 
-int CRender::Update(double delta)
+int KongRenderModule::Update(double delta)
 {
 	mainCamera->Update(delta);		
 	render_time += delta;
@@ -511,7 +513,7 @@ int CRender::Update(double delta)
 			
 			auto blit_start = std::chrono::high_resolution_clock::now();
 			// 复制普通场景渲染中postprocess的scene texture作为折射贴图使用
-			ivec2 window_size = Engine::GetEngine().GetWindowSize();
+			ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, post_process.GetScreenFrameBuffer());
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, water_render_helper_.water_refraction_fbo);
 			glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
@@ -557,13 +559,52 @@ int CRender::Update(double delta)
 	// do post process
 	DoPostProcess();
 
-	
-	post_process.RenderUI();
+	RenderUI(delta);
 	post_process.SetPositionTexture(defer_buffer_.g_position_);	//先放这
 	return 1;
 }
 
-void CRender::PostUpdate()
+void KongRenderModule::RenderUI(double delta)
+{
+	if(ImGui::TreeNode("skybox"))
+	{
+		if(ImGui::Button("change hdr background"))
+		{
+			ChangeSkybox();
+		}
+	
+		ImGui::DragInt("sky display status", &render_sky_env_status, 0.1f, 0, 2);
+		
+		ImGui::TreePop();
+	}
+	
+	auto main_cam = GetCamera();
+	if(main_cam)
+	{
+		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
+		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f,1.0f, 100.0f);
+	}
+	
+	ImGui::Checkbox("ssao", &use_ssao);
+	ImGui::Checkbox("screen space reflection", &use_screen_space_reflection);
+	ImGui::Checkbox("reflective shadowmap(rsm)", &use_rsm);
+	ImGui::DragFloat("rsm intensity", &rsm_intensity, 0.005f, 0., 1.0);
+	
+	ImGui::Checkbox("render cloud", &m_SkyBox.render_cloud);
+	
+	if (ImGui::TreeNode("Percentage-Closer Soft Shadows"))
+	{
+		ImGui::Checkbox("Use PCSS", &use_pcss);
+		ImGui::DragFloat("PCSS radius", &pcss_radius, 0.01f, 0.1f, 50.0f);
+		ImGui::DragFloat("PCSS light scale", &pcss_light_scale, 0.01f, 0.1f, 1.0f);
+		ImGui::DragInt("PCSS sample count", &pcss_sample_count, 0.1f, 8, 64);
+		ImGui::TreePop();
+	}
+	
+	post_process.RenderUI();
+}
+
+void KongRenderModule::PostUpdate()
 {
 	// Swap buffers
 	
@@ -574,10 +615,10 @@ void CRender::PostUpdate()
 	blit_start = blit_end;
 	// std::cout << "glfwSwapBuffers 执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
 
-	glfwPollEvents();
+	// glfwPollEvents();
 }
 
-void CRender::DoPostProcess()
+void KongRenderModule::DoPostProcess()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
@@ -585,12 +626,12 @@ void CRender::DoPostProcess()
 	post_process.Draw();
 }
 
-void CRender::RenderSceneObject(bool water_reflection)
+void KongRenderModule::RenderSceneObject(bool water_reflection)
 {
 #if !SHADOWMAP_DEBUG
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
-	ivec2 window_size = Engine::GetEngine().GetWindowSize();
+	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
 	
@@ -687,12 +728,12 @@ void CRender::RenderSceneObject(bool water_reflection)
 #endif
 }
 
-void CRender::ChangeSkybox()
+void KongRenderModule::ChangeSkybox()
 {
 	m_SkyBox.ChangeSkybox();
 }
 
-void CRender::RenderSkyBox(GLuint depth_texture)
+void KongRenderModule::RenderSkyBox(GLuint depth_texture)
 {
 	if(render_sky_env_status == 0)
 	{
@@ -706,7 +747,7 @@ void CRender::RenderSkyBox(GLuint depth_texture)
 	m_SkyBox.Render(mvp, render_sky_env_status, depth_texture);
 }
 
-void CRender::RenderNonDeferSceneObjects() const
+void KongRenderModule::RenderNonDeferSceneObjects() const
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -741,7 +782,7 @@ void CRender::RenderNonDeferSceneObjects() const
 	}
 }
 
-void CRender::DeferRenderSceneToGBuffer() const
+void KongRenderModule::DeferRenderSceneToGBuffer() const
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -773,7 +814,7 @@ void CRender::DeferRenderSceneToGBuffer() const
 	}
 }
 
-void CRender::DeferRenderSceneLighting() const
+void KongRenderModule::DeferRenderSceneLighting() const
 {
 	defer_buffer_.defer_render_shader->Use();
 #if USE_DSA
@@ -802,7 +843,7 @@ void CRender::DeferRenderSceneLighting() const
 	quad_shape->Draw();
 }
 
-void CRender::RenderWater()
+void KongRenderModule::RenderWater()
 {
 	
 	glEnable(GL_CULL_FACE);
@@ -872,7 +913,7 @@ void CRender::RenderWater()
 	}
 }
 
-void CRender::SSAORender() const
+void KongRenderModule::SSAORender() const
 {
 	// 处理SSAO效果
 	glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.ssao_fbo);
@@ -911,7 +952,7 @@ void CRender::SSAORender() const
 	quad_shape->Draw();
 }
 
-void CRender::SSReflectionRender() const
+void KongRenderModule::SSReflectionRender() const
 {
 	// scene color：post_process.GetScreenTexture()
 	// scene normal：defer_buffer_.g_normal_
@@ -937,7 +978,7 @@ void CRender::SSReflectionRender() const
 	glEnable(GL_DEPTH_TEST);
 }
 
-void CRender::CollectLightInfo()
+void KongRenderModule::CollectLightInfo()
 {
 	// todo: scene重新加载的时候处理一次就好,但是transform更新需要及时
 	scene_render_info.clear();
@@ -975,7 +1016,7 @@ void CRender::CollectLightInfo()
 	}
 }
 
-void CRender::RenderShadowMap()
+void KongRenderModule::RenderShadowMap()
 {
 	// shadowmap 需要正面剔除，避免阴影悬浮
 	// todo: 处理内部有开口模型或者平面该如何处理？
@@ -1052,7 +1093,7 @@ void CRender::RenderShadowMap()
 #endif
 }
 
-void CRender::OnWindowResize(int width, int height)
+void KongRenderModule::OnWindowResize(int width, int height)
 {
 	post_process.OnWindowResize(width, height);
 	defer_buffer_.GenerateDeferRenderTextures(width, height);
@@ -1060,7 +1101,7 @@ void CRender::OnWindowResize(int width, int height)
 	water_render_helper_.GenerateWaterRenderTextures(width, height);
 }
 
-void CRender::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
+void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
 {
 	water_render_helper_.water_actor = render_water_actor;
 }

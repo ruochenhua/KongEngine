@@ -10,17 +10,17 @@ namespace Kong
         // GLFWwindow* GetRenderWindow();
         
         static Engine GetEngine();
-        static GLFWwindow* GetRenderWindow();
+        // static GLFWwindow* GetRenderWindow();
 
         static string ReadFile(const string& file_path);
-        float GetAspectRatio() const {return window_aspect_ratio;}
+        // float GetAspectRatio() const {return window_aspect_ratio;}
         
-        void  SetWidthHeight(int width, int height);
-        glm::ivec2 GetWindowSize() const {return window_size;}
+        // void  SetWidthHeight(int width, int height);
+        // glm::ivec2 GetWindowSize() const {return window_size;}
     private:
-        glm::ivec2 window_size = glm::ivec2(1024, 768);
-        float window_aspect_ratio = 1.f;
-        GLFWwindow* render_window = nullptr;
+        // glm::ivec2 window_size = glm::ivec2(1024, 768);
+        // float window_aspect_ratio = 1.f;
+        // GLFWwindow* render_window = nullptr;
     };
 
 }

@@ -3,12 +3,12 @@
 #include <imgui.h>
 
 #include "Engine.h"
+#include "window.hpp"
 using namespace Kong;
 
 void PostProcess::Init()
 {
-    Engine engine = Engine::GetEngine();
-    glm::ivec2 window_size = engine.GetWindowSize();
+    glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
     window_width = window_size.x;
     window_height = window_size.y;
 

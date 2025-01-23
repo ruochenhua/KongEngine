@@ -6,14 +6,15 @@
 
 #include "Actor.h"
 #include "Engine.h"
-#include "render.h"
 #include "Scene.h"
 #include "Component/LightComponent.h"
 #include <filesystem>
 
+#include "Component/Mesh/Terrain.h"
+
 using namespace Kong;
 
-CUIManager* g_uimanager = new CUIManager;
+static KongUIManager g_UIManager;
 vector<string> g_scene_files;
 vector<const char*> g_scene_items;
 
@@ -32,12 +33,20 @@ vector<string> GetSceneFiles(const string& directory_path)
 	return scene_files;
 }
 
-CUIManager* CUIManager::GetUIManager()
+KongUIManager& KongUIManager::GetUIManager()
 {
-	return g_uimanager;	
+	return g_UIManager;	
 }
 
-void CUIManager::Init()
+KongUIManager::KongUIManager()
+{
+	for (float& time : process_time)
+	{
+		time = 0.0f;
+	}
+}
+
+void KongUIManager::Init(GLFWwindow* windowHandle)
 {
 	// 初始化imgui
 	IMGUI_CHECKVERSION();
@@ -51,7 +60,7 @@ void CUIManager::Init()
 	ImGui::StyleColorsDark();
 
 	// 初始化imgui后端
-	ImGui_ImplGlfw_InitForOpenGL(Engine::GetRenderWindow(), true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
 
 	
@@ -69,7 +78,7 @@ void CUIManager::Init()
 	
 }
 
-void CUIManager::PreRenderUpdate(double delta)
+void KongUIManager::PreRenderUpdate(double delta)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -78,7 +87,7 @@ void CUIManager::PreRenderUpdate(double delta)
 	DescribeUIContent(delta);
 }
 
-void CUIManager::PostRenderUpdate()
+void KongUIManager::PostRenderUpdate()
 {
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
@@ -86,14 +95,14 @@ void CUIManager::PostRenderUpdate()
 	// (Your code calls glfwSwapBuffers() etc.)
 }
 
-void CUIManager::Destroy()
+void KongUIManager::Destroy()
 {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 }
 
-void CUIManager::DescribeUIContent(double delta)
+void KongUIManager::DescribeUIContent(double delta)
 {
 	// ImGui::ShowDemoWindow(); // Show demo window! :)
 	// Rendering
@@ -124,7 +133,6 @@ void CUIManager::DescribeUIContent(double delta)
 	ImGui::Combo("Scenes", &item_type, g_scene_items.data(), g_scene_items.size(), g_scene_items.size());
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
-	auto render_sys = CRender::GetRender();
 	if(ImGui::Button("load scene"))
 	{
 		// Load scene
@@ -133,41 +141,7 @@ void CUIManager::DescribeUIContent(double delta)
 		
 		CScene::GetScene()->LoadScene(scene_name);
 	}
-	if(ImGui::TreeNode("skybox"))
-	{
-		if(ImGui::Button("change hdr background"))
-		{
-			CRender::GetRender()->ChangeSkybox();
-		}
 
-		ImGui::DragInt("sky display status", &render_sys->render_sky_env_status, 0.1f, 0, 2);
-		
-		ImGui::TreePop();
-	}
-	
-	auto main_cam = render_sys->GetCamera();
-	if(main_cam)
-	{
-		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
-		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f,1.0f, 100.0f);
-	}
-
-	ImGui::Checkbox("ssao", &render_sys->use_ssao);
-	ImGui::Checkbox("screen space reflection", &render_sys->use_screen_space_reflection);
-	ImGui::Checkbox("reflective shadowmap(rsm)", &render_sys->use_rsm);
-	ImGui::DragFloat("rsm intensity", &render_sys->rsm_intensity, 0.005f, 0., 1.0);
-	
-	ImGui::Checkbox("render cloud", &render_sys->m_SkyBox.render_cloud);
-
-	if (ImGui::TreeNode("Percentage-Closer Soft Shadows"))
-	{
-		ImGui::Checkbox("Use PCSS", &render_sys->use_pcss);
-		ImGui::DragFloat("PCSS radius", &render_sys->pcss_radius, 0.01f, 0.1f, 50.0f);
-		ImGui::DragFloat("PCSS light scale", &render_sys->pcss_light_scale, 0.01f, 0.1f, 1.0f);
-		ImGui::DragInt("PCSS sample count", &render_sys->pcss_sample_count, 0.1f, 8, 64);
-		ImGui::TreePop();
-	}
-	
 	if(ImGui::TreeNode("scene"))
 	{
 		auto actors = CScene::GetActors();
@@ -242,7 +216,7 @@ void CUIManager::DescribeUIContent(double delta)
 	ImGui::End();
 }
 
-ImVec4 CUIManager::GetFrameRateColor(int framerate)
+ImVec4 KongUIManager::GetFrameRateColor(int framerate)
 {
 	if(framerate > 120)
 	{

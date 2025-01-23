@@ -156,7 +156,7 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         
         GLfloat border_color[] = {1.0, 1.0, 1.0, 1.0};
 #if USE_CSM
-        camera_near_far = CRender::GetNearFar();
+        camera_near_far = KongRenderModule::GetNearFar();
         float far_plane = camera_near_far.y;
         // csm_distances = {far_plane/100};
         
@@ -293,7 +293,7 @@ std::vector<glm::vec4> CDirectionalLightComponent::GetFrustumCornersWorldSpace(c
 
 mat4 CDirectionalLightComponent::CalLightSpaceMatrix(float near, float far)
 {
-    auto camera = CRender::GetRender()->GetCamera();
+    auto camera = KongRenderModule::GetRenderModule().GetCamera();
     float aspect_ratio = camera->m_screenInfo._aspect_ratio;
     float fov = camera->m_screenInfo._fov;
 

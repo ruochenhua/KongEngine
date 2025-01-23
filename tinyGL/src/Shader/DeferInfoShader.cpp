@@ -36,7 +36,7 @@ void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const S
 	SetFloat("roughness", render_material.roughness);
 	SetFloat("ao", render_material.ao);
 	
-	GLuint null_tex_id = CRender::GetNullTexId();
+	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID);
 	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
@@ -98,16 +98,17 @@ void DeferredBRDFShader::InitDefaultShader()
 
 void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
-	GLuint null_tex_id = CRender::GetNullTexId();
+	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	int texture_idx = 4;
 	// 贴图0-3分别是position/normal/albedo/orm, 下面的从4开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧
 	
 #if USE_DSA
-	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxTexture());
-	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture());
-	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxPrefilterTexture());
-	glBindTextureUnit(texture_idx++, CRender::GetRender()->GetSkyboxBRDFLutTexture());
+	auto& render_module = KongRenderModule::GetRenderModule();
+	glBindTextureUnit(texture_idx++, render_module.GetSkyboxTexture());
+	glBindTextureUnit(texture_idx++, render_module.GetSkyboxDiffuseIrradianceTexture());
+	glBindTextureUnit(texture_idx++, render_module.GetSkyboxPrefilterTexture());
+	glBindTextureUnit(texture_idx++, render_module.GetSkyboxBRDFLutTexture());
 #else
 	// 添加天空盒贴图
 	glActiveTexture(GL_TEXTURE0 + texture_idx++);

@@ -11,7 +11,7 @@ void BlendShader::UpdateRenderData(const SMaterial& render_material, const SScen
     // 材质属性
     SetVec4("albedo", render_material.albedo);
     
-    GLuint null_tex_id = CRender::GetNullTexId();
+    GLuint null_tex_id = KongRenderModule::GetNullTexId();
     glActiveTexture(GL_TEXTURE0);
     GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
     glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);

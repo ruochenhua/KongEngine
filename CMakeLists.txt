@@ -18,7 +18,7 @@ file(GLOB IMGUI_SRC ${IMGUI_DIR}/*.cpp)
 file(GLOB IMGUI_BACKEND_SRC ${IMGUI_DIR}/backends/*.cpp)
 
 file(GLOB_RECURSE MAIN_SRC ${SRC_DIR}/*.cpp)
-file(GLOB_RECURSE MAIN_HEAD ${SRC_DIR}/*.h)
+file(GLOB_RECURSE MAIN_HEAD ${SRC_DIR}/*.h ${SRC_DIR}/*.hpp)
 
 
 

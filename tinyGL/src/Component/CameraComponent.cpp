@@ -6,6 +6,7 @@
 
 #include "Engine.h"
 #include "message.h"
+#include "window.hpp"
 // #include "message.h"
 
 using namespace Kong;
@@ -55,7 +56,8 @@ void CCamera::InvertPitch()
 
 void CCamera::UpdateRotation(double delta)
 {
-	auto window = Engine::GetRenderWindow();
+	auto window_module = KongWindow::GetWindowModule();
+	auto window = window_module.GetWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);	
 	double delta_x = x_pos - m_cursorX;
@@ -88,9 +90,10 @@ void CCamera::OnPYRUpdated()
 
 void CCamera::Update(double delta)
 {
-	m_screenInfo._aspect_ratio = Engine::GetEngine().GetAspectRatio();
+	auto window_module = KongWindow::GetWindowModule();
+	m_screenInfo._aspect_ratio = window_module.aspectRatio;
 	UpdateRotation(delta);
-	auto render_window = Engine::GetRenderWindow();
+	auto render_window = window_module.GetWindow();
 	// double xpos, ypos;
 	// glfwGetCursorPos(render_window, &xpos, &ypos);
 	// printf("pitch xpos %f, ypos %f, delta %f\n", (float)xpos, (float)ypos, (float)delta);

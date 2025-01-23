@@ -139,16 +139,16 @@ namespace Kong
 		float move_speed = 0.01f;
 	};
 	
-	class CRender
+	class KongRenderModule
 	{
 	public:
-		static CRender* GetRender();
+		static KongRenderModule& GetRenderModule();
 		static GLuint GetNullTexId();
 		static glm::vec2 GetNearFar();
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
 		GLFWwindow* render_window;
-		CRender() = default;
+		KongRenderModule() = default;
 
 		GLuint GetSkyboxTexture() const;
 		GLuint GetSkyboxDiffuseIrradianceTexture() const;
@@ -156,6 +156,7 @@ namespace Kong
 		GLuint GetSkyboxBRDFLutTexture() const;
 		int Init();
 		int Update(double delta);
+		void RenderUI(double delta);
 		void PostUpdate();
 		void DoPostProcess();
 		

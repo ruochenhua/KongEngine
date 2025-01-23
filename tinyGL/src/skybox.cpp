@@ -4,6 +4,7 @@
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
+#include "window.hpp"
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"
 
@@ -369,7 +370,7 @@ void CSkyBox::RenderCloud(GLuint depth_texture)
 	atmosphere_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
 	atmosphere_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
 	
-	atmosphere_shader->SetVec2("iResolution", Engine::GetEngine().GetWindowSize());
+	atmosphere_shader->SetVec2("iResolution", KongWindow::GetWindowModule().windowSize);
 	
 	
 	// atmosphere_shader->atmos_data.coverage = cloud_model_->coverage;

@@ -259,8 +259,8 @@ namespace YamlParser
                 
                 new_actor->AddComponent(water_comp);
 
-                auto render_sys = CRender::GetRender();
-                render_sys->SetRenderWater(new_actor);
+                auto render_sys = KongRenderModule::GetRenderModule();
+                render_sys.SetRenderWater(new_actor);
             }
             // 带有gerstner wave模拟的水
             else if (component_type == "gerstner_wave_water")
@@ -299,8 +299,8 @@ namespace YamlParser
                 }
                 
                 new_actor->AddComponent(water_comp);
-                auto render_sys = CRender::GetRender();
-                render_sys->SetRenderWater(new_actor);
+                auto render_sys = KongRenderModule::GetRenderModule();
+                render_sys.SetRenderWater(new_actor);
             }
             else if(component_type == "directional_light")
             {
@@ -412,7 +412,7 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
 
     if(scene_node["setting"])
     {
-        auto render_sys = CRender::GetRender();
+        auto render_sys = KongRenderModule::GetRenderModule();
         auto setting = scene_node["setting"];
         if(setting["skybox"])
         {
@@ -420,13 +420,13 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
             if(skybox_node["render_sky_env_status"])
             {
                 auto render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
-                render_sys->render_sky_env_status = render_sky_env_status;
+                render_sys.render_sky_env_status = render_sky_env_status;
             }
 
             if(skybox_node["render_cloud"])
             {
                 auto render_cloud = skybox_node["render_cloud"].as<bool>();
-                render_sys->m_SkyBox.render_cloud = render_cloud;
+                render_sys.m_SkyBox.render_cloud = render_cloud;
             }
         }
     }

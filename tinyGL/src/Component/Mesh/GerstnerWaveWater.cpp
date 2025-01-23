@@ -40,17 +40,17 @@ void GerstnerWaveWater::Draw(const SSceneLightInfo& scene_render_info)
     shader_data->SetInt("terrain_res", water_resolution);
 
     glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());
+    glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
 
     glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
+    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());
     
     SimpleDraw(nullptr);
 }
 
 void GerstnerWaveWater::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 {
-    shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
+    shader_data->SetVec3("cam_pos", KongRenderModule::GetRenderModule().GetCamera()->GetPosition());
     // render_wireframe = true;
     
     if(render_wireframe)

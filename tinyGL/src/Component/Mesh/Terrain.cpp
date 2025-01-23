@@ -63,15 +63,15 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
 {
 #if USE_TCS
     // shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
-    GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : CRender::GetNullTexId();
+    GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : KongRenderModule::GetNullTexId();
 #if USE_DSA
     glBindTextureUnit(0, height_map_id);
 #else
     glActiveTexture(GL_TEXTURE0); 
     glBindTexture(GL_TEXTURE_2D, height_map_id);
 #endif
-    GLuint csm_id = CRender::GetNullTexId();
-    auto dir_light = CRender::GetRender()->scene_render_info.scene_dirlight;
+    GLuint csm_id = KongRenderModule::GetNullTexId();
+    auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
     if(!dir_light.expired())
     {
         auto dir_light_ptr = dir_light.lock();

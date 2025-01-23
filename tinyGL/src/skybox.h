@@ -33,7 +33,7 @@ namespace Kong
 		GLuint GetPrefilterTexture() const {return prefilter_map_id;}
 		GLuint GetBRDFLutTexture() const {return  brdf_lut_map_id;}
 
-		bool render_cloud = true;
+		bool render_cloud = false;
 	private:
 		// skybox渲染相关shader
 		shared_ptr<SkyboxShader> skybox_shader;

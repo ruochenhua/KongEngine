@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "render.h"
 #include "Scene.h"
+#include "window.hpp"
 #include "Component/LightComponent.h"
 const int CLOUD_REZ = 16;
 using namespace Kong;
@@ -97,7 +98,7 @@ VolumetricCloud::VolumetricCloud()
       {{cs,CSceneLoader::ToResourcePath("shader/volumetric_cloud/volumetric_cloud.comp")}});
 
     // 创建cloud相关texture并绑定
-    glm::ivec2 window_size = Engine::GetEngine().GetWindowSize();
+    glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
     unsigned width = window_size.x;
     unsigned height = window_size.y;
 
@@ -127,7 +128,7 @@ void VolumetricCloud::SimpleDraw(shared_ptr<Shader> simple_shader)
 {
     // 计算cloud texture
 	// 有太阳光才计算这个，没有就跳过
-    auto dir_light = CRender::GetRender()->scene_render_info.scene_dirlight;
+    auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
 	if(dir_light.expired())
 	{
 		return;
@@ -135,7 +136,7 @@ void VolumetricCloud::SimpleDraw(shared_ptr<Shader> simple_shader)
 
 	auto dir_light_ptr = dir_light.lock();
 	
-	glm::ivec2 window_size = Engine::GetEngine().GetWindowSize();
+	glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
     glBindImageTexture(0, cloud_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glBindImageTexture(1, bloom_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glBindImageTexture(2, alphaness_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);

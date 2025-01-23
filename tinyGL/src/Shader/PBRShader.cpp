@@ -17,7 +17,7 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneL
 	SetFloat("roughness", render_material.roughness);
 	SetFloat("ao", render_material.ao);
 
-	GLuint null_tex_id = CRender::GetNullTexId();
+	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID);
 	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
@@ -41,20 +41,21 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneL
 
 	// todo: 天空盒贴图需要每次都更新吗？
 	// 添加天空盒贴图
+	auto& render_module = KongRenderModule::GetRenderModule();
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_TEX_SHADER_ID);
-	GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
+	GLuint skybox_tex_id = render_module.GetSkyboxTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
 	// 天空盒辐照度贴图
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
-	GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
+	GLuint skybox_irradiance_tex_id = render_module.GetSkyboxDiffuseIrradianceTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
 	// 天空盒预滤波贴图
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_PREFILTER_TEX_SHADER_ID);
-	GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
+	GLuint skybox_prefilter_tex_id = render_module.GetSkyboxPrefilterTexture();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
 	// 天空盒brdf lut贴图
 	glActiveTexture(GL_TEXTURE0 + SKYBOX_BRDF_LUT_TEX_SHADER_ID);
-	GLuint skybox_brdf_lut_tex_id = CRender::GetRender()->GetSkyboxBRDFLutTexture();
+	GLuint skybox_brdf_lut_tex_id = render_module.GetSkyboxBRDFLutTexture();
 	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
