@@ -15,6 +15,7 @@
 #include "Scene.h"
 #include "Shader/Shader.h"
 #include "stb_image.h"
+#include "texture.h"
 #include "window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"
@@ -66,55 +67,32 @@ void DeferBuffer::GenerateDeferRenderTextures(int width, int height)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
-	if(g_position_)
+	TextureCreateInfo defer_tex_create_info
 	{
-		glDeleteTextures(1, &g_position_);
-	}
+		GL_TEXTURE_2D, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+		width, height, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+		GL_NEAREST, GL_NEAREST
+	};
+	
 	// 将当前视野的数据用贴图缓存
 	// 位置数据
-	glGenTextures(1, &g_position_);
-	glBindTexture(GL_TEXTURE_2D, g_position_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	TextureBuilder::CreateTexture(g_position_, defer_tex_create_info);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
-
-	if(g_normal_)
-	{
-		glDeleteTextures(1, &g_normal_);
-	}
+	
 	// 法线数据
-	glGenTextures(1, &g_normal_);
-	glBindTexture(GL_TEXTURE_2D, g_normal_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	TextureBuilder::CreateTexture(g_normal_, defer_tex_create_info);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
 
-	if(g_albedo_)
-	{
-		glDeleteTextures(1, &g_albedo_);
-	}
+	TextureCreateInfo albedo_tex_create_info {defer_tex_create_info};
+	albedo_tex_create_info.internalFormat = GL_RGBA;
+	albedo_tex_create_info.data_type = GL_UNSIGNED_BYTE;
+
 	// 顶点颜色数据
-	glGenTextures(1, &g_albedo_);
-	glBindTexture(GL_TEXTURE_2D, g_albedo_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	TextureBuilder::CreateTexture(g_albedo_, albedo_tex_create_info);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_, 0);
 
 	// orm数据（ao，roughness，metallic）
-	if(g_orm_)
-	{
-		glDeleteTextures(1, &g_orm_);
-	}
-	glGenTextures(1, &g_orm_);
-	glBindTexture(GL_TEXTURE_2D, g_orm_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	TextureBuilder::CreateTexture(g_orm_, albedo_tex_create_info);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, g_orm_, 0);
 
 	if(g_rbo_)
@@ -179,14 +157,11 @@ void SSAOHelper::Init(int width, int height)
 		ss << "samples[" << i << "]";
 		ssao_shader_->SetVec3(ss.str(), ssao_kernal_samples[i]);
 	}
-	
-	glGenTextures(1, &ssao_noise_texture);
-	glBindTexture(GL_TEXTURE_2D, ssao_noise_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_kernal_noises[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	TextureCreateInfo ssao_noise_create_info{
+	GL_TEXTURE_2D, GL_RGB32F, GL_RGB, GL_FLOAT, 4, 4
+	};
+	ssao_noise_create_info.data = ssao_kernal_noises.data();
+	TextureBuilder::CreateTexture(ssao_noise_texture, ssao_noise_create_info);
 
 	// ssao模糊
 	glGenFramebuffers(1, &SSAO_BlurFBO);
@@ -207,33 +182,19 @@ void SSAOHelper::Init(int width, int height)
 void SSAOHelper::GenerateSSAOTextures(int width, int height)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo);
+	TextureCreateInfo ssao_tex_create_info {
+	GL_TEXTURE_2D, GL_RED, GL_RGB, GL_FLOAT, width, height
+	};
+
+	TextureBuilder::CreateTexture(ssao_result_texture, ssao_tex_create_info);
 	// 绑定对应的ssao计算结果贴图
-	if(ssao_result_texture)
-	{
-		glDeleteTextures(1, &ssao_result_texture);
-	}
-	glGenTextures(1, &ssao_result_texture);
-	glBindTexture(GL_TEXTURE_2D, ssao_result_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_result_texture, 0);
 
 	// ssao模糊
 	glBindFramebuffer(GL_FRAMEBUFFER, SSAO_BlurFBO);
-	if(ssao_blur_texture)
-	{
-		glDeleteTextures(1, &ssao_blur_texture);
-	}
-	glGenTextures(1, &ssao_blur_texture);
-	glBindTexture(GL_TEXTURE_2D, ssao_blur_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	TextureBuilder::CreateTexture(ssao_blur_texture, ssao_tex_create_info);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_texture, 0);
-
-	ssao_shader_->Use();
+	
 	ssao_shader_->SetVec2("screen_size", vec2(width, height));
 }
 
@@ -251,22 +212,14 @@ void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 {
 	// 水面反射相关的buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, water_reflection_fbo);
+	TextureCreateInfo water_tex_create_info {
+	GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT, width, height,
+		GL_REPEAT, GL_REPEAT, GL_REPEAT, GL_LINEAR
+	};
+	TextureBuilder::CreateTexture(water_reflection_texture, water_tex_create_info);
 	
-	if(water_reflection_texture)
-	{
-		glDeleteTextures(1, &water_reflection_texture);
-	}
-	
-	glGenTextures(1, &water_reflection_texture);
-	glBindTexture(GL_TEXTURE_2D, water_reflection_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_reflection_texture, 0);
-
+	
 	if (!water_reflection_rbo)
 	{
 		glGenRenderbuffers(1, &water_reflection_rbo);
@@ -284,20 +237,9 @@ void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
 
 	// 水面折射相关的buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, water_refraction_fbo);
-	
-	if(water_refraction_texture)
-	{
-		glDeleteTextures(1, &water_refraction_texture);
-	}
-	
-	glGenTextures(1, &water_refraction_texture);
-	glBindTexture(GL_TEXTURE_2D, water_refraction_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+	TextureBuilder::CreateTexture(water_refraction_texture, water_tex_create_info);
+	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_refraction_texture, 0);
 	
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -506,7 +448,7 @@ int KongRenderModule::Update(double delta)
 	// render system update
 	for (auto& render_sys : m_renderSystems)
 	{
-		render_sys.Draw(delta, this);
+		render_sys.Draw(delta,  RenderResultInfo{}, this);
 	}
 	
 	
@@ -706,17 +648,11 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 	
 	// 渲染光照
 	DeferRenderSceneLighting();
-	auto blit_start = std::chrono::high_resolution_clock::now();
 	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_scene_buffer);
 	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
 		window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-	auto blit_end = std::chrono::high_resolution_clock::now();
-	auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start).count();
-
-	// printf("Blit time: %lld ms\n", blit_duration);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

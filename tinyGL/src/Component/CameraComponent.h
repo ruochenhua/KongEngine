@@ -24,8 +24,7 @@ namespace Kong
     {
     public:
         CCamera(const vec3& center, const vec3& eye, const vec3& up)
-            : m_center(center), m_front(normalize(eye - center)), m_up(up), m_moveVec(vec3(0, 0, 0))
-            , m_updateRotation(false), m_cursorX(0.0), m_cursorY(0.0)
+            : m_center(center), m_front(normalize(eye - center)), m_up(up)
         {
             
         }
@@ -53,26 +52,26 @@ namespace Kong
         void RotateStart();
         void RotateEnd();
 
-        float exposure = 0.3f;
-        float move_speed = 5.f;
+        float exposure { 0.3f };
+        float move_speed { 5.f };
         
-        SScreenInfo m_screenInfo = SScreenInfo(radians(45.f), 1024.0f / 768.0f, 0.1f, 5000.0f);
+        SScreenInfo m_screenInfo{radians(45.f), 1024.0f / 768.0f, 0.1f, 5000.0f};
     private:
         void UpdateRotation(double delta);
         void OnPYRUpdated();   // 更新pitch yaw roll
-        bool m_updateRotation;
-        double m_cursorX = 512.0;
-        double m_cursorY = 384.0;
+        bool m_updateRotation {false};
+        double m_cursorX { 512.0 };
+        double m_cursorY { 384.0 };
 
         vec3 m_center;
         vec3 m_front;
         vec3 m_up;
 
-        vec3 m_moveVec;
+        vec3 m_moveVec {0.0f,0.0f,0.0f};
 
-        double m_yaw = 0.0;
-        double m_pitch = 0.0;
-        float rotate_speed = 20.f;
+        double m_yaw { 0.0 };
+        double m_pitch { 0.0 };
+        float rotate_speed { 20.f };
 
     };
 }

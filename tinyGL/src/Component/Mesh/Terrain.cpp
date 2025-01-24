@@ -233,18 +233,7 @@ int Terrain::LoadHeightMap(const string& file_name)
     int nrChannels, width, height;
     unsigned char *data = stbi_load(file_name.c_str(), &width, &height, &nrChannels, 0);
 #if USE_TCS
-    if(terrain_height_map) glDeleteTextures(1, &terrain_height_map);
-    terrain_height_map = CTexture2D(width, height, GL_RGBA, data).GetTextureId();
-    // glGenTextures(1, &terrain_height_map);
-    // glBindTexture(GL_TEXTURE_2D, terrain_height_map);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    //
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terrain_size, terrain_size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    // glGenerateMipmap(GL_TEXTURE_2D);
-    
+    TextureBuilder::CreateTexture2D(terrain_height_map, width, height, GL_RGBA, data);
 #else
     
     terrain_res = 1;

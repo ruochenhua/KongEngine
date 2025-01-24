@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "texture.h"
 #include "Utils.hpp"
 #include "window.hpp"
 using namespace Kong;
@@ -147,23 +148,17 @@ void PostProcess::InitQuad()
 void PostProcess::InitScreenTexture()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
-    if(!screen_quad_texture[0])
+    TextureCreateInfo pp_texture_create_info
     {
-        glGenTextures(PP_TEXTURE_COUNT, screen_quad_texture);    
-    }
+        GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT,
+        window_width, window_height, GL_REPEAT, GL_REPEAT, GL_REPEAT,
+        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+    };
 
+    
     for(unsigned i = 0; i < PP_TEXTURE_COUNT; ++i)
     {
-        glBindTexture(GL_TEXTURE_2D, screen_quad_texture[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height,
-        0, GL_RGBA, GL_FLOAT, NULL);
-
-        // 为啥一定要执行前两句？
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
-
+        TextureBuilder::CreateTexture(screen_quad_texture[i], pp_texture_create_info);
         
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, screen_quad_texture[i], 0);
     }

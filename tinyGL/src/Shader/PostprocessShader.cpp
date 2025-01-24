@@ -50,25 +50,9 @@ void CombineProcessShader::GenerateTexture(unsigned width, unsigned height)
     {
         glGenFramebuffers(1, &result_fbo);
     }
-
-    // 原来有贴图就删掉
-    if(result_texture)
-    {
-        glDeleteTextures(1, &result_texture);
-    }
-    
-    glGenTextures(1, &result_texture);
     
     glBindFramebuffer(GL_FRAMEBUFFER, result_fbo);
-
-    glBindTexture(GL_TEXTURE_2D, result_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
-    0, GL_RGBA, GL_FLOAT, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    TextureBuilder::CreateTexture2D(result_texture, width, height, GL_RGBA);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, result_texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -198,29 +182,13 @@ void GaussianBlurShader::GenerateTexture(unsigned width, unsigned height)
         glGenFramebuffers(2, blur_fbo);
     }
 
-    // 原来有贴图就删掉
-    if(blur_texture[0])
-    {
-       glDeleteTextures(2, blur_texture);
-    }
-    
-    glGenTextures(2, blur_texture);
-    for(unsigned i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; i++)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo[i]);
-
-        glBindTexture(GL_TEXTURE_2D, blur_texture[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
-        0, GL_RGBA, GL_FLOAT, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
-        
+        TextureBuilder::CreateTexture2D(blur_texture[i], width, height, GL_RGBA);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture[i], 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void DilatePostprocessShader::InitDefaultShader()
@@ -250,23 +218,8 @@ void DilatePostprocessShader::GenerateTexture(unsigned width, unsigned height)
     }
 
     // 原来有贴图就删掉
-    if(blur_texture != 0)
-    {
-        glDeleteTextures(1, &blur_texture);
-    }
-    
-    glGenTextures(1, &blur_texture);
-    
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
-
-    glBindTexture(GL_TEXTURE_2D, blur_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
-    0, GL_RGBA, GL_FLOAT, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    TextureBuilder::CreateTexture2D(blur_texture, width, height, GL_RGBA);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -336,24 +289,8 @@ void DOFPostprocessShader::GenerateTexture(unsigned width, unsigned height)
         glGenFramebuffers(1, &DOF_fbo);
     }
 
-    // 原来有贴图就删掉
-    if(DOF_texture != 0)
-    {
-        glDeleteTextures(1, &DOF_texture);
-    }
-    
-    glGenTextures(1, &DOF_texture);
-    
     glBindFramebuffer(GL_FRAMEBUFFER, DOF_fbo);
-
-    glBindTexture(GL_TEXTURE_2D, DOF_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
-    0, GL_RGBA, GL_FLOAT, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    TextureBuilder::CreateTexture2D(DOF_texture, width, height, GL_RGBA);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, DOF_texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -418,24 +355,8 @@ void RadicalBlurShader::GenerateTexture(unsigned width, unsigned height)
         glGenFramebuffers(1, &blur_fbo);
     }
 
-    // 原来有贴图就删掉
-    if(blur_texture)
-    {
-        glDeleteTextures(1, &blur_texture);
-    }
-    
-    glGenTextures(1, &blur_texture);
-    
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo);
-
-    glBindTexture(GL_TEXTURE_2D, blur_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height,
-    0, GL_RGBA, GL_FLOAT, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_CLAMP_TO_EDGE);
+    TextureBuilder::CreateTexture2D(blur_texture, width, height, GL_RGBA);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blur_texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

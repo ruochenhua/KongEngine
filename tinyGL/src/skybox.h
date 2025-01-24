@@ -19,9 +19,9 @@ namespace Kong
 	
 	class SkyboxRenderSystem : public KongRenderSystem
 	{
-	public:
+	public:		
 		void Init() override;
-		void Draw(double delta, KongRenderModule* render_module) override;
+		RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module) override;
 		// IBL预处理HDR相关
 		void PreprocessIBL(const string& hdr_file_path);
 		void Render( int render_sky_status, GLuint depth_texture);

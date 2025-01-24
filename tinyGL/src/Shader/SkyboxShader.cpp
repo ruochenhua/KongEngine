@@ -24,8 +24,7 @@ AtmosphereShader::AtmosphereShader()
 
     shader_id = Shader::LoadShaders(shader_path_map);
     assert(shader_id, "load atmosphere shader failed");
-
-    Use();
+    
     SetInt("depth_map", 0);
     SetInt("cloud", 1);
     SetInt("worley32", 2);

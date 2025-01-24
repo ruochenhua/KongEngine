@@ -15,7 +15,6 @@ void DeferInfoShader::InitDefaultShader()
     shader_id = LoadShaders(shader_path_map);
 
     // 设定各个贴图资源
-    Use();
     SetInt("diffuse_texture", DIFFUSE_TEX_SHADER_ID);
     SetInt("normal_texture", NORMAL_TEX_SHADER_ID);
     SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);
@@ -68,8 +67,7 @@ void DeferredBRDFShader::InitDefaultShader()
     shader_id = Shader::LoadShaders(shader_path_map);
     
     assert(shader_id, "Shader load failed!");
-    
-    Use();
+	
     SetInt("position_texture", 0);
     SetInt("normal_texture", 1);
     SetInt("albedo_texture", 2);
@@ -241,7 +239,7 @@ void DeferredTerrainInfoShader::InitDefaultShader()
 	};
 
     shader_id = LoadShaders(shader_path_map);
-	Use();
+	
 	SetInt("height_map", 0);
 	SetInt("csm", 1);
 	SetInt("grass_texture", 2);
@@ -267,8 +265,7 @@ void SSAOShader::InitDefaultShader()
 	shader_id = Shader::LoadShaders(shader_path_map);
     
 	assert(shader_id, "Shader load failed!");
-    
-	Use();
+	
 	SetInt("position_texture", 0);
 	SetInt("normal_texture", 1);
 	SetInt("noise_texture", 2);

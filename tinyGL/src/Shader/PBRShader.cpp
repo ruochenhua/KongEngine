@@ -138,7 +138,6 @@ void PBRShader::InitDefaultShader()
 	assert(shader_id, "Shader load failed!");
 
 	// 一些shader的数据绑定
-	Use();
 	SetInt("diffuse_texture", DIFFUSE_TEX_SHADER_ID);
 	SetInt("normal_texture", NORMAL_TEX_SHADER_ID);
 	SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);

@@ -4,13 +4,14 @@
 #include "render.h"
 #include "Scene.h"
 #include "stb_image.h"
+#include "texture.h"
 #include "window.hpp"
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"
 
 using namespace Kong;
 
-unsigned CUBE_MAP_RES = 1024;
+constexpr int CUBE_MAP_RES = 1024;
 
 #define USE_HDR_SKYBOX 1
 
@@ -93,59 +94,37 @@ void SkyboxRenderSystem::Init()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, preprocess_rbo);
 	
 	////////// 创建立方体贴图
-	glGenTextures(1, &cube_map_id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_id);
-	for (int i = 0; i < 6; ++i)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RGB, GL_FLOAT, nullptr);
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	TextureCreateInfo cubemap_create_info {
+		GL_TEXTURE_CUBE_MAP, GL_RGB32F, GL_RGB,
+		GL_FLOAT, CUBE_MAP_RES, CUBE_MAP_RES,
+				GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR
+		};
 
-	////////// 创建辐照度立方体贴图
-	glGenTextures(1, &irradiance_tex_id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_tex_id);
-	for(int i = 0; i < 6; ++i)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	TextureBuilder::CreateTexture(cube_map_id, cubemap_create_info);
+	
+	// ////////// 创建辐照度立方体贴图
+	TextureCreateInfo irradiance_create_info {cubemap_create_info};
+	irradiance_create_info.width = irradiance_create_info.height = 32;
+	irradiance_create_info.minFilter = GL_LINEAR;
+
+	TextureBuilder::CreateTexture(irradiance_tex_id, irradiance_create_info);
 
 	////////// 预滤波环境贴图
-	glGenTextures(1, &prefilter_map_id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_id);
-	for(unsigned i = 0; i <6; ++i)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-			GL_RGB32F, 128, 128, 0,
-			GL_RGB, GL_FLOAT, nullptr);
-	}
-	
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	// 启用三线性过滤
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	TextureCreateInfo prefilter_create_info {cubemap_create_info};
+	prefilter_create_info.width = prefilter_create_info.height = 128;
+	TextureBuilder::CreateTexture(prefilter_map_id, prefilter_create_info);
 
 	////////// brdf预计算贴图
-	glGenTextures(1, &brdf_lut_map_id);
-	glBindTexture(GL_TEXTURE_2D, brdf_lut_map_id);
-	// 只需要RG两个分量就行
-	glTexImage2D(GL_TEXTURE_2D, 0,
-		GL_RG16F, CUBE_MAP_RES, CUBE_MAP_RES, 0, GL_RG, GL_FLOAT, 0);
-	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	TextureCreateInfo brdf_lut_map_create_info {};
+	brdf_lut_map_create_info.width = brdf_lut_map_create_info.height = CUBE_MAP_RES;
+	brdf_lut_map_create_info.wrapS = brdf_lut_map_create_info.wrapR = brdf_lut_map_create_info.wrapT = GL_CLAMP_TO_EDGE;
+	brdf_lut_map_create_info.minFilter = brdf_lut_map_create_info.magFilter = GL_LINEAR;
+	brdf_lut_map_create_info.format = GL_RG;
+	brdf_lut_map_create_info.data_type = GL_FLOAT;
+	brdf_lut_map_create_info.internalFormat = GL_RG16F;
+
+	TextureBuilder::CreateTexture(brdf_lut_map_id, brdf_lut_map_create_info);
 
 	skybox_res_list.emplace_back(CSceneLoader::ToResourcePath("sky_box/newport_loft.hdr"));
 	skybox_res_list.emplace_back(CSceneLoader::ToResourcePath("sky_box/illovo_beach_balcony_4k.hdr"));
@@ -158,14 +137,24 @@ void SkyboxRenderSystem::Init()
 	volumetric_cloud_ = make_shared<VolumetricCloud>();
 }
 
-void SkyboxRenderSystem::Draw(double delta, KongRenderModule* render_module)
+RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module)
 {
 	if (render_module == nullptr || render_module->render_sky_env_status == 0)
 	{
-		return;
+		return RenderResultInfo{};
+	}
+
+	if (render_result_info.frameBuffer)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 	}
 	
 	Render(render_module->render_sky_env_status, render_module->GetLatestDepthTexture());
+	return RenderResultInfo{};
 }
 
 void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
@@ -173,21 +162,17 @@ void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
 	int width, height, nr_component;
 	stbi_set_flip_vertically_on_load(true);
 	auto data = stbi_loadf(hdr_file_path.c_str(), &width, &height, &nr_component, 0);
-	assert(data, "hdr file load failed");
-
-	// 若原来有贴图数据，释放掉旧的重新加载
-	if(sphere_map_texture)
+	if (data == nullptr)
 	{
-		glDeleteTextures(1, &sphere_map_texture);
+		throw std::runtime_error("failed to load hdr image for skybox");
 	}
-	// 创建球形映射的贴图
-	glGenTextures(1, &sphere_map_texture);
-	glBindTexture(GL_TEXTURE_2D, sphere_map_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	TextureCreateInfo sphere_map_create_info {
+	GL_TEXTURE_2D, GL_RGB32F, GL_RGB, GL_FLOAT, width, height,
+	GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_LINEAR, GL_LINEAR, data
+	};
+	
+	TextureBuilder::CreateTexture(sphere_map_texture, sphere_map_create_info);
 	stbi_image_free(data);
 
 	// projection和view矩阵
@@ -359,53 +344,16 @@ void SkyboxRenderSystem::RenderCloud(GLuint depth_texture)
 		, cloud_model_->cloud_speed
 		, cloud_model_->crispiness
 		, cloud_model_->curliness));
-	//
-	// atmosphere_shader->SetFloat("coverage", cloud_model_->coverage);
-	// atmosphere_shader->SetFloat("cloudSpeed", cloud_model_->cloud_speed);
-	// atmosphere_shader->SetFloat("crispiness", cloud_model_->crispiness);
-	// atmosphere_shader->SetFloat("curliness", cloud_model_->curliness);
-
-	atmosphere_shader->SetVec2("cloud_stat_2", vec2(cloud_model_->absorption*0.01f, cloud_model_->density));
-	// atmosphere_shader->SetFloat("absorption", cloud_model_->absorption*0.01f);
-	// atmosphere_shader->SetFloat("densityFactor", cloud_model_->density);
 	
+	atmosphere_shader->SetVec2("cloud_stat_2", vec2(cloud_model_->absorption*0.01f, cloud_model_->density));
 	atmosphere_shader->SetBool("enablePowder", cloud_model_->enable_powder);
 
 	atmosphere_shader->SetVec3("earth_stat", vec3(cloud_model_->earth_radius, cloud_model_->sphere_inner_radius, cloud_model_->sphere_outer_radius));
-	// atmosphere_shader->SetFloat("earthRadius", cloud_model_->earth_radius);
-	// atmosphere_shader->SetFloat("sphereInnerRadius", cloud_model_->sphere_inner_radius);
-	// atmosphere_shader->SetFloat("sphereOuterRadius", cloud_model_->sphere_outer_radius);
-	//
+	
 	atmosphere_shader->SetVec3("cloudColorTop", cloud_model_->cloud_color_top);
 	atmosphere_shader->SetVec3("cloudColorBottom", cloud_model_->cloud_color_bottom);
 	
 	atmosphere_shader->SetVec2("iResolution", KongWindow::GetWindowModule().windowSize);
-	
-	
-	// atmosphere_shader->atmos_data.coverage = cloud_model_->coverage;
-	// atmosphere_shader->atmos_data.cloud_speed = cloud_model_->cloud_speed;
-	// atmosphere_shader->atmos_data.crispiness = cloud_model_->crispiness;
-	// atmosphere_shader->atmos_data.curliness = cloud_model_->curliness;
-	// atmosphere_shader->atmos_data.absorption = cloud_model_->absorption*0.01f;
-	// atmosphere_shader->atmos_data.density = cloud_model_->density;
-	//
-	// atmosphere_shader->atmos_data.enable_powder = cloud_model_->enable_powder;
-	//
-	// atmosphere_shader->atmos_data.earth_radius = cloud_model_->earth_radius;
-	// atmosphere_shader->atmos_data.sphere_inner_radius = cloud_model_->sphere_inner_radius;
-	// atmosphere_shader->atmos_data.sphere_outer_radius = cloud_model_->sphere_outer_radius;
-	//
-	// atmosphere_shader->atmos_data.earth_radius = cloud_model_->earth_radius;
-	// atmosphere_shader->atmos_data.cloud_color_top = cloud_model_->cloud_color_top;
-	// atmosphere_shader->atmos_data.cloud_color_bottom = cloud_model_->cloud_color_bottom;
-	//
-	// atmosphere_shader->atmos_data.sky_color_top = cloud_model_->sky_color_top;
-	// atmosphere_shader->atmos_data.sky_color_bottom = cloud_model_->sky_color_bottom;
-	//
-	// atmosphere_shader->atmos_data.inv_view = inv_view;
-	// atmosphere_shader->atmos_data.inv_proj = inv_proj;
-	// atmosphere_shader->atmos_data.iResolution = Engine::GetEngine().GetWindowSize();
-	// atmosphere_shader->UpdateSSBOData();
 	
 #if USE_DSA
 	glBindTextureUnit(0, depth_texture);

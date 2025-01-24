@@ -57,8 +57,7 @@ GLuint ResourceManager::GetTexture(const std::string& texture_path, bool flip_uv
 		break;
 	}
 	
-	CTexture2D new_tex = CTexture2D(width, height, format, data);
-	texture_id = new_tex.GetTextureId();
+	TextureBuilder::CreateTexture2D(texture_id, width, height, format, data);
 	
 	texture_cache.emplace(texture_path, texture_id);
 	// release memory
