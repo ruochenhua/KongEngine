@@ -161,14 +161,13 @@ void CDirectionalLightComponent::TurnOnShadowMap(bool b_turn_on)
         // csm_distances = {far_plane/100};
         
         csm_distances = {far_plane/300, far_plane/100, far_plane/50, far_plane/10};
-        glGenTextures(1, &csm_texture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, csm_texture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, (int)csm_distances.size()+1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border_color);
+        Texture3DCreateInfo tex_create_info {
+            GL_TEXTURE_2D_ARRAY, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT,
+            SHADOW_RESOLUTION, SHADOW_RESOLUTION,
+            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER,
+            GL_NEAREST, GL_NEAREST, nullptr, static_cast<int>(csm_distances.size() + 1)
+        };
+        TextureBuilder::CreateTexture3D(csm_texture, tex_create_info);
 
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, csm_texture, 0);
@@ -222,35 +221,22 @@ void CDirectionalLightComponent::TurnOnReflectiveShadowMap(bool b_turn_on)
         glGenFramebuffers(1, &rsm_fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo);
 
+        TextureCreateInfo texture_create_info {
+            GL_TEXTURE_2D, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+            SHADOW_RESOLUTION, SHADOW_RESOLUTION,
+            GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+            GL_NEAREST, GL_NEAREST
+        };
         // 位置数据
-        glGenTextures(1, &rsm_world_position);
-        glBindTexture(GL_TEXTURE_2D, rsm_world_position);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        
+        TextureBuilder::CreateTexture(rsm_world_position, texture_create_info);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rsm_world_position, 0);
         
         // 法线数据
-        glGenTextures(1, &rsm_world_normal);
-        glBindTexture(GL_TEXTURE_2D, rsm_world_normal);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        TextureBuilder::CreateTexture(rsm_world_normal, texture_create_info);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rsm_world_normal, 0);
         
         // flux数据
-        glGenTextures(1, &rsm_world_flux);
-        glBindTexture(GL_TEXTURE_2D, rsm_world_flux);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        TextureBuilder::CreateTexture(rsm_world_flux, texture_create_info);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, rsm_world_flux, 0);
 
         // 生成renderbuffer
@@ -451,21 +437,14 @@ void CPointLightComponent::TurnOnShadowMap(bool b_turn_on)
     {
         glGenFramebuffers(1, &shadowmap_fbo);
         // 创建点光源阴影贴图
-        glGenTextures(1, &shadowmap_texture);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, shadowmap_texture);
-        for(GLuint i = 0; i < 6; ++i)
-        {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-                SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        }
-    
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    
+        TextureCreateInfo shadowmap_tex_create_info {
+            GL_TEXTURE_CUBE_MAP, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
+            SHADOW_RESOLUTION, SHADOW_RESOLUTION, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+            GL_NEAREST, GL_NEAREST
+        };
 
+        TextureBuilder::CreateTexture(shadowmap_texture, shadowmap_tex_create_info);
+        
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
         glDrawBuffer(GL_NONE);

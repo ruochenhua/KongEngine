@@ -51,6 +51,36 @@ void TextureBuilder::CreateTexture2D(GLuint& texture_id, int width, int height, 
     CreateTexture(texture_id, texture_info);
 }
 
+void TextureBuilder::CreateTexture3D(GLuint& texture_id, const Texture3DCreateInfo& profile)
+{
+    // 如果这个id已经绑定了texture，先清理掉原来的
+    if(texture_id)
+    {
+        glDeleteTextures(1, &texture_id);
+        texture_id = GL_NONE;
+    }
+    
+    auto tex_type = profile.texture_type;
+    glGenTextures(1, &texture_id);
+    glBindTexture(tex_type, texture_id);
+    
+    glTexImage3D(tex_type, 0, profile.internalFormat,
+        profile.width, profile.height, profile.depth, 0,
+        profile.format, profile.data_type, profile.data);
+
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_S, profile.wrapS);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_T, profile.wrapT);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_R, profile.wrapR);
+    glTexParameteri(tex_type, GL_TEXTURE_MIN_FILTER, profile.minFilter);
+    glTexParameteri(tex_type, GL_TEXTURE_MAG_FILTER, profile.magFilter);
+
+    glTexParameterfv(tex_type, GL_TEXTURE_BORDER_COLOR, profile.borderColor);
+    
+    glGenerateMipmap(tex_type);
+
+    glBindTexture(tex_type, 0);
+}
+
 
 CTexture2D::CTexture2D(int width, int height, GLenum format, unsigned char* data)
 {

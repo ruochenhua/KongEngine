@@ -24,6 +24,14 @@ namespace Kong
         GLint magFilter { GL_NEAREST };
 
         void* data { nullptr };
+
+    };
+
+    struct Texture3DCreateInfo : public TextureCreateInfo
+    {
+        int depth { 1 };
+        // 先放这
+        GLfloat borderColor[4] = { 1.f, 1.f, 1.f, 1.f };
     };
     
     class TextureBuilder
@@ -36,6 +44,7 @@ namespace Kong
 
         static void CreateTexture(GLuint& texture_id, const TextureCreateInfo& profile);
         static void CreateTexture2D(GLuint& texture_id, int width, int height, GLenum format, unsigned char* data = nullptr);
+        static void CreateTexture3D(GLuint& texture_id, const Texture3DCreateInfo& profile);
     protected:
         GLuint texture_id = GL_NONE;
     };
