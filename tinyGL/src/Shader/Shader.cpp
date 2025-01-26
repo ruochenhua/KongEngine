@@ -4,12 +4,11 @@
 #include <set>
 
 #include "BlendShader.h"
-#include "PBRShader.h"
 #include "DeferInfoShader.h"
 #include "EmitShader.h"
 #include "Utils.hpp"
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 #include "ShadowMapShader.h"
 
 using namespace Kong;

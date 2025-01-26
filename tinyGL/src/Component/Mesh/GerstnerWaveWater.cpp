@@ -1,8 +1,8 @@
 
 #include "GerstnerWaveWater.h"
 
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 #include "Component/LightComponent.h"
 
 using namespace Kong;

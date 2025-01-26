@@ -1,9 +1,9 @@
 ﻿#include "Terrain.h"
 
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 #include "stb_image.h"
-#include "texture.h"
+#include "Texture.hpp"
 #include "Component/LightComponent.h"
 
 using namespace Kong;

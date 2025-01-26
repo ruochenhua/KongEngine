@@ -1,4 +1,4 @@
-#include "render.h"
+#include "RenderModule.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
@@ -7,16 +7,16 @@
 #include <random>
 #include <utility>
 
-#include "Actor.h"
+#include "Actor.hpp"
 #include "Component/CameraComponent.h"
 #include "Utils.hpp"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
-#include "Scene.h"
+#include "Scene.hpp"
 #include "Shader/Shader.h"
 #include "stb_image.h"
-#include "texture.h"
-#include "window.hpp"
+#include "Texture.hpp"
+#include "Window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"

@@ -1,5 +1,5 @@
 //tiny openGL project
-#include "app.hpp"
+#include "App.hpp"
 
 using namespace Kong;
 

@@ -4,9 +4,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include "Actor.h"
+#include "Actor.hpp"
 #include "Utils.hpp"
-#include "Scene.h"
+#include "Scene.hpp"
 #include "Component/LightComponent.h"
 #include <filesystem>
 

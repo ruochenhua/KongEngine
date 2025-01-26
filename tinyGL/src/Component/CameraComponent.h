@@ -3,7 +3,7 @@
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
 
-#include "render.h"
+#include "Render/RenderModule.hpp"
 
 namespace Kong
 {

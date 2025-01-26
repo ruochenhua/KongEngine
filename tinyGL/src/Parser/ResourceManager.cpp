@@ -5,9 +5,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-#include "RenderCommon.h"
+#include "Render/RenderCommon.h"
 #include "stb_image.h"
-#include "texture.h"
+#include "Texture.hpp"
 using namespace Kong;
 using namespace glm;
 

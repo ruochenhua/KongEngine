@@ -1,8 +1,8 @@
-#include "Scene.h"
+#include "Scene.hpp"
 #include "Utils.hpp"
 #include "Component/Mesh/MeshComponent.h"
 
-#include "Actor.h"
+#include "Actor.hpp"
 #include "Parser/YamlParser.h"
 
 using namespace Kong;

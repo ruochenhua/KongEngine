@@ -6,7 +6,7 @@ static constexpr unsigned PP_TEXTURE_COUNT = 3;
 
 namespace Kong
 {
-    class PostProcess
+    class PostProcessRenderSystem
     {
     public:
         void Init();

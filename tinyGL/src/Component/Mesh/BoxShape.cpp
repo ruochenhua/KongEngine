@@ -1,7 +1,7 @@
 #include "BoxShape.h"
 
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 
 using namespace Kong;
 using namespace std;

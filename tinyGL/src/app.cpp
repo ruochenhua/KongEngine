@@ -1,6 +1,6 @@
-#include "app.hpp"
+#include "App.hpp"
 
-#include "window.hpp"
+#include "Window.hpp"
 
 using namespace Kong;
 

@@ -1,7 +1,7 @@
 #include "MeshComponent.h"
 //#include "OBJ_Loader.h"
 
-#include "render.h"
+#include "Render/RenderModule.hpp"
 #include "Shader/Shader.h"
 
 #include "glm/gtc/random.hpp"

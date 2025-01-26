@@ -2,10 +2,10 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "Actor.h"
-#include "render.h"
+#include "Actor.hpp"
+#include "Render/RenderModule.hpp"
 #include "Component/Mesh/ModelMeshComponent.h"
-#include "Scene.h"
+#include "Scene.hpp"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/BoxShape.h"
 #include "Component/Mesh/GerstnerWaveWater.h"

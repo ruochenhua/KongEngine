@@ -1,13 +1,10 @@
 #pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
-#include "postprocess.h"
-#include "RenderSystem.hpp"
-#include "skybox.h"
-#include "Component/Mesh/Terrain.h"
-#include "Component/Mesh/VolumetricCloud.h"
+#include "Render/PostProcessRenderSystem.hpp"
+#include "Render/RenderSystem.hpp"
+#include "Render/SkyboxRenderSystem.hpp"
 #include "Component/Mesh/Water.h"
-#include "Shader/PBRShader.h"
 #include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
 
@@ -172,7 +169,7 @@ namespace Kong
 
 		double render_time = 0.0;
 		
-		PostProcess post_process;
+		PostProcessRenderSystem post_process;
 		int render_sky_env_status = 2;
 		// 启用屏幕空间环境光遮蔽
 		bool use_ssao = false;

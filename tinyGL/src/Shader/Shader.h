@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "RenderCommon.h"
+#include "Render/RenderCommon.h"
 
 namespace Kong
 {

@@ -1,6 +1,6 @@
 #include "ShadowMapShader.h"
 
-#include "Scene.h"
+#include "Scene.hpp"
 
 using namespace Kong;
 using namespace glm;

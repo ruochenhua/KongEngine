@@ -1,11 +1,10 @@
 #include "LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
-#include "Actor.h"
-#include "render.h"
-#include "Scene.h"
+#include "Actor.hpp"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 #include "glm/gtx/euler_angles.hpp"
 #include "Shader/Shader.h"
-#include "Shader/ShadowMapShader.h"
 
 using namespace Kong;
 using namespace glm;

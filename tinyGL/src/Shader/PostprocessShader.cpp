@@ -1,7 +1,7 @@
 #include "PostprocessShader.h"
 
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 using namespace Kong;
 
 GLuint CombineProcessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)

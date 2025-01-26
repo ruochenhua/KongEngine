@@ -1,6 +1,6 @@
 #include "QuadShape.h"
 
-#include "render.h"
+#include "Render/RenderModule.hpp"
 
 using namespace Kong;
 using namespace std;

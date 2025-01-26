@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "Texture.hpp"
 #include "common.h"
 
 using namespace Kong;

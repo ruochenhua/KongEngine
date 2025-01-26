@@ -5,7 +5,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "Utils.hpp"
-#include "window.hpp"
+#include "Window.hpp"
 
 using namespace Kong;
 using namespace glm;

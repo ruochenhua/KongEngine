@@ -1,11 +1,11 @@
-#include "skybox.h"
+#include "SkyboxRenderSystem.hpp"
 
 #include "Utils.hpp"
-#include "render.h"
-#include "Scene.h"
+#include "RenderModule.hpp"
+#include "Scene.hpp"
 #include "stb_image.h"
-#include "texture.h"
-#include "window.hpp"
+#include "Texture.hpp"
+#include "Window.hpp"
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"
 

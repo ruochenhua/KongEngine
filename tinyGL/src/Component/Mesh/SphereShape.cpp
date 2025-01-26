@@ -1,6 +1,6 @@
 #include "SphereShape.h"
 
-#include "Scene.h"
+#include "Scene.hpp"
 
 using namespace Kong;
 

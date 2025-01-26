@@ -1,7 +1,7 @@
 #pragma once
 #include <imgui.h>
 
-#include "window.hpp"
+#include "Window.hpp"
 
 namespace Kong
 {

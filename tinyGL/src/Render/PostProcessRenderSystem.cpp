@@ -1,13 +1,13 @@
-#include "PostProcess.h"
+#include "PostProcessRenderSystem.hpp"
 
 #include <imgui.h>
 
-#include "texture.h"
+#include "Texture.hpp"
 #include "Utils.hpp"
-#include "window.hpp"
+#include "Window.hpp"
 using namespace Kong;
 
-void PostProcess::Init()
+void PostProcessRenderSystem::Init()
 {
     glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
     window_width = window_size.x;
@@ -30,7 +30,7 @@ void PostProcess::Init()
     InitScreenTexture();
 }
 
-void PostProcess::OnWindowResize(unsigned width, unsigned height)
+void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
 {
     window_width = width;
     window_height = height;
@@ -54,7 +54,7 @@ void PostProcess::OnWindowResize(unsigned width, unsigned height)
     radical_blur->GenerateTexture(window_width, window_height);
 }
 
-void PostProcess::Draw()
+void PostProcessRenderSystem::Draw()
 {
     // 先将屏幕空间反射和主场景渲染的内容整合
     combine_process->SetCombineMode(CombineProcessShader::Alpha);
@@ -90,7 +90,7 @@ void PostProcess::Draw()
     final_postprocess->Draw({postprocess_rst}, screen_quad_vao);
 }
 
-void PostProcess::RenderUI()
+void PostProcessRenderSystem::RenderUI()
 {
     ImGui::Begin("Post Process");
     ImGui::PushItemWidth(100);
@@ -120,7 +120,7 @@ void PostProcess::RenderUI()
     ImGui::End();
 }
 
-void PostProcess::InitQuad()
+void PostProcessRenderSystem::InitQuad()
 {
     glGenFramebuffers(1, &screen_quad_fbo);
     
@@ -145,7 +145,7 @@ void PostProcess::InitQuad()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 }
 
-void PostProcess::InitScreenTexture()
+void PostProcessRenderSystem::InitScreenTexture()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
     TextureCreateInfo pp_texture_create_info

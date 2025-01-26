@@ -1,8 +1,8 @@
 #pragma once
-#include "render.h"
-#include "Scene.h"
+#include "Render/RenderModule.hpp"
+#include "Scene.hpp"
 #include "ui.h"
-#include "window.hpp"
+#include "Window.hpp"
 
 namespace Kong
 {
