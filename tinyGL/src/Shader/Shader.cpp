@@ -199,28 +199,24 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 	{
 		auto shader_data = make_shared<DeferInfoShader>();
 
-		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;
 	}
 	else if(shader_name == "emit")
 	{
 		auto shader_data = make_shared<EmitShader>();
-		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;
 	}
 	else if(shader_name == "blend")
 	{
 		auto shader_data = make_shared<BlendShader>();
-		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;
 	}
 	else if(shader_name == "point_light_shadowmap")
 	{
 		auto shader_data = make_shared<PointLightShadowMapShader>();
-		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;
 	}
@@ -231,7 +227,6 @@ shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_nam
 #else
 		auto shader_data = make_shared<DirectionalLightShadowMapShader>();
 #endif
-		shader_data->InitDefaultShader();
 		shader_cache.emplace(shader_name, shader_data);
 		return shader_data;
 	}

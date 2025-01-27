@@ -4,6 +4,19 @@
 #include "Scene.hpp"
 using namespace Kong;
 
+CombineProcessShader::CombineProcessShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+    
+    SetInt("scene_texture", 0);
+    SetInt("added_texture", 1);
+}
+
 GLuint CombineProcessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
 {
 
@@ -30,20 +43,6 @@ GLuint CombineProcessShader::Draw(const vector<GLuint>& texture_list, GLuint scr
     return result_texture;
 }
 
-void CombineProcessShader::InitDefaultShader()
-{
-    shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/pre_postprocess.frag")}
-    };
-    shader_id = LoadShaders(shader_path_map);
-    assert(shader_id, "Shader load failed!");
-    
-    Use();
-    SetInt("scene_texture", 0);
-    SetInt("added_texture", 1);
-}
-
 void CombineProcessShader::GenerateTexture(unsigned width, unsigned height)
 {
     if(!result_fbo)
@@ -60,8 +59,20 @@ void CombineProcessShader::GenerateTexture(unsigned width, unsigned height)
 
 void CombineProcessShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
+}
+
+FinalPostprocessShader::FinalPostprocessShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+    
+    SetInt("scene_texture", 0);
+    SetInt("bright_texture", 1);
 }
 
 GLuint FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
@@ -103,28 +114,25 @@ GLuint FinalPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint s
     return 0;
 }
 
-void FinalPostprocessShader::InitDefaultShader()
-{
-    shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess.frag")}
-    };
-    shader_id = LoadShaders(shader_path_map);
-    assert(shader_id, "Shader load failed!");
-    
-    Use();
-    SetInt("scene_texture", 0);
-    SetInt("bright_texture", 1);
-}
-
 void FinalPostprocessShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
 }
 
 void FinalPostprocessShader::GenerateTexture(unsigned width, unsigned height)
 {
+}
+
+GaussianBlurShader::GaussianBlurShader()
+{
+    shader_path_map = {
+        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/gaussian_blur.vert")},
+        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/gaussian_blur.frag")}
+    };
+    shader_id = LoadShaders(shader_path_map);
+    assert(shader_id, "Shader load failed!");
+    
+    SetInt("bright_texture", 0);
 }
 
 GLuint GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao)
@@ -157,21 +165,9 @@ GLuint GaussianBlurShader::Draw(const vector<GLuint>& texture_list, GLuint scree
     return blur_texture[!horizontal];
 }
 
-void GaussianBlurShader::InitDefaultShader()
-{
-    shader_path_map = {
-        {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/gaussian_blur.vert")},
-        {EShaderType::fs, CSceneLoader::ToResourcePath("shader/postprocess/gaussian_blur.frag")}
-    };
-    shader_id = LoadShaders(shader_path_map);
-    assert(shader_id, "Shader load failed!");
-    glUseProgram(shader_id);
-    SetInt("bright_texture", 0);
-}
 
 void GaussianBlurShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
 }
 
@@ -191,7 +187,7 @@ void GaussianBlurShader::GenerateTexture(unsigned width, unsigned height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DilatePostprocessShader::InitDefaultShader()
+DilatePostprocessShader::DilatePostprocessShader()
 {
     shader_path_map = {
         {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/dilate_blur.vert")},
@@ -200,13 +196,11 @@ void DilatePostprocessShader::InitDefaultShader()
     shader_id = LoadShaders(shader_path_map);
     assert(shader_id, "Shader load failed!");
 
-    glUseProgram(shader_id);
     SetInt("scene_texture", 0);
 }
 
 void DilatePostprocessShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
 }
 
@@ -255,7 +249,8 @@ void DilatePostprocessShader::SetParam(int d_size, float d_separation)
     dilate_separation = d_separation;
 }
 
-void DOFPostprocessShader::InitDefaultShader()
+
+DOFPostprocessShader::DOFPostprocessShader()
 {
     shader_path_map = {
         {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/DOF.vert")},
@@ -264,7 +259,6 @@ void DOFPostprocessShader::InitDefaultShader()
     shader_id = LoadShaders(shader_path_map);
     assert(shader_id, "Shader load failed!");
 
-    glUseProgram(shader_id);
     SetInt("scene_texture", 0);
     SetInt("dilate_texture", 1);
     SetInt("position_texture", 2);
@@ -272,7 +266,6 @@ void DOFPostprocessShader::InitDefaultShader()
 
 void DOFPostprocessShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
 }
 
@@ -330,7 +323,7 @@ GLuint DOFPostprocessShader::Draw(const vector<GLuint>& texture_list, GLuint scr
     return DOF_texture;
 }
 
-void RadicalBlurShader::InitDefaultShader()
+RadicalBlurShader::RadicalBlurShader()
 {
     shader_path_map = {
         {EShaderType::vs, CSceneLoader::ToResourcePath("shader/postprocess/radical_blur.vert")},
@@ -338,13 +331,12 @@ void RadicalBlurShader::InitDefaultShader()
     };
     shader_id = LoadShaders(shader_path_map);
     assert(shader_id, "Shader load failed!");
-    glUseProgram(shader_id);
+    
     SetInt("bright_texture", 0);
 }
 
 void RadicalBlurShader::InitPostProcessShader(unsigned width, unsigned height)
 {
-    InitDefaultShader();
     GenerateTexture(width, height);
 }
 

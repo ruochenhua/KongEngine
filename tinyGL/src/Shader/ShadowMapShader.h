@@ -7,25 +7,23 @@ namespace Kong
     {
     public:
         ShadowMapShader() = default;
-
-        virtual void InitDefaultShader() = 0;
     };
 
     class DirectionalLightShadowMapShader : public ShadowMapShader
     {
     public:
-        virtual void InitDefaultShader() override;
+        DirectionalLightShadowMapShader();
     };
 
     class DirectionalLightCSMShader : public ShadowMapShader
     {
     public:
-        virtual void InitDefaultShader() override;
+        DirectionalLightCSMShader();
     };
 
     class PointLightShadowMapShader :public ShadowMapShader
     {
     public:
-        virtual void InitDefaultShader() override;
+        PointLightShadowMapShader();
     };
 }

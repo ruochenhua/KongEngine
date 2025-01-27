@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "Render/RenderCommon.h"
+#include "Render/RenderCommon.hpp"
 
 namespace Kong
 {
@@ -169,7 +169,6 @@ namespace Kong
     	// 父类的这个是为了支持原先的传入shader文件的写法，也就是设置尽量全名的参数传入
     	virtual void UpdateRenderData(const SMaterial& render_material,
     		const SSceneLightInfo& scene_render_info);
-    	virtual void InitDefaultShader(){};
     	
     	bool bIsBlend = false;
     	

@@ -1,6 +1,7 @@
 #pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
+#include "DeferRenderSystem.hpp"
 #include "Render/PostProcessRenderSystem.hpp"
 #include "Render/RenderSystem.hpp"
 #include "Render/SkyboxRenderSystem.hpp"
@@ -152,7 +153,7 @@ namespace Kong
 		GLuint GetSkyboxPrefilterTexture() const;
 		GLuint GetSkyboxBRDFLutTexture() const;
 		
-		GLuint GetLatestDepthTexture() const;
+		GLuint GetLatestDepthTexture();
 		int Init();
 		int Update(double delta);
 		void RenderUI(double delta);
@@ -202,12 +203,12 @@ namespace Kong
 		// 延迟渲染，将场景渲染到GBuffer上
 		void DeferRenderSceneToGBuffer() const;
 		// 利用GBuffer的信息，渲染光照
-		void DeferRenderSceneLighting() const;
+		void DeferRenderSceneLighting();
 		// 渲染水
 		void RenderWater();
 		
-		void SSAORender() const;
-		void SSReflectionRender() const;
+		void SSAORender();
+		void SSReflectionRender();
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject(bool water_reflection);
@@ -218,9 +219,11 @@ namespace Kong
 		GLuint null_tex_id			= GL_NONE;
 		
 		shared_ptr<Shader> shadowmap_debug_shader;
+#if SHADOWMAP_DEBUG
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
-
+#endif
+		
 		CCamera* mainCamera = nullptr;
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 *  mat4 model
@@ -237,7 +240,7 @@ namespace Kong
 		UBOHelper scene_light_ubo;
 
 		// 延迟渲染
-		DeferBuffer defer_buffer_;
+		DeferRenderSystem m_deferRenderSystem;
 		// ssao实现
 		SSAOHelper ssao_helper_;
 		// 水体渲染实现

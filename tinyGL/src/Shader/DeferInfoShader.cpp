@@ -5,7 +5,8 @@
 #include "Component/LightComponent.h"
 
 using namespace Kong;
-void DeferInfoShader::InitDefaultShader()
+
+DeferInfoShader::DeferInfoShader()
 {
     shader_path_map = {
         {EShaderType::vs, CSceneLoader::ToResourcePath("shader/defer_info.vert")},
@@ -58,7 +59,7 @@ void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const S
 	glBindTexture(GL_TEXTURE_2D, ao_tex_id);
 }
 
-void DeferredBRDFShader::InitDefaultShader()
+DeferredBRDFShader::DeferredBRDFShader()
 {
     shader_path_map = {
         {vs, CSceneLoader::ToResourcePath("shader/defer_pbr.vert")},
@@ -225,12 +226,6 @@ void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, cons
 
 DeferredTerrainInfoShader::DeferredTerrainInfoShader()
 {
-	InitDefaultShader();
-}
-
-void DeferredTerrainInfoShader::InitDefaultShader()
-{
-	Shader::InitDefaultShader();
 	shader_path_map = {
 		{vs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.vert")},
 		{fs, CSceneLoader::ToResourcePath("shader/terrain/terrain_tess.frag")},
@@ -252,12 +247,6 @@ void DeferredTerrainInfoShader::InitDefaultShader()
 
 SSAOShader::SSAOShader()
 {
-	InitDefaultShader();
-}
-
-
-void SSAOShader::InitDefaultShader()
-{
 	shader_path_map = {
 		{vs, CSceneLoader::ToResourcePath("shader/ssao.vert")},
 		{fs, CSceneLoader::ToResourcePath("shader/ssao.frag")},
@@ -272,11 +261,6 @@ void SSAOShader::InitDefaultShader()
 }
 
 SSReflectionShader::SSReflectionShader()
-{
-	InitDefaultShader();
-}
-
-void SSReflectionShader::InitDefaultShader()
 {
 	shader_path_map = {
 		{vs, CSceneLoader::ToResourcePath("shader/ssr.vert")},

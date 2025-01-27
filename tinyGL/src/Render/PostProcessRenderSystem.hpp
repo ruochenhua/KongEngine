@@ -32,7 +32,7 @@ namespace Kong
         float dilate_separation = 0.5;
         
         // 0: 正常场景；1：bloom颜色；2：反射颜色
-        GLuint screen_quad_texture[PP_TEXTURE_COUNT] = {GL_NONE};
+        GLuint screen_quad_texture[PP_TEXTURE_COUNT] = {GL_NONE, GL_NONE, GL_NONE};
     protected:
         // 渲染到屏幕的顶点数据，可以共用        
         GLuint screen_quad_vao = GL_NONE;

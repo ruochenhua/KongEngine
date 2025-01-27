@@ -5,7 +5,7 @@
 using namespace Kong;
 using namespace glm;
 
-void DirectionalLightShadowMapShader::InitDefaultShader()
+DirectionalLightShadowMapShader::DirectionalLightShadowMapShader()
 {
     shader_path_map = {
         {vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap.vert")},
@@ -17,7 +17,7 @@ void DirectionalLightShadowMapShader::InitDefaultShader()
     assert(shader_id, "Shader load failed!");
 }
 
-void DirectionalLightCSMShader::InitDefaultShader()
+DirectionalLightCSMShader::DirectionalLightCSMShader()
 {
     shader_path_map = {
         {vs, CSceneLoader::ToResourcePath("shader/shadow/csm.vert")},
@@ -29,7 +29,7 @@ void DirectionalLightCSMShader::InitDefaultShader()
     assert(shader_id, "Shader load failed!");
 }
 
-void PointLightShadowMapShader::InitDefaultShader()
+PointLightShadowMapShader::PointLightShadowMapShader()
 {
     shader_path_map = {
         {vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_pointlight.vert")},

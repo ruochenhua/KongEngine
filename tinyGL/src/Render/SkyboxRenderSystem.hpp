@@ -1,7 +1,7 @@
 #pragma once
 #include "Component/Mesh/BoxShape.h"
 #include "Common.h"
-#include "RenderCommon.h"
+#include "RenderCommon.hpp"
 #include "RenderSystem.hpp"
 #include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/SkyboxShader.h"

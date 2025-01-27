@@ -7,10 +7,8 @@ namespace Kong
     class EmitShader : public Shader
     {
     public:
-        EmitShader() = default;
+        EmitShader();
         void UpdateRenderData(const SMaterial& render_material,
             const SSceneLightInfo& scene_render_info) override;
-    
-        virtual void InitDefaultShader() override;
     };
 }

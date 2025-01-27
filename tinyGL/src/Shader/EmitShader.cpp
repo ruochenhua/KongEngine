@@ -6,8 +6,22 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
+EmitShader::EmitShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/blend.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/blend.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+	bIsBlend = true;
+	Use();
+	SetInt("diffuse_texture", 0);
+}
+
 void EmitShader::UpdateRenderData(const SMaterial& render_material,
-			const SSceneLightInfo& scene_render_info)
+                                  const SSceneLightInfo& scene_render_info)
 {
 	SetVec4("albedo", render_material.albedo);
 	// GLuint null_tex_id = CRender::GetNullTexId();
@@ -16,13 +30,3 @@ void EmitShader::UpdateRenderData(const SMaterial& render_material,
 	// glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 }
 
-void EmitShader::InitDefaultShader()
-{
-	shader_path_map = {
-		{vs, CSceneLoader::ToResourcePath("shader/emit.vert")},
-		{fs, CSceneLoader::ToResourcePath("shader/emit.frag")},
-	};
-	shader_id = Shader::LoadShaders(shader_path_map);
-    
-	assert(shader_id, "Shader load failed!");
-}

@@ -60,7 +60,6 @@ void DeferBuffer::Init(unsigned width, unsigned height)
 	GenerateDeferRenderTextures(width, height);
 
 	defer_render_shader = make_shared<DeferredBRDFShader>();
-	defer_render_shader->InitDefaultShader();
 }
 
 void DeferBuffer::GenerateDeferRenderTextures(int width, int height)
@@ -290,10 +289,11 @@ GLuint KongRenderModule::GetSkyboxBRDFLutTexture() const
 }
 
 // 获取最新的深度纹理
-GLuint KongRenderModule::GetLatestDepthTexture() const
+GLuint KongRenderModule::GetLatestDepthTexture()
 {
 	// todo:要看情况更新
-	return defer_buffer_.g_normal_;
+	return m_deferRenderSystem.GetNormalTexture();
+
 }
 int KongRenderModule::Init()
 {
@@ -331,7 +331,8 @@ int KongRenderModule::Init()
 	int width = window_size.x;
 	int height = window_size.y;
 	
-	defer_buffer_.Init(width, height);
+	m_deferRenderSystem.Init();
+	
 	ssao_helper_.Init(width, height);
 	water_render_helper_.Init(width, height);
 
@@ -524,7 +525,8 @@ int KongRenderModule::Update(double delta)
 	DoPostProcess();
 
 	RenderUI(delta);
-	post_process.SetPositionTexture(defer_buffer_.g_position_);	//先放这
+
+	post_process.SetPositionTexture(m_deferRenderSystem.GetPositionTexture());
 	return 1;
 }
 
@@ -584,6 +586,7 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
+
 	
 	GLuint render_scene_buffer;
 	// 正常渲染到后处理的buffer上
@@ -598,67 +601,14 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 	}
 	
 	glViewport(0,0, window_size.x, window_size.y);
-
-	// 渲染到g buffer上
-	glBindFramebuffer(GL_FRAMEBUFFER, defer_buffer_.g_buffer_);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	DeferRenderSceneToGBuffer();
-	// 水面反射不做SSAO
-	if(use_ssao && !water_reflection)
-	{
-		// 处理SSAO效果
-		SSAORender();
-	}
-	
-	// 渲染到当前的scene framebuffer上
-	glBindFramebuffer(GL_FRAMEBUFFER, render_scene_buffer);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-
-	defer_buffer_.defer_render_shader->Use();
-	defer_buffer_.defer_render_shader->SetBool("use_ssao", use_ssao);
-	// rsm
-	defer_buffer_.defer_render_shader->SetBool("use_rsm", use_rsm);
-	defer_buffer_.defer_render_shader->SetFloat("rsm_intensity", rsm_intensity);
-	defer_buffer_.defer_render_shader->SetInt("rsm_sample_count", rsm_sample_count);
-	for(int i = 0; i < rsm_sample_count; i++)
-	{
-		stringstream rsm_stream;
-		rsm_stream <<  "rsm_samples_and_weights[" << i << "]";
-		defer_buffer_.defer_render_shader->SetVec4(rsm_stream.str(), rsm_samples_and_weights[i]);
-	}
-
-	// pcss
-	defer_buffer_.defer_render_shader->SetBool("use_pcss", use_pcss);
-	defer_buffer_.defer_render_shader->SetFloat("pcss_radius", pcss_radius);
-	defer_buffer_.defer_render_shader->SetFloat("pcss_light_scale", pcss_light_scale);
-	defer_buffer_.defer_render_shader->SetInt("pcss_sample_count", pcss_sample_count);
-
-	if (use_ssao)
-	{
-#if USE_DSA
-		glBindTextureUnit(16, ssao_helper_.ssao_blur_texture);
-#else
-		glActiveTexture(GL_TEXTURE0 + 16);
-		glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_blur_texture);
-#endif
-	}
-	
-	// 渲染光照
-	DeferRenderSceneLighting();
-	// 需要将延迟渲染的深度缓冲复制到后面的后处理buffer上
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, defer_buffer_.g_buffer_);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_scene_buffer);
-	glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
-		window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	auto defer_render_result = m_deferRenderSystem.Draw(0.0, RenderResultInfo{render_scene_buffer}, this);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	RenderNonDeferSceneObjects();
-	RenderSkyBox(defer_buffer_.g_normal_);
+	RenderSkyBox(defer_render_result.resultDepth);
+
 	
 	// screen space reflection先放在这里吧
 	// 水面反射不做这个
@@ -754,32 +704,20 @@ void KongRenderModule::DeferRenderSceneToGBuffer() const
 	}
 }
 
-void KongRenderModule::DeferRenderSceneLighting() const
+void KongRenderModule::DeferRenderSceneLighting()
 {
-	defer_buffer_.defer_render_shader->Use();
-#if USE_DSA
-	glBindTextureUnit(0, defer_buffer_.g_position_);
-	glBindTextureUnit(1, defer_buffer_.g_normal_);
-	glBindTextureUnit(2, defer_buffer_.g_albedo_);
-	glBindTextureUnit(3, defer_buffer_.g_orm_);
-#else
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
-
-	// normal map加一个法线贴图的数据
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
-
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_albedo_);
-
-	glActiveTexture(GL_TEXTURE0 + 3);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
-#endif
-	defer_buffer_.defer_render_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+	m_deferRenderSystem.GetDeferredBRDFShader()->Use();
 	
-	defer_buffer_.defer_render_shader->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material,
+	glBindTextureUnit(0, m_deferRenderSystem.GetPositionTexture());
+	glBindTextureUnit(1, m_deferRenderSystem.GetNormalTexture());
+	glBindTextureUnit(2, m_deferRenderSystem.GetAlbedoTexture());
+	glBindTextureUnit(3, m_deferRenderSystem.GetOrmTexture());
+	
+	m_deferRenderSystem.GetDeferredBRDFShader()->SetBool("b_render_skybox", render_sky_env_status == 1);
+	
+	m_deferRenderSystem.GetDeferredBRDFShader()->UpdateRenderData(quad_shape->mesh_resource->mesh_list[0].m_RenderInfo.material,
 		scene_render_info);
+	
 	quad_shape->Draw();
 }
 
@@ -807,16 +745,9 @@ void KongRenderModule::RenderWater()
 		auto mesh_shader = water_comp->shader_data;
 
 		mesh_shader->Use();
-#if USE_DSA
 		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
 		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
 		
-#else
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
-#endif		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
@@ -835,15 +766,9 @@ void KongRenderModule::RenderWater()
 		auto mesh_shader = gerstner_water->shader_data;
 
 		mesh_shader->Use();
-#if USE_DSA
 		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
 		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
-#else
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_reflection_texture);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, water_render_helper_.water_refraction_texture);
-#endif
+
 		
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
@@ -853,7 +778,7 @@ void KongRenderModule::RenderWater()
 	}
 }
 
-void KongRenderModule::SSAORender() const
+void KongRenderModule::SSAORender()
 {
 	// 处理SSAO效果
 	glBindFramebuffer(GL_FRAMEBUFFER, ssao_helper_.ssao_fbo);
@@ -861,19 +786,11 @@ void KongRenderModule::SSAORender() const
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	ssao_helper_.ssao_shader_->Use();
-#if USE_DSA
-	glBindTextureUnit(0, defer_buffer_.g_position_);
-	glBindTextureUnit(1, defer_buffer_.g_normal_);
+	glBindTextureUnit(0, m_deferRenderSystem.GetPositionTexture());
+	glBindTextureUnit(1, m_deferRenderSystem.GetNormalTexture());
+	
 	glBindTextureUnit(2, ssao_helper_.ssao_noise_texture);
-#else
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_noise_texture);
-#endif
-	// ssao_shader_->SetVec2("screen_size");
+
 	// kernal samples to shader
 	quad_shape->Draw();
 	
@@ -883,16 +800,12 @@ void KongRenderModule::SSAORender() const
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	ssao_helper_.ssao_blur_shader_->Use();
-#if USE_DSA
 	glBindTextureUnit(0, ssao_helper_.ssao_result_texture);
-#else
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, ssao_helper_.ssao_result_texture);
-#endif
+
 	quad_shape->Draw();
 }
 
-void KongRenderModule::SSReflectionRender() const
+void KongRenderModule::SSReflectionRender()
 {
 	// scene color：post_process.GetScreenTexture()
 	// scene normal：defer_buffer_.g_normal_
@@ -904,15 +817,16 @@ void KongRenderModule::SSReflectionRender() const
 	glDisable(GL_DEPTH_TEST);
 	
 	ssreflection_shader->Use();
+	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_position_);
+	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetPositionTexture());
 	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_normal_);
+	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetNormalTexture());
 	glActiveTexture(GL_TEXTURE0 + 2);
 	// 用给后处理的texture作为scene color
 	glBindTexture(GL_TEXTURE_2D, post_process.GetScreenTexture());
 	glActiveTexture(GL_TEXTURE0 + 3);
-	glBindTexture(GL_TEXTURE_2D, defer_buffer_.g_orm_);
+	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetOrmTexture());
 	
 	quad_shape->Draw();
 	glEnable(GL_DEPTH_TEST);
@@ -1036,7 +950,7 @@ void KongRenderModule::RenderShadowMap()
 void KongRenderModule::OnWindowResize(int width, int height)
 {
 	post_process.OnWindowResize(width, height);
-	defer_buffer_.GenerateDeferRenderTextures(width, height);
+	//defer_buffer_.GenerateDeferRenderTextures(width, height);
 	ssao_helper_.GenerateSSAOTextures(width, height);
 	water_render_helper_.GenerateWaterRenderTextures(width, height);
 }

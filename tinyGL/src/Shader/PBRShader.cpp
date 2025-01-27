@@ -8,6 +8,39 @@ using namespace Kong;
 using namespace glm;
 using namespace std;
 
+PBRShader::PBRShader()
+{
+	shader_path_map = {
+		{vs, CSceneLoader::ToResourcePath("shader/brdf.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/brdf.frag")},
+	};
+	shader_id = Shader::LoadShaders(shader_path_map);
+    
+	assert(shader_id, "Shader load failed!");
+
+	// 一些shader的数据绑定
+	SetInt("diffuse_texture", DIFFUSE_TEX_SHADER_ID);
+	SetInt("normal_texture", NORMAL_TEX_SHADER_ID);
+	SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);
+	SetInt("metallic_texture", METALLIC_TEX_SHADER_ID);
+	SetInt("ao_texture", AO_TEX_SHADER_ID);
+	SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
+	SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
+	SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
+	SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
+	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
+	SetInt("rsm_world_pos", DIRLIGHT_RSM_WORLD_POS);
+	SetInt("rsm_world_normal", DIRLIGHT_RSM_WORLD_NORMAL);
+	SetInt("rsm_world_flux", DIRLIGHT_RSM_WORLD_FLUX);
+	
+	for(unsigned int i = 0; i < POINT_LIGHT_SHADOW_MAX; ++i)
+	{
+		stringstream ss;
+		ss << "shadow_map_pointlight[" << i << "]";
+		SetInt(ss.str(), POINTLIGHT_SM_TEX_SHADER_ID + i);
+	}
+}
+
 void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {	
 	// 材质属性
@@ -127,36 +160,4 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneL
 	}
 }
 
-void PBRShader::InitDefaultShader()
-{
-	shader_path_map = {
-		{vs, CSceneLoader::ToResourcePath("shader/brdf.vert")},
-		{fs, CSceneLoader::ToResourcePath("shader/brdf.frag")},
-	};
-	shader_id = Shader::LoadShaders(shader_path_map);
-    
-	assert(shader_id, "Shader load failed!");
-
-	// 一些shader的数据绑定
-	SetInt("diffuse_texture", DIFFUSE_TEX_SHADER_ID);
-	SetInt("normal_texture", NORMAL_TEX_SHADER_ID);
-	SetInt("roughness_texture", ROUGHNESS_TEX_SHADER_ID);
-	SetInt("metallic_texture", METALLIC_TEX_SHADER_ID);
-	SetInt("ao_texture", AO_TEX_SHADER_ID);
-	SetInt("skybox_texture", SKYBOX_TEX_SHADER_ID);
-	SetInt("skybox_diffuse_irradiance_texture", SKYBOX_DIFFUSE_IRRADIANCE_TEX_SHADER_ID);
-	SetInt("skybox_prefilter_texture", SKYBOX_PREFILTER_TEX_SHADER_ID);
-	SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
-	SetInt("shadow_map", DIRLIGHT_SM_TEX_SHADER_ID);
-	SetInt("rsm_world_pos", DIRLIGHT_RSM_WORLD_POS);
-	SetInt("rsm_world_normal", DIRLIGHT_RSM_WORLD_NORMAL);
-	SetInt("rsm_world_flux", DIRLIGHT_RSM_WORLD_FLUX);
-	
-	for(unsigned int i = 0; i < POINT_LIGHT_SHADOW_MAX; ++i)
-	{
-		stringstream ss;
-		ss << "shadow_map_pointlight[" << i << "]";
-		SetInt(ss.str(), POINTLIGHT_SM_TEX_SHADER_ID + i);
-	}
-}
 

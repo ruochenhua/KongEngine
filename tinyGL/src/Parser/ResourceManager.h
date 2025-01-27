@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-#include "Render/RenderCommon.h"
+#include "Render/RenderCommon.hpp"
 
 struct aiMesh;
 struct aiScene;

@@ -7,11 +7,9 @@ namespace Kong
     class PBRShader : public Shader
     {
     public:
-        PBRShader() = default;
+        PBRShader();
         
         void UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info) override;
-    
-        virtual void InitDefaultShader() override;
     };
     //
     // // brdf_normalmap 就是brdf的变种，很多能力可以和BRDFShader共用

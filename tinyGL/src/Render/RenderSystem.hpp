@@ -1,4 +1,7 @@
 #pragma once
+#include "glad/glad.h"
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 
 namespace Kong
 {
@@ -30,7 +33,9 @@ namespace Kong
         KongRenderSystem(const KongRenderSystem&) = delete;
         KongRenderSystem& operator=(const KongRenderSystem&) = delete;
         
-        virtual RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info,
+        virtual RenderResultInfo Draw(
+            double delta,
+            const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) = 0;
         
         virtual void Init() = 0;

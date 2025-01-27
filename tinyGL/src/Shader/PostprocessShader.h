@@ -11,8 +11,6 @@ namespace Kong
         PostprocessShader() = default;
         virtual GLuint Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) = 0;
 
-        void InitDefaultShader() override = 0;
-        
         virtual void InitPostProcessShader(unsigned width, unsigned height) = 0;
         virtual void GenerateTexture(unsigned width, unsigned height) = 0;
     };
@@ -28,9 +26,9 @@ namespace Kong
             Alpha,      // 以第一张贴图为底图，后续的贴图根据本身的alpha值来叠加
         };
         
-        CombineProcessShader() = default;
+        CombineProcessShader();
         GLuint Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
-        void InitDefaultShader() override;
+        
         void GenerateTexture(unsigned width, unsigned height) override;
         void InitPostProcessShader(unsigned width, unsigned height) override;
         void SetCombineMode(CombineMode mode) {combine_mode = mode;}
@@ -44,10 +42,9 @@ namespace Kong
     class FinalPostprocessShader : public PostprocessShader
     {
     public:
-        FinalPostprocessShader() = default;
+        FinalPostprocessShader();
         GLuint Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
-
-        void InitDefaultShader() override;
+\
         void InitPostProcessShader(unsigned width, unsigned height) override;
         void GenerateTexture(unsigned width, unsigned height) override;
     };
@@ -55,10 +52,9 @@ namespace Kong
     class GaussianBlurShader : public PostprocessShader
     {
     public:
-        GaussianBlurShader() = default;
+        GaussianBlurShader();
         GLuint Draw(const vector<GLuint>& texture_list, GLuint screen_quad_vao) override;
 
-        void InitDefaultShader() override;
         void InitPostProcessShader(unsigned width, unsigned height) override;
         void SetBlurAmount(unsigned amount) {blur_amount = amount;}
         void GenerateTexture(unsigned width, unsigned height) override;
@@ -74,8 +70,8 @@ namespace Kong
     class DilatePostprocessShader : public PostprocessShader
     {
     public:
-        DilatePostprocessShader() = default;
-        void InitDefaultShader() override;
+        DilatePostprocessShader();
+        
         void InitPostProcessShader(unsigned width, unsigned height) override;
         
         void GenerateTexture(unsigned width, unsigned height) override;
@@ -95,8 +91,8 @@ namespace Kong
     class DOFPostprocessShader : public PostprocessShader
     {
     public:
-        DOFPostprocessShader() = default;
-        void InitDefaultShader() override;
+        DOFPostprocessShader();
+        
         void InitPostProcessShader(unsigned width, unsigned height) override;
         void SetFocusDistance(float distance, const glm::vec2& threshold);
 
@@ -116,8 +112,8 @@ namespace Kong
     class RadicalBlurShader : public PostprocessShader
     {
     public:
-        RadicalBlurShader() = default;
-        void InitDefaultShader() override;
+        RadicalBlurShader();
+        
         void InitPostProcessShader(unsigned width, unsigned height) override;
 
         void SetBlurAmount(float amount) {blur_amount = amount;}
