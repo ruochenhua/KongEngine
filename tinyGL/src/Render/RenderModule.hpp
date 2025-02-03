@@ -81,42 +81,8 @@ namespace Kong
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
 #endif
+
 	
-	// 延迟渲染的数据结构
-	struct DeferBuffer
-	{
-		GLuint g_buffer_	= 0;
-		GLuint g_position_	= 0;
-		GLuint g_normal_	= 0;
-		GLuint g_albedo_	= 0;
-		GLuint g_orm_		= 0;	//o:ao, r:roughness, m: metallic
-		GLuint g_rbo_		= 0;
-		
-		void Init(unsigned width, unsigned height);
-		void GenerateDeferRenderTextures(int width, int height);
-		// 延迟渲染着色器
-		shared_ptr<DeferredBRDFShader> defer_render_shader;
-	};
-
-	// ssao渲染相关
-	struct SSAOHelper
-	{
-		unsigned ssao_kernel_count = 64;
-		unsigned ssao_noise_size = 4;
-		vector<glm::vec3> ssao_kernal_samples;
-		vector<glm::vec3> ssao_kernal_noises;
-		
-		GLuint ssao_fbo = GL_NONE;
-		GLuint SSAO_BlurFBO = GL_NONE;
-		GLuint ssao_noise_texture = GL_NONE;
-		GLuint ssao_result_texture = GL_NONE;
-		GLuint ssao_blur_texture = GL_NONE;
-		shared_ptr<SSAOShader> ssao_shader_;
-		shared_ptr<Shader> ssao_blur_shader_;
-
-		void Init(int width, int height);
-		void GenerateSSAOTextures(int width, int height);
-	};
 
 	// water渲染相关
 	struct WaterRenderHelper
@@ -158,9 +124,7 @@ namespace Kong
 		int Update(double delta);
 		void RenderUI(double delta);
 		
-		void DoPostProcess();
-		
-		CCamera* GetCamera() {return mainCamera;}
+		CCamera* GetCamera() const {return mainCamera;}
 
 
 		void ChangeSkybox();
@@ -170,54 +134,43 @@ namespace Kong
 
 		double render_time = 0.0;
 		
-		PostProcessRenderSystem post_process;
 		int render_sky_env_status = 2;
-		// 启用屏幕空间环境光遮蔽
-		bool use_ssao = false;
-		// 启用反射阴影贴图
-		bool use_rsm = false;
-		float rsm_intensity = 0.04f;
-		int rsm_sample_count = 32;
-		
-		vector<glm::vec4> rsm_samples_and_weights;
-		// 启用PCSS
-		bool use_pcss = false;
-		float pcss_radius = 1.0f;
-		float pcss_light_scale = 0.1f;
-		int pcss_sample_count = 36;
-		
+	
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
-		SkyboxRenderSystem m_SkyBox;
-		
+
 		// 场景光源信息
 		SSceneLightInfo scene_render_info;
+		
+		GLuint m_renderToTextures[FRAGOUT_TEXTURE_COUNT] = {0, 0, 0};
+		
 	private:
 		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
 		void UpdateSceneRenderInfo();
 		void InitUBO();
-		void RenderSkyBox(GLuint depth_texture = 0);
+		void InitMainFBO();
+		
 		// 渲染不支持延迟渲染的物体
 		void RenderNonDeferSceneObjects() const;
-		// 延迟渲染，将场景渲染到GBuffer上
-		void DeferRenderSceneToGBuffer() const;
-		// 利用GBuffer的信息，渲染光照
-		void DeferRenderSceneLighting();
 		// 渲染水
 		void RenderWater();
 		
-		void SSAORender();
 		void SSReflectionRender();
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject(bool water_reflection);
 		
 		void RenderShadowMap();
+
+		RenderResultInfo latestRenderResult{};
 	private:
+		friend class CYamlParser;
+		
+		GLuint m_renderToBuffer {0};    // 渲染到的buffer
+		GLuint m_renderToRbo {0};
 		
 		GLuint null_tex_id			= GL_NONE;
-		
 		shared_ptr<Shader> shadowmap_debug_shader;
 #if SHADOWMAP_DEBUG
 		GLuint m_QuadVAO = GL_NONE;
@@ -239,10 +192,13 @@ namespace Kong
 		 */
 		UBOHelper scene_light_ubo;
 
+		// 天空盒
+		SkyboxRenderSystem m_skyboxRenderSystem;
 		// 延迟渲染
 		DeferRenderSystem m_deferRenderSystem;
-		// ssao实现
-		SSAOHelper ssao_helper_;
+		// 后处理
+		PostProcessRenderSystem m_postProcessRenderSystem;
+
 		// 水体渲染实现
 		WaterRenderHelper water_render_helper_;
 

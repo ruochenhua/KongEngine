@@ -8,6 +8,26 @@
 
 namespace Kong
 {
+    // ssao渲染相关
+    struct SSAOHelper
+    {
+        unsigned ssao_kernel_count = 64;
+        unsigned ssao_noise_size = 4;
+        vector<glm::vec3> ssao_kernal_samples;
+        vector<glm::vec3> ssao_kernal_noises;
+		
+        GLuint ssao_fbo = GL_NONE;
+        GLuint SSAO_BlurFBO = GL_NONE;
+        GLuint ssao_noise_texture = GL_NONE;
+        GLuint ssao_result_texture = GL_NONE;
+        GLuint ssao_blur_texture = GL_NONE;
+        shared_ptr<SSAOShader> ssao_shader_;
+        shared_ptr<Shader> ssao_blur_shader_;
+
+        void Init(int width, int height);
+        void GenerateSSAOTextures(int width, int height);
+    };
+    
     class DeferRenderSystem : public KongRenderSystem
     {
     public:
@@ -25,6 +45,8 @@ namespace Kong
             const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) override;
 
+        void DrawUI() override;
+        
         GLuint GetPositionTexture();
         GLuint GetNormalTexture();
         GLuint GetAlbedoTexture();
@@ -34,6 +56,8 @@ namespace Kong
 
         shared_ptr<DeferredBRDFShader> GetDeferredBRDFShader() const {return m_deferredBRDFShader;}
     protected:
+        friend class KongRenderModule;
+        
         shared_ptr<DeferredBRDFShader> m_deferredBRDFShader;
         std::unordered_map<DeferResType, GLuint> m_deferredResourceMap
         {
@@ -45,17 +69,31 @@ namespace Kong
 
         GLuint m_infoBuffer {0};        // 场景信息
         GLuint m_infoRbo {0};
-        
-        GLuint m_renderToBuffer {0};    // 渲染到的buffer
-        GLuint m_renderToRbo {0};
-        GLuint m_renderToTextures[PP_TEXTURE_COUNT] = {0, 0, 0};
-        
+                
         void GenerateDeferInfoTextures(int width, int height);
-        void GenerateDeferRenderToTextures(int width, int height);
 
         void RenderToBuffer(const KongRenderModule* render_module) const;
         void RenderToTexture(GLuint render_to_buffer, const KongRenderModule* render_module);
 
         shared_ptr<CQuadShape> m_quadShape;
+
+        //ssao相关
+        SSAOHelper m_ssaoHelper;
+        void SSAORender();
+        // 启用屏幕空间环境光遮蔽
+        bool use_ssao = false;
+
+        // 启用反射阴影贴图
+        bool use_rsm = false;
+        float rsm_intensity = 0.04f;
+        int rsm_sample_count = 32;
+		
+        vector<glm::vec4> rsm_samples_and_weights;
+        // 启用PCSS
+        bool use_pcss = false;
+        float pcss_radius = 1.0f;
+        float pcss_light_scale = 0.1f;
+        int pcss_sample_count = 36;
+        
     };
 }

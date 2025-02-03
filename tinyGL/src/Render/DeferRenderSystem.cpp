@@ -1,5 +1,8 @@
 #include "DeferRenderSystem.hpp"
 
+#include <imgui.h>
+#include <random>
+
 #include "Actor.hpp"
 #include "RenderModule.hpp"
 #include "Scene.hpp"
@@ -7,6 +10,95 @@
 #include "Window.hpp"
 
 using namespace Kong;
+
+
+void SSAOHelper::Init(int width, int height)
+{
+	// ssao初始化
+	glGenFramebuffers(1, &ssao_fbo);
+	
+	ssao_shader_ = make_shared<SSAOShader>();
+	// init kernel
+	ssao_kernal_samples.resize(ssao_kernel_count);
+	uniform_real_distribution<GLfloat> random_floats(0.0f, 1.0f);
+	default_random_engine generator;
+	auto my_lerp = [](GLfloat a, GLfloat b, GLfloat value)->float
+	{
+		return 	a + value*(b - a);
+	};
+
+	// 半球随机采样点数组
+	for(unsigned int i = 0; i < ssao_kernel_count; i++)
+	{
+		vec3 sample(random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator));
+
+		sample = normalize(sample) * random_floats(generator);
+		float scale = (float)i / float(ssao_kernel_count);
+		scale = my_lerp(0.1f, 1.0f, scale*scale);
+		ssao_kernal_samples[i] = sample*scale;
+	}
+
+	// 引入一些随机旋转
+	unsigned total_noise = ssao_noise_size*ssao_noise_size;
+	ssao_kernal_noises.resize(total_noise);
+	for(unsigned i = 0; i < total_noise; i++)
+	{
+		vec3 noise(random_floats(generator) * 2.0 - 1.0,
+			random_floats(generator) * 2.0 - 1.0,
+			0);
+		ssao_kernal_noises[i] = noise;
+	}
+
+	ssao_shader_->Use();
+	for(unsigned i = 0; i < ssao_kernel_count; ++i)
+	{
+		stringstream ss;
+		ss << "samples[" << i << "]";
+		ssao_shader_->SetVec3(ss.str(), ssao_kernal_samples[i]);
+	}
+	TextureCreateInfo ssao_noise_create_info{
+	GL_TEXTURE_2D, GL_RGB32F, GL_RGB, GL_FLOAT, 4, 4
+	};
+	ssao_noise_create_info.data = ssao_kernal_noises.data();
+	TextureBuilder::CreateTexture(ssao_noise_texture, ssao_noise_create_info);
+
+	// ssao模糊
+	glGenFramebuffers(1, &SSAO_BlurFBO);
+	
+	// ssao blur shader
+	map<EShaderType, string> blur_ssao_shader_path = {
+		{vs, CSceneLoader::ToResourcePath("shader/ssao.vert")},
+		{fs, CSceneLoader::ToResourcePath("shader/ssao_blur.frag")},
+	};
+	
+	ssao_blur_shader_ = make_shared<Shader>(blur_ssao_shader_path);
+	ssao_blur_shader_->Use();
+	ssao_blur_shader_->SetInt("ssao_texture", 0);
+
+	GenerateSSAOTextures(width, height);
+}
+
+void SSAOHelper::GenerateSSAOTextures(int width, int height)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo);
+	TextureCreateInfo ssao_tex_create_info {
+	GL_TEXTURE_2D, GL_RED, GL_RGB, GL_FLOAT, width, height
+	};
+
+	TextureBuilder::CreateTexture(ssao_result_texture, ssao_tex_create_info);
+	// 绑定对应的ssao计算结果贴图
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_result_texture, 0);
+
+	// ssao模糊
+	glBindFramebuffer(GL_FRAMEBUFFER, SSAO_BlurFBO);
+	TextureBuilder::CreateTexture(ssao_blur_texture, ssao_tex_create_info);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_texture, 0);
+	
+	ssao_shader_->SetVec2("screen_size", vec2(width, height));
+}
+
 
 void DeferRenderSystem::Init()
 {
@@ -17,12 +109,22 @@ void DeferRenderSystem::Init()
     auto& window_size = KongWindow::GetWindowModule().windowSize;
     // info buffer
     GenerateDeferInfoTextures(window_size.x, window_size.y);
-
-    // render to buffer
-    glGenFramebuffers(1, &m_renderToBuffer);
-    GenerateDeferRenderToTextures(window_size.x, window_size.y);
     
     m_deferredBRDFShader = make_shared<DeferredBRDFShader>();
+
+	m_ssaoHelper.Init(window_size.x, window_size.y);
+	
+	// rsm采样点初始化
+	std::default_random_engine random_engine;
+	std::uniform_real_distribution<float> u(0.0, 1.0);
+	float pi_num = pi<float>();
+	for(int i = 0; i < rsm_sample_count; i++)
+	{
+		float xi1 = u(random_engine);
+		float xi2 = u(random_engine);
+		
+		rsm_samples_and_weights.emplace_back(xi1*sin(2*pi_num*xi2), xi1*cos(2*pi_num*xi2), xi1*xi1, 0.0);
+	}
 }
 
 RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
@@ -37,20 +139,37 @@ RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& r
     RenderToBuffer(render_module);
     
     // 水面反射不做SSAO
-    if(render_module->use_ssao)
+    if(use_ssao)
     {
         // 处理SSAO效果
-        // SSAORender();
+        SSAORender();
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
     RenderToTexture(render_result_info.frameBuffer, render_module);
     
-    
-    return RenderResultInfo{m_renderToBuffer,
-        m_renderToTextures[0],
+
+	DrawUI();    
+    return RenderResultInfo{render_result_info.frameBuffer,
+        render_result_info.resultColor,
         GetNormalTexture(),
-        m_renderToTextures[1]};
+        render_result_info.resultBloom};
+}
+
+void DeferRenderSystem::DrawUI()
+{
+	ImGui::Checkbox("ssao", &use_ssao);
+	
+	ImGui::Checkbox("reflective shadowmap(rsm)", &use_rsm);
+	ImGui::DragFloat("rsm intensity", &rsm_intensity, 0.005f, 0., 1.0);
+
+	if (ImGui::TreeNode("Percentage-Closer Soft Shadows"))
+	{
+		ImGui::Checkbox("Use PCSS", &use_pcss);
+		ImGui::DragFloat("PCSS radius", &pcss_radius, 0.01f, 0.1f, 50.0f);
+		ImGui::DragFloat("PCSS light scale", &pcss_light_scale, 0.01f, 0.1f, 1.0f);
+		ImGui::DragInt("PCSS sample count", &pcss_sample_count, 0.1f, 8, 64);
+		ImGui::TreePop();
+	}
 }
 
 GLuint DeferRenderSystem::GetPositionTexture()
@@ -126,43 +245,6 @@ void DeferRenderSystem::GenerateDeferInfoTextures(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DeferRenderSystem::GenerateDeferRenderToTextures(int width, int height)
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, m_renderToBuffer);
-
-    TextureCreateInfo pp_texture_create_info
-    {
-        GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT,
-        width, height, GL_REPEAT, GL_REPEAT, GL_REPEAT,
-        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
-    };
-
-    
-    for(unsigned i = 0; i < PP_TEXTURE_COUNT; ++i)
-    {
-        TextureBuilder::CreateTexture(m_renderToTextures[i], pp_texture_create_info);
-        
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i,
-            GL_TEXTURE_2D, m_renderToTextures[i], 0);
-    }
-    // depth buffer
-    if(!m_renderToRbo)
-    {
-        // 注意这里不是glGenTextures，搞错了查了半天
-        glGenRenderbuffers(1, &m_renderToRbo);
-    }
-    glBindRenderbuffer(GL_RENDERBUFFER, m_renderToRbo);
-    
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_renderToRbo);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    // 渲染到多个颜色附件上
-    GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};  
-    glDrawBuffers(3, color_attachment); 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 void DeferRenderSystem::RenderToBuffer(const KongRenderModule* render_module) const
 {
     glEnable(GL_CULL_FACE);
@@ -195,35 +277,34 @@ void DeferRenderSystem::RenderToBuffer(const KongRenderModule* render_module) co
 
 void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer,const Kong::KongRenderModule* render_module)
 {
-    
+    glBindFramebuffer(GL_FRAMEBUFFER, render_to_buffer);
     // 渲染到当前的scene framebuffer上
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_deferredBRDFShader->Use();
-    m_deferredBRDFShader->SetBool("use_ssao", render_module->use_ssao);
+    m_deferredBRDFShader->SetBool("use_ssao", use_ssao);
     // rsm
-    m_deferredBRDFShader->SetBool("use_rsm", render_module->use_rsm);
-    m_deferredBRDFShader->SetFloat("rsm_intensity", render_module->rsm_intensity);
-    m_deferredBRDFShader->SetInt("rsm_sample_count", render_module->rsm_sample_count);
-    for(int i = 0; i < render_module->rsm_sample_count; i++)
+    m_deferredBRDFShader->SetBool("use_rsm", use_rsm);
+    m_deferredBRDFShader->SetFloat("rsm_intensity", rsm_intensity);
+    m_deferredBRDFShader->SetInt("rsm_sample_count", rsm_sample_count);
+    for(int i = 0; i < rsm_sample_count; i++)
     {
         stringstream rsm_stream;
         rsm_stream <<  "rsm_samples_and_weights[" << i << "]";
-        m_deferredBRDFShader->SetVec4(rsm_stream.str(), render_module->rsm_samples_and_weights[i]);
+        m_deferredBRDFShader->SetVec4(rsm_stream.str(), rsm_samples_and_weights[i]);
     }
 
     // pcss
-    m_deferredBRDFShader->SetBool("use_pcss", render_module->use_pcss);
-    m_deferredBRDFShader->SetFloat("pcss_radius", render_module->pcss_radius);
-    m_deferredBRDFShader->SetFloat("pcss_light_scale", render_module->pcss_light_scale);
-    m_deferredBRDFShader->SetInt("pcss_sample_count", render_module->pcss_sample_count);
+    m_deferredBRDFShader->SetBool("use_pcss", use_pcss);
+    m_deferredBRDFShader->SetFloat("pcss_radius", pcss_radius);
+    m_deferredBRDFShader->SetFloat("pcss_light_scale", pcss_light_scale);
+    m_deferredBRDFShader->SetInt("pcss_sample_count", pcss_sample_count);
 
-    // if (use_ssao)
-    // {
-    //     glBindTextureUnit(16, ssao_helper_.ssao_blur_texture);
-    //
-    // }
+    if (use_ssao)
+    {
+        glBindTextureUnit(16, m_ssaoHelper.ssao_blur_texture);
+    }
 	
     // 渲染光照
     m_deferredBRDFShader->Use();
@@ -247,4 +328,31 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer,const Kong::Kong
     glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
         window_size.x, window_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
+}
+
+void DeferRenderSystem::SSAORender()
+{
+	// 处理SSAO效果
+	glBindFramebuffer(GL_FRAMEBUFFER, m_ssaoHelper.ssao_fbo);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	m_ssaoHelper.ssao_shader_->Use();
+	glBindTextureUnit(0, GetPositionTexture());
+	glBindTextureUnit(1, GetNormalTexture());
+	
+	glBindTextureUnit(2, m_ssaoHelper.ssao_noise_texture);
+
+	// kernal samples to shader
+	m_quadShape->Draw();
+	
+	// blur
+	glBindFramebuffer(GL_FRAMEBUFFER, m_ssaoHelper.SSAO_BlurFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	m_ssaoHelper.ssao_blur_shader_->Use();
+	glBindTextureUnit(0, m_ssaoHelper.ssao_result_texture);
+
+	m_quadShape->Draw();
 }

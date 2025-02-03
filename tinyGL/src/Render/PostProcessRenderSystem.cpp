@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "RenderModule.hpp"
 #include "Texture.hpp"
 #include "Utils.hpp"
 #include "Window.hpp"
@@ -27,7 +28,6 @@ void PostProcessRenderSystem::Init()
     radical_blur->InitPostProcessShader(window_width, window_height);
     
     InitQuad();
-    InitScreenTexture();
 }
 
 void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
@@ -35,17 +35,17 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
     window_width = width;
     window_height = height;
 
-    // 删掉并释放掉原来的贴图资源
-    glDeleteTextures(PP_TEXTURE_COUNT, screen_quad_texture);
-    for(int i = 0; i < PP_TEXTURE_COUNT; ++i)
-    {
-        screen_quad_texture[i] = GL_NONE;    
-    }
-    
-    glDeleteRenderbuffers(1, &scene_rbo);
-    scene_rbo = GL_NONE;
-    // 重新创建
-    InitScreenTexture();
+    // // 删掉并释放掉原来的贴图资源
+    // glDeleteTextures(FRAGOUT_TEXTURE_COUNT, screen_quad_texture);
+    // for(int i = 0; i < FRAGOUT_TEXTURE_COUNT; ++i)
+    // {
+    //     screen_quad_texture[i] = GL_NONE;    
+    // }
+    //
+    // glDeleteRenderbuffers(1, &scene_rbo);
+    // scene_rbo = GL_NONE;
+    // // 重新创建
+    // InitScreenTexture();
 
     combine_process->GenerateTexture(window_width, window_height);
     gaussian_blur->GenerateTexture(window_width, window_height);
@@ -54,8 +54,11 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
     radical_blur->GenerateTexture(window_width, window_height);
 }
 
-void PostProcessRenderSystem::Draw()
+void PostProcessRenderSystem::Draw(KongRenderModule* render_module)
 {
+    // 渲染到屏幕的texture
+    // 0: 正常场景；1：bloom颜色；2：反射颜色
+    auto& screen_quad_texture = render_module->m_renderToTextures;
     // 先将屏幕空间反射和主场景渲染的内容整合
     combine_process->SetCombineMode(CombineProcessShader::Alpha);
     auto postprocess_rst = combine_process->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);
@@ -90,6 +93,18 @@ void PostProcessRenderSystem::Draw()
     final_postprocess->Draw({postprocess_rst}, screen_quad_vao);
 }
 
+RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+    KongRenderModule* render_module)
+{
+   // glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    
+    Draw(render_module);
+    return render_result_info;
+}
+
 void PostProcessRenderSystem::RenderUI()
 {
     ImGui::Begin("Post Process");
@@ -122,8 +137,6 @@ void PostProcessRenderSystem::RenderUI()
 
 void PostProcessRenderSystem::InitQuad()
 {
-    glGenFramebuffers(1, &screen_quad_fbo);
-    
     // 屏幕mesh
     float quadVertices[] = {
         // positions        // texture Coords
@@ -143,39 +156,4 @@ void PostProcessRenderSystem::InitQuad()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-}
-
-void PostProcessRenderSystem::InitScreenTexture()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, screen_quad_fbo);
-    TextureCreateInfo pp_texture_create_info
-    {
-        GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT,
-        window_width, window_height, GL_REPEAT, GL_REPEAT, GL_REPEAT,
-        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
-    };
-
-    
-    for(unsigned i = 0; i < PP_TEXTURE_COUNT; ++i)
-    {
-        TextureBuilder::CreateTexture(screen_quad_texture[i], pp_texture_create_info);
-        
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, screen_quad_texture[i], 0);
-    }
-    // depth buffer
-    if(!scene_rbo)
-    {
-        // 注意这里不是glGenTextures，搞错了查了半天
-        glGenRenderbuffers(1, &scene_rbo);
-    }
-    glBindRenderbuffer(GL_RENDERBUFFER, scene_rbo);
-    
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_width, window_height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene_rbo);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    // 渲染到多个颜色附件上
-    GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};  
-    glDrawBuffers(3, color_attachment); 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

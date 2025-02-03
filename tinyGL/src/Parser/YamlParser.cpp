@@ -426,7 +426,7 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
             if(skybox_node["render_cloud"])
             {
                 auto render_cloud = skybox_node["render_cloud"].as<bool>();
-                render_sys.m_SkyBox.render_cloud = render_cloud;
+                render_sys.m_skyboxRenderSystem.render_cloud = render_cloud;
             }
         }
     }

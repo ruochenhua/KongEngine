@@ -37,7 +37,7 @@ namespace Kong
             double delta,
             const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) = 0;
-        
+        virtual void DrawUI() {}
         virtual void Init() = 0;
         
     protected:

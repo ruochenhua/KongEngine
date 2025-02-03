@@ -1,20 +1,21 @@
 #pragma once
+#include "RenderSystem.hpp"
 #include "Shader/PostprocessShader.h"
 #include "Shader/Shader.h"
 
-static constexpr unsigned PP_TEXTURE_COUNT = 3;
 
 namespace Kong
 {
-    class PostProcessRenderSystem
+    class PostProcessRenderSystem : public KongRenderSystem
     {
     public:
-        void Init();
-        GLuint GetScreenFrameBuffer() const {return screen_quad_fbo;}
-        GLuint GetScreenTexture() const {return screen_quad_texture[0];}
+        void Init() override;
         void OnWindowResize(unsigned width, unsigned height);
         
-        void Draw();
+        void Draw(KongRenderModule* render_module);
+        RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info,
+            KongRenderModule* render_module) override;
+        
         void RenderUI();
         void SetPositionTexture(GLuint texture) {position_texture = texture;}
         
@@ -30,23 +31,17 @@ namespace Kong
         glm::vec2 focus_threshold = glm::vec2(1.0, 15.0);
         int dilate_size = 3;
         float dilate_separation = 0.5;
-        
-        // 0: 正常场景；1：bloom颜色；2：反射颜色
-        GLuint screen_quad_texture[PP_TEXTURE_COUNT] = {GL_NONE, GL_NONE, GL_NONE};
+    
     protected:
         // 渲染到屏幕的顶点数据，可以共用        
         GLuint screen_quad_vao = GL_NONE;
         GLuint screen_quad_vbo = GL_NONE;
-
-        // 渲染到屏幕的frame buffer
-        GLuint screen_quad_fbo = GL_NONE;
-
+        
         // 位置贴图，从延迟渲染的部分得到
         GLuint position_texture = GL_NONE;
         
     private:
         void InitQuad();
-        void InitScreenTexture();
 
         // 预后处理阶段
         shared_ptr<CombineProcessShader> combine_process;
@@ -62,11 +57,7 @@ namespace Kong
         // 后处理最后阶段
         shared_ptr<FinalPostprocessShader> final_postprocess;
         
-        // 渲染到屏幕的texture
-        // 0: scene texture
-        // 1: bright texture(for bloom effect)
-        //GLuint screen_quad_texture[2] = {GL_NONE, GL_NONE};
-        GLuint scene_rbo = GL_NONE;
+        
         
         int window_width = 1024;
         int window_height = 768;

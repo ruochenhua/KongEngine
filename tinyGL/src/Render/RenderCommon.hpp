@@ -9,6 +9,7 @@
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
 
+
 namespace Kong
 {
     class CPointLightComponent;
@@ -29,6 +30,10 @@ namespace Kong
     constexpr unsigned DIRLIGHT_RSM_WORLD_FLUX = 12;
     constexpr unsigned POINTLIGHT_SM_TEX_SHADER_ID = 13;
 
+
+    // 输出渲染的贴图数量
+    static constexpr unsigned FRAGOUT_TEXTURE_COUNT = 3;
+    
     enum ETextureType
     {
         diffuse = 0,

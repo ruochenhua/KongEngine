@@ -153,8 +153,8 @@ RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& 
 		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 	}
 	
-	Render(render_module->render_sky_env_status, render_module->GetLatestDepthTexture());
-	return RenderResultInfo{};
+	Render(render_module->render_sky_env_status, render_result_info.resultDepth);
+	return render_result_info;
 }
 
 void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
