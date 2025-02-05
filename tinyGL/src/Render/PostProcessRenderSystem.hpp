@@ -9,6 +9,8 @@ namespace Kong
     class PostProcessRenderSystem : public KongRenderSystem
     {
     public:
+        PostProcessRenderSystem();
+        
         void Init() override;
         void OnWindowResize(unsigned width, unsigned height);
         
@@ -16,7 +18,7 @@ namespace Kong
         RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) override;
         
-        void RenderUI();
+        void DrawUI() override;
         void SetPositionTexture(GLuint texture) {position_texture = texture;}
         
         bool enable_bloom = false;

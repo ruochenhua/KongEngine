@@ -125,40 +125,11 @@ shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 	return g_renderModule.quad_shape;
 }
 
-GLuint KongRenderModule::GetSkyboxTexture() const
-{
-	return m_skyboxRenderSystem.GetSkyBoxTextureId();
-}
-
-GLuint KongRenderModule::GetSkyboxDiffuseIrradianceTexture() const
-{
-	return m_skyboxRenderSystem.GetDiffuseIrradianceTexture();
-}
-
-GLuint KongRenderModule::GetSkyboxPrefilterTexture() const
-{
-	return m_skyboxRenderSystem.GetPrefilterTexture();
-}
-
-GLuint KongRenderModule::GetSkyboxBRDFLutTexture() const
-{
-	return m_skyboxRenderSystem.GetBRDFLutTexture();
-}
-
-// 获取最新的深度纹理
-GLuint KongRenderModule::GetLatestDepthTexture()
-{
-	// todo:要看情况更新
-	return m_deferRenderSystem.GetNormalTexture();
-
-}
 int KongRenderModule::Init()
 {
 	InitMainFBO();
 	InitCamera();
 	quad_shape = make_shared<CQuadShape>();
-	// quad_shape->InitRenderInfo();
-
 
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
@@ -177,7 +148,8 @@ int KongRenderModule::Init()
 	null_tex_id = ResourceManager::GetOrLoadTexture(null_tex_path);
 
 	InitUBO();
-	glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
+	
+	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 	int width = window_size.x;
 	int height = window_size.y;
 
@@ -186,15 +158,35 @@ int KongRenderModule::Init()
 	{
 		render_sys.Init();
 	}
-	m_deferRenderSystem.Init();
+	
 	m_skyboxRenderSystem.Init();
+	m_deferRenderSystem.Init();
 	m_postProcessRenderSystem.Init();
+	m_ssReflectionRenderSystem.Init();
 	water_render_helper_.Init(width, height);
 
-	// 屏幕空间反射shader
-	ssreflection_shader = make_shared<SSReflectionShader>();
-
 	return 0;
+}
+
+KongRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
+{
+	switch (type)
+	{
+	case RenderSystemType::SKYBOX:
+		return &m_skyboxRenderSystem;
+		
+	case RenderSystemType::DEFERRED:
+		return &m_deferRenderSystem;
+
+	case RenderSystemType::POST_PROCESS:
+		return &m_postProcessRenderSystem;
+
+	case RenderSystemType::SS_REFLECTION:
+		return &m_ssReflectionRenderSystem;
+	
+	default:
+		throw std::exception("Render system type not found");
+	}
 }
 
 int KongRenderModule::InitCamera()
@@ -337,7 +329,6 @@ int KongRenderModule::Update(double delta)
 		render_sys.Draw(delta,  RenderResultInfo{}, this);
 	}
 	
-	
 	m_skyboxRenderSystem.PreRenderUpdate();
 	RenderShadowMap();
 	// 更新UBO里的相机数据
@@ -416,19 +407,7 @@ int KongRenderModule::Update(double delta)
 }
 
 void KongRenderModule::RenderUI(double delta)
-{
-	if(ImGui::TreeNode("skybox"))
-	{
-		if(ImGui::Button("change hdr background"))
-		{
-			ChangeSkybox();
-		}
-	
-		ImGui::DragInt("sky display status", &render_sky_env_status, 0.1f, 0, 2);
-		
-		ImGui::TreePop();
-	}
-	
+{	
 	auto main_cam = GetCamera();
 	if(main_cam)
 	{
@@ -436,10 +415,12 @@ void KongRenderModule::RenderUI(double delta)
 		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f,1.0f, 100.0f);
 	}
 	
-	
 	ImGui::Checkbox("screen space reflection", &use_screen_space_reflection);
+
+	m_skyboxRenderSystem.DrawUI();
+	m_deferRenderSystem.DrawUI();
 	
-	m_postProcessRenderSystem.RenderUI();
+	m_postProcessRenderSystem.DrawUI();
 }
 
 void KongRenderModule::RenderSceneObject(bool water_reflection)
@@ -464,6 +445,7 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 		render_scene_buffer = water_render_helper_.water_reflection_fbo;
 	}
 	latestRenderResult.frameBuffer = render_scene_buffer;
+	latestRenderResult.resultColor = m_renderToTextures[0];
 	glViewport(0,0, window_size.x, window_size.y);
 	
 	latestRenderResult = m_deferRenderSystem.Draw(0.0, latestRenderResult, this);
@@ -479,16 +461,11 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 	if(use_screen_space_reflection && !water_reflection)
 	{
 		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
-		SSReflectionRender();
+		latestRenderResult = m_ssReflectionRenderSystem.Draw(0.0, latestRenderResult, this);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
-}
-
-void KongRenderModule::ChangeSkybox()
-{
-	m_skyboxRenderSystem.ChangeSkybox();
 }
 
 void KongRenderModule::RenderNonDeferSceneObjects() const
@@ -519,7 +496,7 @@ void KongRenderModule::RenderNonDeferSceneObjects() const
 
 		// 等于1代表渲染skybox，会需要用到环境贴图
 		mesh_shader->Use();
-		mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
+		mesh_shader->SetBool("b_render_skybox", m_skyboxRenderSystem.render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_shader->SetDouble("iTime", render_time);
 		mesh_component->Draw(scene_render_info);
@@ -581,34 +558,6 @@ void KongRenderModule::RenderWater()
 		mesh_shader->SetDouble("iTime", render_time);
 		gerstner_water->Draw(scene_render_info);
 	}
-}
-
-
-void KongRenderModule::SSReflectionRender()
-{
-	// scene color：post_process.GetScreenTexture()
-	// scene normal：defer_buffer_.g_normal_
-	// scene reflection mask: defer_buffer_.g_orm_
-	// scene position: defer_buffer_.g_position_
-	// scene depth存在于normal贴图的w分量上
-
-	// 这里要关掉深度测试，否则会影响后面的水体渲染的流程
-	glDisable(GL_DEPTH_TEST);
-	
-	ssreflection_shader->Use();
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetPositionTexture());
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetNormalTexture());
-	glActiveTexture(GL_TEXTURE0 + 2);
-	// 用给后处理的texture作为scene color
-	glBindTexture(GL_TEXTURE_2D, m_renderToTextures[0]);
-	glActiveTexture(GL_TEXTURE0 + 3);
-	glBindTexture(GL_TEXTURE_2D, m_deferRenderSystem.GetOrmTexture());
-	
-	quad_shape->Draw();
-	glEnable(GL_DEPTH_TEST);
 }
 
 void KongRenderModule::CollectLightInfo()

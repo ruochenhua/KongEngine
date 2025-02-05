@@ -21,6 +21,15 @@ namespace Kong
     {
         GLuint frameBuffer {GL_NONE};
     };
+
+    enum class RenderSystemType : uint8_t
+    {
+        DEFERRED = 0,
+        SKYBOX,
+        POST_PROCESS,
+        SS_REFLECTION,
+        NONE,
+    };
     
     // 渲染系统，每个渲染效果或者阶段都独立出来
     class KongRenderSystem
@@ -36,11 +45,15 @@ namespace Kong
         virtual RenderResultInfo Draw(
             double delta,
             const RenderResultInfo& render_result_info,
-            KongRenderModule* render_module) = 0;
+            KongRenderModule* render_module)
+        {
+            return RenderResultInfo {};
+        }
         virtual void DrawUI() {}
-        virtual void Init() = 0;
+        virtual void Init() {}
         
     protected:
         GLuint m_frameBuffer {GL_NONE};
+        RenderSystemType m_Type {RenderSystemType::NONE};
     };
 }

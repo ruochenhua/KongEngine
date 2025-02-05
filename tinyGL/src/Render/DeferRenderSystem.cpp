@@ -78,6 +78,7 @@ void SSAOHelper::Init(int width, int height)
 	ssao_blur_shader_->SetInt("ssao_texture", 0);
 
 	GenerateSSAOTextures(width, height);
+	
 }
 
 void SSAOHelper::GenerateSSAOTextures(int width, int height)
@@ -99,6 +100,11 @@ void SSAOHelper::GenerateSSAOTextures(int width, int height)
 	ssao_shader_->SetVec2("screen_size", vec2(width, height));
 }
 
+DeferRenderSystem::DeferRenderSystem()
+{
+	m_Type = RenderSystemType::DEFERRED;
+}
+
 
 void DeferRenderSystem::Init()
 {
@@ -110,7 +116,6 @@ void DeferRenderSystem::Init()
     // info buffer
     GenerateDeferInfoTextures(window_size.x, window_size.y);
     
-    m_deferredBRDFShader = make_shared<DeferredBRDFShader>();
 
 	m_ssaoHelper.Init(window_size.x, window_size.y);
 	
@@ -125,6 +130,9 @@ void DeferRenderSystem::Init()
 		
 		rsm_samples_and_weights.emplace_back(xi1*sin(2*pi_num*xi2), xi1*cos(2*pi_num*xi2), xi1*xi1, 0.0);
 	}
+
+	// 绑定一些texture
+	m_deferredBRDFShader = make_shared<DeferredBRDFShader>();
 }
 
 RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
@@ -146,9 +154,7 @@ RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& r
     }
 
     RenderToTexture(render_result_info.frameBuffer, render_module);
-    
-
-	DrawUI();    
+	
     return RenderResultInfo{render_result_info.frameBuffer,
         render_result_info.resultColor,
         GetNormalTexture(),
@@ -245,7 +251,7 @@ void DeferRenderSystem::GenerateDeferInfoTextures(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DeferRenderSystem::RenderToBuffer(const KongRenderModule* render_module) const
+void DeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
 {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -267,15 +273,17 @@ void DeferRenderSystem::RenderToBuffer(const KongRenderModule* render_module) co
             continue;
         }
 
+		auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
+    	
         mesh_shader->Use();
         // 等于1代表渲染skybox，会需要用到环境贴图
-        mesh_shader->SetBool("b_render_skybox", render_module->render_sky_env_status == 1);
+        mesh_shader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
         mesh_shader->SetMat4("model", actor->GetModelMatrix());
         mesh_component->Draw(render_module->scene_render_info);
     }
 }
 
-void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer,const Kong::KongRenderModule* render_module)
+void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModule* render_module)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, render_to_buffer);
     // 渲染到当前的scene framebuffer上
@@ -307,14 +315,20 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer,const Kong::Kong
     }
 	
     // 渲染光照
-    m_deferredBRDFShader->Use();
+	int texture_idx = 0;
+	glBindTextureUnit(texture_idx++, GetPositionTexture());
+	glBindTextureUnit(texture_idx++, GetNormalTexture());
+	glBindTextureUnit(texture_idx++, GetAlbedoTexture());
+	glBindTextureUnit(texture_idx++, GetOrmTexture());
 	
-    glBindTextureUnit(0, GetPositionTexture());
-    glBindTextureUnit(1, GetNormalTexture());
-    glBindTextureUnit(2, GetAlbedoTexture());
-    glBindTextureUnit(3, GetOrmTexture());
-	
-    m_deferredBRDFShader->SetBool("b_render_skybox", render_module->render_sky_env_status == 1);
+	auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
+    m_deferredBRDFShader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
+	// auto& render_module = KongRenderModule::GetRenderModule();
+	glBindTextureUnit(texture_idx++, skybox_sys->GetSkyBoxTextureId());
+	glBindTextureUnit(texture_idx++, skybox_sys->GetDiffuseIrradianceTexture());
+	glBindTextureUnit(texture_idx++, skybox_sys->GetPrefilterTexture());
+	glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
+
 	
     m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0].m_RenderInfo.material,
         render_module->scene_render_info);

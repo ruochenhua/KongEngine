@@ -2,20 +2,14 @@
 #include "Component/CameraComponent.h"
 #include "Common.h"
 #include "DeferRenderSystem.hpp"
+#include "SSReflectionRenderSystem.hpp"
 #include "Render/PostProcessRenderSystem.hpp"
 #include "Render/RenderSystem.hpp"
 #include "Render/SkyboxRenderSystem.hpp"
-#include "Component/Mesh/Water.h"
-#include "Shader/DeferInfoShader.h"
 #include "Shader/Shader.h"
 
 namespace Kong
 {
-	class FinalPostprocessShader;
-	class CPointLightComponent;
-	class CDirectionalLightComponent;
-	class CMeshComponent;
-	class CModelMeshComponent;
 	class CCamera;
 
 	// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
@@ -81,7 +75,6 @@ namespace Kong
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
 #endif
-
 	
 
 	// water渲染相关
@@ -113,28 +106,19 @@ namespace Kong
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
 		KongRenderModule() = default;
-
-		GLuint GetSkyboxTexture() const;
-		GLuint GetSkyboxDiffuseIrradianceTexture() const;
-		GLuint GetSkyboxPrefilterTexture() const;
-		GLuint GetSkyboxBRDFLutTexture() const;
 		
-		GLuint GetLatestDepthTexture();
 		int Init();
 		int Update(double delta);
 		void RenderUI(double delta);
 		
 		CCamera* GetCamera() const {return mainCamera;}
 
-
-		void ChangeSkybox();
 		void OnWindowResize(int width, int height);
 
 		void SetRenderWater(const weak_ptr<AActor>& water_actor);
 
 		double render_time = 0.0;
 		
-		int render_sky_env_status = 2;
 	
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
@@ -143,7 +127,8 @@ namespace Kong
 		SSceneLightInfo scene_render_info;
 		
 		GLuint m_renderToTextures[FRAGOUT_TEXTURE_COUNT] = {0, 0, 0};
-		
+
+		KongRenderSystem* GetRenderSystemByType(RenderSystemType type);
 	private:
 		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
@@ -156,7 +141,6 @@ namespace Kong
 		// 渲染水
 		void RenderWater();
 		
-		void SSReflectionRender();
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		void CollectLightInfo();
 		void RenderSceneObject(bool water_reflection);
@@ -198,13 +182,13 @@ namespace Kong
 		DeferRenderSystem m_deferRenderSystem;
 		// 后处理
 		PostProcessRenderSystem m_postProcessRenderSystem;
+		// 屏幕空间反射
+		SSReflectionRenderSystem m_ssReflectionRenderSystem;
 
 		// 水体渲染实现
 		WaterRenderHelper water_render_helper_;
 
 		shared_ptr<CQuadShape> quad_shape;
-		// 屏幕空间反射
-		shared_ptr<SSReflectionShader> ssreflection_shader;
 
 		std::vector<KongRenderSystem> m_renderSystems;
 	};

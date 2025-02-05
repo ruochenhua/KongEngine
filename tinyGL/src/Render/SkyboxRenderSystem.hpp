@@ -19,8 +19,10 @@ namespace Kong
 	
 	class SkyboxRenderSystem : public KongRenderSystem
 	{
-	public:		
+	public:
+		SkyboxRenderSystem();
 		void Init() override;
+		void DrawUI() override;
 		RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module) override;
 		// IBL预处理HDR相关
 		void PreprocessIBL(const string& hdr_file_path);
@@ -36,6 +38,7 @@ namespace Kong
 		GLuint GetBRDFLutTexture() const {return  brdf_lut_map_id;}
 
 		bool render_cloud = false;
+		int render_sky_env_status = 2;
 	private:
 		// skybox渲染相关shader
 		shared_ptr<SkyboxShader> skybox_shader;
@@ -68,7 +71,7 @@ namespace Kong
 		GLuint prefilter_map_id = GL_NONE; 
 		// brdf查找表
 		GLuint brdf_lut_map_id = GL_NONE;
-
+		
 		unsigned current_skybox_idx = 0;
 		vector<string> skybox_res_list;
 	};

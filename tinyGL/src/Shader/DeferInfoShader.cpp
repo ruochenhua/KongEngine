@@ -98,34 +98,9 @@ DeferredBRDFShader::DeferredBRDFShader()
 void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
 {
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
-	int texture_idx = 4;
-	// 贴图0-3分别是position/normal/albedo/orm, 下面的从4开始算
+	int texture_idx = 8;
+	// 贴图0-3分别是position/normal/albedo/orm, 已经IBL相关贴图，下面的从8开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧
-	
-#if USE_DSA
-	auto& render_module = KongRenderModule::GetRenderModule();
-	glBindTextureUnit(texture_idx++, render_module.GetSkyboxTexture());
-	glBindTextureUnit(texture_idx++, render_module.GetSkyboxDiffuseIrradianceTexture());
-	glBindTextureUnit(texture_idx++, render_module.GetSkyboxPrefilterTexture());
-	glBindTextureUnit(texture_idx++, render_module.GetSkyboxBRDFLutTexture());
-#else
-	// 添加天空盒贴图
-	glActiveTexture(GL_TEXTURE0 + texture_idx++);
-	GLuint skybox_tex_id = CRender::GetRender()->GetSkyboxTexture();
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_tex_id);
-	// 天空盒辐照度贴图
-	glActiveTexture(GL_TEXTURE0 + texture_idx++);
-	GLuint skybox_irradiance_tex_id = CRender::GetRender()->GetSkyboxDiffuseIrradianceTexture();
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_irradiance_tex_id);
-	// 天空盒预滤波贴图
-	glActiveTexture(GL_TEXTURE0 +	texture_idx++);
-	GLuint skybox_prefilter_tex_id = CRender::GetRender()->GetSkyboxPrefilterTexture();
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_prefilter_tex_id);
-	// 天空盒brdf lut贴图
-	glActiveTexture(GL_TEXTURE0 + texture_idx++);
-	GLuint skybox_brdf_lut_tex_id = CRender::GetRender()->GetSkyboxBRDFLutTexture();
-	glBindTexture(GL_TEXTURE_2D, skybox_brdf_lut_tex_id);
-#endif
 	
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();

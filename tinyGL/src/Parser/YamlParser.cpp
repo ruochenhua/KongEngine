@@ -420,7 +420,7 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
             if(skybox_node["render_sky_env_status"])
             {
                 auto render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
-                render_sys.render_sky_env_status = render_sky_env_status;
+                render_sys.m_skyboxRenderSystem.render_sky_env_status = render_sky_env_status;
             }
 
             if(skybox_node["render_cloud"])

@@ -8,6 +8,11 @@
 #include "Window.hpp"
 using namespace Kong;
 
+PostProcessRenderSystem::PostProcessRenderSystem()
+{
+    m_Type = RenderSystemType::POST_PROCESS;
+}
+
 void PostProcessRenderSystem::Init()
 {
     glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
@@ -105,7 +110,7 @@ RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultI
     return render_result_info;
 }
 
-void PostProcessRenderSystem::RenderUI()
+void PostProcessRenderSystem::DrawUI()
 {
     ImGui::Begin("Post Process");
     ImGui::PushItemWidth(100);

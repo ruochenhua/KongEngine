@@ -1,5 +1,7 @@
 #include "SkyboxRenderSystem.hpp"
 
+#include <imgui.h>
+
 #include "Utils.hpp"
 #include "RenderModule.hpp"
 #include "Scene.hpp"
@@ -14,6 +16,11 @@ using namespace Kong;
 constexpr int CUBE_MAP_RES = 1024;
 
 #define USE_HDR_SKYBOX 1
+
+SkyboxRenderSystem::SkyboxRenderSystem()
+{
+	m_Type = RenderSystemType::SKYBOX;
+}
 
 void SkyboxRenderSystem::Init()
 {
@@ -137,9 +144,25 @@ void SkyboxRenderSystem::Init()
 	volumetric_cloud_ = make_shared<VolumetricCloud>();
 }
 
+void SkyboxRenderSystem::DrawUI()
+{
+	if(ImGui::TreeNode("skybox"))
+	{
+		if(ImGui::Button("change hdr background"))
+		{
+			ChangeSkybox();
+		}
+	
+		ImGui::Checkbox("render cloud", &render_cloud);
+		ImGui::DragInt("sky display status", &render_sky_env_status, 0.1f, 0, 2);
+		
+		ImGui::TreePop();
+	}
+}
+
 RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module)
 {
-	if (render_module == nullptr || render_module->render_sky_env_status == 0)
+	if (render_module == nullptr || render_sky_env_status == 0)
 	{
 		return RenderResultInfo{};
 	}
@@ -153,7 +176,7 @@ RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& 
 		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 	}
 	
-	Render(render_module->render_sky_env_status, render_result_info.resultDepth);
+	Render(render_sky_env_status, render_result_info.resultDepth);
 	return render_result_info;
 }
 

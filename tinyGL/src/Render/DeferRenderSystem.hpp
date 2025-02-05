@@ -39,6 +39,8 @@ namespace Kong
             Orm
         };
 
+        DeferRenderSystem();
+        
         void Init() override;
 
         RenderResultInfo Draw(double delta,
@@ -72,8 +74,8 @@ namespace Kong
                 
         void GenerateDeferInfoTextures(int width, int height);
 
-        void RenderToBuffer(const KongRenderModule* render_module) const;
-        void RenderToTexture(GLuint render_to_buffer, const KongRenderModule* render_module);
+        void RenderToBuffer(KongRenderModule* render_module);
+        void RenderToTexture(GLuint render_to_buffer, KongRenderModule* render_module);
 
         shared_ptr<CQuadShape> m_quadShape;
 
