@@ -41,7 +41,7 @@ namespace Kong
 
         // update ui
         void PreRenderUpdate() const;
-        void SimpleDraw(shared_ptr<Shader> simple_shader) override;
+        void DrawShadowInfo(shared_ptr<Shader> simple_shader) override;
         
         // cloud process
         GLuint cloud_tex, bloom_tex, alphaness_tex, depth_tex;

@@ -27,10 +27,7 @@ void SkyboxRenderSystem::Init()
 	box_mesh = make_shared<CBoxShape>();
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
 	box_mesh->BeginPlay();
-	
-	quad_shape = make_shared<CQuadShape>();
-	quad_shape->BeginPlay();
-	
+		
 	skybox_shader = make_shared<SkyboxShader>();
 	atmosphere_shader = make_shared<AtmosphereShader>();
 	equirectangular_to_cubemap_shader = make_shared<EquirectangularToCubemapShader>();
@@ -310,7 +307,8 @@ void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
 	glViewport(0, 0, CUBE_MAP_RES, CUBE_MAP_RES);
 	brdf_lut_calculation_shader->Use();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	quad_shape->Draw();
+	
+	KongRenderModule::GetScreenShape()->Draw();
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
@@ -394,7 +392,7 @@ void SkyboxRenderSystem::RenderCloud(GLuint depth_texture)
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, cloud_model_->weather_texutre);
 #endif
-	quad_shape->Draw();
+	KongRenderModule::GetScreenShape()->Draw();
 }
 
 void SkyboxRenderSystem::ChangeSkybox()

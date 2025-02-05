@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "MeshComponent.h"
 
+#define USE_TCS 1
 namespace Kong
 {
     // 地形类
@@ -9,7 +10,7 @@ namespace Kong
     public:
         Terrain();
         Terrain(const string &file_name);
-        void SimpleDraw(shared_ptr<Shader> simple_draw_shader) override;
+        void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
         float height_scale_ = 64.0f;
         float height_shift_ = 16.0f;
 
@@ -24,19 +25,23 @@ namespace Kong
         
         int terrain_size = 10000;
         int terrain_res = 100;
+        
     private:
         // 读取高度图
         int LoadHeightMap(const string &file_name);
         GLuint terrain_vao = GL_NONE;
         GLuint terrain_vbo = GL_NONE;
-        GLuint terrain_ebo = GL_NONE;
+        
         GLuint terrain_height_map = GL_NONE;
         
         std::vector<float> height_data;
         std::vector<unsigned int> height_indices;
-
+        
+#if !USE_TCS
         unsigned int num_strips = 0;
         unsigned int num_verts_per_strip = 0;
+#endif
+        
         bool render_wireframe = false;
 
         GLuint grass_albedo_texture = GL_NONE;
@@ -47,6 +52,5 @@ namespace Kong
         
         GLuint rock_albedo_texture = GL_NONE;
         GLuint rock_normal_texture = GL_NONE;
-        
     };
 }

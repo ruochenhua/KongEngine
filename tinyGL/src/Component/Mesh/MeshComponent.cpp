@@ -16,7 +16,7 @@ void CMeshComponent::BeginPlay()
 	InitRenderInfo();
 }
 
-void CMeshComponent::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
+void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
 	{

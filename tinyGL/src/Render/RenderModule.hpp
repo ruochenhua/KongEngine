@@ -119,7 +119,9 @@ namespace Kong
 
 		double render_time = 0.0;
 		
-	
+		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
+		void RenderSceneObject(GLuint target_fbo = GL_NONE);
+		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
 
@@ -140,10 +142,6 @@ namespace Kong
 		void RenderNonDeferSceneObjects() const;
 		// 渲染水
 		void RenderWater();
-		
-		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
-		void CollectLightInfo();
-		void RenderSceneObject(bool water_reflection);
 		
 		void RenderShadowMap();
 
@@ -188,7 +186,7 @@ namespace Kong
 		// 水体渲染实现
 		WaterRenderHelper water_render_helper_;
 
-		shared_ptr<CQuadShape> quad_shape;
+		shared_ptr<CQuadShape> m_quadShape;
 
 		std::vector<KongRenderSystem> m_renderSystems;
 	};

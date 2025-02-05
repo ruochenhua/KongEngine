@@ -12,7 +12,6 @@ SSReflectionRenderSystem::SSReflectionRenderSystem()
 
 void SSReflectionRenderSystem::Init()
 {
-    m_quadShape = make_shared<CQuadShape>();
     m_ssReflectionShader = std::make_shared<SSReflectionShader>();
 }
 
@@ -41,7 +40,7 @@ RenderResultInfo SSReflectionRenderSystem::Draw(double delta, const RenderResult
     glActiveTexture(GL_TEXTURE0 + 3);
     glBindTexture(GL_TEXTURE_2D, defer_render_system->GetOrmTexture());
 	
-    m_quadShape->Draw();
+    KongRenderModule::GetScreenShape()->Draw();
     glEnable(GL_DEPTH_TEST);
     
     return render_result_info;

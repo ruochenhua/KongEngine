@@ -93,7 +93,7 @@ void CDirectionalLightComponent::RenderShadowMap()
         shadowmap_shader->SetMat4("light_space_mat[0]", light_space_mat);
 #endif
         
-        render_obj->SimpleDraw(shadowmap_shader);
+        render_obj->DrawShadowInfo(shadowmap_shader);
     }
     // 渲染rsm信息
     if(enable_rsm)
@@ -130,7 +130,7 @@ void CDirectionalLightComponent::RenderShadowMap()
             light_space_mat = light_proj * light_view;
             rsm_shader->SetMat4("light_space_mat", light_space_matrices[0]);
         
-            render_obj->SimpleDraw(rsm_shader);
+            render_obj->DrawShadowInfo(rsm_shader);
         }
     }
     

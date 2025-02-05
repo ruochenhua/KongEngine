@@ -77,8 +77,6 @@ namespace Kong
         void RenderToBuffer(KongRenderModule* render_module);
         void RenderToTexture(GLuint render_to_buffer, KongRenderModule* render_module);
 
-        shared_ptr<CQuadShape> m_quadShape;
-
         //ssao相关
         SSAOHelper m_ssaoHelper;
         void SSAORender();

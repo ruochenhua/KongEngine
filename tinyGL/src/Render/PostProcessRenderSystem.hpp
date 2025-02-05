@@ -14,12 +14,10 @@ namespace Kong
         void Init() override;
         void OnWindowResize(unsigned width, unsigned height);
         
-        void Draw(KongRenderModule* render_module);
         RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) override;
         
         void DrawUI() override;
-        void SetPositionTexture(GLuint texture) {position_texture = texture;}
         
         bool enable_bloom = false;
         // 开启和关闭景深
@@ -38,9 +36,6 @@ namespace Kong
         // 渲染到屏幕的顶点数据，可以共用        
         GLuint screen_quad_vao = GL_NONE;
         GLuint screen_quad_vbo = GL_NONE;
-        
-        // 位置贴图，从延迟渲染的部分得到
-        GLuint position_texture = GL_NONE;
         
     private:
         void InitQuad();

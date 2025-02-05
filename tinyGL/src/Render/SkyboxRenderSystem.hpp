@@ -9,7 +9,6 @@
 
 namespace Kong
 {
-	class CQuadShape;
 	enum ESkyEnvStatus
 	{
 		no_sky = 0,
@@ -56,8 +55,7 @@ namespace Kong
 		
 		// skybox渲染用到的mesh信息
 		shared_ptr<CBoxShape> box_mesh;
-		shared_ptr<CQuadShape> quad_shape;
-		
+				
 		// skybox贴图预处理帧缓冲
 		GLuint preprocess_fbo = GL_NONE;
 		GLuint preprocess_rbo = GL_NONE;

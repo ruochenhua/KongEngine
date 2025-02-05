@@ -14,6 +14,7 @@ namespace Kong
         GLuint resultColor {GL_NONE};
         GLuint resultDepth {GL_NONE};
         GLuint resultBloom {GL_NONE};
+        GLuint resultPosition {GL_NONE};
     };
 
     // 渲染传入信息

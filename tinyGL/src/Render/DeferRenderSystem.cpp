@@ -108,8 +108,6 @@ DeferRenderSystem::DeferRenderSystem()
 
 void DeferRenderSystem::Init()
 {
-    m_quadShape = make_shared<CQuadShape>();
-    
     glGenFramebuffers(1, &m_infoBuffer);
 
     auto& window_size = KongWindow::GetWindowModule().windowSize;
@@ -158,7 +156,8 @@ RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& r
     return RenderResultInfo{render_result_info.frameBuffer,
         render_result_info.resultColor,
         GetNormalTexture(),
-        render_result_info.resultBloom};
+        render_result_info.resultBloom,
+		GetPositionTexture()};
 }
 
 void DeferRenderSystem::DrawUI()
@@ -329,7 +328,7 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModul
 	glBindTextureUnit(texture_idx++, skybox_sys->GetPrefilterTexture());
 	glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
 
-	
+	auto m_quadShape = KongRenderModule::GetScreenShape();
     m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0].m_RenderInfo.material,
         render_module->scene_render_info);
 	
@@ -356,7 +355,7 @@ void DeferRenderSystem::SSAORender()
 	glBindTextureUnit(1, GetNormalTexture());
 	
 	glBindTextureUnit(2, m_ssaoHelper.ssao_noise_texture);
-
+	auto m_quadShape = KongRenderModule::GetScreenShape();
 	// kernal samples to shader
 	m_quadShape->Draw();
 	

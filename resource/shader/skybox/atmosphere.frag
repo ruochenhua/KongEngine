@@ -347,7 +347,7 @@ vec4 raymarchToCloud(vec3 startPos, vec3 endPos, vec3 bg){
     float len = length(path);
 
 //    const int nSteps = 64;
-    const int nSteps = int(ceil(mix(16.0, 64.0, clamp(len/(SPHERE_OUTER_RADIUS-SPHERE_INNER_RADIUS), 0.0, 1.0))));
+    const int nSteps = int(ceil(mix(8.0,32.0, clamp(len/(SPHERE_OUTER_RADIUS-SPHERE_INNER_RADIUS), 0.0, 1.0))));
 
     float ds = len / float(nSteps-1);
     vec3 view_dir = path/len;

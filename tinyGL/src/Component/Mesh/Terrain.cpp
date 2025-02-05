@@ -7,7 +7,6 @@
 #include "Component/LightComponent.h"
 
 using namespace Kong;
-#define USE_TCS 1
 
 Terrain::Terrain()
 {
@@ -59,31 +58,20 @@ Terrain::Terrain(const string& file_name)
     LoadHeightMap(file_name);
 }
 
-void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
+void Terrain::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 {
+    return;
 #if USE_TCS
     // shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
     GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : KongRenderModule::GetNullTexId();
-#if USE_DSA
     glBindTextureUnit(0, height_map_id);
-#else
-    glActiveTexture(GL_TEXTURE0); 
-    glBindTexture(GL_TEXTURE_2D, height_map_id);
-#endif
-    GLuint csm_id = KongRenderModule::GetNullTexId();
+
     auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
     if(!dir_light.expired())
     {
         auto dir_light_ptr = dir_light.lock();
-        csm_id = dir_light_ptr->GetShadowMapTexture();
         shader_data->SetInt("csm_level_count", dir_light_ptr->csm_distances.size());
-        for(int i = 0; i < dir_light_ptr->csm_distances.size(); ++i)
-        {
-            stringstream ss;
-            ss << "csm_distances[" << i << "]";
-            shader_data->SetFloat(ss.str(), dir_light_ptr->csm_distances[i]);
-        }
-
+        
         for(int i = 0; i < dir_light_ptr->light_space_matrices.size(); ++i)
         {
             stringstream ss;
@@ -92,48 +80,8 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
         }
         shader_data->SetInt("light_space_matrix_count", dir_light_ptr->light_space_matrices.size());
     }
-#if USE_DSA
-    glBindTextureUnit(1, csm_id);
-    glBindTextureUnit(2, grass_albedo_texture);
-    glBindTextureUnit(3, grass_normal_texture);
-    glBindTextureUnit(4, sand_albedo_texture);
-    glBindTextureUnit(5, sand_normal_texture);
-    glBindTextureUnit(6, rock_albedo_texture);
-    glBindTextureUnit(7, rock_normal_texture);
-#else
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, csm_id);
-    
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, grass_albedo_texture);
-    
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, grass_normal_texture);
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, sand_albedo_texture);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, sand_normal_texture);
-    
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, rock_albedo_texture);
-    
-    glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D, rock_normal_texture);
-#endif
-    
-    if(render_wireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glLineWidth(2.0);
-    }
     
     glDrawArrays(GL_PATCHES, 0, 4*terrain_res*terrain_res);
-    if(render_wireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);    
-    }
 
 #else
     for(unsigned int strip = 0; strip < num_strips; ++strip)
@@ -160,9 +108,61 @@ void Terrain::Draw(const SSceneLightInfo& scene_render_info)
     shader_data->SetInt("terrain_size", terrain_size);
     shader_data->SetInt("terrain_res", terrain_res);
     shader_data->SetMat4("model", mat4(1.0));
-    SimpleDraw(nullptr);
+
+#if USE_TCS
+    GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : KongRenderModule::GetNullTexId();
+    glBindTextureUnit(0, height_map_id);
+
+    GLuint csm_id = KongRenderModule::GetNullTexId();
+    auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
+    if(!dir_light.expired())
+    {
+        auto dir_light_ptr = dir_light.lock();
+        csm_id = dir_light_ptr->GetShadowMapTexture();
+        shader_data->SetInt("csm_level_count", dir_light_ptr->csm_distances.size());
+        for(int i = 0; i < dir_light_ptr->csm_distances.size(); ++i)
+        {
+            stringstream ss;
+            ss << "csm_distances[" << i << "]";
+            shader_data->SetFloat(ss.str(), dir_light_ptr->csm_distances[i]);
+        }
+
+        for(int i = 0; i < dir_light_ptr->light_space_matrices.size(); ++i)
+        {
+            stringstream ss;
+            ss << "light_space_matrices[" << i << "]";
+            shader_data->SetMat4(ss.str(), dir_light_ptr->light_space_matrices[i]);
+        }
+        shader_data->SetInt("light_space_matrix_count", dir_light_ptr->light_space_matrices.size());
+    }
     
-    // glEnable(GL_CULL_FACE);
+    glBindTextureUnit(1, csm_id);
+    glBindTextureUnit(2, grass_albedo_texture);
+    glBindTextureUnit(3, grass_normal_texture);
+    glBindTextureUnit(4, sand_albedo_texture);
+    glBindTextureUnit(5, sand_normal_texture);
+    glBindTextureUnit(6, rock_albedo_texture);
+    glBindTextureUnit(7, rock_normal_texture);
+    
+    if(render_wireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(2.0);
+    }
+    
+    glDrawArrays(GL_PATCHES, 0, 4*terrain_res*terrain_res);
+    if(render_wireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);    
+    }
+#else
+    for(unsigned int strip = 0; strip < num_strips; ++strip)
+    {
+        glDrawElements(GL_LINE_STRIP,
+            num_verts_per_strip+2, GL_UNSIGNED_INT,
+            (void*)(sizeof(unsigned int) * strip * (num_verts_per_strip+2)));
+    }
+#endif
 }
 
 void Terrain::InitRenderInfo()

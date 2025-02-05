@@ -51,11 +51,11 @@ namespace Kong
 
         void TurnOnShadowMap(bool b_turn_on) override;
         void TurnOnReflectiveShadowMap(bool b_turn_on);
-        glm::mat4 light_space_mat;
+        glm::mat4 light_space_mat {1};
         vector<glm::mat4> light_space_matrices;
         
         // 级联阴影
-        glm::vec2 camera_near_far;
+        glm::vec2 camera_near_far {0.0};
         vector<float> csm_distances;
         GLuint csm_texture = GL_NONE;
 
@@ -71,7 +71,7 @@ namespace Kong
         GLuint rsm_depth = GL_NONE;
         shared_ptr<Shader> rsm_shader;
     private:
-        glm::vec3 light_dir;
+        glm::vec3 light_dir {0};
         // 计算视锥体范围的AABB在世界坐标下的顶点
         std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj_view);
         glm::mat4 CalLightSpaceMatrix(float near, float far);

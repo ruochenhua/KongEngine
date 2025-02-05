@@ -3,13 +3,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
 #include <imgui.h>
-#include <iostream>
 #include <random>
-#include <utility>
 
 #include "Actor.hpp"
 #include "Component/CameraComponent.h"
-#include "Utils.hpp"
 #include "Component/LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Scene.hpp"
@@ -122,14 +119,14 @@ vec2 KongRenderModule::GetNearFar()
 
 shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 {
-	return g_renderModule.quad_shape;
+	return g_renderModule.m_quadShape;
 }
 
 int KongRenderModule::Init()
 {
 	InitMainFBO();
 	InitCamera();
-	quad_shape = make_shared<CQuadShape>();
+	m_quadShape = make_shared<CQuadShape>();
 
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
@@ -200,6 +197,37 @@ int KongRenderModule::InitCamera()
 
 void KongRenderModule::UpdateSceneRenderInfo()
 {
+	scene_render_info.clear();
+	auto actors = KongSceneManager::GetActors();
+	for(auto actor: actors)
+	{
+		auto light_component = actor->GetComponent<CLightComponent>();
+		if(!light_component)
+		{
+			continue;
+		}
+
+		auto dir_light =
+			std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
+		
+		if(dir_light)
+		{
+			dir_light->SetLightDir(actor->rotation);
+			scene_render_info.scene_dirlight = dir_light;
+			continue;
+		}
+
+		if(scene_render_info.scene_pointlights.size() < POINT_LIGHT_MAX)
+		{
+			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_component);
+			if(point_light)
+			{
+				point_light->SetLightLocation(actor->location);
+				scene_render_info.scene_pointlights.push_back(point_light);
+			}
+		}
+	}
+	
 	// 更新光源UBO
 	SceneLightInfo light_info;
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
@@ -318,9 +346,7 @@ int KongRenderModule::Update(double delta)
 {
 	mainCamera->Update(delta);		
 	render_time += delta;
-	// 更新光照
-	// todo: 这两个合起来
-	CollectLightInfo();
+	// 更新场景信息
 	UpdateSceneRenderInfo();
 
 	// render system update
@@ -339,7 +365,7 @@ int KongRenderModule::Update(double delta)
 	matrix_ubo.EndBind();
 	
 	// 普通渲染场景
-	RenderSceneObject(false);
+	RenderSceneObject();
 
 	// 有水体，需要做一次从下往上的渲染获取反射的内容
 	if (water_render_helper_.water_actor.lock())
@@ -369,7 +395,10 @@ int KongRenderModule::Update(double delta)
 			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
 			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
 			matrix_ubo.EndBind();
-			RenderSceneObject(true);
+			bool tmp_ssr = use_screen_space_reflection;
+			use_screen_space_reflection = false;
+			RenderSceneObject(water_render_helper_.water_reflection_fbo);
+			use_screen_space_reflection = tmp_ssr;
 			
 			// // 渲染水面mesh
 			glBindFramebuffer(GL_FRAMEBUFFER, m_renderToBuffer);
@@ -385,10 +414,7 @@ int KongRenderModule::Update(double delta)
 			matrix_ubo.EndBind();
 
 			RenderWater();
-			auto blit_end = std::chrono::high_resolution_clock::now();
-			auto blit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(blit_end - blit_start);
-
-			// std::cout << "代码执行时间: " << blit_duration.count() << " 毫秒" << std::endl;
+			
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else
@@ -401,8 +427,6 @@ int KongRenderModule::Update(double delta)
 	latestRenderResult = m_postProcessRenderSystem.Draw(0.0, latestRenderResult, this);
 
 	RenderUI(delta);
-
-	m_postProcessRenderSystem.SetPositionTexture(m_deferRenderSystem.GetPositionTexture());
 	return 1;
 }
 
@@ -423,8 +447,13 @@ void KongRenderModule::RenderUI(double delta)
 	m_postProcessRenderSystem.DrawUI();
 }
 
-void KongRenderModule::RenderSceneObject(bool water_reflection)
+void KongRenderModule::RenderSceneObject(GLuint target_fbo)
 {
+	if (target_fbo == GL_NONE)
+	{
+		target_fbo = m_renderToBuffer;
+	}
+	
 #if !SHADOWMAP_DEBUG
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
@@ -433,17 +462,10 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
 
 	
-	GLuint render_scene_buffer;
+	GLuint render_scene_buffer = target_fbo;
 	// 正常渲染到后处理的buffer上
-	if (!water_reflection)
-	{
-		render_scene_buffer = m_renderToBuffer;
-	}
-	else
-	{
-		// 水体反射的渲染到water scene fbo上
-		render_scene_buffer = water_render_helper_.water_reflection_fbo;
-	}
+	
+	
 	latestRenderResult.frameBuffer = render_scene_buffer;
 	latestRenderResult.resultColor = m_renderToTextures[0];
 	glViewport(0,0, window_size.x, window_size.y);
@@ -458,7 +480,7 @@ void KongRenderModule::RenderSceneObject(bool water_reflection)
 		
 	// screen space reflection先放在这里吧
 	// 水面反射不做这个
-	if(use_screen_space_reflection && !water_reflection)
+	if(use_screen_space_reflection)
 	{
 		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
 		latestRenderResult = m_ssReflectionRenderSystem.Draw(0.0, latestRenderResult, this);
@@ -557,44 +579,6 @@ void KongRenderModule::RenderWater()
 		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
 		mesh_shader->SetDouble("iTime", render_time);
 		gerstner_water->Draw(scene_render_info);
-	}
-}
-
-void KongRenderModule::CollectLightInfo()
-{
-	// todo: scene重新加载的时候处理一次就好,但是transform更新需要及时
-	scene_render_info.clear();
-	// scene_dirlight.reset();
-	// scene_pointlights.clear();
-	//
-	auto actors = KongSceneManager::GetActors();
-	for(auto actor: actors)
-	{
-		auto light_component = actor->GetComponent<CLightComponent>();
-		if(!light_component)
-		{
-			continue;
-		}
-
-		auto dir_light =
-			std::dynamic_pointer_cast<CDirectionalLightComponent>(light_component);
-		
-		if(dir_light)
-		{
-			dir_light->SetLightDir(actor->rotation);
-			scene_render_info.scene_dirlight = dir_light;
-			continue;
-		}
-
-		if(scene_render_info.scene_pointlights.size() < POINT_LIGHT_MAX)
-		{
-			auto point_light = dynamic_pointer_cast<CPointLightComponent>(light_component);
-			if(point_light)
-			{
-				point_light->SetLightLocation(actor->location);
-				scene_render_info.scene_pointlights.push_back(point_light);
-			}
-		}
 	}
 }
 

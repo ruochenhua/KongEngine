@@ -23,6 +23,5 @@ namespace Kong
         
         // 屏幕空间反射
         std::shared_ptr<SSReflectionShader> m_ssReflectionShader;
-        std::shared_ptr<CQuadShape> m_quadShape;
     };
 }

@@ -40,18 +40,6 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
     window_width = width;
     window_height = height;
 
-    // // 删掉并释放掉原来的贴图资源
-    // glDeleteTextures(FRAGOUT_TEXTURE_COUNT, screen_quad_texture);
-    // for(int i = 0; i < FRAGOUT_TEXTURE_COUNT; ++i)
-    // {
-    //     screen_quad_texture[i] = GL_NONE;    
-    // }
-    //
-    // glDeleteRenderbuffers(1, &scene_rbo);
-    // scene_rbo = GL_NONE;
-    // // 重新创建
-    // InitScreenTexture();
-
     combine_process->GenerateTexture(window_width, window_height);
     gaussian_blur->GenerateTexture(window_width, window_height);
     dilate_blur->GenerateTexture(window_width, window_height);
@@ -59,8 +47,14 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
     radical_blur->GenerateTexture(window_width, window_height);
 }
 
-void PostProcessRenderSystem::Draw(KongRenderModule* render_module)
+RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+    KongRenderModule* render_module)
 {
+   // glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    
     // 渲染到屏幕的texture
     // 0: 正常场景；1：bloom颜色；2：反射颜色
     auto& screen_quad_texture = render_module->m_renderToTextures;
@@ -91,22 +85,13 @@ void PostProcessRenderSystem::Draw(KongRenderModule* render_module)
         
         auto dilate_textures = dilate_blur->Draw({postprocess_rst}, screen_quad_vao);
         dof_process->SetFocusDistance(focus_distance, focus_threshold);
-        postprocess_rst = dof_process->Draw({postprocess_rst, dilate_textures, position_texture}, screen_quad_vao);
+        postprocess_rst = dof_process->Draw({postprocess_rst, dilate_textures, render_result_info.resultPosition}, screen_quad_vao);
     }
 
 
     final_postprocess->Draw({postprocess_rst}, screen_quad_vao);
-}
 
-RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
-    KongRenderModule* render_module)
-{
-   // glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     
-    Draw(render_module);
     return render_result_info;
 }
 
