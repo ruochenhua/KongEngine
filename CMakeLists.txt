@@ -6,7 +6,17 @@ set(CMAKE_CXX_EXTENSIONS 17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 查找OpenGL
 find_package(OpenGL REQUIRED)
+
+# 查找Vulkan
+find_package(Vulkan QUIET)
+
+if(Vulkan_FOUND)
+	add_definitions(-DRENDER_IN_VULKAN)
+endif()
+
+
 set(SRC_DIR tinyGL/src)
 set(3RD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
 
@@ -37,3 +47,7 @@ target_link_libraries(KongEngine glm_static)
 target_link_libraries(KongEngine glad)
 target_link_libraries(KongEngine assimp)
 target_link_libraries(KongEngine yaml-cpp)
+
+if(Vulkan_FOUND)
+	target_link_libraries(KongEngine Vulkan::Vulkan)
+endif()
