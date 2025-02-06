@@ -31,7 +31,7 @@ namespace Kong
         SS_REFLECTION,
         NONE,
     };
-    
+
     // 渲染系统，每个渲染效果或者阶段都独立出来
     class KongRenderSystem
     {

@@ -2,8 +2,7 @@
 
 #include <imgui.h>
 
-#include "Utils.hpp"
-#include "RenderModule.hpp"
+#include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
 #include "Texture.hpp"

@@ -4,7 +4,7 @@
 #include <random>
 
 #include "Actor.hpp"
-#include "RenderModule.hpp"
+#include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "Texture.hpp"
 #include "Window.hpp"
