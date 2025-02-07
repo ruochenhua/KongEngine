@@ -1,6 +1,11 @@
 #include "Window.hpp"
 #include "common.h"
 #include <stdexcept>
+#if USE_VULKAN
+#include "Render/GraphicsDevice/VulkanGraphicsDevice.hpp"
+#else
+#include "Render/GraphicsDevice/OpenGLGraphicsDevice.hpp"
+#endif
 
 using namespace Kong;
 
@@ -13,37 +18,26 @@ KongWindow& KongWindow::GetWindowModule()
 
 KongWindow::KongWindow()
 {
+#if USE_VULKAN
+    auto graphics_device = VulkanGraphicsDevice::GetGraphicsDevice();
+    m_window = graphics_device->Init(windowSize.x, windowSize.y);
+    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+     
+#else
+    auto graphics_device = OpenGLGraphicsDevice::GetGraphicsDevice();
+    m_window = graphics_device->Init(windowSize.x, windowSize.y);
+    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+    
+#endif
+    
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW3");
     }
-
-    // 初始化opengl
-    glfwWindowHint(GLFW_SAMPLES, 2);    // 抗锯齿
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-    m_window = glfwCreateWindow(windowSize.x, windowSize.y, "Kong Sample", nullptr, nullptr);
-    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
-
-    if (m_window == nullptr)
-    {
-        glfwTerminate();
-        throw std::runtime_error("Failed to create glfw window");
-    }
-
-    glfwMakeContextCurrent(m_window);
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-    {
-        throw std::runtime_error("Failed to initialize GLAD");
-    }
-
+    
     glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetWindowUserPointer(m_window, this);   // 指定window的类型
     glfwSetWindowSizeCallback(m_window, frameBufferResizeCallback);
-    
 }
 
 GLFWwindow* KongWindow::GetWindow()
