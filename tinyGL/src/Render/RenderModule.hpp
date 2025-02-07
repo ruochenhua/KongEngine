@@ -1,12 +1,12 @@
 #pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
-#include "DeferRenderSystem.hpp"
-#include "SSReflectionRenderSystem.hpp"
-#include "WaterRenderSystem.hpp"
-#include "Render/PostProcessRenderSystem.hpp"
-#include "Render/RenderSystem.hpp"
-#include "Render/SkyboxRenderSystem.hpp"
+#include "RenderSystem/DeferRenderSystem.hpp"
+#include "RenderSystem/SSReflectionRenderSystem.hpp"
+#include "RenderSystem/WaterRenderSystem.hpp"
+#include "RenderSystem/PostProcessRenderSystem.hpp"
+#include "RenderSystem/RenderSystem.hpp"
+#include "RenderSystem/SkyboxRenderSystem.hpp"
 #include "Shader/Shader.h"
 
 namespace Kong
