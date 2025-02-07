@@ -152,21 +152,6 @@ void CCamera::Update(double delta)
 	m_moveVec = vec3(0, 0, 0);
 }
 
-void CCamera::InitControl()
-{
-	// CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_PRESS, MoveForward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_PRESS, MoveBackward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_PRESS, MoveLeft);
-	// CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_PRESS, MoveRight);
-	// CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_REPEAT, MoveForward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_REPEAT, MoveBackward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_REPEAT, MoveLeft);
-	// CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_REPEAT, MoveRight);
-	//
-	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, RotateStart);
-	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, RotateEnd);
-}
-
 void CCamera::MoveForward()
 {
 	m_moveVec += m_front;

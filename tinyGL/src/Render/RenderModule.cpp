@@ -51,58 +51,6 @@ void UBOHelper::EndBind() const
 #endif
 }
 
-
-void WaterRenderHelper::Init(int width, int height)
-{
-	// water相关的buffer初始化
-	glGenFramebuffers(1, &water_reflection_fbo);
-	glGenFramebuffers(1, &water_refraction_fbo);
-
-	GenerateWaterRenderTextures(width, height);
-}
-
-void WaterRenderHelper::GenerateWaterRenderTextures(int width, int height)
-{
-	// 水面反射相关的buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, water_reflection_fbo);
-	TextureCreateInfo water_tex_create_info {
-	GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT, width, height,
-		GL_REPEAT, GL_REPEAT, GL_REPEAT, GL_LINEAR
-	};
-	TextureBuilder::CreateTexture(water_reflection_texture, water_tex_create_info);
-	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_reflection_texture, 0);
-	
-	if (!water_reflection_rbo)
-	{
-		glGenRenderbuffers(1, &water_reflection_rbo);
-	}
-	glBindRenderbuffer(GL_RENDERBUFFER, water_reflection_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, water_reflection_rbo);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		printf("water reflection framebuffer error\n");
-	}
-
-	// 水面折射相关的buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, water_refraction_fbo);
-
-	TextureBuilder::CreateTexture(water_refraction_texture, water_tex_create_info);
-	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_refraction_texture, 0);
-	
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		printf("water refraction framebuffer error\n");
-	}
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 KongRenderModule& KongRenderModule::GetRenderModule()
 {
 	return g_renderModule;
@@ -125,7 +73,9 @@ shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 int KongRenderModule::Init()
 {
 	InitMainFBO();
-	InitCamera();
+	
+	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, 1.0f, 0.0f));
 	m_quadShape = make_shared<CQuadShape>();
 
 #if SHADOWMAP_DEBUG
@@ -146,21 +96,12 @@ int KongRenderModule::Init()
 
 	InitUBO();
 	
-	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
-	int width = window_size.x;
-	int height = window_size.y;
-
 	// add render system
-	for (auto& render_sys : m_renderSystems)
-	{
-		render_sys.Init();
-	}
-	
 	m_skyboxRenderSystem.Init();
 	m_deferRenderSystem.Init();
 	m_postProcessRenderSystem.Init();
 	m_ssReflectionRenderSystem.Init();
-	water_render_helper_.Init(width, height);
+	m_waterRenderSystem.Init();
 
 	return 0;
 }
@@ -188,10 +129,8 @@ KongRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
 
 int KongRenderModule::InitCamera()
 {
-	mainCamera = new CCamera(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
-		vec3(0.0f, 1.0f, 0.0f));
-
-	mainCamera->InitControl();
+	
+	
 	return 0;
 }
 
@@ -348,14 +287,8 @@ int KongRenderModule::Update(double delta)
 	render_time += delta;
 	// 更新场景信息
 	UpdateSceneRenderInfo();
-
-	// render system update
-	for (auto& render_sys : m_renderSystems)
-	{
-		render_sys.Draw(delta,  RenderResultInfo{}, this);
-	}
-	
 	m_skyboxRenderSystem.PreRenderUpdate();
+	
 	RenderShadowMap();
 	// 更新UBO里的相机数据
 	matrix_ubo.Bind();
@@ -365,63 +298,8 @@ int KongRenderModule::Update(double delta)
 	matrix_ubo.EndBind();
 	
 	// 普通渲染场景
-	RenderSceneObject();
-
-	// 有水体，需要做一次从下往上的渲染获取反射的内容
-	if (water_render_helper_.water_actor.lock())
-	{
-		auto water_actor = water_render_helper_.water_actor.lock();
-		
-		vec3 origin_cam_pos = mainCamera->GetPosition();
-		// camera在水面之上
-		float height_diff = origin_cam_pos.y - water_actor->location.y;
-		if (height_diff > 0.0f)
-		{
-			
-			auto blit_start = std::chrono::high_resolution_clock::now();
-			// 复制普通场景渲染中postprocess的scene texture作为折射贴图使用
-			ivec2 window_size = KongWindow::GetWindowModule().windowSize;
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, m_renderToBuffer);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, water_render_helper_.water_refraction_fbo);
-			glBlitFramebuffer(0, 0, window_size.x, window_size.y, 0, 0,
-				window_size.x, window_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		
-			// 处理水面折射
-			mainCamera->SetPosition(origin_cam_pos + vec3(0,-2*height_diff, 0));
-			mainCamera->InvertPitch();
-		
-			matrix_ubo.Bind();
-			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-			matrix_ubo.EndBind();
-			bool tmp_ssr = use_screen_space_reflection;
-			use_screen_space_reflection = false;
-			RenderSceneObject(water_render_helper_.water_reflection_fbo);
-			use_screen_space_reflection = tmp_ssr;
-			
-			// // 渲染水面mesh
-			glBindFramebuffer(GL_FRAMEBUFFER, m_renderToBuffer);
-		
-			// 渲染水需要恢复相机位置
-			mainCamera->SetPosition(origin_cam_pos);
-			mainCamera->InvertPitch();
-		
-			matrix_ubo.Bind();
-			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-			matrix_ubo.EndBind();
-
-			RenderWater();
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-		else
-		{
-			// todo: 水下
-		}
-	}
+	latestRenderResult = RenderSceneObject();
+	latestRenderResult = m_waterRenderSystem.Draw(delta, latestRenderResult, this);
 
 	// do post process
 	latestRenderResult = m_postProcessRenderSystem.Draw(0.0, latestRenderResult, this);
@@ -447,47 +325,38 @@ void KongRenderModule::RenderUI(double delta)
 	m_postProcessRenderSystem.DrawUI();
 }
 
-void KongRenderModule::RenderSceneObject(GLuint target_fbo)
+RenderResultInfo KongRenderModule::RenderSceneObject(GLuint target_fbo)
 {
-	if (target_fbo == GL_NONE)
-	{
-		target_fbo = m_renderToBuffer;
-	}
-	
+	RenderResultInfo render_result_info {latestRenderResult};
 #if !SHADOWMAP_DEBUG
 	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
 	glDisable(GL_BLEND);
 	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
 
 	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
-
-	
-	GLuint render_scene_buffer = target_fbo;
+	GLuint render_scene_buffer = target_fbo == GL_NONE ? m_renderToBuffer : target_fbo;
 	// 正常渲染到后处理的buffer上
-	
-	
-	latestRenderResult.frameBuffer = render_scene_buffer;
-	latestRenderResult.resultColor = m_renderToTextures[0];
+	render_result_info.frameBuffer = render_scene_buffer;
+	render_result_info.resultColor = m_renderToTextures[0];
 	glViewport(0,0, window_size.x, window_size.y);
 	
-	latestRenderResult = m_deferRenderSystem.Draw(0.0, latestRenderResult, this);
+	render_result_info = m_deferRenderSystem.Draw(0.0, render_result_info, this);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	RenderNonDeferSceneObjects();
-	latestRenderResult = m_skyboxRenderSystem.Draw(0.0, latestRenderResult, this);
+	render_result_info = m_skyboxRenderSystem.Draw(0.0, render_result_info, this);
 		
 	// screen space reflection先放在这里吧
 	// 水面反射不做这个
 	if(use_screen_space_reflection)
 	{
 		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
-		latestRenderResult = m_ssReflectionRenderSystem.Draw(0.0, latestRenderResult, this);
+		render_result_info = m_ssReflectionRenderSystem.Draw(0.0, render_result_info, this);
 	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
+	return render_result_info;
 }
 
 void KongRenderModule::RenderNonDeferSceneObjects() const
@@ -522,63 +391,6 @@ void KongRenderModule::RenderNonDeferSceneObjects() const
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_shader->SetDouble("iTime", render_time);
 		mesh_component->Draw(scene_render_info);
-	}
-}
-
-void KongRenderModule::RenderWater()
-{
-	
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glEnable(GL_DEPTH_TEST);
-
-	water_render_helper_.total_move = render_time;
-	if (water_render_helper_.water_actor.expired())
-	{
-		return;
-	}
-
-	shared_ptr<AActor> water_actor = water_render_helper_.water_actor.lock();
-	
-	// glEnable(GL_CLIP_DISTANCE0);
-	// auto actors = CScene::GetActors();
-	//for(auto actor : actors)
-	auto water_comp = water_actor->GetComponent<Water>();
-	if(water_comp)
-	{
-		auto mesh_shader = water_comp->shader_data;
-
-		mesh_shader->Use();
-		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
-		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
-		
-		// 等于1代表渲染skybox，会需要用到环境贴图
-		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
-		mesh_shader->SetFloat("move_factor",
-			fmodf(water_render_helper_.total_move*water_render_helper_.move_speed, 1.0));
-		water_comp->Draw(scene_render_info);
-	}
-	else
-	{
-		auto gerstner_water = water_actor->GetComponent<GerstnerWaveWater>();
-		if(!gerstner_water)
-		{
-			return;
-		}
-
-		auto mesh_shader = gerstner_water->shader_data;
-
-		mesh_shader->Use();
-		glBindTextureUnit(0, water_render_helper_.water_reflection_texture);
-		glBindTextureUnit(1, water_render_helper_.water_refraction_texture);
-
-		
-		// 等于1代表渲染skybox，会需要用到环境贴图
-		// mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
-		mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
-		mesh_shader->SetDouble("iTime", render_time);
-		gerstner_water->Draw(scene_render_info);
 	}
 }
 
@@ -664,10 +476,10 @@ void KongRenderModule::OnWindowResize(int width, int height)
 	m_postProcessRenderSystem.OnWindowResize(width, height);
 	//defer_buffer_.GenerateDeferRenderTextures(width, height);
 	//ssao_helper_.GenerateSSAOTextures(width, height);
-	water_render_helper_.GenerateWaterRenderTextures(width, height);
+	// water_render_helper_.GenerateWaterRenderTextures(width, height);
 }
 
 void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
 {
-	water_render_helper_.water_actor = render_water_actor;
+	m_waterRenderSystem.m_waterActor = render_water_actor;
 }

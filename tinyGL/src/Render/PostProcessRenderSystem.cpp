@@ -50,7 +50,8 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
 RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
-   // glBindFramebuffer(GL_FRAMEBUFFER, render_result_info.frameBuffer);
+    // post process往屏幕上（frame buffer 0）渲染
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);

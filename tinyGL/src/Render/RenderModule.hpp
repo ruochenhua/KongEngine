@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "DeferRenderSystem.hpp"
 #include "SSReflectionRenderSystem.hpp"
+#include "WaterRenderSystem.hpp"
 #include "Render/PostProcessRenderSystem.hpp"
 #include "Render/RenderSystem.hpp"
 #include "Render/SkyboxRenderSystem.hpp"
@@ -13,6 +14,12 @@ namespace Kong
 	class CCamera;
 
 	// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
+	/*
+	 *  mat4 view
+	 *  mat4 projection
+	 *  vec4 cam_pos;
+	 *  vec4 near_far;
+	 */
 	class UBOHelper
 	{
 	public:
@@ -76,27 +83,6 @@ namespace Kong
 	}
 #endif
 	
-
-	// water渲染相关
-	struct WaterRenderHelper
-	{
-		weak_ptr<AActor> water_actor;
-		// 反射部分，需要变换相机角度重新渲染
-		GLuint water_reflection_fbo = GL_NONE;
-		GLuint water_reflection_rbo = GL_NONE;
-		GLuint water_reflection_texture = GL_NONE;
-
-		// 折射部分，先使用延迟渲染的结果复制过来
-		GLuint water_refraction_fbo = GL_NONE;
-		GLuint water_refraction_texture = GL_NONE;
-		
-		void Init(int width, int height);
-		void GenerateWaterRenderTextures(int width, int height);
-
-		float total_move = 0.0f;
-		float move_speed = 0.01f;
-	};
-	
 	class KongRenderModule
 	{
 	public:
@@ -111,7 +97,7 @@ namespace Kong
 		int Update(double delta);
 		void RenderUI(double delta);
 		
-		CCamera* GetCamera() const {return mainCamera;}
+		shared_ptr<CCamera> GetCamera() const {return mainCamera;}
 
 		void OnWindowResize(int width, int height);
 
@@ -120,7 +106,7 @@ namespace Kong
 		double render_time = 0.0;
 		
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
-		void RenderSceneObject(GLuint target_fbo = GL_NONE);
+		RenderResultInfo RenderSceneObject(GLuint target_fbo = GL_NONE);
 		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
@@ -131,6 +117,10 @@ namespace Kong
 		GLuint m_renderToTextures[FRAGOUT_TEXTURE_COUNT] = {0, 0, 0};
 
 		KongRenderSystem* GetRenderSystemByType(RenderSystemType type);
+
+		/* 矩阵UBO，保存场景基础的矩阵信息
+		 */
+		UBOHelper matrix_ubo;
 	private:
 		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
@@ -140,8 +130,6 @@ namespace Kong
 		
 		// 渲染不支持延迟渲染的物体
 		void RenderNonDeferSceneObjects() const;
-		// 渲染水
-		void RenderWater();
 		
 		void RenderShadowMap();
 
@@ -159,14 +147,8 @@ namespace Kong
 		GLuint m_QuadVBO = GL_NONE;
 #endif
 		
-		CCamera* mainCamera = nullptr;
-		/* 矩阵UBO，保存场景基础的矩阵信息
-		 *  mat4 model
-		 *  mat4 view
-		 *  mat4 projection
-		 *  vec3 cam_pos;
-		 */
-		UBOHelper matrix_ubo;
+		shared_ptr<CCamera> mainCamera{};
+		
 
 		// 光照UBO，保存场景基础的光照信息
 		/*		
@@ -182,12 +164,9 @@ namespace Kong
 		PostProcessRenderSystem m_postProcessRenderSystem;
 		// 屏幕空间反射
 		SSReflectionRenderSystem m_ssReflectionRenderSystem;
-
 		// 水体渲染实现
-		WaterRenderHelper water_render_helper_;
+		WaterRenderSystem m_waterRenderSystem;
 
 		shared_ptr<CQuadShape> m_quadShape;
-
-		std::vector<KongRenderSystem> m_renderSystems;
 	};
 }

@@ -42,7 +42,6 @@ namespace Kong
     
     public:
         //camera control
-        void InitControl();
         void MoveForward();
         void MoveBackward();
         void MoveLeft();
