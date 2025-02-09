@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 
-#include "GraphicsDevice.hpp"
+#include "../GraphicsDevice.hpp"
 
 namespace Kong
 {
@@ -30,15 +30,28 @@ namespace Kong
         
         VulkanGraphicsDevice();
         ~VulkanGraphicsDevice() override;
-
+        
         GLFWwindow* Init(int width, int height) override;
-        void Destroy() override;
-        void BeginFrame() override;
-        void EndFrame() override;
-
+        
+        VkDevice GetDevice() const { return m_device; }
+        VkQueue GetGraphicsQueue() const { return m_graphicsQueue; }
+        VkQueue GetPresentQueue() const { return m_presentQueue; }
+        VkCommandPool GetCommandPool() const {return m_commandPool;}
+        VkSurfaceKHR GetSurface() const {return m_surface;}
         
         VkPhysicalDeviceProperties m_properties;
 
+        SwapChainSupportDetails GetSwapChainSupport() {return QuerySwapChainSupport(m_physicalDevice);}
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        QueueFamilyIndices FindPhysicsQueueFamilies() {return FindQueueFamilies(m_physicalDevice);}
+        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+        void CreateImageWithInfo(
+            const VkImageCreateInfo &imageInfo,
+            VkMemoryPropertyFlags properties,
+            VkImage& image,
+            VkDeviceMemory& imageMemory);
+        
     private:
         VkInstance m_instance;
         VkDebugUtilsMessengerEXT m_debugMessenger;

@@ -2,9 +2,9 @@
 #include "common.h"
 #include <stdexcept>
 #if USE_VULKAN
-#include "Render/GraphicsDevice/VulkanGraphicsDevice.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
 #else
-#include "Render/GraphicsDevice/OpenGLGraphicsDevice.hpp"
+#include "Render/GraphicsAPI/OpenGL/OpenGLGraphicsDevice.hpp"
 #endif
 
 using namespace Kong;
