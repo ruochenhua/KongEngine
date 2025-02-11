@@ -43,7 +43,7 @@ namespace Kong
         ambient_occlusion,
     };
 
-    enum EShaderType
+    enum EShaderType 
     {
         vs = GL_VERTEX_SHADER,		        // vertex shader
         fs = GL_FRAGMENT_SHADER,	        // fragment shader

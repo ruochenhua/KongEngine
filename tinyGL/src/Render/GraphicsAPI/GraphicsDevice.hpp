@@ -16,9 +16,9 @@ namespace Kong
         
         virtual ~GraphicsDevice() = default;
         virtual GLFWwindow* Init(int width, int height) = 0;
-        virtual void BeginFrame() = 0;
-        virtual void EndFrame() = 0;
-        virtual void Destroy() = 0;
+        // virtual void BeginFrame() = 0;
+        // virtual void EndFrame() = 0;
+        // virtual void Destroy() = 0;
 
     protected:
         GraphicsAPI m_API {NONE};

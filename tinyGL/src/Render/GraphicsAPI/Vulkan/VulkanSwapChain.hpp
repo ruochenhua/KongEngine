@@ -36,7 +36,6 @@ namespace Kong
                 m_swapChainDepthFormat == other.m_swapChainDepthFormat;
         }
         
-        VkFormat GetSupportedDepthFormat() const;
         VkResult AcquireNextImage(uint32_t *imageIndex);
         VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
         

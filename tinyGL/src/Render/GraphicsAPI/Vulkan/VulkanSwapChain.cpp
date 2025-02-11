@@ -1,6 +1,7 @@
 #include "VulkanSwapChain.hpp"
 
 #include <array>
+#include <iostream>
 
 using namespace Kong;
 
@@ -61,10 +62,6 @@ VkFormat VulkanSwapChain::FindDepthFormat() const
     return m_deviceRef.FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
         VK_IMAGE_TILING_OPTIMAL,
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
-
-VkFormat VulkanSwapChain::GetSupportedDepthFormat() const
-{
 }
 
 VkResult VulkanSwapChain::AcquireNextImage(uint32_t* imageIndex)
@@ -294,6 +291,7 @@ void VulkanSwapChain::CreateDepthResources()
 
     for (size_t i = 0; i < imageCount; i++)
     {
+        // 创建深度图像
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -310,12 +308,15 @@ void VulkanSwapChain::CreateDepthResources()
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.flags = 0;
 
+        // 根据配置好的 imageInfo 创建深度图像，并分配设备本地内存（VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT），
+        // 将创建的深度图像句柄存储在 m_depthImages[i] 中，分配的内存句柄存储在 m_depthImageMemorys[i] 中。
         m_deviceRef.CreateImageWithInfo(
             imageInfo,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             m_depthImages[i],
             m_depthImageMemorys[i]);
 
+        // 创建深度图像视图
         VkImageViewCreateInfo viewInfo = {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = m_depthImages[i];
@@ -469,12 +470,61 @@ void VulkanSwapChain::CreateSyncObjects()
 
 VkSurfaceFormatKHR VulkanSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
+    for (const auto& availableFormat : availableFormats)
+    {
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return availableFormat;
+        }
+    }
+
+    return availableFormats[0];
 }
 
 VkPresentModeKHR VulkanSwapChain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
+    /* mailbox同步方法和fifo(v-sync)方法
+   * 区别在于在fifo模式下，gpu完成渲染后到屏幕刷新的时间之间，gpu处于idle状态
+   * mailbox模式下，gpu从不idle，会一直渲染覆盖旧的image，屏幕刷新的时候取状态最新的image
+   * mailbox模式比fifo模式有更小的延迟，对用户输入反馈更加及时，但也有更高的性能消耗
+   * immediate方法则是不等待显示器刷新，会出现撕裂
+  */
+    for (const auto &availablePresentMode : availablePresentModes)
+    {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            std::cout << "Present mode: Mailbox\n";
+            return availablePresentMode;
+        }
+    }
+
+    // for (const auto &availablePresentMode : availablePresentModes) {
+    //   if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+    //     std::cout << "Present mode: Immediate" << std::endl;
+    //     return availablePresentMode;
+    //   }
+    // }
+
+    std::cout << "Present mode: V-Sync\n";
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D VulkanSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+    {
+        return capabilities.currentExtent;
+    }
+    else
+    {
+        VkExtent2D actualExtent = m_windowExtent;
+        actualExtent.width = std::max(
+            capabilities.minImageExtent.width,
+            std::min(capabilities.maxImageExtent.width, actualExtent.width));
+        actualExtent.height = std::max(
+            capabilities.minImageExtent.height,
+            std::min(capabilities.maxImageExtent.height, actualExtent.height));
+
+        return actualExtent;
+    }
 }

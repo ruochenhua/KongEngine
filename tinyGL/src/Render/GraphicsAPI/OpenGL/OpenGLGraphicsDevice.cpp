@@ -51,15 +51,3 @@ GLFWwindow* OpenGLGraphicsDevice::Init(int width, int height)
 
     return window;
 }
-
-void OpenGLGraphicsDevice::BeginFrame()
-{
-}
-
-void OpenGLGraphicsDevice::EndFrame()
-{
-}
-
-void OpenGLGraphicsDevice::Destroy()
-{
-}
