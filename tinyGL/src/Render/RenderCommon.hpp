@@ -1,5 +1,8 @@
 #pragma once
 #include <vector>
+#if RENDER_IN_VULKAN
+#include <vulkan/vulkan_core.h>
+#endif
 
 #include "glad/glad.h"
 #include "glm/vec2.hpp"
@@ -100,19 +103,23 @@ namespace Kong
         // 材质
         SMaterial material;
     };
-	
-    class CMesh
-    {
-    public:		
-        std::vector<float> GetVertices() const;
-        std::vector<float> GetTextureCoords() const;
-        std::vector<float> GetNormals() const;
-        std::vector<unsigned int> GetIndices() const;
-        std::vector<float> GetTangents() const;
-        std::vector<float> GetBitangents() const;
 
-        // virtual void GenerateRenderInfo() = 0;
-		
+    struct Vertex
+    {
+        glm::vec3 position{0.0f};
+        glm::vec3 normal{0.f, 1.f, 0.f};
+        glm::vec2 uv{0.0f};
+        glm::vec3 tangent{0.0f};
+        glm::vec3 bitangent{0.0f};
+        
+#if RENDER_IN_VULKAN
+        static std::vector<VkVertexInputBindingDescription> GetBindingDescription();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
+#endif
+    };
+    
+    struct CMesh
+    {
         std::vector<float> m_Vertex;
         std::vector<float> m_Normal;
         std::vector<float> m_TexCoord;
@@ -123,27 +130,11 @@ namespace Kong
 
         SRenderInfo m_RenderInfo;
         string name;
-    };
 
-    struct MeshBuffer
-    {
-        // vertex buffer id(vbo)
-        GLuint vertex_buffer = 0;
-        GLuint index_buffer = 0;
-        GLuint texture_buffer = 0;
-        // vao
-        GLuint vertex_array_id = 0;
-        
-        GLuint normal_buffer = 0;
-        GLuint tangent_buffer = 0;
-        GLuint bitangent_buffer = 0;
-        GLuint instance_buffer = 0;
-
-        unsigned vertex_size = 0;
-        unsigned stride_count = 1;
-        unsigned indices_count = 0;
-        unsigned instance_count = 0;
+        // todo: 后续都放到这个格式里面,也要改造opengl的buffer不要搞太多buffer
+        std::vector<Vertex> vertices;
     };
+    
 
     // 渲染资源描述
     struct SRenderResourceDesc

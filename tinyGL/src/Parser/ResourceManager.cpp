@@ -7,7 +7,7 @@
 
 #include "Render/RenderCommon.hpp"
 #include "stb_image.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 using namespace Kong;
 using namespace glm;
 
@@ -126,10 +126,13 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 	{
 		// 用emplace_back而不是push_back可以避免构造后的拷贝操作
 		const auto& vert = mesh->mVertices[i];
+		Vertex new_vertex;
 		
 		new_mesh.m_Vertex.emplace_back(vert.x);
 		new_mesh.m_Vertex.emplace_back(vert.y);
 		new_mesh.m_Vertex.emplace_back(vert.z);
+
+		new_vertex.position = {vert.x, vert.y, vert.z};
 		
 		if(has_normal)
 		{
@@ -137,12 +140,16 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_mesh.m_Normal.emplace_back(norm.x);
 			new_mesh.m_Normal.emplace_back(norm.y);
 			new_mesh.m_Normal.emplace_back(norm.z);
+
+			new_vertex.normal = {norm.x, norm.y, norm.z};
 		}
 		else
 		{
 			new_mesh.m_Normal.emplace_back(0);
 			new_mesh.m_Normal.emplace_back(1);
 			new_mesh.m_Normal.emplace_back(0);
+
+			new_vertex.normal = {0, 1, 0};
 		}
 		
 		if(has_uv)
@@ -150,6 +157,8 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			const auto& tex_uv = mesh->mTextureCoords[0][i];
 			new_mesh.m_TexCoord.emplace_back(tex_uv.x);
 			new_mesh.m_TexCoord.emplace_back(tex_uv.y);
+
+			new_vertex.uv = {tex_uv.x, tex_uv.y};
 		}
 		else
 		{
@@ -164,10 +173,14 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_mesh.m_Tangent.emplace_back(tangent.y);
 			new_mesh.m_Tangent.emplace_back(tangent.z);
 
+			new_vertex.tangent = {tangent.x, tangent.y, tangent.z};
+
 			const auto& bitangnet = mesh->mBitangents[i];
 			new_mesh.m_Bitangent.emplace_back(bitangnet.x);
 			new_mesh.m_Bitangent.emplace_back(bitangnet.y);
 			new_mesh.m_Bitangent.emplace_back(bitangnet.z);
+
+			new_vertex.bitangent = {bitangnet.x, bitangnet.y, bitangnet.z};
 		}
 		else
 		{
@@ -179,6 +192,8 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_mesh.m_Bitangent.emplace_back(0);
 			new_mesh.m_Bitangent.emplace_back(0);
 		}
+
+		new_mesh.vertices.emplace_back(new_vertex);
 	}
 
 	new_mesh.m_RenderInfo.vertex.vertex_size = mesh->mNumVertices;

@@ -123,7 +123,7 @@ void CMeshComponent::InitRenderInfo()
 	{
 		// 构建默认的shader数据结构，数据齐全，但是冗余
 		auto& render_vertex = mesh.m_RenderInfo.vertex;
-		std::vector<float> vertices = mesh.GetVertices();
+		std::vector<float> vertices = mesh.m_Vertex;
 		
 		glGenVertexArrays(1, &render_vertex.vertex_array_id);
 		glBindVertexArray(render_vertex.vertex_array_id);
@@ -146,7 +146,7 @@ void CMeshComponent::InitRenderInfo()
 		glEnableVertexAttribArray(0);
 
 		//normal buffer
-		std::vector<float> normals = mesh.GetNormals();
+		std::vector<float> normals = mesh.m_Normal;
 		glGenBuffers(1, &render_vertex.normal_buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.normal_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
@@ -155,7 +155,7 @@ void CMeshComponent::InitRenderInfo()
 		glEnableVertexAttribArray(1);
 
 		// texcoord
-		std::vector<float> tex_coords = mesh.GetTextureCoords();
+		std::vector<float> tex_coords = mesh.m_TexCoord;
 		glGenBuffers(1, &render_vertex.texture_buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.texture_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
@@ -163,7 +163,7 @@ void CMeshComponent::InitRenderInfo()
 		glEnableVertexAttribArray(2);
 
 		// tangent
-		vector<float> tangents = mesh.GetTangents();
+		vector<float> tangents = mesh.m_Tangent;
 		if(!tangents.empty())
 		{
 			glGenBuffers(1, &render_vertex.tangent_buffer);
@@ -174,7 +174,7 @@ void CMeshComponent::InitRenderInfo()
 		}
 		
 		// bitangent
-		vector<float> bitangents = mesh.GetBitangents();
+		vector<float> bitangents = mesh.m_Bitangent;
 		if(!bitangents.empty())
 		{
 			glGenBuffers(1, &render_vertex.bitangent_buffer);
@@ -185,7 +185,7 @@ void CMeshComponent::InitRenderInfo()
 		}
 		
 		// index buffer
-		std::vector<unsigned int> indices = mesh.GetIndices();
+		std::vector<unsigned int> indices = mesh.m_Index;
 		if(!indices.empty())
 		{
 			glGenBuffers(1, &render_vertex.index_buffer);
@@ -204,36 +204,6 @@ void CMeshComponent::InitRenderInfo()
 bool CMeshComponent::IsBlend()
 {
 	return shader_data->bIsBlend;
-}
-
-std::vector<float> CMesh::GetVertices() const
-{
-	return m_Vertex;
-}
-
-std::vector<float> CMesh::GetTextureCoords() const
-{
-	return m_TexCoord;
-}
-
-std::vector<float> CMesh::GetNormals() const
-{
-	return m_Normal;
-}
-
-vector<unsigned int> CMesh::GetIndices() const
-{
-	return m_Index;
-}
-
-vector<float> CMesh::GetTangents() const
-{
-	return m_Tangent;
-}
-
-vector<float> CMesh::GetBitangents() const
-{
-	return m_Bitangent;
 }
 
 int CMeshComponent::ImportObj(const std::string& model_path)

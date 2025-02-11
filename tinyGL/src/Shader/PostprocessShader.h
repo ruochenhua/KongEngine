@@ -1,6 +1,6 @@
 #pragma once
 #include "Shader.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 
 namespace Kong
 {
