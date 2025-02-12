@@ -3,7 +3,7 @@
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Component/LightComponent.h"
 
 using namespace Kong;

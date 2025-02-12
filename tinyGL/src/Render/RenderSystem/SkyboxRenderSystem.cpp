@@ -5,7 +5,7 @@
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/Shader.h"

@@ -3,8 +3,7 @@
 #include <imgui.h>
 
 #include "Render/RenderModule.hpp"
-#include "Texture.hpp"
-#include "Utils.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 using namespace Kong;
 

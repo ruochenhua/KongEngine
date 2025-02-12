@@ -12,7 +12,7 @@
 #include "Scene.hpp"
 #include "Shader/Shader.h"
 #include "stb_image.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/QuadShape.h"

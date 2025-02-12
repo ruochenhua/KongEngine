@@ -2,7 +2,7 @@
 
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
 #include "Component/Mesh/Water.h"

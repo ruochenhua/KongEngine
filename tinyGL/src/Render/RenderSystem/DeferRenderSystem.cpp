@@ -6,7 +6,7 @@
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 
 using namespace Kong;
