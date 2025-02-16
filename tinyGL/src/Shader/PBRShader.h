@@ -9,6 +9,6 @@ namespace Kong
     public:
         PBRShader();
         
-        void UpdateRenderData(const SMaterial& render_material) override;
+        void UpdateRenderData(const SMaterialInfo& render_material) override;
     };
 }

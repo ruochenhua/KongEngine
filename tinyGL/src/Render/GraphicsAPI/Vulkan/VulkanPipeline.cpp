@@ -5,7 +5,7 @@
 #include "Utils.hpp"
 
 using namespace Kong;
-
+#if USE_VULKAN
 std::vector<VkVertexInputBindingDescription> Vertex::GetBindingDescription()
 {
     std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
@@ -228,3 +228,4 @@ void VulkanPipeline::CreateShaderModule(const std::string& shaderCode, VkShaderM
         throw std::runtime_error("failed to create shader module!");
     }
 }
+#endif

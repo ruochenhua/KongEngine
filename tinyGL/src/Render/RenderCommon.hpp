@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#if RENDER_IN_VULKAN
+#if USE_VULKAN
 #include <vulkan/vulkan_core.h>
 #endif
 
@@ -8,10 +8,17 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
+#include "GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#include "Resource/Buffer.hpp"
 
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
 
+
+namespace Kong
+{
+    class OpenGLBuffer;
+}
 
 namespace Kong
 {
@@ -56,9 +63,9 @@ namespace Kong
         tes = GL_TESS_EVALUATION_SHADER,    // tessellation evaluation shader
     };
 		
-    struct SMaterial
+    struct SMaterialInfo
     {
-        SMaterial() = default;
+        SMaterialInfo() = default;
         glm::vec4 albedo = glm::vec4(0.2f);
         float specular_factor = 1.0f;
         float metallic = 0.5f;
@@ -75,19 +82,15 @@ namespace Kong
         GLuint ao_tex_id = 0;
     };
 
-    struct SVertex
+    struct SVertexInfo
     {
-        // vertex buffer id(vbo)
-        GLuint vertex_buffer = 0;
-        // ibo
-        GLuint index_buffer = 0;
-        // vao
+        // vao: opengl
         GLuint vertex_array_id = 0;
         GLuint instance_buffer = 0;
-		
-        unsigned vertex_size = 0;
-        unsigned stride_count = 1;
-        unsigned indices_count = 0;
+
+        OpenGLBuffer vertex_buffer;
+        OpenGLBuffer index_buffer;
+        
         unsigned instance_count = 0;
     };
 
@@ -95,9 +98,9 @@ namespace Kong
     struct SRenderInfo
     {
         // 顶点
-        SVertex vertex;
+        SVertexInfo vertex;
         // 材质
-        SMaterial material;
+        SMaterialInfo material;
     };
 
     struct Vertex
@@ -108,7 +111,7 @@ namespace Kong
         glm::vec3 tangent{0.0f};
         glm::vec3 bitangent{0.0f};
         
-#if RENDER_IN_VULKAN
+#if USE_VULKAN
         static std::vector<VkVertexInputBindingDescription> GetBindingDescription();
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
 #endif
@@ -116,13 +119,12 @@ namespace Kong
     
     struct CMesh
     {
-        std::vector<unsigned int> m_Index;
-
         SRenderInfo m_RenderInfo;
         string name;
 
         // todo: 后续都放到这个格式里面,也要改造opengl的buffer不要搞太多buffer
         std::vector<Vertex> vertices;
+        std::vector<unsigned int> m_Index;
     };
     
 
@@ -137,7 +139,7 @@ namespace Kong
 
         string model_path;
         bool bOverloadMaterial = false;
-        SMaterial material;
+        SMaterialInfo material;
     };
 
     struct SSceneLightInfo

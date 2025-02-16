@@ -120,8 +120,8 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 	bool has_tangent = mesh->HasTangentsAndBitangents();
 	string directory = mesh_resource->directory;
 	
-	CMesh new_mesh;
-	new_mesh.name = mesh->mName.C_Str();
+	auto new_mesh = make_shared<CMesh>();
+	new_mesh->name = mesh->mName.C_Str();
 	for(unsigned int i = 0; i < mesh->mNumVertices; ++i)
 	{
 		// 用emplace_back而不是push_back可以避免构造后的拷贝操作
@@ -166,25 +166,22 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_vertex.bitangent = {0, 0, 1};
 		}
 
-		new_mesh.vertices.emplace_back(new_vertex);
+		new_mesh->vertices.emplace_back(new_vertex);
 	}
-
-	new_mesh.m_RenderInfo.vertex.vertex_size = mesh->mNumVertices;
 	
 	for(unsigned int i = 0; i < mesh->mNumFaces; ++i)
 	{
 		aiFace face = mesh->mFaces[i];
 		for(unsigned int j = 0; j < face.mNumIndices; ++j)
 		{
-			new_mesh.m_Index.push_back(face.mIndices[j]);
+			new_mesh->m_Index.push_back(face.mIndices[j]);
 		}
 	}
-	new_mesh.m_RenderInfo.vertex.indices_count = mesh->mNumFaces;
-
+	
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-		auto& mesh_material = new_mesh.m_RenderInfo.material;
+		auto& mesh_material = new_mesh->m_RenderInfo.material;
 		mesh_material.name = material->GetName().C_Str();
 		
 		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);

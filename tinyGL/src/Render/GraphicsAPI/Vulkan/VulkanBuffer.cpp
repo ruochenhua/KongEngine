@@ -2,9 +2,11 @@
 
 using namespace Kong;
 
-void VulkanBuffer::Initialize(BufferType type, uint64_t size, uint32_t instanceCount)
+void VulkanBuffer::Initialize(BufferType type, uint64_t instanceSize, uint32_t instanceCount, void* data)
 {
-    m_instanceSize = size;
+    KongBuffer::Initialize(type, instanceSize, instanceCount);
+    
+    m_instanceSize = instanceSize;
     m_instanceCount = instanceCount;
 
     switch (type)
@@ -31,6 +33,15 @@ void VulkanBuffer::Initialize(BufferType type, uint64_t size, uint32_t instanceC
     
     auto device = VulkanGraphicsDevice::GetGraphicsDevice();
     device->CreateBuffer(m_bufferSize, m_usageFlags, m_memoryPropertyFlags, m_buffer, m_memory);
+
+    // 有数据的话直接写入
+    // todo: staging buffer 优化
+    if (data)
+    {
+        Map();
+        WriteToBuffer(data);
+        Unmap();
+    }
 }
 
 VulkanBuffer::~VulkanBuffer()

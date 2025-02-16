@@ -112,7 +112,7 @@ namespace YamlParser
         {
             auto material_node = mesh_node["material"];
             // 读取材质信息
-            SMaterial tmp_material;
+            SMaterialInfo tmp_material;
             if(material_node["diffuse"])
             {
                 if(material_node["diffuse"].IsSequence())

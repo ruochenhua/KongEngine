@@ -15,8 +15,15 @@ namespace Kong
     public:
         KongBuffer() = default;
 
-        virtual void Initialize(BufferType type, uint64_t size, uint32_t instanceCount) = 0;
+        virtual void Initialize(BufferType type, uint64_t size, uint32_t instanceCount, void* data = nullptr)
+        {
+            m_type = type;
+        }
+        
         KongBuffer(const KongBuffer& other) = delete;
         KongBuffer& operator=(const KongBuffer& other) = delete;
+
+    protected:
+        BufferType m_type {NONE_BUFFER};
     };
 }

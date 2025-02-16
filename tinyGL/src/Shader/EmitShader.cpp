@@ -20,7 +20,7 @@ EmitShader::EmitShader()
 	SetInt("diffuse_texture", 0);
 }
 
-void EmitShader::UpdateRenderData(const SMaterial& render_material)
+void EmitShader::UpdateRenderData(const SMaterialInfo& render_material)
 {
 	SetVec4("albedo", render_material.albedo);
 	// GLuint null_tex_id = CRender::GetNullTexId();

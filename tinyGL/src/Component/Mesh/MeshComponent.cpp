@@ -20,7 +20,7 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
+		auto& render_vertex = mesh->m_RenderInfo.vertex;
 		if(simple_draw_shader)
 		{
 			if(use_override_material)
@@ -29,37 +29,36 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 			}
 			else
 			{
-				simple_draw_shader->SetVec4("albedo", mesh.m_RenderInfo.material.albedo);		
+				simple_draw_shader->SetVec4("albedo", mesh->m_RenderInfo.material.albedo);		
 			}
 			
 		}
 		glBindVertexArray(render_vertex.vertex_array_id);
 		// Draw the triangle !
 		// if no index, use draw array
-		if(render_vertex.index_buffer == GL_NONE)
+		if(mesh->m_RenderInfo.vertex.index_buffer.GetBuffer() == GL_NONE)
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
 				// Starting from vertex 0; 3 vertices total -> 1 triangle
 				glDrawArraysInstanced(GL_TRIANGLES, 0,
-					render_vertex.vertex_size / render_vertex.stride_count,
-					render_vertex.instance_count);
+					mesh->vertices.size(),render_vertex.instance_count);
 			}
 			else
 			{
 				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); 	
+				glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); 	
 			}
 		}
 		else
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
-				glDrawElementsInstanced(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0, render_vertex.instance_count);
+				glDrawElementsInstanced(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0, render_vertex.instance_count);
 			}
 			else
 			{
-				glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0);
 			}
 		}
 		
@@ -69,12 +68,17 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 
 void CMeshComponent::Draw()
 {
+#if RENDER_IN_VULKAN
+	
+#else
+	
+#endif
 	if (shader_data)
 		shader_data->Use();
 	
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
+		auto& render_vertex = mesh->m_RenderInfo.vertex;
 		
 		glBindVertexArray(render_vertex.vertex_array_id);
 		if (shader_data)
@@ -85,35 +89,34 @@ void CMeshComponent::Draw()
 			}
 			else
 			{
-				shader_data->UpdateRenderData(mesh.m_RenderInfo.material);
+				shader_data->UpdateRenderData(mesh->m_RenderInfo.material);
 			}
 		}
 		// Draw the triangle !
 		// if no index, use draw array
-		if(render_vertex.index_buffer == GL_NONE)
+		if(mesh->m_RenderInfo.vertex.index_buffer.GetBuffer() == GL_NONE)
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
 				// Starting from vertex 0; 3 vertices total -> 1 triangle
 				glDrawArraysInstanced(GL_TRIANGLES, 0,
-					render_vertex.vertex_size / render_vertex.stride_count,
-					render_vertex.instance_count);
+					mesh->vertices.size(),render_vertex.instance_count);
 			}
 			else
 			{
 				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); 	
+				glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); 	
 			}
 		}
 		else
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
-				glDrawElementsInstanced(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0, render_vertex.instance_count);
+				glDrawElementsInstanced(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0, render_vertex.instance_count);
 			}
 			else
 			{
-				glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0);
 			}
 		}
 		
@@ -127,26 +130,17 @@ void CMeshComponent::InitRenderInfo()
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
 		// 构建默认的shader数据结构，数据齐全，但是冗余
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
-		std::vector<Vertex> mesh_vertices = mesh.vertices;
+		auto& render_vertex = mesh->m_RenderInfo.vertex;
+		std::vector<Vertex>& mesh_vertices = mesh->vertices;
 		
 		glGenVertexArrays(1, &render_vertex.vertex_array_id);
 		glBindVertexArray(render_vertex.vertex_array_id);
-
-		//init vertex buffer
-		glGenBuffers(1, &render_vertex.vertex_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.vertex_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * mesh_vertices.size(), &mesh_vertices[0], GL_STATIC_DRAW);
-
+		
+		// //init vertex buffer
+		mesh->m_RenderInfo.vertex.vertex_buffer.Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
+		
 		//vertex buffer
-		glVertexAttribPointer(
-			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			sizeof(Vertex),                  // stride
-			(void*)offsetof(Vertex, position)       // array buffer offset
-		);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 		glEnableVertexAttribArray(0);
 
 		//normal buffer
@@ -165,21 +159,14 @@ void CMeshComponent::InitRenderInfo()
 		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
 		glEnableVertexAttribArray(4);
 
-	
 		// index buffer
-		std::vector<unsigned int> indices = mesh.m_Index;
+		std::vector<unsigned int> indices = mesh->m_Index;
 		if(!indices.empty())
 		{
-			glGenBuffers(1, &render_vertex.index_buffer);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_vertex.index_buffer);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
+			mesh->m_RenderInfo.vertex.index_buffer.Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
 		}
 
 		glBindVertexArray(GL_NONE);
-
-	
-		render_vertex.vertex_size = mesh_vertices.size();
-		render_vertex.indices_count = indices.size();
 	}
 }
 

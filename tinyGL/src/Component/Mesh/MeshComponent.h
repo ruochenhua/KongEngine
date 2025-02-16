@@ -2,6 +2,8 @@
 #include "Common.h"
 #include "Component/Component.h"
 #include "Parser/ResourceManager.h"
+#include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Shader/Shader.h"
 
 struct aiMesh;
@@ -10,8 +12,6 @@ struct aiNode;
 
 namespace Kong
 {
-
-	
 	class CMeshComponent : public CComponent
 	{
 	public:

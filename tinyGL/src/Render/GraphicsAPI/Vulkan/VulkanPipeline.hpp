@@ -7,6 +7,7 @@
 
 namespace Kong
 {
+#if USE_VULKAN
     struct PipelineConfigInfo
     {
         PipelineConfigInfo(const PipelineConfigInfo&) = delete;
@@ -52,4 +53,5 @@ namespace Kong
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
     };
+#endif
 }

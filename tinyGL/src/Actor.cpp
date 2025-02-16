@@ -89,8 +89,8 @@ void AActor::BindInstancingToMesh(weak_ptr<CMeshComponent> mesh_comp)
 {
 	auto mesh_ptr = mesh_comp.lock();
 
-	CMesh& mesh = mesh_ptr->mesh_resource->mesh_list[0];
-	auto& render_vertex = mesh.m_RenderInfo.vertex;
+	auto mesh = mesh_ptr->mesh_resource->mesh_list[0];
+	auto& render_vertex = mesh->m_RenderInfo.vertex;
 	glGenBuffers(1, &render_vertex.instance_buffer);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, render_vertex.instance_buffer);

@@ -12,7 +12,7 @@ namespace Kong
     struct MeshResource
     {
         string directory;
-        vector<CMesh> mesh_list;
+        vector<shared_ptr<CMesh>> mesh_list;
     };
 
     // 资管管理类

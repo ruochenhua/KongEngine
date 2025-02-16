@@ -27,7 +27,7 @@ DeferInfoShader::DeferInfoShader()
     // SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 }
 
-void DeferInfoShader::UpdateRenderData(const SMaterial& render_material)
+void DeferInfoShader::UpdateRenderData(const SMaterialInfo& render_material)
 {
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
@@ -95,7 +95,7 @@ DeferredBRDFShader::DeferredBRDFShader()
 	SetInt("ssao_result_texture", 16);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material)
+void DeferredBRDFShader::UpdateRenderData(const SMaterialInfo& render_material)
 {
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	int texture_idx = 8;

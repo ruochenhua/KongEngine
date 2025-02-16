@@ -19,7 +19,7 @@ BlendShader::BlendShader()
     SetInt("diffuse_texture", 0);
 }
 
-void BlendShader::UpdateRenderData(const SMaterial& render_material)
+void BlendShader::UpdateRenderData(const SMaterialInfo& render_material)
 {
     // 材质属性
     SetVec4("albedo", render_material.albedo);

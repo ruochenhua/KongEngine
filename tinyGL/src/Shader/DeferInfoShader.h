@@ -7,7 +7,7 @@ namespace Kong
     {
     public:
         DeferInfoShader();
-        void UpdateRenderData(const SMaterial& render_material) override;
+        void UpdateRenderData(const SMaterialInfo& render_material) override;
  
     };
     
@@ -15,7 +15,7 @@ namespace Kong
     {
     public:
         DeferredBRDFShader();
-        void UpdateRenderData(const SMaterial& render_material) override;
+        void UpdateRenderData(const SMaterialInfo& render_material) override;
     };
 
     class DeferredTerrainInfoShader : public Shader

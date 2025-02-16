@@ -7,7 +7,8 @@ namespace Kong
     class VulkanBuffer : public KongBuffer
     {
     public:
-        void Initialize(BufferType type, uint64_t size, uint32_t instanceCount) override;
+        // instanceSize代表数据类型的大小sizeof(vertex)
+        void Initialize(BufferType type, uint64_t instanceSize, uint32_t instanceCount, void* data = nullptr) override;
         
         ~VulkanBuffer();
 

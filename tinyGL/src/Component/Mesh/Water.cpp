@@ -31,7 +31,7 @@ void Water::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 void Water::Draw()
 {
     shader_data->Use();
-    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
+    auto& render_info = mesh_resource->mesh_list[0]->m_RenderInfo.vertex;
 #if USE_DSA
     glBindTextureUnit(2, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
     glBindTextureUnit(3, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());

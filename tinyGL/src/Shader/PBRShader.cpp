@@ -41,7 +41,7 @@ PBRShader::PBRShader()
 	}
 }
 
-void PBRShader::UpdateRenderData(const SMaterial& render_material)
+void PBRShader::UpdateRenderData(const SMaterialInfo& render_material)
 {	
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
