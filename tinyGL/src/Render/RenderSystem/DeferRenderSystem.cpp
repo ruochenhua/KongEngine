@@ -278,7 +278,7 @@ void DeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
         // 等于1代表渲染skybox，会需要用到环境贴图
         mesh_shader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
         mesh_shader->SetMat4("model", actor->GetModelMatrix());
-        mesh_component->Draw(render_module->scene_render_info);
+        mesh_component->Draw();
     }
 }
 
@@ -329,8 +329,7 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModul
 	glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
 
 	auto m_quadShape = KongRenderModule::GetScreenShape();
-    m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0].m_RenderInfo.material,
-        render_module->scene_render_info);
+    m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0].m_RenderInfo.material);
 	
     m_quadShape->Draw();
     

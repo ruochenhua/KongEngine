@@ -27,7 +27,7 @@ DeferInfoShader::DeferInfoShader()
     // SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 }
 
-void DeferInfoShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
+void DeferInfoShader::UpdateRenderData(const SMaterial& render_material)
 {
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
@@ -95,13 +95,13 @@ DeferredBRDFShader::DeferredBRDFShader()
 	SetInt("ssao_result_texture", 16);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
+void DeferredBRDFShader::UpdateRenderData(const SMaterial& render_material)
 {
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	int texture_idx = 8;
 	// 贴图0-3分别是position/normal/albedo/orm, 已经IBL相关贴图，下面的从8开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧
-	
+	auto scene_render_info = KongRenderModule::GetRenderModule().scene_render_info;
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
 	

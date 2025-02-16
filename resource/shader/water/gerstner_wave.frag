@@ -73,7 +73,8 @@ void main()
 	vec4 diffuse_color = mix(reflection_color, refraction_color, fresnel_blend);
 
     vec4 final_color = diffuse_color + vec4(specular_highlights, 0.0);
-
+	
+//	final_color = vec4(vec3(max(0, dot(frag_normal, -light_info_ubo.directional_light.light_dir.xyz))),1.0);
 //	if(frag_pos.y > foam_threshold)
 //	{
 //		final_color = mix(vec4(1.0), final_color,

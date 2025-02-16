@@ -202,6 +202,7 @@ void KongUIManager::DescribeUIContent(double delta)
 						ImGui::DragFloat("freq", &terrain->freq, 0.0001f, 0.f, 1.0f);
 						ImGui::DragFloat("power", &terrain->power, 0.02f, 0.f, 32.f);
 						ImGui::DragInt("octaves", &terrain->octaves, 0.02f, 0, 100);
+						ImGui::DragFloat("height shift", &terrain->height_shift_, 0.1f, -100.0, 100.0);
 						ImGui::TreePop();
 					}
 				}

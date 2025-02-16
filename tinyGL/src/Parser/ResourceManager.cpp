@@ -128,69 +128,42 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 		const auto& vert = mesh->mVertices[i];
 		Vertex new_vertex;
 		
-		new_mesh.m_Vertex.emplace_back(vert.x);
-		new_mesh.m_Vertex.emplace_back(vert.y);
-		new_mesh.m_Vertex.emplace_back(vert.z);
-
 		new_vertex.position = {vert.x, vert.y, vert.z};
 		
 		if(has_normal)
 		{
 			const auto& norm = mesh->mNormals[i];
-			new_mesh.m_Normal.emplace_back(norm.x);
-			new_mesh.m_Normal.emplace_back(norm.y);
-			new_mesh.m_Normal.emplace_back(norm.z);
 
 			new_vertex.normal = {norm.x, norm.y, norm.z};
 		}
 		else
 		{
-			new_mesh.m_Normal.emplace_back(0);
-			new_mesh.m_Normal.emplace_back(1);
-			new_mesh.m_Normal.emplace_back(0);
-
 			new_vertex.normal = {0, 1, 0};
 		}
 		
 		if(has_uv)
 		{
 			const auto& tex_uv = mesh->mTextureCoords[0][i];
-			new_mesh.m_TexCoord.emplace_back(tex_uv.x);
-			new_mesh.m_TexCoord.emplace_back(tex_uv.y);
 
 			new_vertex.uv = {tex_uv.x, tex_uv.y};
 		}
 		else
 		{
-			new_mesh.m_TexCoord.emplace_back(0.0);
-			new_mesh.m_TexCoord.emplace_back(0.0);
+			new_vertex.uv = {0, 0};
 		}
 
 		if(has_tangent)
 		{
 			const auto& tangent = mesh->mTangents[i];
-			new_mesh.m_Tangent.emplace_back(tangent.x);
-			new_mesh.m_Tangent.emplace_back(tangent.y);
-			new_mesh.m_Tangent.emplace_back(tangent.z);
-
 			new_vertex.tangent = {tangent.x, tangent.y, tangent.z};
 
 			const auto& bitangnet = mesh->mBitangents[i];
-			new_mesh.m_Bitangent.emplace_back(bitangnet.x);
-			new_mesh.m_Bitangent.emplace_back(bitangnet.y);
-			new_mesh.m_Bitangent.emplace_back(bitangnet.z);
-
 			new_vertex.bitangent = {bitangnet.x, bitangnet.y, bitangnet.z};
 		}
 		else
 		{
-			// fixme: 这里先塞空值进去，是否可以做判断(用不同的shader？或者shader里面判断tangent的值？)
-			new_mesh.m_Tangent.emplace_back(0);
-			new_mesh.m_Tangent.emplace_back(0);
-			new_mesh.m_Tangent.emplace_back(0);
-			new_mesh.m_Bitangent.emplace_back(0);
-			new_mesh.m_Bitangent.emplace_back(0);
-			new_mesh.m_Bitangent.emplace_back(0);
+			new_vertex.tangent = {1, 0, 0};
+			new_vertex.bitangent = {0, 0, 1};
 		}
 
 		new_mesh.vertices.emplace_back(new_vertex);

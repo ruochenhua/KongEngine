@@ -41,7 +41,7 @@ PBRShader::PBRShader()
 	}
 }
 
-void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
+void PBRShader::UpdateRenderData(const SMaterial& render_material)
 {	
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
@@ -76,7 +76,8 @@ void PBRShader::UpdateRenderData(const SMaterial& render_material, const SSceneL
 	// 天空盒brdf lut贴图
 	GLuint skybox_brdf_lut_tex_id = skybox_sys->GetBRDFLutTexture();
 	glBindTextureUnit(GL_TEXTURE0 + SKYBOX_BRDF_LUT_TEX_SHADER_ID, skybox_brdf_lut_tex_id);
-	
+
+	auto scene_render_info = KongRenderModule::GetRenderModule().scene_render_info;
 	// 添加光源的阴影贴图
 	bool has_dir_light = !scene_render_info.scene_dirlight.expired();
 	GLuint dir_light_shadowmap_id, rsm_world_pos, rsm_world_normal, rsm_world_flux;

@@ -83,10 +83,6 @@ namespace Kong
         GLuint index_buffer = 0;
         // vao
         GLuint vertex_array_id = 0;
-        GLuint texture_buffer = 0;
-        GLuint normal_buffer = 0;
-        GLuint tangent_buffer = 0;
-        GLuint bitangent_buffer = 0;
         GLuint instance_buffer = 0;
 		
         unsigned vertex_size = 0;
@@ -120,12 +116,6 @@ namespace Kong
     
     struct CMesh
     {
-        std::vector<float> m_Vertex;
-        std::vector<float> m_Normal;
-        std::vector<float> m_TexCoord;
-        std::vector<float> m_Tangent;
-        std::vector<float> m_Bitangent;
-
         std::vector<unsigned int> m_Index;
 
         SRenderInfo m_RenderInfo;
@@ -187,5 +177,4 @@ namespace Kong
         //只允许有四个点光源的阴影贴图，这里用ivec4传入对应点光源的index
         glm::ivec4 point_light_shadow_index = glm::ivec4(-1); 
     };
-
 }

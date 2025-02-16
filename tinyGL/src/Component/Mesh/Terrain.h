@@ -12,7 +12,7 @@ namespace Kong
         Terrain(const string &file_name);
         void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
         float height_scale_ = 64.0f;
-        float height_shift_ = 16.0f;
+        float height_shift_ = 0.0f;
 
         // perlin noise生成数据相关
         float amplitude = 12.f;
@@ -20,7 +20,7 @@ namespace Kong
         float freq = 0.002f;
         float power = 2.0f;
         
-        void Draw(const SSceneLightInfo& scene_render_info) override;
+        void Draw() override;
         void InitRenderInfo() override;
         
         int terrain_size = 10000;

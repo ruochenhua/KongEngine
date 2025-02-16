@@ -10,30 +10,24 @@ CQuadShape::CQuadShape()
     InitRenderInfo();
 }
 
-void CQuadShape::Draw(const SSceneLightInfo& scene_render_info)
+void CQuadShape::Draw()
 {
-    shader_data->Use();
+    if (shader_data)
+        shader_data->Use();
     auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
     
     glBindVertexArray(render_info.vertex_array_id);
-    if(use_override_material)
+    if (shader_data)
     {
-        shader_data->UpdateRenderData(override_render_info.material, scene_render_info);
+        if(use_override_material)
+        {
+            shader_data->UpdateRenderData(override_render_info.material);
+        }
+        else
+        {
+            shader_data->UpdateRenderData(mesh_resource->mesh_list[0].m_RenderInfo.material);
+        }
     }
-    else
-    {
-        shader_data->UpdateRenderData(mesh_resource->mesh_list[0].m_RenderInfo.material, scene_render_info);
-    }
-   
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(GL_NONE);
-}
-
-void CQuadShape::Draw()
-{
-    auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;
-    
-    glBindVertexArray(render_info.vertex_array_id);   
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(GL_NONE);
 }

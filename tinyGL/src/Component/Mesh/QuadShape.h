@@ -7,8 +7,7 @@ namespace Kong
     {
     public:
         CQuadShape();
-        virtual void Draw(const SSceneLightInfo& scene_render_info) override;
-        void Draw();
+        void Draw() override;
         virtual void InitRenderInfo() override;
 
         void BindVAO();

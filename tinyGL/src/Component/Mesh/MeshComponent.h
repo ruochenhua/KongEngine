@@ -10,6 +10,8 @@ struct aiNode;
 
 namespace Kong
 {
+
+	
 	class CMeshComponent : public CComponent
 	{
 	public:
@@ -21,13 +23,14 @@ namespace Kong
 		void BeginPlay() override;
 		// 简单调用一下draw，不管shader（可能用其他的shader）
 		virtual void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader);
-		virtual void Draw(const SSceneLightInfo& scene_render_info);
+		virtual void Draw();
 		virtual void InitRenderInfo();
 		bool IsBlend();
 
 		// 覆盖原有材质 
 		SRenderInfo override_render_info;
 		bool use_override_material = false;
+	
 	protected:
 		// import obj model
 		int ImportObj(const std::string& model_path);

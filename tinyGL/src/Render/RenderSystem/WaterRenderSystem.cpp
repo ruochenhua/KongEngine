@@ -119,7 +119,7 @@ void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_r
         mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
         mesh_shader->SetFloat("move_factor",
             fmodf(total_move*move_speed, 1.0));
-        water_comp->Draw(render_module->scene_render_info);
+        water_comp->Draw();
     }
     else
     {
@@ -140,7 +140,7 @@ void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_r
         // mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
         mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
         mesh_shader->SetDouble("iTime", total_move);
-        gerstner_water->Draw(render_module->scene_render_info);
+        gerstner_water->Draw();
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

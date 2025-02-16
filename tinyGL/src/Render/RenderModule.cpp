@@ -390,7 +390,7 @@ void KongRenderModule::RenderNonDeferSceneObjects() const
 		mesh_shader->SetBool("b_render_skybox", m_skyboxRenderSystem.render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_shader->SetDouble("iTime", render_time);
-		mesh_component->Draw(scene_render_info);
+		mesh_component->Draw();
 	}
 }
 

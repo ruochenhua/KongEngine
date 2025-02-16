@@ -7,6 +7,5 @@ namespace Kong
 	{
 	public:
 		CModelMeshComponent(const string& model_path);
-		virtual void Draw(const SSceneLightInfo& scene_render_info) override;
 	};
 }

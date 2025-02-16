@@ -11,7 +11,7 @@ namespace Kong
 
         void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
         
-        void Draw(const SSceneLightInfo& scene_render_info) override;
+        void Draw() override;
 
         void LoadDudvMapTexture(const string& texture_path);
         void LoadNormalTexture(const string& texture_path);

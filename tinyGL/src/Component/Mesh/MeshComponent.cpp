@@ -67,21 +67,26 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 	}
 }
 
-void CMeshComponent::Draw(const SSceneLightInfo& scene_render_info)
+void CMeshComponent::Draw()
 {
-	shader_data->Use();
+	if (shader_data)
+		shader_data->Use();
+	
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
 		auto& render_vertex = mesh.m_RenderInfo.vertex;
 		
 		glBindVertexArray(render_vertex.vertex_array_id);
-		if(use_override_material)
+		if (shader_data)
 		{
-			shader_data->UpdateRenderData(override_render_info.material, scene_render_info);
-		}
-		else
-		{
-			shader_data->UpdateRenderData(mesh.m_RenderInfo.material, scene_render_info);
+			if(use_override_material)
+			{
+				shader_data->UpdateRenderData(override_render_info.material);
+			}
+			else
+			{
+				shader_data->UpdateRenderData(mesh.m_RenderInfo.material);
+			}
 		}
 		// Draw the triangle !
 		// if no index, use draw array
@@ -123,7 +128,7 @@ void CMeshComponent::InitRenderInfo()
 	{
 		// 构建默认的shader数据结构，数据齐全，但是冗余
 		auto& render_vertex = mesh.m_RenderInfo.vertex;
-		std::vector<float> vertices = mesh.m_Vertex;
+		std::vector<Vertex> mesh_vertices = mesh.vertices;
 		
 		glGenVertexArrays(1, &render_vertex.vertex_array_id);
 		glBindVertexArray(render_vertex.vertex_array_id);
@@ -131,59 +136,36 @@ void CMeshComponent::InitRenderInfo()
 		//init vertex buffer
 		glGenBuffers(1, &render_vertex.vertex_buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.vertex_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * mesh_vertices.size(), &mesh_vertices[0], GL_STATIC_DRAW);
 
 		//vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER,  render_vertex.vertex_buffer);
 		glVertexAttribPointer(
 			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 			3,                  // size
 			GL_FLOAT,           // type
 			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
+			sizeof(Vertex),                  // stride
+			(void*)offsetof(Vertex, position)       // array buffer offset
 		);
 		glEnableVertexAttribArray(0);
 
 		//normal buffer
-		std::vector<float> normals = mesh.m_Normal;
-		glGenBuffers(1, &render_vertex.normal_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.normal_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
-
-		glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,0, (void*)0);
+		glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,sizeof(Vertex), (void*)offsetof(Vertex, normal));
 		glEnableVertexAttribArray(1);
 
 		// texcoord
-		std::vector<float> tex_coords = mesh.m_TexCoord;
-		glGenBuffers(1, &render_vertex.texture_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.texture_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,0,(void*)0);
+		glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex, uv));
 		glEnableVertexAttribArray(2);
 
 		// tangent
-		vector<float> tangents = mesh.m_Tangent;
-		if(!tangents.empty())
-		{
-			glGenBuffers(1, &render_vertex.tangent_buffer);
-			glBindBuffer(GL_ARRAY_BUFFER, render_vertex.tangent_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
-			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glEnableVertexAttribArray(3);
-		}
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+		glEnableVertexAttribArray(3);
 		
 		// bitangent
-		vector<float> bitangents = mesh.m_Bitangent;
-		if(!bitangents.empty())
-		{
-			glGenBuffers(1, &render_vertex.bitangent_buffer);
-			glBindBuffer(GL_ARRAY_BUFFER, render_vertex.bitangent_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
-			glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glEnableVertexAttribArray(4);
-		}
-		
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+		glEnableVertexAttribArray(4);
+
+	
 		// index buffer
 		std::vector<unsigned int> indices = mesh.m_Index;
 		if(!indices.empty())
@@ -195,8 +177,8 @@ void CMeshComponent::InitRenderInfo()
 
 		glBindVertexArray(GL_NONE);
 
-		// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
-		render_vertex.vertex_size = vertices.size();
+	
+		render_vertex.vertex_size = mesh_vertices.size();
 		render_vertex.indices_count = indices.size();
 	}
 }

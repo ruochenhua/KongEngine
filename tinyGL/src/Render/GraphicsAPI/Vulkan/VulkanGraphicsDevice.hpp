@@ -38,7 +38,14 @@ namespace Kong
         VkQueue GetPresentQueue() const { return m_presentQueue; }
         VkCommandPool GetCommandPool() const {return m_commandPool;}
         VkSurfaceKHR GetSurface() const {return m_surface;}
-        
+        // Buffer Helper Functions
+        void CreateBuffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags usage,
+            VkMemoryPropertyFlags properties,
+            VkBuffer &buffer,
+            VkDeviceMemory &bufferMemory);
+
         VkPhysicalDeviceProperties m_properties;
 
         SwapChainSupportDetails GetSwapChainSupport() {return QuerySwapChainSupport(m_physicalDevice);}

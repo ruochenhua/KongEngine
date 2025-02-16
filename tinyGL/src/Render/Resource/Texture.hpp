@@ -49,9 +49,11 @@ namespace Kong
         GLuint texture_id = GL_NONE;
     };
 
-    class CTexture2D : public TextureBuilder
+    // opengl vulkan 分别处理
+    class Texture
     {
     public:
-        CTexture2D(int width, int height, GLenum format, unsigned char* data);
+        
     };
+    
 }

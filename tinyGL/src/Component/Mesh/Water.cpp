@@ -28,7 +28,7 @@ void Water::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
     CQuadShape::DrawShadowInfo(simple_draw_shader);
 }
 
-void Water::Draw(const SSceneLightInfo& scene_render_info)
+void Water::Draw()
 {
     shader_data->Use();
     auto& render_info = mesh_resource->mesh_list[0].m_RenderInfo.vertex;

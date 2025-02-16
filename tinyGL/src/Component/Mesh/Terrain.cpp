@@ -94,7 +94,7 @@ void Terrain::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
     
 }
 
-void Terrain::Draw(const SSceneLightInfo& scene_render_info)
+void Terrain::Draw()
 {
     // glDisable(GL_CULL_FACE);
     shader_data->Use();

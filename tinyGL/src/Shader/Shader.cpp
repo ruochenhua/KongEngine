@@ -146,7 +146,7 @@ void Shader::Use() const
     glUseProgram(shader_id);
 }
 
-void Shader::UpdateRenderData(const SMaterial& render_material, const SSceneLightInfo& scene_render_info)
+void Shader::UpdateRenderData(const SMaterial& render_material)
 {
 	// 材质属性
 	SetVec4("albedo", render_material.albedo);
