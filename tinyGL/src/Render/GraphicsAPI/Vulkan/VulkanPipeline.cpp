@@ -5,7 +5,7 @@
 #include "Utils.hpp"
 
 using namespace Kong;
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
 std::vector<VkVertexInputBindingDescription> Vertex::GetBindingDescription()
 {
     std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);

@@ -72,12 +72,15 @@ shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 
 int KongRenderModule::Init()
 {
-	InitMainFBO();
-	
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
 	m_quadShape = make_shared<CQuadShape>();
 
+#ifdef RENDER_IN_VULKAN
+	
+	
+#else
+	InitMainFBO();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {
 		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.vert")},
@@ -102,7 +105,7 @@ int KongRenderModule::Init()
 	m_postProcessRenderSystem.Init();
 	m_ssReflectionRenderSystem.Init();
 	m_waterRenderSystem.Init();
-
+#endif
 	return 0;
 }
 

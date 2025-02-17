@@ -15,7 +15,6 @@ using namespace std;
 
 // 使用opengl 4.5的(Direct State Access)特性，减少绑定和解绑操作，优化性能
 #define USE_DSA 1
-#define USE_VULKAN 0
 
 namespace Kong
 {

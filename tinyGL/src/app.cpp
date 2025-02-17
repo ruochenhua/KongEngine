@@ -12,16 +12,16 @@ KongApp::KongApp()
     , m_RenderModule{KongRenderModule::GetRenderModule()}
     , m_SceneManager{KongSceneManager::GetSceneManager()}
 {
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
 #else
     m_UIManager.Init(m_Window.GetWindow());
-    m_RenderModule.Init();
 #endif
+    m_RenderModule.Init();
 }
 
 KongApp::~KongApp()
 {
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
 #else
     m_UIManager.Destroy();
 #endif
@@ -40,10 +40,13 @@ void KongApp::Run()
             glfwSetWindowShouldClose(m_Window.GetWindow(), true);
             continue;
         }
-#if USE_VULKAN
-#else
         double delta = new_time - current_time;
         if(delta > FRAME_TIME_CAP)
+#ifdef RENDER_IN_VULKAN
+        {
+            
+        }
+#else
         {
             m_UIManager.PreRenderUpdate(delta);
             m_SceneManager.PreRenderUpdate(delta);

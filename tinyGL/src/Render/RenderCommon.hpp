@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
 #endif
 
@@ -111,7 +111,7 @@ namespace Kong
         glm::vec3 tangent{0.0f};
         glm::vec3 bitangent{0.0f};
         
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
         static std::vector<VkVertexInputBindingDescription> GetBindingDescription();
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
 #endif

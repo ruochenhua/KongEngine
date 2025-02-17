@@ -155,7 +155,9 @@ namespace Kong
 		 *	SceneLightInfo light_info
 		 */
 		UBOHelper scene_light_ubo;
-
+#ifdef RENDER_IN_VULKAN
+		
+#else
 		// 天空盒
 		SkyboxRenderSystem m_skyboxRenderSystem;
 		// 延迟渲染
@@ -166,7 +168,8 @@ namespace Kong
 		SSReflectionRenderSystem m_ssReflectionRenderSystem;
 		// 水体渲染实现
 		WaterRenderSystem m_waterRenderSystem;
-
+#endif
+		
 		shared_ptr<CQuadShape> m_quadShape;
 	};
 }

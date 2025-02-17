@@ -1,7 +1,7 @@
 #include "Window.hpp"
 #include "common.h"
 #include <stdexcept>
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
 #else
 #include "Render/GraphicsAPI/OpenGL/OpenGLGraphicsDevice.hpp"
@@ -18,7 +18,7 @@ KongWindow& KongWindow::GetWindowModule()
 
 KongWindow::KongWindow()
 {
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
     auto graphics_device = VulkanGraphicsDevice::GetGraphicsDevice();
     m_window = graphics_device->Init(windowSize.x, windowSize.y);
     aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);

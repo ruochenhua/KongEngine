@@ -7,7 +7,7 @@
 
 namespace Kong
 {
-#if USE_VULKAN
+#ifdef RENDER_IN_VULKAN
     struct PipelineConfigInfo
     {
         PipelineConfigInfo(const PipelineConfigInfo&) = delete;

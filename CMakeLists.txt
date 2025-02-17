@@ -12,7 +12,7 @@ find_package(OpenGL REQUIRED)
 # 查找Vulkan
 find_package(Vulkan QUIET)
 
-if(Vulkan_FOUND)
+if(Vulkan_FOUND AND USE_VULKAN)
 	add_definitions(-DRENDER_IN_VULKAN)
 endif()
 
