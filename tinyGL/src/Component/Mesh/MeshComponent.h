@@ -34,7 +34,6 @@ namespace Kong
 		// std::unique_ptr<VulkanBuffer> vertexBuffer;
 		// std::unique_ptr<VulkanBuffer> indexBuffer;
 		
-		void VkDraw(VkCommandBuffer command_buffer);
 #endif
 		
 		// 覆盖原有材质 

@@ -1,5 +1,5 @@
 #include "VulkanBuffer.hpp"
-
+#ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
 void VulkanBuffer::Initialize(BufferType type, uint64_t instanceSize, uint32_t instanceCount, void* data)
@@ -198,3 +198,4 @@ VkDeviceSize VulkanBuffer::GetAlignment(VkDeviceSize size, VkDeviceSize minOffse
     }
     return size;
 }
+#endif

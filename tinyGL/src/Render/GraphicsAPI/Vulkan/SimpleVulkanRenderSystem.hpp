@@ -1,9 +1,10 @@
 #pragma once
+#ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
 
 #include "VulkanPipeline.hpp"
 
-#ifdef RENDER_IN_VULKAN
+
 namespace Kong
 {
     struct FrameInfo

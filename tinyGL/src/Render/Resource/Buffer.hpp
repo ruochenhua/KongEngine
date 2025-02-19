@@ -1,8 +1,8 @@
 #pragma once
-
+#include <stdint.h>
 namespace Kong
 {
-    enum BufferType : uint8_t
+    enum BufferType : short
     {
         VERTEX_BUFFER = 0,
         INDEX_BUFFER,
@@ -24,7 +24,7 @@ namespace Kong
         KongBuffer(const KongBuffer& other) = delete;
         KongBuffer& operator=(const KongBuffer& other) = delete;
 
-        virtual void Bind(void* commandBuffer)
+        virtual void Bind(void* commandBuffer = nullptr)
         {
             
         }

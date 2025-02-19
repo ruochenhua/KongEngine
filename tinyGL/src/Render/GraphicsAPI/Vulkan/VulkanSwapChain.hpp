@@ -1,6 +1,6 @@
 #pragma once
 #include "VulkanGraphicsDevice.hpp"
-
+#ifdef RENDER_IN_VULKAN
 namespace Kong
 {
     
@@ -92,3 +92,4 @@ namespace Kong
     };
     
 }
+#endif

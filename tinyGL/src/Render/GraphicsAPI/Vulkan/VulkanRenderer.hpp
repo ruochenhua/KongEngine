@@ -1,4 +1,5 @@
 #pragma once
+#ifdef RENDER_IN_VULKAN
 #include "VulkanGraphicsDevice.hpp"
 #include "VulkanSwapChain.hpp"
 #include "Render/GraphicsAPI/Renderer.hpp"
@@ -42,3 +43,4 @@ namespace Kong
     };
     
 }
+#endif

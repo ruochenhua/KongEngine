@@ -57,7 +57,7 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(SimplePushConstantData), &push);
         
-        mesh_component->VkDraw(frameInfo.commandBuffer);
+        mesh_component->Draw(frameInfo.commandBuffer);
     }
 }
 

@@ -22,7 +22,6 @@ KongApp::KongApp()
 #endif
     , m_RenderModule{KongRenderModule::GetRenderModule()}
     , m_SceneManager{KongSceneManager::GetSceneManager()}
-    , m_renderer()
 {
 #ifdef RENDER_IN_VULKAN
     m_globalPool = VulkanDescriptorPool::Builder()

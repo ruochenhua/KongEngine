@@ -1,7 +1,7 @@
 #pragma once
 #include "VulkanGraphicsDevice.hpp"
 #include "Render/Resource/Buffer.hpp"
-
+#ifdef RENDER_IN_VULKAN
 namespace Kong
 {
     class VulkanBuffer : public KongBuffer
@@ -51,3 +51,4 @@ namespace Kong
     };
     
 }
+#endif

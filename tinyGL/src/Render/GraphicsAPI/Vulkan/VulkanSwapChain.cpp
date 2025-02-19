@@ -2,7 +2,7 @@
 
 #include <array>
 #include <iostream>
-
+#ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
 VulkanSwapChain::VulkanSwapChain(VulkanGraphicsDevice& deviceRef, VkExtent2D extent)
@@ -529,3 +529,4 @@ VkExtent2D VulkanSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
         return actualExtent;
     }
 }
+#endif

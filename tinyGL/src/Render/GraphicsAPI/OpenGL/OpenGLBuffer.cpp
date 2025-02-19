@@ -14,6 +14,8 @@ void OpenGLBuffer::Initialize(BufferType type,
     switch (type)
     {
     case VERTEX_BUFFER:
+        glGenVertexArrays(1, &m_VAO);
+        glBindVertexArray(m_VAO);
         bufferType = GL_ARRAY_BUFFER;
         break;
     case INDEX_BUFFER:
@@ -29,4 +31,20 @@ void OpenGLBuffer::Initialize(BufferType type,
 
     glBindBuffer(bufferType, m_ID);
     glBufferData(bufferType, instanceSize*instanceCount, data, GL_DYNAMIC_DRAW);
+}
+
+void OpenGLBuffer::AddAttribute(const std::vector<OpenGLVertexAttribute>& attributes) const
+{
+    int size = attributes.size();
+    for (int i = 0; i < size; i++)
+    {
+        auto& attr = attributes[i];
+        glEnableVertexAttribArray(i);
+        glVertexAttribPointer(i, attr.size, attr.type, attr.normalized,  attr.stride, attr.offset);
+    }
+}
+
+void OpenGLBuffer::Bind(void* commandBuffer)
+{
+    glBindVertexArray(m_VAO);
 }

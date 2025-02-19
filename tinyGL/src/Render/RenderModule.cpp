@@ -76,12 +76,13 @@ int KongRenderModule::Init()
 {
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
-	// m_quadShape = make_shared<CQuadShape>();
+	
 
 #ifdef RENDER_IN_VULKAN
 	
 	
 #else
+	m_quadShape = make_shared<CQuadShape>();
 	InitMainFBO();
 #if SHADOWMAP_DEBUG
 	map<EShaderType, string> debug_shader_paths = {

@@ -1,7 +1,7 @@
 #include "VulkanDescriptor.hpp"
+#ifdef RENDER_IN_VULKAN
 
 using namespace Kong;
-#ifdef RENDER_IN_VULKAN
 
 
 // *************** Descriptor Set Layout Builder *********************

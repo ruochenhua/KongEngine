@@ -1,4 +1,5 @@
 #pragma once
+#ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
 
 #include "../GraphicsDevice.hpp"
@@ -111,3 +112,4 @@ namespace Kong
     };
     
 }
+#endif

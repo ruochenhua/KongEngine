@@ -1,5 +1,5 @@
 #include "VulkanGraphicsDevice.hpp"
-
+#ifdef RENDER_IN_VULKAN
 #include <iostream>
 #include <set>
 #include <unordered_set>
@@ -7,7 +7,7 @@
 
 using namespace Kong;
 
-#if RENDER_IN_VULKAN
+
 
 static std::shared_ptr<VulkanGraphicsDevice> g_VulkanGraphicsDevice {nullptr};
 

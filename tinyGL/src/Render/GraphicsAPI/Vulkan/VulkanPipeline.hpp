@@ -1,4 +1,5 @@
 #pragma once
+#ifdef RENDER_IN_VULKAN
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -7,7 +8,6 @@
 
 namespace Kong
 {
-#ifdef RENDER_IN_VULKAN
     struct PipelineConfigInfo
     {
         PipelineConfigInfo(const PipelineConfigInfo&) = delete;
@@ -52,5 +52,5 @@ namespace Kong
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
     };
-#endif
 }
+#endif

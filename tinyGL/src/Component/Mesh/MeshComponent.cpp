@@ -33,7 +33,8 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 			}
 			
 		}
-		glBindVertexArray(render_vertex.vertex_array_id);
+		
+		mesh->vertex_buffer->Bind(nullptr);
 		// Draw the triangle !
 		// if no index, use draw array
 		if(!mesh->index_buffer)
@@ -62,13 +63,37 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 			}
 		}
 		
-		glBindVertexArray(GL_NONE);	// 解绑VAO
+//		glBindVertexArray(GL_NONE);	// 解绑VAO
 	}
 }
 
 void CMeshComponent::Draw(void* commandBuffer)
 {
+#ifdef RENDER_IN_VULKAN
+	auto cb = static_cast<VkCommandBuffer>(commandBuffer);
+   
+	for (auto& mesh : mesh_resource->mesh_list)
+	{
 
+		if (!mesh->vertex_buffer || !mesh->index_buffer)
+			continue;
+
+		mesh->vertex_buffer->Bind(commandBuffer);
+		if (mesh->index_buffer)
+		{
+			mesh->index_buffer->Bind(commandBuffer);
+
+			std::vector<unsigned int> indices = mesh->m_Index;
+			vkCmdDrawIndexed(cb, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		}
+		else
+		{
+			auto vertices = mesh->vertices;
+			vkCmdDraw(cb, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		}
+	}
+#else
+	
 	if (shader_data)
 		shader_data->Use();
 	
@@ -76,7 +101,8 @@ void CMeshComponent::Draw(void* commandBuffer)
 	{
 		auto& render_vertex = mesh->m_RenderInfo.vertex;
 		
-		glBindVertexArray(render_vertex.vertex_array_id);
+		// glBindVertexArray(render_vertex.vertex_array_id);
+		mesh->vertex_buffer->Bind(commandBuffer);
 		if (shader_data)
 		{
 			if(use_override_material)
@@ -116,8 +142,9 @@ void CMeshComponent::Draw(void* commandBuffer)
 			}
 		}
 		
-		glBindVertexArray(GL_NONE);	// 解绑VAO
+//		glBindVertexArray(GL_NONE);	// 解绑VAO
 	}
+#endif
 }
 
 void CMeshComponent::InitRenderInfo()
@@ -141,40 +168,31 @@ void CMeshComponent::InitRenderInfo()
 		}
 		
 #else
-		glGenVertexArrays(1, &render_vertex.vertex_array_id);
-		glBindVertexArray(render_vertex.vertex_array_id);
+		// glGenVertexArrays(1, &render_vertex.vertex_array_id);
+		// glBindVertexArray(render_vertex.vertex_array_id);
 		
 		// //init vertex buffer
-		mesh->vertex_buffer.Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
-		
-		//vertex buffer
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
-		glEnableVertexAttribArray(0);
-
-		//normal buffer
-		glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,sizeof(Vertex), (void*)offsetof(Vertex, normal));
-		glEnableVertexAttribArray(1);
-
-		// texcoord
-		glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex, uv));
-		glEnableVertexAttribArray(2);
-
-		// tangent
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-		glEnableVertexAttribArray(3);
-		
-		// bitangent
-		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
-		glEnableVertexAttribArray(4);
+		auto vertex_buffer = make_unique<OpenGLBuffer>();
+		vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
+		std::vector<OpenGLVertexAttribute> vertexAttributes = {
+			{3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position)},
+			{3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal)},
+			{2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv)},
+			{3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent)},
+			{3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent)},
+		};
+		vertex_buffer->AddAttribute(vertexAttributes);
 
 		// index buffer
 		std::vector<unsigned int> indices = mesh->m_Index;
 		if(!indices.empty())
 		{
-			mesh->index_buffer.Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
+			mesh->index_buffer = make_unique<OpenGLBuffer>();
+			mesh->index_buffer->Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
 		}
 
-		glBindVertexArray(GL_NONE);
+		mesh->vertex_buffer = std::move(vertex_buffer);
+//		glBindVertexArray(GL_NONE);
 #endif
 	}
 }
@@ -184,32 +202,6 @@ bool CMeshComponent::IsBlend()
 	return shader_data->bIsBlend;
 }
 
-#ifdef RENDER_IN_VULKAN
-
-void CMeshComponent::VkDraw(VkCommandBuffer commandBuffer)
-{
-	for (auto& mesh : mesh_resource->mesh_list)
-	{
-
-		if (!mesh->vertex_buffer || !mesh->index_buffer)
-			continue;
-
-		mesh->vertex_buffer->Bind(commandBuffer);
-		if (mesh->index_buffer)
-		{
-			mesh->index_buffer->Bind(commandBuffer);
-
-			std::vector<unsigned int> indices = mesh->m_Index;
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-		}
-		else
-		{
-			auto vertices = mesh->vertices;
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-		}
-	}
-}
-#endif
 
 int CMeshComponent::ImportObj(const std::string& model_path)
 {

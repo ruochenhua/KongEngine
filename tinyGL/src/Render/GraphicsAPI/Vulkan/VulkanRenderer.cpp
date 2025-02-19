@@ -1,5 +1,5 @@
 ﻿#include "VulkanRenderer.hpp"
-
+#ifdef RENDER_IN_VULKAN
 #include <array>
 
 #include "Window.hpp"
@@ -190,3 +190,4 @@ void VulkanRenderer::RecreateSwapChain()
         }
     }
 }
+#endif
