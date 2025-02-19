@@ -26,7 +26,7 @@ namespace Kong
     class VulkanGraphicsDevice : public GraphicsDevice
     {
     public:
-        static VulkanGraphicsDevice* GetGraphicsDevice();
+        static std::shared_ptr<VulkanGraphicsDevice> GetGraphicsDevice();
         
         VulkanGraphicsDevice();
         ~VulkanGraphicsDevice() override;
@@ -46,7 +46,7 @@ namespace Kong
             VkBuffer &buffer,
             VkDeviceMemory &bufferMemory);
 
-        VkPhysicalDeviceProperties m_properties;
+        VkPhysicalDeviceProperties m_properties {};
 
         SwapChainSupportDetails GetSwapChainSupport() {return QuerySwapChainSupport(m_physicalDevice);}
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -60,16 +60,16 @@ namespace Kong
             VkDeviceMemory& imageMemory);
         
     private:
-        VkInstance m_instance;
-        VkDebugUtilsMessengerEXT m_debugMessenger;
-        VkSurfaceKHR m_surface;
+        VkInstance m_instance {VK_NULL_HANDLE};
+        VkDebugUtilsMessengerEXT m_debugMessenger {VK_NULL_HANDLE};
+        VkSurfaceKHR m_surface {VK_NULL_HANDLE};
         VkPhysicalDevice m_physicalDevice {VK_NULL_HANDLE};
-        VkDevice m_device;
+        VkDevice m_device {VK_NULL_HANDLE};
 
-        VkQueue m_graphicsQueue;
-        VkQueue m_presentQueue;
+        VkQueue m_graphicsQueue {VK_NULL_HANDLE};
+        VkQueue m_presentQueue {VK_NULL_HANDLE};
 
-        VkCommandPool m_commandPool;
+        VkCommandPool m_commandPool {VK_NULL_HANDLE};
         
         void InitVulkanDevice(GLFWwindow* window);
 

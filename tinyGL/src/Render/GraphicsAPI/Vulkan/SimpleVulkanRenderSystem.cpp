@@ -1,5 +1,6 @@
 #include "SimpleVulkanRenderSystem.hpp"
 
+#include "Actor.hpp"
 #include "Scene.hpp"
 #include "Render/RenderModule.hpp"
 
@@ -12,8 +13,8 @@ struct SimplePushConstantData
     alignas(16) glm::mat4 normalMatrix{1.0f};
 };
 
-SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VulkanGraphicsDevice& deviceRef, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout)
-    : m_deviceRef(deviceRef)
+SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout)
+    : m_deviceRef(VulkanGraphicsDevice::GetGraphicsDevice())
 {
     CreatePipelineLayout(globalSetLayout);
     CreatePipeline(renderPass);
@@ -34,28 +35,30 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
         m_pipelineLayout,
         0, 1, &frameInfo.globalDescriptorSet, 0, nullptr);
     
-
-    auto projectionMat = KongRenderModule::GetRenderModule().GetCamera()->GetProjectionMatrix();
-    auto viewMat = KongRenderModule::GetRenderModule().GetCamera()->GetViewMatrix();
-    auto projectionView =  projectionMat * viewMat;
     auto actors = KongSceneManager::GetActors();
     for (auto actor : actors)
     {
-        // todo: 简单渲染
+        auto mesh_component = actor->GetComponent<CMeshComponent>();
+        if (!mesh_component)
+        {
+            continue;
+        }
+
+        auto mesh_shader = mesh_component->shader_data;
+        if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader))
+        {
+            continue;
+        }
+        
+        SimplePushConstantData push{};
+        push.modelMatrix = actor->GetModelMatrix();
+
+        vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(SimplePushConstantData), &push);
+        
+        mesh_component->VkDraw(frameInfo.commandBuffer);
     }
-    // for (auto& object : gameObjects)
-    // {
-    //     SimplePushConstantData push{};
-    //     push.modelMatrix = projectionView * object.transform.mat4();
-    //     
-    //     
-    //     vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
-    //         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-    //         0, sizeof(SimplePushConstantData), &push);
-    //     
-    //     object.model->bind(frameInfo.commandBuffer);
-    //     object.model->draw(frameInfo.commandBuffer);
-    // }
 }
 
 void SimpleVulkanRenderSystem::CreatePipelineLayout(VkDescriptorSetLayout globalSetLayout)
@@ -78,7 +81,7 @@ void SimpleVulkanRenderSystem::CreatePipelineLayout(VkDescriptorSetLayout global
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(m_deviceRef.GetDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(m_deviceRef->GetDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create pipeline layout!");
     }
@@ -93,10 +96,9 @@ void SimpleVulkanRenderSystem::CreatePipeline(VkRenderPass renderPass)
     VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = m_pipelineLayout;
-    m_pipeline = std::make_unique<VulkanPipeline>(m_deviceRef,
-        std::map<EShaderType, std::string>{
-        {vs, "../resource/shader/simple_shader.vert.spv"},
-        {fs, "../resource/shader/simple_shader.frag.spv"}},
+    m_pipeline = std::make_unique<VulkanPipeline>(std::map<EShaderType, std::string>{
+        {vs, "shader/Vulkan/simple_shader.vulkan.vert.spv"},
+        {fs, "shader/Vulkan/simple_shader.vulkan.frag.spv"}},
         pipelineConfig);
 }
 

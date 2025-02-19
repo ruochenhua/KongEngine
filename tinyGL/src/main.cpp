@@ -8,6 +8,7 @@ void main()
 	KongApp app;
 	try
 	{
+
 		app.Run();	
 	}
 	catch (std::exception &e)

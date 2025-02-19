@@ -24,6 +24,16 @@ GLuint ResourceManager::GetOrLoadTexture(const std::string& texture_path, bool f
     return g_resourceManager->GetTexture(texture_path, flip_uv);
 }
 
+void ResourceManager::Clean()
+{
+	if (!g_resourceManager)
+	{
+		return;
+	}
+
+	g_resourceManager->mesh_cache.clear();
+}
+
 GLuint ResourceManager::GetTexture(const std::string& texture_path, bool flip_uv)
 {
     if(texture_cache.find(texture_path) != texture_cache.end())

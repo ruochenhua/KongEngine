@@ -1,7 +1,7 @@
 #include "PostProcessRenderSystem.hpp"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
-
+#endif
 #include "Render/RenderModule.hpp"
 #include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
@@ -97,6 +97,7 @@ RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultI
 
 void PostProcessRenderSystem::DrawUI()
 {
+#ifndef RENDER_IN_VULKAN
     ImGui::Begin("Post Process");
     ImGui::PushItemWidth(100);
     // 两个只开一个
@@ -123,6 +124,8 @@ void PostProcessRenderSystem::DrawUI()
     ImGui::Checkbox("god ray", &enable_god_ray);
     // todo god ray相关的参数
     ImGui::End();
+#endif
+    
 }
 
 void PostProcessRenderSystem::InitQuad()

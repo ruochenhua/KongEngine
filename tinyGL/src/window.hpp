@@ -11,6 +11,7 @@ namespace Kong
         static KongWindow& GetWindowModule();
         
         KongWindow();
+        ~KongWindow();
         GLFWwindow* GetWindow();
 
         glm::ivec2 windowSize {1280, 960};

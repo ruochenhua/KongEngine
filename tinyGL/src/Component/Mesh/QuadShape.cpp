@@ -10,7 +10,7 @@ CQuadShape::CQuadShape()
     InitRenderInfo();
 }
 
-void CQuadShape::Draw()
+void CQuadShape::Draw(void* commandBuffer)
 {
     if (shader_data)
         shader_data->Use();
@@ -51,7 +51,7 @@ void CQuadShape::InitRenderInfo()
     glGenVertexArrays(1, &render_info.vertex_array_id);
     glBindVertexArray(render_info.vertex_array_id);
     
-    render_info.vertex_buffer.Initialize(VERTEX_BUFFER, sizeof(float), sizeof(quadVertices), &quadVertices);
+    quadMesh->vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(float), sizeof(quadVertices), &quadVertices);
     // glGenBuffers(1, &render_info.vertex_buffer);
     // glBindBuffer(GL_ARRAY_BUFFER, render_info.vertex_buffer);
     // glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);

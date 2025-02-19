@@ -2,7 +2,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
+#endif
 #include <random>
 
 #include "Actor.hpp"
@@ -74,7 +76,7 @@ int KongRenderModule::Init()
 {
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
-	m_quadShape = make_shared<CQuadShape>();
+	// m_quadShape = make_shared<CQuadShape>();
 
 #ifdef RENDER_IN_VULKAN
 	
@@ -286,7 +288,9 @@ void KongRenderModule::InitMainFBO()
 
 int KongRenderModule::Update(double delta)
 {
-	mainCamera->Update(delta);		
+	mainCamera->Update(delta);
+#ifdef RENDER_IN_VULKAN
+#else
 	render_time += delta;
 	// 更新场景信息
 	UpdateSceneRenderInfo();
@@ -308,12 +312,14 @@ int KongRenderModule::Update(double delta)
 	latestRenderResult = m_postProcessRenderSystem.Draw(0.0, latestRenderResult, this);
 
 	RenderUI(delta);
+#endif
 	return 1;
 }
 
 void KongRenderModule::RenderUI(double delta)
 {	
 	auto main_cam = GetCamera();
+#ifndef RENDER_IN_VULKAN
 	if(main_cam)
 	{
 		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
@@ -321,7 +327,8 @@ void KongRenderModule::RenderUI(double delta)
 	}
 	
 	ImGui::Checkbox("screen space reflection", &use_screen_space_reflection);
-
+#endif
+	
 	m_skyboxRenderSystem.DrawUI();
 	m_deferRenderSystem.DrawUI();
 	

@@ -84,6 +84,7 @@ namespace YamlParser
 
     void ParseMeshMaterial(YAML::Node mesh_node, shared_ptr<CMeshComponent> mesh_component)
     {
+#ifndef RENDER_IN_VULKAN
         // 创建shader
         if(mesh_node["shader_type"])
         {
@@ -174,6 +175,7 @@ namespace YamlParser
             mesh_component->override_render_info.material = tmp_material;
             mesh_component->use_override_material = true;
         }
+#endif
     }
 
     void ParseComponent(YAML::Node actor, shared_ptr<AActor> new_actor)
@@ -321,7 +323,7 @@ namespace YamlParser
                     dirlight_comp->light_intensity = component["light_intensity"].as<float>(); 
                     dirlight_comp->light_color *= dirlight_comp->light_intensity;
                 }
-
+#ifndef RENDER_IN_VULKAN
                 // 平行光默认打开阴影贴图
                 if(component["make_shadow"])
                 {
@@ -336,7 +338,7 @@ namespace YamlParser
                 {
                     dirlight_comp->TurnOnReflectiveShadowMap(component["reflective_shadow_map"].as<bool>());    
                 }
-                
+#endif                
                 new_actor->AddComponent(dirlight_comp);
             }
             else if(component_type == "point_light")
@@ -357,13 +359,13 @@ namespace YamlParser
                     // 填了光的强度的话，需要乘上去
                     pointlight_comp->light_color *= component["light_intensity"].as<float>();
                 }
-
+#ifndef RENDER_IN_VULKAN
                 // 点光源默认不开启阴影贴图
                 if(component["make_shadow"])
                 {
                     pointlight_comp->TurnOnShadowMap(component["make_shadow"].as<bool>());
                 }
-                
+#endif
                 new_actor->AddComponent(pointlight_comp);
             }
         }

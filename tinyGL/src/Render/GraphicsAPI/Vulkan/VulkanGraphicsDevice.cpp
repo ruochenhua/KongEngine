@@ -9,7 +9,7 @@ using namespace Kong;
 
 #if RENDER_IN_VULKAN
 
-static VulkanGraphicsDevice g_VulkanDevice;
+static std::shared_ptr<VulkanGraphicsDevice> g_VulkanGraphicsDevice {nullptr};
 
 // local callback functions
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -51,9 +51,13 @@ void DestroyDebugUtilsMessengerEXT(
 }
 
 
-VulkanGraphicsDevice* VulkanGraphicsDevice::GetGraphicsDevice()
+std::shared_ptr<VulkanGraphicsDevice> VulkanGraphicsDevice::GetGraphicsDevice()
 {
-    return &g_VulkanDevice;
+    if (!g_VulkanGraphicsDevice)
+    {
+        g_VulkanGraphicsDevice = make_shared<VulkanGraphicsDevice>();
+    }
+    return g_VulkanGraphicsDevice;
 }
 
 VulkanGraphicsDevice::VulkanGraphicsDevice()
@@ -97,7 +101,7 @@ GLFWwindow* VulkanGraphicsDevice::Init(int width, int height)
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
     }
-
+    glfwSetWindowUserPointer(window, this);
     InitVulkanDevice(window);
     return window;
 }

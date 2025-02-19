@@ -74,7 +74,8 @@ void VulkanBuffer::Unmap()
 {
     if (m_mapped)
     {
-        vkUnmapMemory(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), m_memory);
+        auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+        vkUnmapMemory(device, m_memory);
         m_mapped = nullptr;
     }
     
@@ -168,6 +169,26 @@ VkDescriptorBufferInfo VulkanBuffer::DescriptorInfoForIndex(int index)
 VkResult VulkanBuffer::InvalidateIndex(int index)
 {
     return Invalidate(m_alignmentSize, index*m_alignmentSize);
+}
+
+void VulkanBuffer::Bind(void* commandBuffer)
+{
+    auto cb = static_cast<VkCommandBuffer>(commandBuffer);
+    switch (m_type)
+    {
+    case VERTEX_BUFFER:
+        {
+            VkBuffer buffers[] = {GetBuffer()};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(cb, 0, 1, buffers, offsets);
+        }
+        break;
+    case INDEX_BUFFER:
+        vkCmdBindIndexBuffer(cb, GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        break;
+    default:
+        break;
+    }
 }
 
 VkDeviceSize VulkanBuffer::GetAlignment(VkDeviceSize size, VkDeviceSize minOffsetAlignment)

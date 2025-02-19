@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Window.hpp"
 #include "common.h"
 #include <stdexcept>
@@ -9,11 +11,15 @@
 
 using namespace Kong;
 
-static KongWindow g_WindowModule;
+static KongWindow* g_WindowModule = nullptr;
 
 KongWindow& KongWindow::GetWindowModule()
 {
-    return g_WindowModule;
+    if (g_WindowModule == nullptr)
+    {
+        g_WindowModule = new KongWindow();
+    }
+    return *g_WindowModule;
 }
 
 KongWindow::KongWindow()
@@ -38,6 +44,11 @@ KongWindow::KongWindow()
     glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetWindowUserPointer(m_window, this);   // 指定window的类型
     glfwSetWindowSizeCallback(m_window, frameBufferResizeCallback);
+}
+
+KongWindow::~KongWindow()
+{
+    std::cout << "Destroying window\n";
 }
 
 GLFWwindow* KongWindow::GetWindow()

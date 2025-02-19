@@ -6,8 +6,7 @@
 
 using namespace Kong;
 
-VulkanRenderer::VulkanRenderer(VulkanGraphicsDevice& device)
-    : m_deviceRef(device)
+VulkanRenderer::VulkanRenderer()
 {
     CreateCommandBuffers();
     RecreateSwapChain();
@@ -141,10 +140,11 @@ void VulkanRenderer::CreateCommandBuffers()
     * secondary不能送到Device Graphics Queue执行，但是可以被其他command buffer引用
     */
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = m_deviceRef.GetCommandPool();
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice();
+    allocInfo.commandPool = device->GetCommandPool();
     allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
 
-    if (vkAllocateCommandBuffers(m_deviceRef.GetDevice(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+    if (vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to allocate command buffers!");
     }
@@ -152,7 +152,8 @@ void VulkanRenderer::CreateCommandBuffers()
 
 void VulkanRenderer::FreeCommandBuffers()
 {
-    vkFreeCommandBuffers(m_deviceRef.GetDevice(), m_deviceRef.GetCommandPool(),
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice();
+    vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(),
         static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 
     m_commandBuffers.clear();
@@ -173,14 +174,15 @@ void VulkanRenderer::RecreateSwapChain()
 
     window_extent = {static_cast<uint32_t>(window_size.x), static_cast<uint32_t>(window_size.y)};
 
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice();
     if (m_swapChain == nullptr)
     {
-        m_swapChain = std::make_unique<VulkanSwapChain>(m_deviceRef, window_extent);
+        m_swapChain = std::make_unique<VulkanSwapChain>(*device, window_extent);
     }
     else
     {
         std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapChain);
-        m_swapChain = std::make_unique<VulkanSwapChain>(m_deviceRef, window_extent, oldSwapChain);
+        m_swapChain = std::make_unique<VulkanSwapChain>(*device, window_extent, oldSwapChain);
 
         if (!oldSwapChain->CompareSwapChainFormats(*m_swapChain.get()))
         {

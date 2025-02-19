@@ -1,6 +1,7 @@
 ﻿#include "CameraComponent.h"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
+#endif
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
@@ -49,7 +50,7 @@ void CCamera::InvertPitch()
 
 void CCamera::UpdateRotation(double delta)
 {
-	auto window_module = KongWindow::GetWindowModule();
+	auto& window_module = KongWindow::GetWindowModule();
 	auto window = window_module.GetWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);	
@@ -83,7 +84,7 @@ void CCamera::OnPYRUpdated()
 
 void CCamera::Update(double delta)
 {
-	auto window_module = KongWindow::GetWindowModule();
+	auto& window_module = KongWindow::GetWindowModule();
 	m_screenInfo._aspect_ratio = window_module.aspectRatio;
 	UpdateRotation(delta);
 	auto render_window = window_module.GetWindow();
@@ -125,7 +126,7 @@ void CCamera::Update(double delta)
 	{
 		MoveUp();
 	}
-
+#ifndef RENDER_IN_VULKAN
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse)
 	{
@@ -139,6 +140,7 @@ void CCamera::Update(double delta)
 			RotateEnd();
 		}
 	}
+#endif
 	
 	//update translate
 	m_center += m_moveVec * float(delta*move_speed);

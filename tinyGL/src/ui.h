@@ -1,4 +1,5 @@
 #pragma once
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 
 #include "Window.hpp"
@@ -26,3 +27,4 @@ namespace Kong
         int process_time_offset {0};
     };
 }
+#endif

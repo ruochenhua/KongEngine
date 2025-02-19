@@ -36,7 +36,7 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 		glBindVertexArray(render_vertex.vertex_array_id);
 		// Draw the triangle !
 		// if no index, use draw array
-		if(mesh->m_RenderInfo.vertex.index_buffer.GetBuffer() == GL_NONE)
+		if(!mesh->index_buffer)
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
@@ -66,13 +66,9 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 	}
 }
 
-void CMeshComponent::Draw()
+void CMeshComponent::Draw(void* commandBuffer)
 {
-#if RENDER_IN_VULKAN
-	
-#else
-	
-#endif
+
 	if (shader_data)
 		shader_data->Use();
 	
@@ -94,7 +90,7 @@ void CMeshComponent::Draw()
 		}
 		// Draw the triangle !
 		// if no index, use draw array
-		if(mesh->m_RenderInfo.vertex.index_buffer.GetBuffer() == GL_NONE)
+		if(!mesh->index_buffer)
 		{
 			if(render_vertex.instance_buffer != GL_NONE)
 			{
@@ -127,17 +123,29 @@ void CMeshComponent::Draw()
 void CMeshComponent::InitRenderInfo()
 {
 	// compile shader map
-	for(auto& mesh : mesh_resource->mesh_list)
+	for(auto mesh : mesh_resource->mesh_list)
 	{
 		// 构建默认的shader数据结构，数据齐全，但是冗余
 		auto& render_vertex = mesh->m_RenderInfo.vertex;
 		std::vector<Vertex>& mesh_vertices = mesh->vertices;
+
+#ifdef RENDER_IN_VULKAN
+		mesh->vertex_buffer = make_unique<VulkanBuffer>();
+		mesh->vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
 		
+		std::vector<unsigned int> indices = mesh->m_Index;
+		if(!indices.empty())
+		{
+			mesh->index_buffer = make_unique<VulkanBuffer>();
+			mesh->index_buffer->Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
+		}
+		
+#else
 		glGenVertexArrays(1, &render_vertex.vertex_array_id);
 		glBindVertexArray(render_vertex.vertex_array_id);
 		
 		// //init vertex buffer
-		mesh->m_RenderInfo.vertex.vertex_buffer.Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
+		mesh->vertex_buffer.Initialize(VERTEX_BUFFER, sizeof(Vertex), mesh_vertices.size(), &mesh_vertices[0]);
 		
 		//vertex buffer
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
@@ -163,10 +171,11 @@ void CMeshComponent::InitRenderInfo()
 		std::vector<unsigned int> indices = mesh->m_Index;
 		if(!indices.empty())
 		{
-			mesh->m_RenderInfo.vertex.index_buffer.Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
+			mesh->index_buffer.Initialize(INDEX_BUFFER, sizeof(unsigned int), indices.size(), &indices[0]);
 		}
 
 		glBindVertexArray(GL_NONE);
+#endif
 	}
 }
 
@@ -174,6 +183,33 @@ bool CMeshComponent::IsBlend()
 {
 	return shader_data->bIsBlend;
 }
+
+#ifdef RENDER_IN_VULKAN
+
+void CMeshComponent::VkDraw(VkCommandBuffer commandBuffer)
+{
+	for (auto& mesh : mesh_resource->mesh_list)
+	{
+
+		if (!mesh->vertex_buffer || !mesh->index_buffer)
+			continue;
+
+		mesh->vertex_buffer->Bind(commandBuffer);
+		if (mesh->index_buffer)
+		{
+			mesh->index_buffer->Bind(commandBuffer);
+
+			std::vector<unsigned int> indices = mesh->m_Index;
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		}
+		else
+		{
+			auto vertices = mesh->vertices;
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		}
+	}
+}
+#endif
 
 int CMeshComponent::ImportObj(const std::string& model_path)
 {

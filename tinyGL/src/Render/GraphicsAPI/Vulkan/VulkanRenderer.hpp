@@ -8,7 +8,7 @@ namespace Kong
     class VulkanRenderer : public Renderer
     {
     public:
-        VulkanRenderer(VulkanGraphicsDevice& device);
+        VulkanRenderer();
         ~VulkanRenderer() override;
 
         VulkanRenderer(const VulkanRenderer&) = delete;
@@ -32,7 +32,6 @@ namespace Kong
         void FreeCommandBuffers();
 
         void RecreateSwapChain();
-        VulkanGraphicsDevice& m_deviceRef;
 
         std::unique_ptr<VulkanSwapChain> m_swapChain;
         std::vector<VkCommandBuffer> m_commandBuffers;

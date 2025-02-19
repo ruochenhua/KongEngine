@@ -22,6 +22,7 @@ namespace Kong
         static shared_ptr<MeshResource> GetOrLoadMesh(const std::string & model_path);
         static GLuint GetOrLoadTexture(const std::string & texture_path, bool filp_uv = true);
 
+        static void Clean();
         // 贴图
         GLuint GetTexture(const std::string & texture_path, bool flip_uv);
 

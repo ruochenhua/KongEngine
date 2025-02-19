@@ -1,7 +1,7 @@
 #include "SkyboxRenderSystem.hpp"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
-
+#endif
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
@@ -142,6 +142,7 @@ void SkyboxRenderSystem::Init()
 
 void SkyboxRenderSystem::DrawUI()
 {
+#ifndef RENDER_IN_VULKAN
 	if(ImGui::TreeNode("skybox"))
 	{
 		if(ImGui::Button("change hdr background"))
@@ -154,6 +155,7 @@ void SkyboxRenderSystem::DrawUI()
 		
 		ImGui::TreePop();
 	}
+#endif
 }
 
 RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module)

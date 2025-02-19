@@ -20,7 +20,7 @@ namespace Kong
         float freq = 0.002f;
         float power = 2.0f;
         
-        void Draw() override;
+        void Draw(void* commandBuffer = nullptr) override;
         void InitRenderInfo() override;
         
         int terrain_size = 10000;

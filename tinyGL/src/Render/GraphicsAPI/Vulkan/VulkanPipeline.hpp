@@ -33,8 +33,7 @@ namespace Kong
     class VulkanPipeline
     {
     public:
-        VulkanPipeline(VulkanGraphicsDevice& device,
-            std::map<EShaderType, std::string>& shaderPaths,
+        VulkanPipeline(std::map<EShaderType, std::string>& shaderPaths,
             const PipelineConfigInfo& configInfo);
         ~VulkanPipeline();
 
@@ -48,7 +47,7 @@ namespace Kong
         void CreateGraphicsPipeline(std::map<EShaderType, std::string>& shaderPaths, const PipelineConfigInfo& configInfo);
         void CreateShaderModule(const std::string& shaderCode, VkShaderModule* shaderModule);
         
-        VulkanGraphicsDevice& m_deviceRef;
+        shared_ptr<VulkanGraphicsDevice> m_deviceRef;
         VkPipeline m_graphicsPipeline;
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;

@@ -1,6 +1,7 @@
 #include "DeferRenderSystem.hpp"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
+#endif
 #include <random>
 
 #include "Actor.hpp"
@@ -162,6 +163,7 @@ RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& r
 
 void DeferRenderSystem::DrawUI()
 {
+#ifndef RENDER_IN_VULKAN
 	ImGui::Checkbox("ssao", &use_ssao);
 	
 	ImGui::Checkbox("reflective shadowmap(rsm)", &use_rsm);
@@ -175,6 +177,8 @@ void DeferRenderSystem::DrawUI()
 		ImGui::DragInt("PCSS sample count", &pcss_sample_count, 0.1f, 8, 64);
 		ImGui::TreePop();
 	}
+#endif
+	
 }
 
 GLuint DeferRenderSystem::GetPositionTexture()

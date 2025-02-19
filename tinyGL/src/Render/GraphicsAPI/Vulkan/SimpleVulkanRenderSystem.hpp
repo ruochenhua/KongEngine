@@ -17,7 +17,7 @@ namespace Kong
     class SimpleVulkanRenderSystem
     {
     public:
-        SimpleVulkanRenderSystem(VulkanGraphicsDevice& deviceRef, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+        SimpleVulkanRenderSystem(VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
         ~SimpleVulkanRenderSystem();
 
         SimpleVulkanRenderSystem(const SimpleVulkanRenderSystem&) = delete;
@@ -32,7 +32,7 @@ namespace Kong
         VkPipelineLayout m_pipelineLayout;
 
         
-        VulkanGraphicsDevice& m_deviceRef;
+        shared_ptr<VulkanGraphicsDevice> m_deviceRef;
     };
     
 }

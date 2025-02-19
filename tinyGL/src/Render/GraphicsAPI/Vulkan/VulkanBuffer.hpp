@@ -10,7 +10,7 @@ namespace Kong
         // instanceSize代表数据类型的大小sizeof(vertex)
         void Initialize(BufferType type, uint64_t instanceSize, uint32_t instanceCount, void* data = nullptr) override;
         
-        ~VulkanBuffer();
+        ~VulkanBuffer() override;
 
         VkResult Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void Unmap();
@@ -33,7 +33,8 @@ namespace Kong
         VkBufferUsageFlags GetUsageFlags() const { return m_usageFlags; }
         VkMemoryPropertyFlags GetMemoryPropertyFlags() const { return m_memoryPropertyFlags; }
         VkDeviceSize GetBufferSize() const { return m_bufferSize; }
-        
+
+        void Bind(void* commandBuffer) override;
     private:
         static VkDeviceSize GetAlignment(VkDeviceSize size, VkDeviceSize minOffsetAlignment);
         

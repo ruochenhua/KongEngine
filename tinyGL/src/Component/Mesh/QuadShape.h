@@ -7,7 +7,7 @@ namespace Kong
     {
     public:
         CQuadShape();
-        void Draw() override;
+        void Draw(void* commandBuffer = nullptr) override;
         virtual void InitRenderInfo() override;
 
         void BindVAO();

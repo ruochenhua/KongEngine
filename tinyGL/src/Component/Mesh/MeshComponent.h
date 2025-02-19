@@ -23,10 +23,20 @@ namespace Kong
 		void BeginPlay() override;
 		// 简单调用一下draw，不管shader（可能用其他的shader）
 		virtual void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader);
-		virtual void Draw();
+		virtual void Draw(void* commandBuffer = nullptr);
 		virtual void InitRenderInfo();
 		bool IsBlend();
 
+#ifdef RENDER_IN_VULKAN
+		// void CreateVertexBuffer(const std::vector<Vertex>& vertices);
+		// void CreateIndexBuffer(const std::vector<uint32_t>& indices);
+		
+		// std::unique_ptr<VulkanBuffer> vertexBuffer;
+		// std::unique_ptr<VulkanBuffer> indexBuffer;
+		
+		void VkDraw(VkCommandBuffer command_buffer);
+#endif
+		
 		// 覆盖原有材质 
 		SRenderInfo override_render_info;
 		bool use_override_material = false;

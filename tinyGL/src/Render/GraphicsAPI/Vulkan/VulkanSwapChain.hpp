@@ -3,6 +3,7 @@
 
 namespace Kong
 {
+    
     class VulkanSwapChain
     {
     public:

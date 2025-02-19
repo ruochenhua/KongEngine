@@ -8,7 +8,7 @@ namespace Kong
     {
     public:
         GerstnerWaveWater();
-        void Draw() override;
+        void Draw(void* commandBuffer = nullptr) override;
         void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
         void InitRenderInfo() override;
         

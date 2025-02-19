@@ -1,7 +1,7 @@
 #include "VolumetricCloud.h"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
-
+#endif
 #include "Utils.hpp"
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
@@ -111,6 +111,7 @@ VolumetricCloud::VolumetricCloud()
 
 void VolumetricCloud::PreRenderUpdate() const
 {
+#ifndef RENDER_IN_VULKAN
 	ImGui::Begin("Volumetric Cloud");
 	ImGui::PushItemWidth(80);
 	ImGui::DragFloat("Coverage", &cloud_model_->coverage, 0.02f, 0.0, 3.0);
@@ -122,6 +123,7 @@ void VolumetricCloud::PreRenderUpdate() const
 	ImGui::DragFloat("perlin frequency", &cloud_model_->perlin_frequency, 0.04f, 0.0f, 10.0f);
 	
 	ImGui::End();
+#endif
 }
 
 void VolumetricCloud::DrawShadowInfo(shared_ptr<Shader> simple_shader)

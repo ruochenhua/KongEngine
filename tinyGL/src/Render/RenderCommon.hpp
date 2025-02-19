@@ -88,8 +88,6 @@ namespace Kong
         GLuint vertex_array_id = 0;
         GLuint instance_buffer = 0;
 
-        OpenGLBuffer vertex_buffer;
-        OpenGLBuffer index_buffer;
         
         unsigned instance_count = 0;
     };
@@ -121,7 +119,13 @@ namespace Kong
     {
         SRenderInfo m_RenderInfo;
         string name;
+        
+        // OpenGLBuffer vertex_buffer;
+        // OpenGLBuffer index_buffer;
 
+        std::unique_ptr<KongBuffer> vertex_buffer;
+        std::unique_ptr<KongBuffer> index_buffer;
+        
         // todo: 后续都放到这个格式里面,也要改造opengl的buffer不要搞太多buffer
         std::vector<Vertex> vertices;
         std::vector<unsigned int> m_Index;

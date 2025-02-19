@@ -25,8 +25,10 @@ GLuint CLightComponent::GetShadowMapTexture() const
 CDirectionalLightComponent::CDirectionalLightComponent()
     : CLightComponent(ELightType::directional_light)
 {
+#ifndef RENDER_IN_VULKAN
     shadowmap_shader = ShaderManager::GetShader("directional_light_shadowmap");
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
+#endif
 }
 
 GLuint CDirectionalLightComponent::GetShadowMapTexture() const
@@ -404,7 +406,7 @@ void CPointLightComponent::RenderShadowMap()
             UpdateShadowMapInfo(model_mat, vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
-            if(render_vertex.index_buffer.GetBuffer() == GL_NONE)
+            if(!mesh->index_buffer)
             {
                 glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); // Starting from vertex 0; 3 vertices total -> 1 triangle	
             }

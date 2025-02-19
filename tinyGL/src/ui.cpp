@@ -1,5 +1,5 @@
 #include "ui.h"
-
+#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -246,3 +246,4 @@ ImVec4 KongUIManager::GetFrameRateColor(int framerate)
 	// terrible
 	return ImVec4(1.f, 0.f, 0.0f, 1.0f);
 }
+#endif

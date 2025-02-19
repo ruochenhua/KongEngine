@@ -25,7 +25,7 @@ GerstnerWaveWater::GerstnerWaveWater()
     shader_data->SetInt("normal_map", 3);
 }
 
-void GerstnerWaveWater::Draw()
+void GerstnerWaveWater::Draw(void* commandBuffer)
 {
     // glDisable(GL_CULL_FACE);
     shader_data->Use();    

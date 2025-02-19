@@ -2,7 +2,9 @@
 
 #include <iostream>
 
+#include "Scene.hpp"
 #include "Utils.hpp"
+#include "Parser/ResourceManager.h"
 
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
@@ -39,16 +41,16 @@ std::vector<VkVertexInputAttributeDescription> Vertex::GetAttributeDescription()
     return attributeDescriptions;
 }
 
-VulkanPipeline::VulkanPipeline(VulkanGraphicsDevice& device, std::map<EShaderType, std::string>& shaderPaths,
+VulkanPipeline::VulkanPipeline(std::map<EShaderType, std::string>& shaderPaths,
                                const PipelineConfigInfo& configInfo)
-        : m_deviceRef(device)
+        : m_deviceRef(VulkanGraphicsDevice::GetGraphicsDevice())
 {
     CreateGraphicsPipeline(shaderPaths, configInfo);
 }
 
 VulkanPipeline::~VulkanPipeline()
 {
-    auto device = m_deviceRef.GetDevice();
+    auto device = m_deviceRef->GetDevice();
     vkDestroyShaderModule(device, vertexShaderModule, nullptr);
     vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
     vkDestroyPipeline(device, m_graphicsPipeline, nullptr);
@@ -152,8 +154,8 @@ void VulkanPipeline::CreateGraphicsPipeline(std::map<EShaderType, std::string>& 
     assert(configInfo.pipelineLayout != VK_NULL_HANDLE, "Cannot create pipeline layout: no pipeline layout provided");
     assert(configInfo.renderPass != VK_NULL_HANDLE, "Cannot create pipeline layout: no renderPass provided");
     
-    auto vertData = Utils::ReadFile(shaderPaths[vs]);
-    auto fragData = Utils::ReadFile(shaderPaths[fs]);
+    auto vertData = Utils::ReadFile(CSceneLoader::ToResourcePath(shaderPaths[vs]));
+    auto fragData = Utils::ReadFile(CSceneLoader::ToResourcePath(shaderPaths[fs]));
 
     std::cout << "vert code size: " << vertData.size() << "\n";
     std::cout << "frag code size: " << fragData.size() << "\n";
@@ -209,7 +211,7 @@ void VulkanPipeline::CreateGraphicsPipeline(std::map<EShaderType, std::string>& 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(m_deviceRef.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
+    if (vkCreateGraphicsPipelines(m_deviceRef->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
         nullptr, &m_graphicsPipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
@@ -223,7 +225,7 @@ void VulkanPipeline::CreateShaderModule(const std::string& shaderCode, VkShaderM
     createInfo.codeSize = shaderCode.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
-    if (vkCreateShaderModule(m_deviceRef.GetDevice(), &createInfo, nullptr, &*shaderModule) != VK_SUCCESS)
+    if (vkCreateShaderModule(m_deviceRef->GetDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create shader module!");
     }

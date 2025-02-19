@@ -89,7 +89,7 @@ VkResult VulkanSwapChain::AcquireNextImage(uint32_t* imageIndex)
 VkResult VulkanSwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
 {
     // 等待gpu同步
-    if (m_inFlightFences[m_currentFrame] != VK_NULL_HANDLE)
+    if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
     {
         vkWaitForFences(m_deviceRef.GetDevice(),1, &m_imagesInFlight[*imageIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
     }
@@ -180,7 +180,7 @@ void VulkanSwapChain::CreateSwapChain()
     VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
     // 确定swapchain图像个数,imageCount数量不能超出
-    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount;  // todo : check 3 image error
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
     {
         imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -351,7 +351,7 @@ void VulkanSwapChain::CreateRenderPass()
     // 深度附件引用:定义子通道中如何引用深度附件
     VkAttachmentReference depthAttachmentRef = {};
     depthAttachmentRef.attachment = 1;      // 指定附件的索引, 表示是第二个附件(从0开始)
-    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;       // 指定子通道中使用附件时的图像布局(这里表示用于深度附件的最佳布局)
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;       // 指定子通道中使用附件时的图像布局(这里表示用于深度附件的最佳布局)
 
     // 颜色附件描述
     VkAttachmentDescription colorAttachment = {};
@@ -402,6 +402,7 @@ void VulkanSwapChain::CreateRenderPass()
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = attachments.size();
+    renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
