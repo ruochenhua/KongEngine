@@ -1,5 +1,6 @@
 #pragma once
 #include "VulkanGraphicsDevice.hpp"
+#include "Render/RenderCommon.hpp"
 #include "Render/Resource/Buffer.hpp"
 #ifdef RENDER_IN_VULKAN
 namespace Kong
@@ -49,6 +50,14 @@ namespace Kong
         VkBufferUsageFlags m_usageFlags = 0;
         VkMemoryPropertyFlags m_memoryPropertyFlags = 0;
     };
-    
+
+    class VulkanRenderInfo : public SRenderInfo
+    {
+    public:
+        VulkanRenderInfo();
+        
+        void Draw(void* commandBuffer) override;
+        void InitRenderInfo() override;
+    };
 }
 #endif

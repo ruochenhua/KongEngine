@@ -19,6 +19,7 @@ namespace Kong
         virtual void Initialize(BufferType type, uint64_t size, uint32_t instanceCount, void* data = nullptr)
         {
             m_type = type;
+            m_isValid = true;
         }
         
         KongBuffer(const KongBuffer& other) = delete;
@@ -29,7 +30,9 @@ namespace Kong
             
         }
 
+        bool IsValid() const {return m_isValid;}
     protected:
         BufferType m_type {NONE_BUFFER};
+        bool m_isValid {false};
     };
 }

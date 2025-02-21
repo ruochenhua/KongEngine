@@ -31,7 +31,7 @@ void Water::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 void Water::Draw(void* commandBuffer)
 {
     shader_data->Use();
-    auto& render_info = mesh_resource->mesh_list[0]->m_RenderInfo.vertex;
+    auto& render_info = mesh_resource->mesh_list[0]->m_RenderInfo;
 #if USE_DSA
     glBindTextureUnit(2, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
     glBindTextureUnit(3, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());
@@ -42,9 +42,8 @@ void Water::Draw(void* commandBuffer)
     glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
     glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
 #endif
-    glBindVertexArray(render_info.vertex_array_id);
+    render_info->vertex_buffer->Bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(GL_NONE);
 }
 
 void Water::LoadDudvMapTexture(const string& texture_path)

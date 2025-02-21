@@ -333,7 +333,7 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModul
 	glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
 
 	auto m_quadShape = KongRenderModule::GetScreenShape();
-    m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0]->m_RenderInfo.material);
+    m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0]->m_RenderInfo->material);
 	
     m_quadShape->Draw();
     

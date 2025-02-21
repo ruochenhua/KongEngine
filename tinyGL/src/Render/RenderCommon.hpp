@@ -4,21 +4,21 @@
 #include <vulkan/vulkan_core.h>
 #endif
 
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+
 #include "glad/glad.h"
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
-#include "GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#include "GLM/gtc/matrix_transform.hpp"
 #include "Resource/Buffer.hpp"
 
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
 
-
-namespace Kong
-{
-    class OpenGLBuffer;
-}
 
 namespace Kong
 {
@@ -71,7 +71,7 @@ namespace Kong
         float metallic = 0.5f;
         float roughness = 0.5;
         float ao = 0.3f;
-        string name;
+        std::string name;
 
         // texture id
         std::map<ETextureType, GLuint> textures;
@@ -80,25 +80,6 @@ namespace Kong
         GLuint roughness_tex_id = 0;
         GLuint metallic_tex_id = 0;
         GLuint ao_tex_id = 0;
-    };
-
-    struct SVertexInfo
-    {
-        // vao: opengl
-        GLuint vertex_array_id = 0;
-        GLuint instance_buffer = 0;
-
-        
-        unsigned instance_count = 0;
-    };
-
-    // 渲染信息
-    struct SRenderInfo
-    {
-        // 顶点
-        SVertexInfo vertex;
-        // 材质
-        SMaterialInfo material;
     };
 
     struct Vertex
@@ -115,33 +96,52 @@ namespace Kong
 #endif
     };
     
-    struct CMesh
+    // 渲染信息 //todo: 改名, opengl和vulkan在这里做区分
+    class SRenderInfo
     {
-        SRenderInfo m_RenderInfo;
-        string name;
+    public:
+        GLuint instance_buffer = 0;
+        unsigned instance_count = 0;
         
-        // OpenGLBuffer vertex_buffer;
-        // OpenGLBuffer index_buffer;
+        virtual void Draw(void* commandBuffer) {}
+        virtual void InitRenderInfo(){}
+        
+        // 顶点
+        std::unique_ptr<KongBuffer> vertex_buffer {nullptr};
+        std::unique_ptr<KongBuffer> index_buffer {nullptr};
 
-        std::unique_ptr<KongBuffer> vertex_buffer;
-        std::unique_ptr<KongBuffer> index_buffer;
-        
         // todo: 后续都放到这个格式里面,也要改造opengl的buffer不要搞太多buffer
         std::vector<Vertex> vertices;
         std::vector<unsigned int> m_Index;
+        
+        // 材质
+        SMaterialInfo material;
     };
     
+
+    
+    class CMesh
+    {
+    public:
+        CMesh();
+        
+        std::unique_ptr<SRenderInfo> m_RenderInfo {nullptr};
+        std::string name;
+        
+
+    };
+
 
     // 渲染资源描述
     struct SRenderResourceDesc
     {
         // shader类型
-        string shader_type;
+        std::string shader_type;
         // 没有shader类型那就直接读取shader文件路径，尽量不要用这个
-        map<EShaderType, string> shader_paths;
-        map<ETextureType, string> texture_paths;
+        std::map<EShaderType, std::string> shader_paths;
+        std::map<ETextureType, std::string> texture_paths;
 
-        string model_path;
+        std::string model_path;
         bool bOverloadMaterial = false;
         SMaterialInfo material;
     };

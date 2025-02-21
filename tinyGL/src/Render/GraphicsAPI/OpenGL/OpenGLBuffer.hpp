@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "glad/glad.h"
+#include "Render/RenderCommon.hpp"
 #include "Render/Resource/Buffer.hpp"
 
 namespace Kong
@@ -31,5 +32,13 @@ namespace Kong
     private:
         GLuint m_ID {GL_NONE};
         GLuint m_VAO {GL_NONE}; // vertex buffer会创建VAO
+    };
+
+    class OpenGLRenderInfo : public SRenderInfo
+    {
+    public:
+        OpenGLRenderInfo();
+        void Draw(void* commandBuffer) override;
+        void InitRenderInfo() override;
     };
 }

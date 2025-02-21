@@ -398,22 +398,23 @@ void CPointLightComponent::RenderShadowMap()
         
         for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
-            const SVertexInfo& render_vertex = mesh->m_RenderInfo.vertex;
-            glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
             UpdateShadowMapInfo(model_mat, vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
-            if(!mesh->index_buffer)
-            {
-                glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-            }
-            else
-            {		
-                glDrawElements(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0);
-            }
+            
+            mesh->m_RenderInfo->Draw(nullptr);
+            // glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
+            // if(!mesh->m_RenderInfo->index_buffer)
+            // {
+            //     glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+            // }
+            // else
+            // {		
+            //     glDrawElements(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0);
+            // }
         }
         glBindVertexArray(GL_NONE);	// 解绑VAO
     }

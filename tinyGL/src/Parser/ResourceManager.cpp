@@ -176,7 +176,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 			new_vertex.bitangent = {0, 0, 1};
 		}
 
-		new_mesh->vertices.emplace_back(new_vertex);
+		new_mesh->m_RenderInfo->vertices.emplace_back(new_vertex);
 	}
 	
 	for(unsigned int i = 0; i < mesh->mNumFaces; ++i)
@@ -184,14 +184,14 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 		aiFace face = mesh->mFaces[i];
 		for(unsigned int j = 0; j < face.mNumIndices; ++j)
 		{
-			new_mesh->m_Index.push_back(face.mIndices[j]);
+			new_mesh->m_RenderInfo->m_Index.push_back(face.mIndices[j]);
 		}
 	}
 	
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-		auto& mesh_material = new_mesh->m_RenderInfo.material;
+		auto& mesh_material = new_mesh->m_RenderInfo->material;
 		mesh_material.name = material->GetName().C_Str();
 		
 		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);

@@ -14,10 +14,7 @@ void CQuadShape::Draw(void* commandBuffer)
 {
     if (shader_data)
         shader_data->Use();
-    auto& render_info = mesh_resource->mesh_list[0]->m_RenderInfo.vertex;
     
-    //glBindVertexArray(render_info.vertex_array_id);
-    mesh_resource->mesh_list[0]->vertex_buffer->Bind();
     if (shader_data)
     {
         if(use_override_material)
@@ -26,11 +23,12 @@ void CQuadShape::Draw(void* commandBuffer)
         }
         else
         {
-            shader_data->UpdateRenderData(mesh_resource->mesh_list[0]->m_RenderInfo.material);
+            shader_data->UpdateRenderData(mesh_resource->mesh_list[0]->m_RenderInfo->material);
         }
     }
+    
+    mesh_resource->mesh_list[0]->m_RenderInfo->vertex_buffer->Bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    //glBindVertexArray(GL_NONE);
 }
 
 void CQuadShape::InitRenderInfo()
@@ -47,8 +45,7 @@ void CQuadShape::InitRenderInfo()
     mesh_resource = make_shared<MeshResource>();
     // mesh_resource->mesh_list.push_back(CMesh());
     auto quadMesh = make_shared<CMesh>();
-    auto& render_info = quadMesh->m_RenderInfo.vertex;
-        
+    
 #ifndef RENDER_IN_VULKAN
     auto vertex_buffer = make_unique<OpenGLBuffer>();
     vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(float), sizeof(quadVertices), &quadVertices);
@@ -64,7 +61,7 @@ void CQuadShape::InitRenderInfo()
     
 #endif
     
-    quadMesh->vertex_buffer = std::move(vertex_buffer);
+    quadMesh->m_RenderInfo->vertex_buffer = std::move(vertex_buffer);
     mesh_resource->mesh_list.push_back(quadMesh);
 }
 
