@@ -32,7 +32,7 @@ void AActor::PreRenderUpdate(double delta)
     if(light_comp && mesh_comp)
     {
     	mesh_comp->use_override_material = true;
-        mesh_comp->override_render_info.material.albedo = glm::vec4(light_comp->light_color, 1.0);
+        mesh_comp->override_render_info->material->albedo = glm::vec4(light_comp->light_color, 1.0);
 
     	auto dir_light_comp = dynamic_cast<CDirectionalLightComponent*>(light_comp.get());
     	if(dir_light_comp)

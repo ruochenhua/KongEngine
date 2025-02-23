@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "OpenGLShader.h"
 
 #include <regex>
 #include <set>
@@ -17,13 +17,13 @@ using namespace glm;
 ShaderManager* g_shader_manager = new ShaderManager;
 set<string> shader_include_set;
 
-Shader::Shader(const map<EShaderType, string>& shader_paths)
+OpenGLShader::OpenGLShader(const map<EShaderType, string>& shader_paths)
 {
 	shader_path_map = shader_paths;
     Init(shader_paths);
 }
 
-GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_paths)
+GLuint OpenGLShader::LoadShaders(const map<EShaderType, string>& shader_paths)
 {
     vector<GLuint> shader_id_list;
     for(auto& shader_path_pair : shader_paths)
@@ -94,7 +94,7 @@ GLuint Shader::LoadShaders(const map<EShaderType, string>& shader_paths)
 	return prog_id;
 }
 
-void Shader::IncludeShader(const string& include_path)
+void OpenGLShader::IncludeShader(const string& include_path)
 {
 	// already include
 	if(shader_include_set.find(include_path) != shader_include_set.end())
@@ -113,7 +113,7 @@ void Shader::IncludeShader(const string& include_path)
 	include_content_str.c_str());
 }
 
-std::vector<std::string> Shader::FindIncludeFiles(const string& code_content)
+std::vector<std::string> OpenGLShader::FindIncludeFiles(const string& code_content)
 {
 	std::regex includeRegex("#include \"(.+)\"");  // Regex for #include statements
 	std::vector<std::string> includes;  // Vector to store extracted includes
@@ -133,27 +133,27 @@ std::vector<std::string> Shader::FindIncludeFiles(const string& code_content)
 }
 
 
-void Shader::Init(const map<EShaderType, string>& shader_path_cache)
+void OpenGLShader::Init(const map<EShaderType, string>& shader_path_cache)
 {
-    shader_id = Shader::LoadShaders(shader_path_cache);
+    shader_id = OpenGLShader::LoadShaders(shader_path_cache);
 	
 	assert(shader_id, "Shader load failed!");
 }
 
-void Shader::Use() const
+void OpenGLShader::Use() const
 {
     assert(shader_id, "Shader not loaded yet!");
     glUseProgram(shader_id);
 }
 
-void Shader::UpdateRenderData(const SMaterialInfo& render_material)
+void OpenGLShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
 	// 材质属性
-	SetVec4("albedo", render_material.albedo);
-	SetFloat("specular_factor", render_material.specular_factor);
-	SetFloat("metallic", render_material.metallic);
-	SetFloat("roughness", render_material.roughness);
-	SetFloat("ao", render_material.ao);
+	SetVec4("albedo", render_material->albedo);
+	SetFloat("specular_factor", render_material->specular_factor);
+	SetFloat("metallic", render_material->metallic);
+	SetFloat("roughness", render_material->roughness);
+	SetFloat("ao", render_material->ao);
 
 	/*
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
@@ -161,15 +161,15 @@ void Shader::UpdateRenderData(const SMaterialInfo& render_material)
 	 */
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0);
-	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
+	GLuint diffuse_tex_id = render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
 	glActiveTexture(GL_TEXTURE1);
-	GLuint normal_map_id = render_material.normal_tex_id != 0 ? render_material.normal_tex_id : null_tex_id;
+	GLuint normal_map_id = render_material->normal_tex_id != 0 ? render_material->normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_map_id);
 }
 
-GLint Shader::GetVariableLocation(const string& variable_name)
+GLint OpenGLShader::GetVariableLocation(const string& variable_name)
 {
 	if (variable_location_map_.find(variable_name) != variable_location_map_.end())
 	{
@@ -181,12 +181,12 @@ GLint Shader::GetVariableLocation(const string& variable_name)
 	return location;
 }
 
-shared_ptr<Shader> ShaderManager::GetShader(const string& shader_name)
+shared_ptr<OpenGLShader> ShaderManager::GetShader(const string& shader_name)
 {
 	return g_shader_manager->GetShaderFromTypeName(shader_name);
 }
 
-shared_ptr<Shader> ShaderManager::GetShaderFromTypeName(const string& shader_name)
+shared_ptr<OpenGLShader> ShaderManager::GetShaderFromTypeName(const string& shader_name)
 {
 	auto find_iter = shader_cache.find(shader_name);
 	if(find_iter != shader_cache.end())

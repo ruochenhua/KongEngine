@@ -21,11 +21,14 @@ namespace Kong
     public:
         static shared_ptr<MeshResource> GetOrLoadMesh(const std::string & model_path);
         static GLuint GetOrLoadTexture(const std::string & texture_path, bool filp_uv = true);
-
-        static void Clean();
         // 贴图
         GLuint GetTexture(const std::string & texture_path, bool flip_uv);
-
+        
+        static shared_ptr<KongTexture> GetOrLoadTexture_new(const std::string & texture_path, bool filp_uv = true);
+        shared_ptr<KongTexture> GetTexture_new(const std::string & texture_path, bool flip_uv);
+        
+        static void Clean();
+        
         // mesh
         shared_ptr<MeshResource> GetMesh(const std::string & mesh_path);
 
@@ -34,6 +37,8 @@ namespace Kong
     private:
         // 贴图储存
         map<string, GLuint> texture_cache;
+        map<string, shared_ptr<KongTexture>> texture_cache_new;
+        
         // 模型资源存储
         map<string, shared_ptr<MeshResource>> mesh_cache; 
     };

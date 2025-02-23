@@ -51,7 +51,7 @@ namespace Kong
         VkMemoryPropertyFlags m_memoryPropertyFlags = 0;
     };
 
-    class VulkanRenderInfo : public SRenderInfo
+    class VulkanRenderInfo : public RenderInfo
     {
     public:
         VulkanRenderInfo();

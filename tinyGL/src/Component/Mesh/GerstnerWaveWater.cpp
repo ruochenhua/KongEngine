@@ -16,7 +16,7 @@ GerstnerWaveWater::GerstnerWaveWater()
         {tes, CSceneLoader::ToResourcePath("shader/water/gerstner_wave.tese")}
     };
 
-    shader_data = make_shared<Shader>(shader_path_map);
+    shader_data = make_shared<OpenGLShader>(shader_path_map);
 
     shader_data->Use();
     shader_data->SetInt("reflection_texture", 0);
@@ -48,7 +48,7 @@ void GerstnerWaveWater::Draw(void* commandBuffer)
     DrawShadowInfo(nullptr);
 }
 
-void GerstnerWaveWater::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
+void GerstnerWaveWater::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
     shader_data->SetVec3("cam_pos", KongRenderModule::GetRenderModule().GetCamera()->GetPosition());
     // render_wireframe = true;

@@ -14,7 +14,7 @@ Water::Water()
         {fs, CSceneLoader::ToResourcePath("shader/water/water.frag")}
     };
 
-    shader_data = make_shared<Shader>(shader_path_map);
+    shader_data = make_shared<OpenGLShader>(shader_path_map);
 
     shader_data->Use();
     shader_data->SetInt("reflection_texture", 0);
@@ -23,7 +23,7 @@ Water::Water()
     shader_data->SetInt("normal_map", 3);
 }
 
-void Water::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
+void Water::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
     CQuadShape::DrawShadowInfo(simple_draw_shader);
 }

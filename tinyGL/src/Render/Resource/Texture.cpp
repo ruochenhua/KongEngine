@@ -148,4 +148,43 @@ void TextureBuilder::CreateTexture3D(GLuint& texture_id, const Texture3DCreateIn
     glBindTexture(tex_type, 0);
 }
 
+#ifdef RENDER_IN_VULKAN
+
+VulkanTexture::~VulkanTexture()
+{
+}
+
+bool VulkanTexture::IsValid()
+{
+     return m_memory && m_image && m_view;
+}
+
+void VulkanTexture::LoadTexture(const std::string& fileName)
+{
+
+}
+
+#else
+
+OpenGLTexture::OpenGLTexture()
+{
+    
+}
+
+OpenGLTexture::~OpenGLTexture()
+{
+}
+
+bool OpenGLTexture::IsValid()
+{
+    return m_texId != GL_NONE;
+}
+
+void OpenGLTexture::LoadTexture(const std::string& fileName)
+{
+    
+}
+
+#endif
+
 

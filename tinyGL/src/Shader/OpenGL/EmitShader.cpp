@@ -12,7 +12,7 @@ EmitShader::EmitShader()
 		{vs, CSceneLoader::ToResourcePath("shader/blend.vert")},
 		{fs, CSceneLoader::ToResourcePath("shader/blend.frag")},
 	};
-	shader_id = Shader::LoadShaders(shader_path_map);
+	shader_id = OpenGLShader::LoadShaders(shader_path_map);
     
 	assert(shader_id, "Shader load failed!");
 	bIsBlend = true;
@@ -20,9 +20,9 @@ EmitShader::EmitShader()
 	SetInt("diffuse_texture", 0);
 }
 
-void EmitShader::UpdateRenderData(const SMaterialInfo& render_material)
+void EmitShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
-	SetVec4("albedo", render_material.albedo);
+	SetVec4("albedo", render_material->albedo);
 	// GLuint null_tex_id = CRender::GetNullTexId();
 	// glActiveTexture(GL_TEXTURE0);
 	// GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;

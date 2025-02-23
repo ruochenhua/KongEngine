@@ -4,7 +4,7 @@
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "glm/gtx/euler_angles.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 using namespace Kong;
 using namespace glm;
@@ -217,7 +217,7 @@ void CDirectionalLightComponent::TurnOnReflectiveShadowMap(bool b_turn_on)
             {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.vert")},
             {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.frag")}
         };
-        rsm_shader = make_shared<Shader>(shader_path_map);
+        rsm_shader = make_shared<OpenGLShader>(shader_path_map);
         
         glGenFramebuffers(1, &rsm_fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo);

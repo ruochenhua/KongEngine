@@ -11,7 +11,7 @@ BlendShader::BlendShader()
         {vs, CSceneLoader::ToResourcePath("shader/blend.vert")},
         {fs, CSceneLoader::ToResourcePath("shader/blend.frag")},
     };
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     
     assert(shader_id, "Shader load failed!");
     bIsBlend = true;
@@ -19,14 +19,14 @@ BlendShader::BlendShader()
     SetInt("diffuse_texture", 0);
 }
 
-void BlendShader::UpdateRenderData(const SMaterialInfo& render_material)
+void BlendShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
     // 材质属性
-    SetVec4("albedo", render_material.albedo);
+    SetVec4("albedo", render_material->albedo);
     
     GLuint null_tex_id = KongRenderModule::GetNullTexId();
     glActiveTexture(GL_TEXTURE0);
-    GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
+    GLuint diffuse_tex_id = render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id;
     glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 }
 

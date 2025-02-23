@@ -16,3 +16,9 @@ CMesh::CMesh()
 {
     
 }
+
+template <class T>
+std::shared_ptr<T> RenderInfo::GetMaterial()
+{
+    return std::dynamic_pointer_cast<T>(material);
+}

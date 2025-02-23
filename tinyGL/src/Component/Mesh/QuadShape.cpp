@@ -19,7 +19,7 @@ void CQuadShape::Draw(void* commandBuffer)
     {
         if(use_override_material)
         {
-            shader_data->UpdateRenderData(override_render_info.material);
+            shader_data->UpdateRenderData(override_render_info->material);
         }
         else
         {
@@ -34,12 +34,19 @@ void CQuadShape::Draw(void* commandBuffer)
 void CQuadShape::InitRenderInfo()
 {
     // 屏幕mesh
-    float quadVertices[] = {
-        // positions         // normals         // texture Coords
-        -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-         1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+    // float quadVertices[] = {
+    //     // positions         // normals         // texture Coords
+    //     -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+    //     -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+    //      1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+    //      1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+    // };
+
+    std::vector<Vertex> quadVertexArray = {
+        {{-1,1, 0}, {0.0, 0.0, 1.0}, {0.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{-1,-1, 0}, {0.0, 0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{1,1, 0}, {0.0, 0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{1,-1, 0}, {0.0, 0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}}
     };
     
     mesh_resource = make_shared<MeshResource>();
@@ -48,16 +55,18 @@ void CQuadShape::InitRenderInfo()
     
 #ifndef RENDER_IN_VULKAN
     auto vertex_buffer = make_unique<OpenGLBuffer>();
-    vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(float), sizeof(quadVertices), &quadVertices);
+    vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), quadVertexArray.size(), &quadVertexArray[0]);
     std::vector<OpenGLVertexAttribute> vertexAttributes = {
-        {3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0},
-        {3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float))},
-        {2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float))},
+        {3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position)},
+        {3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal)},
+        {2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv)},
+        {3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent)},
+        {3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent)},
     };
     vertex_buffer->AddAttribute(vertexAttributes);
 #else
     auto vertex_buffer = make_unique<VulkanBuffer>();
-    vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(float), sizeof(quadVertices), &quadVertices);
+    vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), quadVertexArray.size(), &quadVertexArray[0]);
     
 #endif
     

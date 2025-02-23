@@ -10,7 +10,7 @@ namespace Kong
     public:
         Terrain();
         Terrain(const string &file_name);
-        void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
+        void DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader) override;
         float height_scale_ = 64.0f;
         float height_shift_ = 0.0f;
 

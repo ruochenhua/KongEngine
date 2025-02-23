@@ -31,7 +31,7 @@ namespace Kong
 
         virtual void TurnOnShadowMap(bool b_turn_on) = 0;
     protected:
-        shared_ptr<Shader> shadowmap_shader;
+        shared_ptr<OpenGLShader> shadowmap_shader;
         GLuint shadowmap_texture = GL_NONE;
         GLuint shadowmap_fbo = GL_NONE;
         
@@ -69,7 +69,7 @@ namespace Kong
         GLuint rsm_world_normal = GL_NONE;      //法线
         GLuint rsm_world_flux = GL_NONE;        //辐射量, 先直接使用albedo和光照强度相乘
         GLuint rsm_depth = GL_NONE;
-        shared_ptr<Shader> rsm_shader;
+        shared_ptr<OpenGLShader> rsm_shader;
     private:
         glm::vec3 light_dir {0};
         // 计算视锥体范围的AABB在世界坐标下的顶点

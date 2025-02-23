@@ -11,7 +11,7 @@ SkyboxShader::SkyboxShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/skybox.frag")}
     };
 	
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load skybox shader failed");
 }
 
@@ -22,7 +22,7 @@ AtmosphereShader::AtmosphereShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/atmosphere.frag")},
     };
 
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load atmosphere shader failed");
     
     SetInt("depth_map", 0);
@@ -38,7 +38,7 @@ EquirectangularToCubemapShader::EquirectangularToCubemapShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/sphere_to_cube.frag")}
     };
 	
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load skybox shader failed");
 }
 
@@ -50,7 +50,7 @@ IrradianceCalculationShader::IrradianceCalculationShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/irradiance_map.frag")}
     };
 	
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load skybox shader failed");
 }
 
@@ -62,7 +62,7 @@ PrefilterCalculationShader::PrefilterCalculationShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/prefilter_map.frag")}
     };
 	
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load skybox shader failed");
 }
 
@@ -74,6 +74,6 @@ BRDFLutCalculationShader::BRDFLutCalculationShader()
         {EShaderType::fs, CSceneLoader::ToResourcePath("shader/skybox/brdf_lut.frag")}
     };
 	
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     assert(shader_id, "load skybox shader failed");
 }

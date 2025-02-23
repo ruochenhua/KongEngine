@@ -58,7 +58,7 @@ Terrain::Terrain(const string& file_name)
     LoadHeightMap(file_name);
 }
 
-void Terrain::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
+void Terrain::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
     return;
 #if USE_TCS

@@ -33,8 +33,8 @@ namespace Kong
         GLuint m_ID {GL_NONE};
         GLuint m_VAO {GL_NONE}; // vertex buffer会创建VAO
     };
-
-    class OpenGLRenderInfo : public SRenderInfo
+    
+    class OpenGLRenderInfo : public RenderInfo
     {
     public:
         OpenGLRenderInfo();

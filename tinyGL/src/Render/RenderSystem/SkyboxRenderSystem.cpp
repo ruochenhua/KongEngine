@@ -8,7 +8,7 @@
 #include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 #include "Component/Mesh/QuadShape.h"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 using namespace Kong;
 

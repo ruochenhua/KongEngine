@@ -9,7 +9,7 @@ namespace Kong
     public:
         Water();
 
-        void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
+        void DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader) override;
         
         void Draw(void* commandBuffer = nullptr) override;
 

@@ -1,7 +1,7 @@
 ﻿#include "SSReflectionRenderSystem.hpp"
 
 #include "Render/RenderModule.hpp"
-#include "Shader/DeferInfoShader.h"
+#include "Shader/OpenGL/DeferInfoShader.h"
 
 using namespace Kong;
 

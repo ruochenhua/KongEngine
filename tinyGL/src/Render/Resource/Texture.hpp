@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
-
+#ifdef RENDER_IN_VULKAN
+#include <vulkan/vulkan_core.h>
+#endif
 #include "glad/glad.h"
 
 namespace Kong
@@ -50,10 +52,43 @@ namespace Kong
     };
 
     // opengl vulkan 分别处理
-    class Texture
+    class KongTexture
     {
     public:
-        
+        KongTexture() = default;
+        virtual ~KongTexture() = default;
+        virtual void LoadTexture(const std::string& fileName) = 0;
+        virtual bool IsValid() = 0;
     };
+
+#ifdef RENDER_IN_VULKAN
+    class VulkanTexture : public KongTexture
+    {
+    public:
+        VulkanTexture() = default;
+        virtual ~VulkanTexture() override;
+        bool IsValid() override;
+        void LoadTexture(const std::string& fileName) override;
+        
+    private:
+        VkImage m_image{ nullptr };
+        VkDeviceMemory m_memory{ nullptr };
+        VkImageView m_view{ nullptr };
+    };
+#else
+    class OpenGLTexture : public KongTexture
+    {
+    public:
+        OpenGLTexture();
+        virtual ~OpenGLTexture() override;
+
+        bool IsValid() override;
+        void LoadTexture(const std::string& fileName) override;
+    private:
+        friend class ResourceManager;
+        GLuint m_texId {GL_NONE};
+    };
+#endif
+    
     
 }

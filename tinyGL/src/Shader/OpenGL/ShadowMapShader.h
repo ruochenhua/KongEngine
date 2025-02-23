@@ -1,9 +1,9 @@
 #pragma once
-#include "Shader.h"
+#include "OpenGLShader.h"
 
 namespace Kong
 {
-    class ShadowMapShader : public Shader
+    class ShadowMapShader : public OpenGLShader
     {
     public:
         ShadowMapShader() = default;

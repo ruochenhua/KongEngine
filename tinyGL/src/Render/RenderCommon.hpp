@@ -15,6 +15,7 @@
 #include "glm/vec4.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
 #include "Resource/Buffer.hpp"
+#include "Resource/Texture.hpp"
 
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
@@ -63,23 +64,28 @@ namespace Kong
         tes = GL_TESS_EVALUATION_SHADER,    // tessellation evaluation shader
     };
 		
-    struct SMaterialInfo
+    class RenderMaterialInfo
     {
-        SMaterialInfo() = default;
-        glm::vec4 albedo = glm::vec4(0.2f);
-        float specular_factor = 1.0f;
-        float metallic = 0.5f;
-        float roughness = 0.5;
-        float ao = 0.3f;
+    public:
+        RenderMaterialInfo() = default;
+        virtual ~RenderMaterialInfo() = default;
+        glm::vec4 albedo {0.2f};
+        float specular_factor {1.0f};
+        float metallic {0.5f};
+        float roughness {0.5f};
+        float ao {0.3f};
         std::string name;
 
+        
         // texture id
-        std::map<ETextureType, GLuint> textures;
+        // std::map<ETextureType, GLuint> textures;
         GLuint diffuse_tex_id = 0;
         GLuint normal_tex_id = 0;
         GLuint roughness_tex_id = 0;
         GLuint metallic_tex_id = 0;
         GLuint ao_tex_id = 0;
+
+        std::map<ETextureType, std::shared_ptr<KongTexture>> textures;
     };
 
     struct Vertex
@@ -97,7 +103,7 @@ namespace Kong
     };
     
     // 渲染信息 //todo: 改名, opengl和vulkan在这里做区分
-    class SRenderInfo
+    class RenderInfo
     {
     public:
         GLuint instance_buffer = 0;
@@ -105,6 +111,9 @@ namespace Kong
         
         virtual void Draw(void* commandBuffer) {}
         virtual void InitRenderInfo(){}
+
+        template <class T>
+        std::shared_ptr<T> GetMaterial();
         
         // 顶点
         std::unique_ptr<KongBuffer> vertex_buffer {nullptr};
@@ -113,22 +122,20 @@ namespace Kong
         // todo: 后续都放到这个格式里面,也要改造opengl的buffer不要搞太多buffer
         std::vector<Vertex> vertices;
         std::vector<unsigned int> m_Index;
+
         
         // 材质
-        SMaterialInfo material;
+        std::shared_ptr<RenderMaterialInfo> material {};
     };
-    
 
-    
+
     class CMesh
     {
     public:
         CMesh();
         
-        std::unique_ptr<SRenderInfo> m_RenderInfo {nullptr};
+        std::unique_ptr<RenderInfo> m_RenderInfo {nullptr};
         std::string name;
-        
-
     };
 
 
@@ -143,7 +150,7 @@ namespace Kong
 
         std::string model_path;
         bool bOverloadMaterial = false;
-        SMaterialInfo material;
+        RenderMaterialInfo material;
     };
 
     struct SSceneLightInfo

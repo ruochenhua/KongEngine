@@ -201,7 +201,7 @@ VkDeviceSize VulkanBuffer::GetAlignment(VkDeviceSize size, VkDeviceSize minOffse
 
 VulkanRenderInfo::VulkanRenderInfo()
 {
-
+    material = std::make_shared<RenderMaterialInfo>();
 }
 
 void VulkanRenderInfo::Draw(void* commandBuffer)

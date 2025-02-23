@@ -7,6 +7,8 @@
 
 #include "Render/RenderCommon.hpp"
 #include "stb_image.h"
+
+#include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
 #include "Render/Resource/Texture.hpp"
 using namespace Kong;
 using namespace glm;
@@ -22,6 +24,53 @@ shared_ptr<MeshResource> ResourceManager::GetOrLoadMesh(const std::string& model
 GLuint ResourceManager::GetOrLoadTexture(const std::string& texture_path, bool flip_uv)
 {
     return g_resourceManager->GetTexture(texture_path, flip_uv);
+}
+
+shared_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path, bool filp_uv)
+{
+	return g_resourceManager->GetTexture_new(texture_path, filp_uv);
+}
+
+shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path, bool flip_uv)
+{
+	if(texture_cache_new.find(texture_path) != texture_cache_new.end())
+	{
+		return texture_cache_new[texture_path];
+	}
+
+	GLuint texture_id = 0;
+	if (texture_path.empty())
+	{
+		return nullptr;		
+	}
+	stbi_set_flip_vertically_on_load(flip_uv);
+	int width, height, nr_component;
+	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
+	assert(data, "load texture failed");
+
+	GLenum format = GL_BGR;
+	switch(nr_component)
+	{
+	case 1:
+		format = GL_RED;
+		break;
+	case 3:
+		format = GL_RGB;
+		break;
+	case 4:
+		format = GL_RGBA;
+		break;
+	default:
+		break;
+	}
+
+	auto new_tex = make_shared<OpenGLTexture>();
+	TextureBuilder::CreateTexture2D(new_tex->m_texId, width, height, format, data);
+	texture_cache_new.emplace(texture_path, new_tex);
+	
+	// release memory
+	stbi_image_free(data);
+	return new_tex;
 }
 
 void ResourceManager::Clean()
@@ -191,95 +240,107 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 	if(mesh->mMaterialIndex > 0)
 	{
 		aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-		auto& mesh_material = new_mesh->m_RenderInfo->material;
-		mesh_material.name = material->GetName().C_Str();
+		auto mesh_material = new_mesh->m_RenderInfo->material;
+		if(mesh_material)
+		{
+			mesh_material->name = material->GetName().C_Str();
 		
-		aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material.roughness);
-		ret = aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &mesh_material.metallic);
+			aiReturn ret = aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &mesh_material->roughness);
+			ret = aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &mesh_material->metallic);
 				
-		aiColor4D ambient_color;
-		ret = aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient_color);
-		aiGetMaterialFloat(material, AI_MATKEY_SPECULAR_FACTOR, &mesh_material.specular_factor);
+			aiColor4D ambient_color;
+			ret = aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient_color);
+			aiGetMaterialFloat(material, AI_MATKEY_SPECULAR_FACTOR, &mesh_material->specular_factor);
 
-		aiColor4D base_color;
-		aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
-		mesh_material.albedo = vec4(base_color.r, base_color.g, base_color.b, base_color.a);
+			aiColor4D base_color;
+			aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &base_color);
+			mesh_material->albedo = vec4(base_color.r, base_color.g, base_color.b, base_color.a);
 		
-		unsigned base_color_count = material->GetTextureCount(aiTextureType_BASE_COLOR);
-		unsigned diffuse_count = material->GetTextureCount(aiTextureType_DIFFUSE);
-		if(base_color_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_BASE_COLOR, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.diffuse_tex_id = GetOrLoadTexture(tex_path);
-		}
-		else if(diffuse_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.diffuse_tex_id = GetOrLoadTexture(tex_path);
-		}
+			unsigned base_color_count = material->GetTextureCount(aiTextureType_BASE_COLOR);
+			unsigned diffuse_count = material->GetTextureCount(aiTextureType_DIFFUSE);
+			if(base_color_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_BASE_COLOR, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+
+				
+				mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
+			}
+			else if(diffuse_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
+			}
 		
 
-		// 暂时还不支持coat效果，先屏蔽掉对应的mesh
-		if(mesh_material.name == "coat")
-		{
-			return;
-		}
+			// 暂时还不支持coat效果，先屏蔽掉对应的mesh
+			if(mesh_material->name == "coat")
+			{
+				return;
+			}
 
-		unsigned height_count = material->GetTextureCount(aiTextureType_HEIGHT);
-		if(height_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.normal_tex_id = GetOrLoadTexture(tex_path);
-		}
-		unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
-		if(normal_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.normal_tex_id = GetOrLoadTexture(tex_path);
-		}
+			unsigned height_count = material->GetTextureCount(aiTextureType_HEIGHT);
+			if(height_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
+			}
+			unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
+			if(normal_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
+			}
 		
-		// unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
-		// if(clear_coat_count > 0)
-		// {
-		// 	// aiString tex_str;
-		// 	// material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
-		// 	// string tex_path = directory + "/" + tex_str.C_Str();
-		// 	// new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
-		// }
+			// unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
+			// if(clear_coat_count > 0)
+			// {
+			// 	// aiString tex_str;
+			// 	// material->GetTexture(aiTextureType_CLEARCOAT, 0, &tex_str);
+			// 	// string tex_path = directory + "/" + tex_str.C_Str();
+			// 	// new_mesh.m_RenderInfo.diffuse_tex_id = CRender::LoadTexture(tex_path);
+			// }
 		
-		unsigned roughness_count = material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS);
-		if(roughness_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.roughness_tex_id = GetOrLoadTexture(tex_path);
-		}
+			unsigned roughness_count = material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS);
+			if(roughness_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->roughness_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::roughness, GetOrLoadTexture_new(tex_path));
+			}
 
-		unsigned metallic_count = material->GetTextureCount(aiTextureType_METALNESS);
-		if(metallic_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_METALNESS, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.metallic_tex_id = GetOrLoadTexture(tex_path);
-		}
+			unsigned metallic_count = material->GetTextureCount(aiTextureType_METALNESS);
+			if(metallic_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_METALNESS, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->metallic_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::metallic, GetOrLoadTexture_new(tex_path));
+			}
 
-		unsigned ambient_count = material->GetTextureCount(aiTextureType_AMBIENT);
-		if(ambient_count > 0)
-		{
-			aiString tex_str;
-			material->GetTexture(aiTextureType_AMBIENT, 0, &tex_str);
-			string tex_path = directory + "/" + tex_str.C_Str();
-			mesh_material.ao_tex_id = GetOrLoadTexture(tex_path);
+			unsigned ambient_count = material->GetTextureCount(aiTextureType_AMBIENT);
+			if(ambient_count > 0)
+			{
+				aiString tex_str;
+				material->GetTexture(aiTextureType_AMBIENT, 0, &tex_str);
+				string tex_path = directory + "/" + tex_str.C_Str();
+				mesh_material->ao_tex_id = GetOrLoadTexture(tex_path);
+				mesh_material->textures.emplace(ETextureType::ambient_occlusion, GetOrLoadTexture_new(tex_path));
+			}
 		}
 	}
 	mesh_resource->mesh_list.push_back(new_mesh);

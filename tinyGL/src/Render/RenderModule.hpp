@@ -7,7 +7,7 @@
 #include "RenderSystem/PostProcessRenderSystem.hpp"
 #include "RenderSystem/RenderSystem.hpp"
 #include "RenderSystem/SkyboxRenderSystem.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 namespace Kong
 {
@@ -141,7 +141,7 @@ namespace Kong
 		GLuint m_renderToRbo {0};
 		
 		GLuint null_tex_id			= GL_NONE;
-		shared_ptr<Shader> shadowmap_debug_shader;
+		shared_ptr<OpenGLShader> shadowmap_debug_shader;
 #if SHADOWMAP_DEBUG
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;

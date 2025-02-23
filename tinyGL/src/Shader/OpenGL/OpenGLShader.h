@@ -10,12 +10,12 @@ namespace Kong
 	
 	// shader的主类型，后面每个shader的类型都会建一个类集成Shader类
 	// 每个shader子类对应相同的shader编译文件，所以按理来说是可以每个类型的shader加载一次就行，而不需要每个模型加载一次，性能得以优化
-    class Shader
+    class OpenGLShader
     {
     public:
-    	Shader() = default;
-    	Shader(const map<EShaderType, string>& shader_paths);
-	    virtual ~Shader() = default;
+    	OpenGLShader() = default;
+    	OpenGLShader(const map<EShaderType, string>& shader_paths);
+	    virtual ~OpenGLShader() = default;
 	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
     	static GLuint LoadShaders(const map<EShaderType, string>& shader_paths);
     	static void IncludeShader(const string& include_path);
@@ -167,7 +167,7 @@ namespace Kong
     	void Use() const;
     	// 获取这个shader需要的数据，每个shader的需求应该是不一样的所以子类需要实现;
     	// 父类的这个是为了支持原先的传入shader文件的写法，也就是设置尽量全名的参数传入
-    	virtual void UpdateRenderData(const SMaterialInfo& render_material);
+    	virtual void UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material);
     	
     	bool bIsBlend = false;
     	
@@ -184,12 +184,12 @@ namespace Kong
 	class ShaderManager
 	{
 	public:
-		static shared_ptr<Shader> GetShader(const string& shader_name);
+		static shared_ptr<OpenGLShader> GetShader(const string& shader_name);
 
 	protected:
-		shared_ptr<Shader> GetShaderFromTypeName(const string& shader_name);
+		shared_ptr<OpenGLShader> GetShaderFromTypeName(const string& shader_name);
 	private:
 		
-		std::map<string, shared_ptr<Shader>> shader_cache;
+		std::map<string, shared_ptr<OpenGLShader>> shader_cache;
 	};
 }

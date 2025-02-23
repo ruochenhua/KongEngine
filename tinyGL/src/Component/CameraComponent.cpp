@@ -126,9 +126,11 @@ void CCamera::Update(double delta)
 	{
 		MoveUp();
 	}
+	
 #ifndef RENDER_IN_VULKAN
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse)
+#endif
 	{
 		if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{
@@ -140,7 +142,6 @@ void CCamera::Update(double delta)
 			RotateEnd();
 		}
 	}
-#endif
 	
 	//update translate
 	m_center += m_moveVec * float(delta*move_speed);

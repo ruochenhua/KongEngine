@@ -4,7 +4,7 @@
 #include "PostProcessRenderSystem.hpp"
 #include "RenderSystem.hpp"
 #include "Component/Mesh/QuadShape.h"
-#include "Shader/DeferInfoShader.h"
+#include "Shader/OpenGL/DeferInfoShader.h"
 
 namespace Kong
 {
@@ -22,7 +22,7 @@ namespace Kong
         GLuint ssao_result_texture = GL_NONE;
         GLuint ssao_blur_texture = GL_NONE;
         shared_ptr<SSAOShader> ssao_shader_;
-        shared_ptr<Shader> ssao_blur_shader_;
+        shared_ptr<OpenGLShader> ssao_blur_shader_;
 
         void Init(int width, int height);
         void GenerateSSAOTextures(int width, int height);

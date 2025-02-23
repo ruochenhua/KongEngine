@@ -1,10 +1,10 @@
 #pragma once
-#include "Shader.h"
+#include "OpenGLShader.h"
 
 namespace Kong
 {
     // 天空盒渲染
-    class SkyboxShader : public Shader
+    class SkyboxShader : public OpenGLShader
     {
     public:
         SkyboxShader();
@@ -28,35 +28,35 @@ namespace Kong
         glm::vec2 iResolution;
     };
     
-    class AtmosphereShader : public Shader
+    class AtmosphereShader : public OpenGLShader
     {
     public:
         AtmosphereShader();
     };
     
     // 等距柱状投影图到立方体贴图转换计算
-    class EquirectangularToCubemapShader : public Shader
+    class EquirectangularToCubemapShader : public OpenGLShader
     {
     public:
         EquirectangularToCubemapShader();
     };
 
     // 辐照度贴图预计算
-    class IrradianceCalculationShader : public  Shader
+    class IrradianceCalculationShader : public  OpenGLShader
     {
     public:
         IrradianceCalculationShader();
     };
 
     // 预滤波贴图预计算
-    class PrefilterCalculationShader : public  Shader
+    class PrefilterCalculationShader : public  OpenGLShader
     {
     public:
         PrefilterCalculationShader();
     };
     
     // brdf参数查找表贴图预计算
-    class BRDFLutCalculationShader :public Shader
+    class BRDFLutCalculationShader :public OpenGLShader
     {
     public:
         BRDFLutCalculationShader();

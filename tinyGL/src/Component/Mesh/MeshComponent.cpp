@@ -2,7 +2,7 @@
 //#include "OBJ_Loader.h"
 
 #include "Render/RenderModule.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 #include "glm/gtc/random.hpp"
 #include "Parser/ResourceManager.h"
@@ -10,13 +10,22 @@
 using namespace Kong;
 using namespace glm;
 
+CMeshComponent::CMeshComponent()
+#ifdef RENDER_IN_VULKAN
+ : override_render_info(std::make_unique<VulkanRenderInfo>())
+#else
+ : override_render_info(std::make_unique<OpenGLRenderInfo>())
+#endif
+{
+}
+
 void CMeshComponent::BeginPlay()
 {
 	CComponent::BeginPlay();
 	InitRenderInfo();
 }
 
-void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
+void CMeshComponent::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
@@ -25,11 +34,11 @@ void CMeshComponent::DrawShadowInfo(shared_ptr<Shader> simple_draw_shader)
 		{
 			if(use_override_material)
 			{
-				simple_draw_shader->SetVec4("albedo", override_render_info.material.albedo);	
+				simple_draw_shader->SetVec4("albedo", override_render_info->material->albedo);	
 			}
 			else
 			{
-				simple_draw_shader->SetVec4("albedo", mesh->m_RenderInfo->material.albedo);		
+				simple_draw_shader->SetVec4("albedo", mesh->m_RenderInfo->material->albedo);		
 			}
 			
 		}
@@ -51,7 +60,7 @@ void CMeshComponent::Draw(void* commandBuffer)
 		{
 			if(use_override_material)
 			{
-				shader_data->UpdateRenderData(override_render_info.material);
+				shader_data->UpdateRenderData(override_render_info->material);
 			}
 			else
 			{

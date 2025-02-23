@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderSystem.hpp"
-#include "Shader/PostprocessShader.h"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/PostprocessShader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 
 namespace Kong

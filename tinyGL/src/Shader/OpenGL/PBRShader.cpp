@@ -14,7 +14,7 @@ PBRShader::PBRShader()
 		{vs, CSceneLoader::ToResourcePath("shader/brdf.vert")},
 		{fs, CSceneLoader::ToResourcePath("shader/brdf.frag")},
 	};
-	shader_id = Shader::LoadShaders(shader_path_map);
+	shader_id = OpenGLShader::LoadShaders(shader_path_map);
     
 	assert(shader_id, "Shader load failed!");
 
@@ -41,22 +41,22 @@ PBRShader::PBRShader()
 	}
 }
 
-void PBRShader::UpdateRenderData(const SMaterialInfo& render_material)
+void PBRShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {	
 	// 材质属性
-	SetVec4("albedo", render_material.albedo);
-	SetFloat("specular_factor", render_material.specular_factor);
-	SetFloat("metallic", render_material.metallic);
-	SetFloat("roughness", render_material.roughness);
-	SetFloat("ao", render_material.ao);
+	SetVec4("albedo", render_material->albedo);
+	SetFloat("specular_factor", render_material->specular_factor);
+	SetFloat("metallic", render_material->metallic);
+	SetFloat("roughness", render_material->roughness);
+	SetFloat("ao", render_material->ao);
 
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
-	glBindTextureUnit(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID, render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id);
+	glBindTextureUnit(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID, render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id);
 	// normal map加一个法线贴图的数据
-	glBindTextureUnit(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID, render_material.normal_tex_id != 0 ? render_material.normal_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID, render_material.roughness_tex_id != 0 ? render_material.roughness_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID, render_material.metallic_tex_id != 0 ? render_material.metallic_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + AO_TEX_SHADER_ID, render_material.ao_tex_id != 0 ? render_material.ao_tex_id : null_tex_id);
+	glBindTextureUnit(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID, render_material->normal_tex_id != 0 ? render_material->normal_tex_id : null_tex_id);
+	glBindTextureUnit(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID, render_material->roughness_tex_id != 0 ? render_material->roughness_tex_id : null_tex_id);
+	glBindTextureUnit(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID, render_material->metallic_tex_id != 0 ? render_material->metallic_tex_id : null_tex_id);
+	glBindTextureUnit(GL_TEXTURE0 + AO_TEX_SHADER_ID, render_material->ao_tex_id != 0 ? render_material->ao_tex_id : null_tex_id);
 
 	// todo: 天空盒贴图需要每次都更新吗?
 	auto& render_module = KongRenderModule::GetRenderModule();

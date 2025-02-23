@@ -11,7 +11,7 @@ const int CLOUD_REZ = 16;
 using namespace Kong;
 CloudModel::CloudModel()
 {
-    perlin_worley_comp_shader = make_shared<Shader>();
+    perlin_worley_comp_shader = make_shared<OpenGLShader>();
     perlin_worley_comp_shader->Init(
         {{cs,CSceneLoader::ToResourcePath("shader/volumetric_cloud/perlin_worley.comp")}});
 
@@ -38,7 +38,7 @@ CloudModel::CloudModel()
     glGenerateMipmap(GL_TEXTURE_3D);
 
     
-    worley_comp_shader = make_shared<Shader>();
+    worley_comp_shader = make_shared<OpenGLShader>();
     worley_comp_shader->Init(
         {{cs,CSceneLoader::ToResourcePath("shader/volumetric_cloud/worley.comp")}});
 
@@ -63,7 +63,7 @@ CloudModel::CloudModel()
     glGenerateMipmap(GL_TEXTURE_3D);
 
     
-    weather_compute_shader = make_shared<Shader>();
+    weather_compute_shader = make_shared<OpenGLShader>();
     weather_compute_shader->Init(
         {{cs,CSceneLoader::ToResourcePath("shader/volumetric_cloud/weather.comp")}});
     // weather 材质
@@ -93,7 +93,7 @@ VolumetricCloud::VolumetricCloud()
     :cloud_tex(0), bloom_tex(0), alphaness_tex(0), depth_tex(0)
 {
     cloud_model_ = make_shared<CloudModel>();
-    cloud_compute_shader_ = make_shared<Shader>();
+    cloud_compute_shader_ = make_shared<OpenGLShader>();
     cloud_compute_shader_->Init(
       {{cs,CSceneLoader::ToResourcePath("shader/volumetric_cloud/volumetric_cloud.comp")}});
 
@@ -126,7 +126,7 @@ void VolumetricCloud::PreRenderUpdate() const
 #endif
 }
 
-void VolumetricCloud::DrawShadowInfo(shared_ptr<Shader> simple_shader)
+void VolumetricCloud::DrawShadowInfo(shared_ptr<OpenGLShader> simple_shader)
 {
     // 计算cloud texture
 	// 有太阳光才计算这个，没有就跳过

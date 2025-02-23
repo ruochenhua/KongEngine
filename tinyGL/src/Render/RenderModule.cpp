@@ -12,7 +12,7 @@
 #include "Component/LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Scene.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 #include "stb_image.h"
 #include "Render/Resource/Texture.hpp"
 #include "Window.hpp"

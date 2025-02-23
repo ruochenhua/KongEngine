@@ -106,23 +106,23 @@ namespace YamlParser
                     CSceneLoader::ToResourcePath(shader_node["fs"].as<string>()));
             }
 
-            mesh_component->shader_data = make_shared<Shader>(shader_cache);
+            mesh_component->shader_data = make_shared<OpenGLShader>(shader_cache);
         }
 
         if(mesh_node["material"])
         {
             auto material_node = mesh_node["material"];
             // 读取材质信息
-            SMaterialInfo tmp_material;
+            std::shared_ptr<RenderMaterialInfo> tmp_material = make_shared<RenderMaterialInfo>();
             if(material_node["diffuse"])
             {
                 if(material_node["diffuse"].IsSequence())
                 {
-                    tmp_material.albedo = glm::vec4(ParseVec3(material_node["diffuse"].as<vector<float>>()), 1.0);    
+                    tmp_material->albedo = glm::vec4(ParseVec3(material_node["diffuse"].as<vector<float>>()), 1.0);    
                 }
                 else
                 {
-                    tmp_material.diffuse_tex_id =
+                    tmp_material->diffuse_tex_id =
                         ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>()));
                 }
             }
@@ -131,11 +131,11 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.metallic = material_node["metallic"].as<float>();
+                    tmp_material->metallic = material_node["metallic"].as<float>();
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.metallic_tex_id =
+                    tmp_material->metallic_tex_id =
                         ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>()));
                 }
             }
@@ -144,11 +144,11 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.roughness = material_node["roughness"].as<float>();    
+                    tmp_material->roughness = material_node["roughness"].as<float>();    
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.roughness_tex_id =
+                    tmp_material->roughness_tex_id =
                         ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>()));
                 }    
             }
@@ -157,22 +157,22 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.ao = material_node["ao"].as<float>();    
+                    tmp_material->ao = material_node["ao"].as<float>();    
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.ao_tex_id =
+                    tmp_material->ao_tex_id =
                         ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["ao"].as<string>()));
                 }    
             }
             
             if(material_node["normal"])
             {
-                tmp_material.normal_tex_id =
+                tmp_material->normal_tex_id =
                     ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["normal"].as<string>()));
             }
 
-            mesh_component->override_render_info.material = tmp_material;
+            mesh_component->override_render_info->material = tmp_material;
             mesh_component->use_override_material = true;
         }
 #endif

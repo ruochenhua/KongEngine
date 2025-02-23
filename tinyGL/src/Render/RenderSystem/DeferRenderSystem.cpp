@@ -74,7 +74,7 @@ void SSAOHelper::Init(int width, int height)
 		{fs, CSceneLoader::ToResourcePath("shader/ssao_blur.frag")},
 	};
 	
-	ssao_blur_shader_ = make_shared<Shader>(blur_ssao_shader_path);
+	ssao_blur_shader_ = make_shared<OpenGLShader>(blur_ssao_shader_path);
 	ssao_blur_shader_->Use();
 	ssao_blur_shader_->SetInt("ssao_texture", 0);
 

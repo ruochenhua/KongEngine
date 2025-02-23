@@ -1,11 +1,11 @@
 #pragma once
-#include "Shader.h"
+#include "OpenGLShader.h"
 #include "Render/Resource/Texture.hpp"
 
 namespace Kong
 {
     // 后处理shader
-    class PostprocessShader : public Shader
+    class PostprocessShader : public OpenGLShader
     {
     public:
         PostprocessShader() = default;

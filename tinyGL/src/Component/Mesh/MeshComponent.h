@@ -4,7 +4,7 @@
 #include "Parser/ResourceManager.h"
 #include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 struct aiMesh;
 struct aiScene;
@@ -16,28 +16,19 @@ namespace Kong
 	{
 	public:
 		shared_ptr<MeshResource> mesh_resource;
-		shared_ptr<Shader> shader_data;
+		shared_ptr<OpenGLShader> shader_data;
 		
-		CMeshComponent() = default;	
+		CMeshComponent();	
 		
 		void BeginPlay() override;
 		// 简单调用一下draw，不管shader（可能用其他的shader）
-		virtual void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader);
+		virtual void DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader);
 		virtual void Draw(void* commandBuffer = nullptr);
 		virtual void InitRenderInfo();
 		bool IsBlend();
-
-#ifdef RENDER_IN_VULKAN
-		// void CreateVertexBuffer(const std::vector<Vertex>& vertices);
-		// void CreateIndexBuffer(const std::vector<uint32_t>& indices);
-		
-		// std::unique_ptr<VulkanBuffer> vertexBuffer;
-		// std::unique_ptr<VulkanBuffer> indexBuffer;
-		
-#endif
-		
+				
 		// 覆盖原有材质 
-		SRenderInfo override_render_info;
+		std::unique_ptr<RenderInfo> override_render_info;
 		bool use_override_material = false;
 	
 	protected:

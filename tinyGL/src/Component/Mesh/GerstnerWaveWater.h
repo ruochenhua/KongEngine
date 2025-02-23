@@ -9,7 +9,7 @@ namespace Kong
     public:
         GerstnerWaveWater();
         void Draw(void* commandBuffer = nullptr) override;
-        void DrawShadowInfo(shared_ptr<Shader> simple_draw_shader) override;
+        void DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader) override;
         void InitRenderInfo() override;
         
         float height_scale_ = 1.0f;

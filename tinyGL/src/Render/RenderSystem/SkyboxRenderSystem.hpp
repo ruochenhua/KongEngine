@@ -4,7 +4,7 @@
 #include "Render/RenderCommon.hpp"
 #include "RenderSystem.hpp"
 #include "Component/Mesh/VolumetricCloud.h"
-#include "Shader/SkyboxShader.h"
+#include "Shader/OpenGL/SkyboxShader.h"
 
 
 namespace Kong

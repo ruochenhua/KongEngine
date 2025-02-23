@@ -52,8 +52,7 @@ void OpenGLBuffer::Bind(void* commandBuffer)
 
 OpenGLRenderInfo::OpenGLRenderInfo()
 {
-    vertex_buffer = std::make_unique<OpenGLBuffer>();
-    index_buffer = std::make_unique<OpenGLBuffer>();
+    material = std::make_shared<RenderMaterialInfo>();
 }
 
 void OpenGLRenderInfo::Draw(void* commandBuffer)
@@ -91,6 +90,7 @@ void OpenGLRenderInfo::Draw(void* commandBuffer)
 void OpenGLRenderInfo::InitRenderInfo()
 {
     // //init vertex buffer
+    vertex_buffer = std::make_unique<OpenGLBuffer>();
     vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), vertices.size(), &vertices[0]);
     std::vector<OpenGLVertexAttribute> vertexAttributes = {
         {3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position)},
@@ -105,6 +105,7 @@ void OpenGLRenderInfo::InitRenderInfo()
     // index buffer
     if(!m_Index.empty())
     {
+        index_buffer = std::make_unique<OpenGLBuffer>();
         index_buffer->Initialize(INDEX_BUFFER, sizeof(unsigned int), m_Index.size(), &m_Index[0]);
     }
 }

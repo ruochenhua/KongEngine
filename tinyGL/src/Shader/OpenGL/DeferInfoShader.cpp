@@ -27,35 +27,35 @@ DeferInfoShader::DeferInfoShader()
     // SetInt("skybox_brdf_lut_texture", SKYBOX_BRDF_LUT_TEX_SHADER_ID);
 }
 
-void DeferInfoShader::UpdateRenderData(const SMaterialInfo& render_material)
+void DeferInfoShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
 	// 材质属性
-	SetVec4("albedo", render_material.albedo);
-	SetFloat("specular_factor", render_material.specular_factor);
-	SetFloat("metallic", render_material.metallic);
-	SetFloat("roughness", render_material.roughness);
-	SetFloat("ao", render_material.ao);
+	SetVec4("albedo", render_material->albedo);
+	SetFloat("specular_factor", render_material->specular_factor);
+	SetFloat("metallic", render_material->metallic);
+	SetFloat("roughness", render_material->roughness);
+	SetFloat("ao", render_material->ao);
 	
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID);
-	GLuint diffuse_tex_id = render_material.diffuse_tex_id != 0 ? render_material.diffuse_tex_id : null_tex_id;
+	GLuint diffuse_tex_id = render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
 
 	// normal map加一个法线贴图的数据
 	glActiveTexture(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID);
-	GLuint normal_tex_id = render_material.normal_tex_id != 0 ? render_material.normal_tex_id : null_tex_id;
+	GLuint normal_tex_id = render_material->normal_tex_id != 0 ? render_material->normal_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, normal_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID);
-	GLuint roughness_tex_id = render_material.roughness_tex_id != 0 ? render_material.roughness_tex_id : null_tex_id;
+	GLuint roughness_tex_id = render_material->roughness_tex_id != 0 ? render_material->roughness_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, roughness_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID);
-	GLuint metallic_tex_id = render_material.metallic_tex_id != 0 ? render_material.metallic_tex_id : null_tex_id;
+	GLuint metallic_tex_id = render_material->metallic_tex_id != 0 ? render_material->metallic_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, metallic_tex_id);
 
 	glActiveTexture(GL_TEXTURE0 + AO_TEX_SHADER_ID);
-	GLuint ao_tex_id = render_material.ao_tex_id != 0 ? render_material.ao_tex_id : null_tex_id;
+	GLuint ao_tex_id = render_material->ao_tex_id != 0 ? render_material->ao_tex_id : null_tex_id;
 	glBindTexture(GL_TEXTURE_2D, ao_tex_id);
 }
 
@@ -65,7 +65,7 @@ DeferredBRDFShader::DeferredBRDFShader()
         {vs, CSceneLoader::ToResourcePath("shader/defer_pbr.vert")},
         {fs, CSceneLoader::ToResourcePath("shader/defer_pbr.frag")},
     };
-    shader_id = Shader::LoadShaders(shader_path_map);
+    shader_id = OpenGLShader::LoadShaders(shader_path_map);
     
     assert(shader_id, "Shader load failed!");
 	
@@ -95,7 +95,7 @@ DeferredBRDFShader::DeferredBRDFShader()
 	SetInt("ssao_result_texture", 16);
 }
 
-void DeferredBRDFShader::UpdateRenderData(const SMaterialInfo& render_material)
+void DeferredBRDFShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	int texture_idx = 8;
@@ -226,7 +226,7 @@ SSAOShader::SSAOShader()
 		{vs, CSceneLoader::ToResourcePath("shader/ssao.vert")},
 		{fs, CSceneLoader::ToResourcePath("shader/ssao.frag")},
 	};
-	shader_id = Shader::LoadShaders(shader_path_map);
+	shader_id = OpenGLShader::LoadShaders(shader_path_map);
     
 	assert(shader_id, "Shader load failed!");
 	
@@ -242,7 +242,7 @@ SSReflectionShader::SSReflectionShader()
 		{fs, CSceneLoader::ToResourcePath("shader/ssr.frag")},
 	};
 
-	shader_id = Shader::LoadShaders(shader_path_map);
+	shader_id = OpenGLShader::LoadShaders(shader_path_map);
 	assert(shader_id, "Shader load failed!");
 
 	Use();
