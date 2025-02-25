@@ -27,6 +27,7 @@ KongApp::KongApp()
     m_globalPool = VulkanDescriptorPool::Builder()
                     .SetMaxSets(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
+                    .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
                     .Build();
     
 #else
@@ -58,12 +59,14 @@ void KongApp::Run()
     
     auto globalSetLayout = VulkanDescriptorSetLayout::Builder()
             .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+            .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
             
     std::vector<VkDescriptorSet> globalDiscriptorSets{VulkanSwapChain::MAX_FRAMES_IN_FLIGHT};
     for (int i = 0; i < globalDiscriptorSets.size(); i++)
     {
         auto bufferInfo = uboBuffers[i]->DescriptorInfo();
+        
         VulkanDescriptorWriter(*globalSetLayout, *m_globalPool)
         .WriteBuffer(0, &bufferInfo)
         .Build(globalDiscriptorSets[i]);

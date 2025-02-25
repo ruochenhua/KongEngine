@@ -51,13 +51,12 @@ void PBRShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 	SetFloat("ao", render_material->ao);
 
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
-	glBindTextureUnit(GL_TEXTURE0 + DIFFUSE_TEX_SHADER_ID, render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id);
-	// normal map加一个法线贴图的数据
-	glBindTextureUnit(GL_TEXTURE0 + NORMAL_TEX_SHADER_ID, render_material->normal_tex_id != 0 ? render_material->normal_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + ROUGHNESS_TEX_SHADER_ID, render_material->roughness_tex_id != 0 ? render_material->roughness_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + METALLIC_TEX_SHADER_ID, render_material->metallic_tex_id != 0 ? render_material->metallic_tex_id : null_tex_id);
-	glBindTextureUnit(GL_TEXTURE0 + AO_TEX_SHADER_ID, render_material->ao_tex_id != 0 ? render_material->ao_tex_id : null_tex_id);
-
+	render_material->BindTextureByType(diffuse, DIFFUSE_TEX_SHADER_ID);
+	render_material->BindTextureByType(normal,  NORMAL_TEX_SHADER_ID);
+	render_material->BindTextureByType(roughness, ROUGHNESS_TEX_SHADER_ID);
+	render_material->BindTextureByType(metallic, METALLIC_TEX_SHADER_ID);
+	render_material->BindTextureByType(ambient_occlusion, AO_TEX_SHADER_ID);
+	
 	// todo: 天空盒贴图需要每次都更新吗?
 	auto& render_module = KongRenderModule::GetRenderModule();
 	auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module.GetRenderSystemByType(RenderSystemType::SKYBOX));

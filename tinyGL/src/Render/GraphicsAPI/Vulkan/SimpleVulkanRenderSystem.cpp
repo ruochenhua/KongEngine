@@ -28,12 +28,7 @@ SimpleVulkanRenderSystem::~SimpleVulkanRenderSystem()
 void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
 {
     m_pipeline->Bind(frameInfo.commandBuffer);
-    // 绑定descriptor set
-    vkCmdBindDescriptorSets(
-        frameInfo.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_pipelineLayout,
-        0, 1, &frameInfo.globalDescriptorSet, 0, nullptr);
+  
     
     auto actors = KongSceneManager::GetActors();
     for (auto actor : actors)
@@ -56,7 +51,33 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
         vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(SimplePushConstantData), &push);
+
+        auto diffuse_tex = dynamic_pointer_cast<VulkanTexture>(mesh_component->override_render_info->material->GetTextureByType(diffuse));
+        if (diffuse_tex)
+        {    // 准备纹理采样器描述符信息
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = diffuse_tex->m_imageView;
+            imageInfo.sampler = diffuse_tex->m_sampler;
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = frameInfo.globalDescriptorSet;
+            descriptorWrite.dstBinding = 1;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &imageInfo;
+
+            vkUpdateDescriptorSets(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), 1, &descriptorWrite, 0, nullptr);
+        }
         
+        // 绑定descriptor set
+        vkCmdBindDescriptorSets(
+            frameInfo.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pipelineLayout,
+            0, 1, &frameInfo.globalDescriptorSet, 0, nullptr);
         mesh_component->Draw(frameInfo.commandBuffer);
     }
 }

@@ -57,8 +57,10 @@ namespace Kong
     public:
         KongTexture() = default;
         virtual ~KongTexture() = default;
-        virtual void LoadTexture(const std::string& fileName) = 0;
+        virtual void CreateTexture(int width, int height, int nr_component, unsigned char* pixels) = 0;
         virtual bool IsValid() = 0;
+
+        virtual void Bind(unsigned int location) = 0;
     };
 
 #ifdef RENDER_IN_VULKAN
@@ -68,20 +70,36 @@ namespace Kong
         VulkanTexture() = default;
         virtual ~VulkanTexture() override;
         bool IsValid() override;
-        void LoadTexture(const std::string& fileName) override;
-        
-    private:
+        void CreateTexture(int width, int height, int nr_component, unsigned char* pixels) override;
+
+        void Bind(unsigned int location) override;
+
         VkImage m_image{ nullptr };
         VkDeviceMemory m_memory{ nullptr };
-        VkImageView m_view{ nullptr };
+        VkImageView m_imageView{ nullptr };
+        VkSampler m_sampler{ nullptr };
+        VkFormat m_format{ VK_FORMAT_MAX_ENUM };
+    private:
+        // 转换图像布局
+        void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+        // 复制缓冲区到图像
+        void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height);
+        // 创建纹理图像视图, 为了让着色器能够访问纹理图像
+        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值
+        void CreateTextureSampler();
     };
 #else
     class OpenGLTexture : public KongTexture
     {
     public:
-        OpenGLTexture();
+        OpenGLTexture() = default;
         virtual ~OpenGLTexture() override;
 
+        GLuint GetTextureId() const {return m_texId;}
+
+        void Bind(unsigned int location) override;
+        
         bool IsValid() override;
         void LoadTexture(const std::string& fileName) override;
     private:

@@ -7,7 +7,7 @@ layout(location=3) in vec3 tangent;
 layout(location=4) in vec3 bitangent;
 
 layout(location=0) out vec3 fragColor;
-
+layout(location=1) out vec2 fragUV;
 layout(push_constant) uniform Push{
     mat4 modelMatrix;
     mat4 normalMatrix;
@@ -28,4 +28,5 @@ void main()
     float lightIntensity = AMBIENT + max(dot(normalWorldSpace, ubo.directionToLight), 0);
 
     fragColor = lightIntensity*vec3(0.2, 0.3, 0.4);
+    fragUV = uv;
 }

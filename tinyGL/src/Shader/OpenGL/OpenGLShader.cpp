@@ -160,13 +160,8 @@ void OpenGLShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_materi
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
 	GLuint null_tex_id = KongRenderModule::GetNullTexId();
-	glActiveTexture(GL_TEXTURE0);
-	GLuint diffuse_tex_id = render_material->diffuse_tex_id != 0 ? render_material->diffuse_tex_id : null_tex_id;
-	glBindTexture(GL_TEXTURE_2D, diffuse_tex_id);
-
-	glActiveTexture(GL_TEXTURE1);
-	GLuint normal_map_id = render_material->normal_tex_id != 0 ? render_material->normal_tex_id : null_tex_id;
-	glBindTexture(GL_TEXTURE_2D, normal_map_id);
+	render_material->BindTextureByType(diffuse, 0);
+	render_material->BindTextureByType(normal, 1);
 }
 
 GLint OpenGLShader::GetVariableLocation(const string& variable_name)

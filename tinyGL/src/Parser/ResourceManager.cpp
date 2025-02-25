@@ -9,6 +9,7 @@
 #include "stb_image.h"
 
 #include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Render/Resource/Texture.hpp"
 using namespace Kong;
 using namespace glm;
@@ -47,7 +48,18 @@ shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& textu
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data, "load texture failed");
-
+	
+	// todo: opengl和vulkan这里要做区分
+#ifdef RENDER_IN_VULKAN
+	// rgb8在GPU上的支持可能不够，先跳过这个类型
+	auto new_tex = make_shared<VulkanTexture>();
+	
+	if (nr_component != 3)
+	{
+		new_tex->CreateTexture(width, height, nr_component, data);
+		texture_cache_new.emplace(texture_path, new_tex);
+	}
+#else
 	GLenum format = GL_BGR;
 	switch(nr_component)
 	{
@@ -63,10 +75,11 @@ shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& textu
 	default:
 		break;
 	}
-
+	
 	auto new_tex = make_shared<OpenGLTexture>();
 	TextureBuilder::CreateTexture2D(new_tex->m_texId, width, height, format, data);
 	texture_cache_new.emplace(texture_path, new_tex);
+#endif
 	
 	// release memory
 	stbi_image_free(data);
@@ -265,7 +278,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				string tex_path = directory + "/" + tex_str.C_Str();
 
 				
-				mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
 			}
 			else if(diffuse_count > 0)
@@ -273,7 +286,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
 			}
 		
@@ -290,7 +303,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
 			}
 			unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
@@ -299,7 +312,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
 			}
 		
@@ -318,7 +331,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->roughness_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->roughness_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::roughness, GetOrLoadTexture_new(tex_path));
 			}
 
@@ -328,7 +341,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_METALNESS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->metallic_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->metallic_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::metallic, GetOrLoadTexture_new(tex_path));
 			}
 
@@ -338,7 +351,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				aiString tex_str;
 				material->GetTexture(aiTextureType_AMBIENT, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				mesh_material->ao_tex_id = GetOrLoadTexture(tex_path);
+				// mesh_material->ao_tex_id = GetOrLoadTexture(tex_path);
 				mesh_material->textures.emplace(ETextureType::ambient_occlusion, GetOrLoadTexture_new(tex_path));
 			}
 		}

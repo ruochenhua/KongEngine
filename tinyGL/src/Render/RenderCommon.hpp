@@ -76,14 +76,8 @@ namespace Kong
         float ao {0.3f};
         std::string name;
 
-        
-        // texture id
-        // std::map<ETextureType, GLuint> textures;
-        GLuint diffuse_tex_id = 0;
-        GLuint normal_tex_id = 0;
-        GLuint roughness_tex_id = 0;
-        GLuint metallic_tex_id = 0;
-        GLuint ao_tex_id = 0;
+        void BindTextureByType(ETextureType textureType, unsigned int location);
+        std::shared_ptr<KongTexture> GetTextureByType(ETextureType textureType);
 
         std::map<ETextureType, std::shared_ptr<KongTexture>> textures;
     };

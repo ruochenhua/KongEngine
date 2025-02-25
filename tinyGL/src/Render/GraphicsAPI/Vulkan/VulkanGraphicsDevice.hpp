@@ -59,6 +59,11 @@ namespace Kong
             VkMemoryPropertyFlags properties,
             VkImage& image,
             VkDeviceMemory& imageMemory);
+
+        // 开始单次使用的命令缓冲区
+        VkCommandBuffer BeginSingleTimeCommands();
+        // 结束单次使用的命令缓冲区
+        void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
         
     private:
         VkInstance m_instance {VK_NULL_HANDLE};
