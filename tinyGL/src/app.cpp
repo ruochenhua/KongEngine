@@ -9,11 +9,7 @@
 using namespace Kong;
 
 constexpr double FRAME_TIME_CAP = 1.0/60.0;
-struct GlobalUbo
-{
-    glm::mat4 projectionView {1.};
-    glm::vec3 lightDirection = glm::normalize(glm::vec3{1., -3., -1.});
-};
+
 
 KongApp::KongApp()
     : m_Window{KongWindow::GetWindowModule()}
@@ -49,31 +45,9 @@ void KongApp::Run()
 #ifdef RENDER_IN_VULKAN
     string scene_name = "scene/hello_ssr.yaml";
     KongSceneManager::GetSceneManager().LoadScene(scene_name);
-    std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
-    for (int i = 0; i < uboBuffers.size(); i++)
-    {
-        uboBuffers[i] = std::make_unique<VulkanBuffer>();
-        uboBuffers[i]->Initialize(UNIFORM_BUFFER, sizeof(GlobalUbo),1);
-        uboBuffers[i]->Map();
-    }
-    
-    auto globalSetLayout = VulkanDescriptorSetLayout::Builder()
-            .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-            .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .Build();
             
-    std::vector<VkDescriptorSet> globalDiscriptorSets{VulkanSwapChain::MAX_FRAMES_IN_FLIGHT};
-    for (int i = 0; i < globalDiscriptorSets.size(); i++)
-    {
-        auto bufferInfo = uboBuffers[i]->DescriptorInfo();
-        
-        VulkanDescriptorWriter(*globalSetLayout, *m_globalPool)
-        .WriteBuffer(0, &bufferInfo)
-        .Build(globalDiscriptorSets[i]);
-    }
-            
-    SimpleVulkanRenderSystem simpleRenderSystem{m_renderer.GetSwapChainRenderPass(),
-        globalSetLayout->GetDescriptorSetLayout()};
+    SimpleVulkanRenderSystem simpleRenderSystem{m_renderer.GetSwapChainRenderPass()};
+    simpleRenderSystem.CreateMeshDescriptorSet();
     
 #endif
     
@@ -98,6 +72,8 @@ void KongApp::Run()
         {
             m_SceneManager.PreRenderUpdate(delta);
             m_RenderModule.Update(delta);
+
+            
             
             m_renderer.BeginFrame();
             if (auto commandBuffer = m_renderer.GetCurrentCommandBuffer())
@@ -106,18 +82,10 @@ void KongApp::Run()
                 FrameInfo frameInfo{
                     frameIndex,
                     static_cast<float>(delta),
-                    commandBuffer,
-                    globalDiscriptorSets[frameIndex]
+                    commandBuffer
                 };
 
-                // 更新ubo数据
-                GlobalUbo ubo{};
-                ubo.projectionView = m_RenderModule.GetCamera()->GetProjectionMatrix() * m_RenderModule.GetCamera()->GetViewMatrix();
-                // globalUboBuffer.writeToBuffer(&ubo, frameIndex);
-                // globalUboBuffer.flushIndex(frameIndex);
-                uboBuffers[frameIndex]->WriteToBuffer(&ubo);
-                uboBuffers[frameIndex]->Flush();
-                
+                simpleRenderSystem.UpdateMeshUBO(frameInfo);
                 // render
                 /* 每个frame之间可以有多个render pass，比如
                  * begin offscreen shadow pass
@@ -126,6 +94,7 @@ void KongApp::Run()
                  * // reflection
                  * // post process
                  */
+                // 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
                 m_renderer.BeginSwapChainRenderPass(commandBuffer);
                 simpleRenderSystem.RenderGameObjects(frameInfo);
                 m_renderer.EndSwapChainRenderPass(commandBuffer);
@@ -155,10 +124,10 @@ void KongApp::Run()
     // cpu等待所有gpu任务完成
     vkDeviceWaitIdle(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice());
     
-    for (size_t i = 0; i < uboBuffers.size(); i++)
-    {
-        uboBuffers[i] = nullptr;
-    }
+    // for (size_t i = 0; i < uboBuffers.size(); i++)
+    // {
+    //     uboBuffers[i] = nullptr;
+    // }
 
     ResourceManager::Clean();
 

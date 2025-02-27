@@ -14,6 +14,7 @@
 #include "Component/Mesh/Terrain.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtc/random.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 
 using namespace Kong;
 
@@ -114,7 +115,12 @@ namespace YamlParser
         {
             auto material_node = mesh_node["material"];
             // 读取材质信息
+#ifdef RENDER_IN_VULKAN
+            std::shared_ptr<VulkanMaterialInfo> tmp_material = make_shared<VulkanMaterialInfo>();
+#else
             std::shared_ptr<RenderMaterialInfo> tmp_material = make_shared<RenderMaterialInfo>();
+#endif
+      
             if(material_node["diffuse"])
             {
                 if(material_node["diffuse"].IsSequence())
@@ -123,7 +129,7 @@ namespace YamlParser
                 }
                 else
                 {
-                    tmp_material->textures.emplace(diffuse, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>())));
+                    tmp_material->AddMaterialByType(diffuse, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>())));
                 }
             }
 
@@ -135,7 +141,7 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->textures.emplace(metallic, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>())));
+                    tmp_material->AddMaterialByType(metallic, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>())));
                 }
             }
 
@@ -147,7 +153,7 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->textures.emplace(roughness, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>())));
+                    tmp_material->AddMaterialByType(roughness, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>())));
                 }    
             }
 
@@ -159,16 +165,17 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->textures.emplace(ambient_occlusion, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["ao"].as<string>())));
+                    tmp_material->AddMaterialByType(ambient_occlusion, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["ao"].as<string>())));
                 }    
             }
             
             if(material_node["normal"])
             {
-                tmp_material->textures.emplace(normal, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["normal"].as<string>())));
+                tmp_material->AddMaterialByType(normal, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["normal"].as<string>())));
             }
 
             mesh_component->override_render_info->material = tmp_material;
+            mesh_component->override_render_info->material->Initialize();
             mesh_component->use_override_material = true;
         }
     }

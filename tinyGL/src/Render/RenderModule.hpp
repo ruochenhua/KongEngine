@@ -88,6 +88,7 @@ namespace Kong
 	public:
 		static KongRenderModule& GetRenderModule();
 		static GLuint GetNullTexId();
+		static KongTexture* GetNullTex();
 		static glm::vec2 GetNearFar();
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
@@ -139,6 +140,8 @@ namespace Kong
 		
 		GLuint m_renderToBuffer {0};    // 渲染到的buffer
 		GLuint m_renderToRbo {0};
+
+		weak_ptr<KongTexture> m_nullTex;
 		
 		GLuint null_tex_id			= GL_NONE;
 		shared_ptr<OpenGLShader> shadowmap_debug_shader;

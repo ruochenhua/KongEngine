@@ -4,6 +4,8 @@
 #include "Component/LightComponent.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/euler_angles.hpp"
+
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 using namespace Kong;
 using namespace glm;
 

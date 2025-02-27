@@ -2,6 +2,8 @@
 
 #include "Actor.hpp"
 #include "Scene.hpp"
+#include "VulkanDescriptor.hpp"
+#include "VulkanSwapChain.hpp"
 #include "Render/RenderModule.hpp"
 
 using namespace Kong;
@@ -10,13 +12,13 @@ using namespace Kong;
 struct SimplePushConstantData
 {
     glm::mat4 modelMatrix{1.0f};
-    alignas(16) glm::mat4 normalMatrix{1.0f};
 };
 
-SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout)
+SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VkRenderPass renderPass)
     : m_deviceRef(VulkanGraphicsDevice::GetGraphicsDevice())
 {
-    CreatePipelineLayout(globalSetLayout);
+    CreateDescriptorSetLayout();
+    CreatePipelineLayout();
     CreatePipeline(renderPass);
 }
 
@@ -25,10 +27,52 @@ SimpleVulkanRenderSystem::~SimpleVulkanRenderSystem()
     vkDestroyPipelineLayout(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), m_pipelineLayout, nullptr);
 }
 
+void SimpleVulkanRenderSystem::UpdateMeshUBO(const FrameInfo& frameInfo)
+{
+    auto actors = KongSceneManager::GetActors();
+    for (auto actor : actors)
+    {
+        auto mesh_component = actor->GetComponent<CMeshComponent>();
+        if (!mesh_component)
+        {
+            continue;
+        }
+
+        auto mesh_shader = mesh_component->shader_data;
+        if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader))
+        {
+            continue;
+        }
+
+        mesh_component->UpdateMeshUBO(frameInfo);
+    }
+}
+
+void SimpleVulkanRenderSystem::CreateMeshDescriptorSet()
+{
+    auto actors = KongSceneManager::GetActors();
+    for (auto actor : actors)
+    {
+        auto mesh_component = actor->GetComponent<CMeshComponent>();
+        if (!mesh_component)
+        {
+            continue;
+        }
+
+        auto mesh_shader = mesh_component->shader_data;
+        if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader))
+        {
+            continue;
+        }
+
+        mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout, m_descriptorPool.get());
+    }
+}
+
 void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
 {
     m_pipeline->Bind(frameInfo.commandBuffer);
-  
+    int frameIndex = frameInfo.frameIndex;
     
     auto actors = KongSceneManager::GetActors();
     for (auto actor : actors)
@@ -51,38 +95,39 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
         vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(SimplePushConstantData), &push);
-
-        auto diffuse_tex = dynamic_pointer_cast<VulkanTexture>(mesh_component->override_render_info->material->GetTextureByType(diffuse));
-        if (diffuse_tex)
-        {    // 准备纹理采样器描述符信息
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = diffuse_tex->m_imageView;
-            imageInfo.sampler = diffuse_tex->m_sampler;
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = frameInfo.globalDescriptorSet;
-            descriptorWrite.dstBinding = 1;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), 1, &descriptorWrite, 0, nullptr);
-        }
-        
-        // 绑定descriptor set
-        vkCmdBindDescriptorSets(
-            frameInfo.commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            m_pipelineLayout,
-            0, 1, &frameInfo.globalDescriptorSet, 0, nullptr);
-        mesh_component->Draw(frameInfo.commandBuffer);
+       
+        mesh_component->Draw(frameInfo, m_pipelineLayout);
     }
 }
 
-void SimpleVulkanRenderSystem::CreatePipelineLayout(VkDescriptorSetLayout globalSetLayout)
+void SimpleVulkanRenderSystem::CreateDescriptorSetLayout()
+{
+    int meshCount = 10 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+    int meshTexCount = 5;
+    m_descriptorPool = VulkanDescriptorPool::Builder()
+               .SetMaxSets(meshCount)  // 简单设置一个最大数量
+               .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
+               .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
+               .Build();
+    
+    auto basicLayout = VulkanDescriptorSetLayout::Builder()
+    // projection view, 有无贴图等数据
+    
+    .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+    .Build();
+    basicLayout->m_usage = VulkanDescriptorSetLayout::BasicData;
+    m_descriptorSetLayout.push_back(std::move(basicLayout));
+    
+    auto textureLayout = VulkanDescriptorSetLayout::Builder()
+    // image 贴图数据
+    .AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo
+    .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+    .Build();
+    textureLayout->m_usage = VulkanDescriptorSetLayout::Texture;
+    m_descriptorSetLayout.push_back(std::move(textureLayout));
+}
+
+void SimpleVulkanRenderSystem::CreatePipelineLayout()
 {
     VkPushConstantRange pushConstantRange = {};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -90,7 +135,11 @@ void SimpleVulkanRenderSystem::CreatePipelineLayout(VkDescriptorSetLayout global
     pushConstantRange.size = sizeof(SimplePushConstantData);
 
     // set按顺序存在vector中，set0,set1,set2 ...
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts{globalSetLayout};
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    for (auto& layout : m_descriptorSetLayout)
+    {
+        descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());
+    }
     
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

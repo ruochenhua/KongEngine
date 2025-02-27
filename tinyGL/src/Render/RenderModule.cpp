@@ -62,6 +62,11 @@ GLuint KongRenderModule::GetNullTexId()
 	return g_renderModule.null_tex_id;
 }
 
+KongTexture* KongRenderModule::GetNullTex()
+{
+	return g_renderModule.m_nullTex.lock().get();
+}
+
 vec2 KongRenderModule::GetNearFar()
 {
 	return g_renderModule.mainCamera->GetNearFar();
@@ -77,9 +82,9 @@ int KongRenderModule::Init()
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
 	
-
+	string null_tex_path = RESOURCE_PATH + "textures/pbr/rusted_iron/albedo.png";
 #ifdef RENDER_IN_VULKAN
-	
+	m_nullTex = ResourceManager::GetOrLoadTexture_new(null_tex_path);
 	
 #else
 	m_quadShape = make_shared<CQuadShape>();
@@ -97,7 +102,7 @@ int KongRenderModule::Init()
 #endif
 	
 	// load null texture
-	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
+	
 	null_tex_id = ResourceManager::GetOrLoadTexture(null_tex_path);
 
 	InitUBO();

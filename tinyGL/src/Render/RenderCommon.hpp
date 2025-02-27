@@ -69,6 +69,7 @@ namespace Kong
     public:
         RenderMaterialInfo() = default;
         virtual ~RenderMaterialInfo() = default;
+        virtual void Initialize() {}
         glm::vec4 albedo {0.2f};
         float specular_factor {1.0f};
         float metallic {0.5f};
@@ -77,9 +78,10 @@ namespace Kong
         std::string name;
 
         void BindTextureByType(ETextureType textureType, unsigned int location);
-        std::shared_ptr<KongTexture> GetTextureByType(ETextureType textureType);
+        KongTexture* GetTextureByType(ETextureType textureType);
 
-        std::map<ETextureType, std::shared_ptr<KongTexture>> textures;
+        virtual void AddMaterialByType(ETextureType textureType, std::weak_ptr<KongTexture> texture);
+        std::map<ETextureType, std::weak_ptr<KongTexture>> textures;
     };
 
     struct Vertex

@@ -27,12 +27,32 @@ GLuint ResourceManager::GetOrLoadTexture(const std::string& texture_path, bool f
     return g_resourceManager->GetTexture(texture_path, flip_uv);
 }
 
-shared_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path, bool filp_uv)
+weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path, bool filp_uv)
 {
 	return g_resourceManager->GetTexture_new(texture_path, filp_uv);
 }
 
-shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path, bool flip_uv)
+stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
+	stbi_uc* rgbaData = new stbi_uc[pixelCount*4];
+	
+	// 检查内存是否分配成功
+	assert(rgbaData != nullptr && "Failed to allocate memory for RGBA8 texture");
+
+	// 转换 RGB 到 RGBA
+	for (int i = 0; i < pixelCount; ++i) {
+		rgbaData[i * 4 + 0] = rgbData[i * 3 + 0]; // R
+		rgbaData[i * 4 + 1] = rgbData[i * 3 + 1]; // G
+		rgbaData[i * 4 + 2] = rgbData[i * 3 + 2]; // B
+		rgbaData[i * 4 + 3] = 255; // A (alpha 通道设为 255)
+	}
+
+	// 原始数据还可以在这里释放，如果不再使用
+	delete[] rgbData;
+
+	return rgbaData; // 返回新的 RGBA8 数据
+}
+
+weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path, bool flip_uv)
 {
 	if(texture_cache_new.find(texture_path) != texture_cache_new.end())
 	{
@@ -42,7 +62,7 @@ shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& textu
 	GLuint texture_id = 0;
 	if (texture_path.empty())
 	{
-		return nullptr;		
+		return weak_ptr<KongTexture>{};		
 	}
 	stbi_set_flip_vertically_on_load(flip_uv);
 	int width, height, nr_component;
@@ -51,14 +71,19 @@ shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& textu
 	
 	// todo: opengl和vulkan这里要做区分
 #ifdef RENDER_IN_VULKAN
-	// rgb8在GPU上的支持可能不够，先跳过这个类型
-	auto new_tex = make_shared<VulkanTexture>();
 	
-	if (nr_component != 3)
+	auto new_tex = make_shared<VulkanTexture>();
+
+	// rgb8在GPU上的支持可能不够，转换成rgba
+	if (nr_component == 3)
 	{
-		new_tex->CreateTexture(width, height, nr_component, data);
-		texture_cache_new.emplace(texture_path, new_tex);
+		data = ConvertRGB8ToRGBA8(data, width * height);
+		nr_component = 4;
 	}
+	
+	new_tex->CreateTexture(width, height, nr_component, data);
+	texture_cache_new.emplace(texture_path, new_tex);
+	
 #else
 	GLenum format = GL_BGR;
 	switch(nr_component)
@@ -83,7 +108,8 @@ shared_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& textu
 	
 	// release memory
 	stbi_image_free(data);
-	return new_tex;
+	
+	return texture_cache_new[texture_path];
 }
 
 void ResourceManager::Clean()
@@ -93,7 +119,10 @@ void ResourceManager::Clean()
 		return;
 	}
 
-	g_resourceManager->mesh_cache.clear();
+	// 释放资源
+	g_resourceManager->mesh_cache.clear();			
+	g_resourceManager->texture_cache.clear();
+	g_resourceManager->texture_cache_new.clear();	
 }
 
 GLuint ResourceManager::GetTexture(const std::string& texture_path, bool flip_uv)

@@ -6,6 +6,7 @@
 
 #include "glm/gtc/random.hpp"
 #include "Parser/ResourceManager.h"
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 
 using namespace Kong;
 using namespace glm;
@@ -67,7 +68,7 @@ void CMeshComponent::Draw(void* commandBuffer)
 				shader_data->UpdateRenderData(mesh->m_RenderInfo->material);
 			}
 		}
-		
+
 		render_vertex->Draw(commandBuffer);
 	}
 }
@@ -87,6 +88,111 @@ bool CMeshComponent::IsBlend()
 	return shader_data->bIsBlend;
 }
 
+#ifdef RENDER_IN_VULKAN
+void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout)
+{
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		auto& render_vertex = mesh->m_RenderInfo;
+
+		shared_ptr<VulkanMaterialInfo> vulkanMaterial;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
+		}
+		if (!vulkanMaterial)
+		{
+			continue;
+		}
+		
+		vkCmdBindDescriptorSets(
+		    frameInfo.commandBuffer,
+		    VK_PIPELINE_BIND_POINT_GRAPHICS,
+		    pipelineLayout,
+		    0, 1,
+		    &vulkanMaterial->m_discriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::BasicData]
+		    	, 0, nullptr);
+		
+		vkCmdBindDescriptorSets(
+			frameInfo.commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			1, 1,
+			&vulkanMaterial->m_discriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::Texture]
+				, 0, nullptr);
+		
+		render_vertex->Draw(frameInfo.commandBuffer);
+	}
+}
+
+void CMeshComponent::UpdateMeshUBO(const FrameInfo& frameInfo)
+{
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		shared_ptr<VulkanMaterialInfo> vulkanMaterial;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
+		}
+		 
+		if (!vulkanMaterial)
+		{
+			continue;
+		}
+
+		auto camera = KongRenderModule::GetRenderModule().GetCamera();
+		SimpleVulkanRenderSystem::SimpleVulkanUbo ubo{};
+		ubo.projectionView =camera->GetProjectionMatrix() * camera->GetViewMatrix();
+		ubo.cameraPosition = vec4(camera->GetPosition(), 1.0);
+		ubo.use_texture = vulkanMaterial->GetTextureByType(diffuse) ? 1 : 0;
+      
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->Flush();
+	}
+}
+
+void CMeshComponent::CreateMeshDescriptorSet(const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout, VulkanDescriptorPool* descriptorPool)
+{
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		VulkanMaterialInfo* vulkanMaterial = nullptr;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material).get();
+			if (!vulkanMaterial)
+			{
+				continue;
+			}
+			for (auto& layout : descriptorSetLayout)
+			{
+				vulkanMaterial->CreateDescriptorSet(layout.get(), descriptorPool);	
+			}
+			break;
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material).get();
+			if (!vulkanMaterial)
+			{
+				continue;
+			}
+			for (auto& layout : descriptorSetLayout)
+			{
+				vulkanMaterial->CreateDescriptorSet(layout.get(), descriptorPool);	
+			}
+		}
+	}
+	
+}
+#endif
 
 int CMeshComponent::ImportObj(const std::string& model_path)
 {

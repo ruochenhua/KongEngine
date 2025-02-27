@@ -78,7 +78,6 @@ void VulkanBuffer::Unmap()
         vkUnmapMemory(device, m_memory);
         m_mapped = nullptr;
     }
-    
 }
 
 // 写入buffer
@@ -199,42 +198,4 @@ VkDeviceSize VulkanBuffer::GetAlignment(VkDeviceSize size, VkDeviceSize minOffse
     return size;
 }
 
-VulkanRenderInfo::VulkanRenderInfo()
-{
-    material = std::make_shared<RenderMaterialInfo>();
-}
-
-void VulkanRenderInfo::Draw(void* commandBuffer)
-{
-    auto cb = static_cast<VkCommandBuffer>(commandBuffer);
-
-    if (!vertex_buffer->IsValid())
-    {
-        return;
-    }
-    
-    vertex_buffer->Bind(commandBuffer);
-    if (index_buffer && index_buffer->IsValid())
-    {
-        index_buffer->Bind(commandBuffer);
-        
-        vkCmdDrawIndexed(cb, static_cast<uint32_t>(m_Index.size()), 1, 0, 0, 0);
-    }
-    else
-    {
-        vkCmdDraw(cb, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-    }
-}
-
-void VulkanRenderInfo::InitRenderInfo()
-{
-    vertex_buffer = make_unique<VulkanBuffer>();
-    vertex_buffer->Initialize(VERTEX_BUFFER, sizeof(Vertex), vertices.size(), &vertices[0]);
-    
-    if(!m_Index.empty())
-    {
-        index_buffer = make_unique<VulkanBuffer>();
-        index_buffer->Initialize(INDEX_BUFFER, sizeof(unsigned int), m_Index.size(), &m_Index[0]);
-    }
-}
 #endif

@@ -3,9 +3,7 @@
 #include <memory>
 
 #include "RenderModule.hpp"
-#include "GraphicsAPI/GraphicsDevice.hpp"
-#include "GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
-#include "GraphicsAPI/Vulkan/VulkanBuffer.hpp"
+#include "GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 
 using namespace Kong;
 
@@ -23,14 +21,23 @@ void RenderMaterialInfo::BindTextureByType(ETextureType textureType, unsigned in
     }
 }
 
-std::shared_ptr<KongTexture> RenderMaterialInfo::GetTextureByType(ETextureType textureType)
+KongTexture* RenderMaterialInfo::GetTextureByType(ETextureType textureType)
 {
-    if (textures.find(textureType) != textures.end() && textures[textureType]->IsValid())
+    if (textures.find(textureType) != textures.end())
     {
-        return textures[textureType];
+        auto texture_ptr = textures[textureType].lock().get();
+        if (texture_ptr && texture_ptr->IsValid())
+        {
+            return texture_ptr;
+        }
     }
     
     return nullptr;
+}
+
+void RenderMaterialInfo::AddMaterialByType(ETextureType textureType, std::weak_ptr<KongTexture> texture)
+{
+    textures.emplace(textureType, texture);
 }
 
 CMesh::CMesh()

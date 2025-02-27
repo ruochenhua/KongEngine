@@ -51,13 +51,5 @@ namespace Kong
         VkMemoryPropertyFlags m_memoryPropertyFlags = 0;
     };
 
-    class VulkanRenderInfo : public RenderInfo
-    {
-    public:
-        VulkanRenderInfo();
-        
-        void Draw(void* commandBuffer) override;
-        void InitRenderInfo() override;
-    };
 }
 #endif

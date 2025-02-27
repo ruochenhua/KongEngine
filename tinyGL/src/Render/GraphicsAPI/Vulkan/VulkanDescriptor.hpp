@@ -9,6 +9,13 @@ namespace Kong
     class VulkanDescriptorSetLayout
     {
     public:
+        enum DescriptorSetLayoutUsageType
+        {
+            BasicData = 0,
+            Texture,
+            None,
+        };
+        
         class Builder
         {
         public:
@@ -33,6 +40,8 @@ namespace Kong
         VulkanDescriptorSetLayout& operator=(const VulkanDescriptorSetLayout&) = delete;
 
         VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_descriptorSetLayout; }
+
+        DescriptorSetLayoutUsageType m_usage {None};
 
     private:
         std::shared_ptr<VulkanGraphicsDevice> m_deviceRef;
