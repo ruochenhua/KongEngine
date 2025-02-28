@@ -20,12 +20,7 @@ KongApp::KongApp()
     , m_SceneManager{KongSceneManager::GetSceneManager()}
 {
 #ifdef RENDER_IN_VULKAN
-    m_globalPool = VulkanDescriptorPool::Builder()
-                    .SetMaxSets(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
-                    .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
-                    .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VulkanSwapChain::MAX_FRAMES_IN_FLIGHT)
-                    .Build();
-    
+   
 #else
     m_UIManager.Init(m_Window.GetWindow());
 #endif
@@ -71,11 +66,9 @@ void KongApp::Run()
 #ifdef RENDER_IN_VULKAN
         {
             m_SceneManager.PreRenderUpdate(delta);
-            m_RenderModule.Update(delta);
-
-            
             
             m_renderer.BeginFrame();
+            m_RenderModule.Update(delta);
             if (auto commandBuffer = m_renderer.GetCurrentCommandBuffer())
             {
                 int frameIndex = m_renderer.GetFrameIndex();

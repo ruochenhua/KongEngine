@@ -27,7 +27,7 @@ namespace Kong
         void Initialize() override;
         
         std::vector<std::map<VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType, VkDescriptorSet>> m_discriptorSets;
-        std::vector<std::unique_ptr<VulkanBuffer>> m_uboBuffers;    // todo: ubo应该是全场景公用的吧
+        // std::vector<std::unique_ptr<VulkanBuffer>> m_uboBuffers;    // todo: ubo应该是全场景公用的吧
 
         void CreateDescriptorSet(VulkanDescriptorSetLayout* descriptorSetLayout, VulkanDescriptorPool* descriptorPool);
     private:

@@ -82,10 +82,21 @@ namespace Kong
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
 #endif
+
 	
 	class KongRenderModule
 	{
 	public:
+		struct GlobalVulkanUbo
+		{
+			glm::mat4 projectionView {1.f};
+			glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, -3.f, -1.0f, 0.0});
+			glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
+
+			// SceneLightInfo sceneLightInfo;
+            
+		};
+		
 		static KongRenderModule& GetRenderModule();
 		static GLuint GetNullTexId();
 		static KongTexture* GetNullTex();
@@ -119,6 +130,15 @@ namespace Kong
 
 		KongRenderSystem* GetRenderSystemByType(RenderSystemType type);
 
+#ifdef RENDER_IN_VULKAN
+		
+		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool{};
+		// vulkan的ubo相关，也是用于保存场景的基础信息
+		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorLayout;
+		std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
+		std::vector<VkDescriptorSet> m_descriptorSets;
+		
+#endif
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 */
 		UBOHelper matrix_ubo;

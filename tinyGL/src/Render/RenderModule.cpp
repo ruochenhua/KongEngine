@@ -20,6 +20,7 @@
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
+#include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 
 using namespace Kong;
 using namespace glm;
@@ -82,10 +83,18 @@ int KongRenderModule::Init()
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
 	
-	string null_tex_path = RESOURCE_PATH + "textures/pbr/rusted_iron/albedo.png";
+	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 #ifdef RENDER_IN_VULKAN
 	m_nullTex = ResourceManager::GetOrLoadTexture_new(null_tex_path);
 	
+	// 创建描述符集池子
+	int meshCount = 10 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+	int meshTexCount = 5;
+	m_descriptorPool = VulkanDescriptorPool::Builder()
+			   .SetMaxSets(meshCount)  // 简单设置一个最大数量
+			   .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
+			   .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
+			   .Build();
 #else
 	m_quadShape = make_shared<CQuadShape>();
 	InitMainFBO();
@@ -105,7 +114,6 @@ int KongRenderModule::Init()
 	
 	null_tex_id = ResourceManager::GetOrLoadTexture(null_tex_path);
 
-	InitUBO();
 	
 	// add render system
 	m_skyboxRenderSystem.Init();
@@ -114,6 +122,9 @@ int KongRenderModule::Init()
 	m_ssReflectionRenderSystem.Init();
 	m_waterRenderSystem.Init();
 #endif
+
+	
+	InitUBO();
 	return 0;
 }
 
@@ -234,6 +245,31 @@ void KongRenderModule::UpdateSceneRenderInfo()
 void KongRenderModule::InitUBO()
 {
 	// 初始化UBO数据
+#ifdef RENDER_IN_VULKAN
+	// set 0
+	m_descriptorLayout = VulkanDescriptorSetLayout::Builder()
+	.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+	.Build();
+
+	m_descriptorLayout->m_usage = VulkanDescriptorSetLayout::GlobalData;
+
+	// create ubo buffer
+	m_uniformBuffers.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+	m_descriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+	for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		m_uniformBuffers[i] = std::make_unique<VulkanBuffer>();
+		m_uniformBuffers[i]->Initialize(UNIFORM_BUFFER, sizeof(KongRenderModule::GlobalVulkanUbo), 1);
+		m_uniformBuffers[i]->Map();
+
+		auto bufferInfo = m_uniformBuffers[i]->DescriptorInfo();
+		VulkanDescriptorWriter(*m_descriptorLayout, *m_descriptorPool)
+		.WriteBuffer(0, &bufferInfo)
+		.Build(m_descriptorSets[i]);
+	}
+	// create descriptor sets
+	
+#else
 //	matrix_ubo.AppendData(glm::mat4(), "model");
 	matrix_ubo.AppendData(glm::mat4(), "view");
 	matrix_ubo.AppendData(glm::mat4(), "projection");
@@ -247,6 +283,7 @@ void KongRenderModule::InitUBO()
 	// 更新远近平面数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
+#endif
 }
 
 void KongRenderModule::InitMainFBO()
@@ -296,6 +333,17 @@ int KongRenderModule::Update(double delta)
 {
 	mainCamera->Update(delta);
 #ifdef RENDER_IN_VULKAN
+	KongRenderModule::GlobalVulkanUbo ubo{};
+	ubo.projectionView = mainCamera->GetProjectionMatrix() * mainCamera->GetViewMatrix();
+	ubo.cameraPosition = vec4(mainCamera->GetPosition(), 1.0f);
+
+	// todo: frameIndex
+	for (int i = 0; i < m_uniformBuffers.size(); ++i)
+	{
+		m_uniformBuffers[i]->WriteToBuffer(&ubo);
+		m_uniformBuffers[i]->Flush();
+	}
+	
 #else
 	render_time += delta;
 	// 更新场景信息

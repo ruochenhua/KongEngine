@@ -28,7 +28,6 @@ namespace Kong
         KongSceneManager& m_SceneManager;
 
 #ifdef RENDER_IN_VULKAN
-        std::unique_ptr<VulkanDescriptorPool> m_globalPool{};
         VulkanRenderer m_renderer;
 #endif
     };

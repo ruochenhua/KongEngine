@@ -66,7 +66,8 @@ void SimpleVulkanRenderSystem::CreateMeshDescriptorSet()
             continue;
         }
 
-        mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout, m_descriptorPool.get());
+        mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout,
+            KongRenderModule::GetRenderModule().m_descriptorPool.get());
     }
 }
 
@@ -97,29 +98,13 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
         vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(SimplePushConstantData), &push);
-       
+        
         mesh_component->Draw(frameInfo, m_pipelineLayout);
     }
 }
 
 void SimpleVulkanRenderSystem::CreateDescriptorSetLayout()
 {
-    int meshCount = 10 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
-    int meshTexCount = 5;
-    m_descriptorPool = VulkanDescriptorPool::Builder()
-               .SetMaxSets(meshCount)  // 简单设置一个最大数量
-               .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
-               .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
-               .Build();
-    
-    auto basicLayout = VulkanDescriptorSetLayout::Builder()
-    // projection view, 有无贴图等数据
-    
-    .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-    .Build();
-    basicLayout->m_usage = VulkanDescriptorSetLayout::BasicData;
-    m_descriptorSetLayout.push_back(std::move(basicLayout));
-    
     auto textureLayout = VulkanDescriptorSetLayout::Builder()
     // image 贴图数据
     .AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo
@@ -141,6 +126,8 @@ void SimpleVulkanRenderSystem::CreatePipelineLayout()
 
     // set按顺序存在vector中，set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    // 先放全局的descriptor set layout
+    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)
     {
         descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());

@@ -6,12 +6,15 @@
 #ifdef RENDER_IN_VULKAN
 namespace Kong
 {
+    class VulkanDescriptorPool;
+
     class VulkanDescriptorSetLayout
     {
     public:
         enum DescriptorSetLayoutUsageType
         {
-            BasicData = 0,
+            GlobalData = 0, //全局参数，如相机位置，变换矩阵等等
+            BasicData,
             Texture,
             None,
         };
@@ -32,7 +35,7 @@ namespace Kong
         private:
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> m_bindings{};
         };
-
+        
         VulkanDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
         ~VulkanDescriptorSetLayout();
         
