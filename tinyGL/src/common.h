@@ -9,6 +9,9 @@
 #include <sstream>
 
 #include "GLFW/glfw3.h"
+#ifdef RENDER_IN_VULKAN
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE 
+#endif
 #include "GLM/glm.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
 using namespace std;

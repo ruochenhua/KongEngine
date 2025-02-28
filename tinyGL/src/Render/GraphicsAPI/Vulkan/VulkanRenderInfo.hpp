@@ -33,8 +33,7 @@ namespace Kong
     private:
         void CreateDescriptorBuffer();
 
-        VkDescriptorImageInfo m_diffuseImageInfo{};
-        VkDescriptorImageInfo m_normalImageInfo{};
+        std::map<ETextureType, VkDescriptorImageInfo> m_imageInfoCache;
     };
 }
 

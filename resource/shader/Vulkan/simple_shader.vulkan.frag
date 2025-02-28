@@ -9,24 +9,40 @@ layout(location=0) out vec4 outColor;
 
 layout(push_constant) uniform Push{
     mat4 modelMatrix;
-    mat4 normalMatrix;
+    int use_texture;
 } push;
 
 layout(set=0, binding=0) uniform GlobalUbo {
     mat4 projectionView;
     vec4 directionToLight;
     vec4 cameraPosition;
-    int use_texture;
 } ubo;
 
 layout(set=1, binding=0) uniform sampler2D diffuse_texture;
 layout(set=1, binding=1) uniform sampler2D normal_texture;
+layout(set=1, binding=2) uniform sampler2D roughness_texture;
+layout(set=1, binding=3) uniform sampler2D metallic_texture;
+layout(set=1, binding=4) uniform sampler2D ambient_texture;
+
 float PI = 3.1415926;
+
+vec4 GetAlbedo()
+{
+    float texture_size = textureSize(diffuse_texture, 0).x;
+    if(texture_size > 2.0)
+    {
+        vec4 texture_albedo = texture(diffuse_texture, fragUV);
+        // sRGB空间转换到线性空间
+        return pow(texture_albedo, vec4(2.2));
+    }
+
+    return vec4(0.2, 0.3, 0.5, 1.0);
+}
 
 vec3 GetNormal()
 {
     float texture_size = textureSize(normal_texture, 0).x;
-    if(texture_size > 1.0)
+    if(texture_size > 2.0)
     {
         vec3 texture_normal = texture(normal_texture, fragUV).rgb;
         // 从[0,1]映射到[-1,1]
@@ -37,6 +53,39 @@ vec3 GetNormal()
     return fragNormal;
 }
 
+
+float GetRoughness()
+{
+    float texture_size = textureSize(roughness_texture, 0).x;
+    if(texture_size > 2.0)
+    {
+        return texture(roughness_texture, fragUV).r;
+    }
+
+    return 0.0;
+}
+
+float GetMetallic()
+{
+    float texture_size = textureSize(metallic_texture, 0).x;
+    if(texture_size > 2.0)
+    {
+        return texture(metallic_texture, fragUV).r;
+    }
+
+    return 0.0;
+}
+
+float GetAO()
+{
+    float texture_size = textureSize(ambient_texture, 0).x;
+    if(texture_size > 2.0)
+    {
+        return texture(ambient_texture, fragUV).r;
+    }
+
+    return 0.1;
+}
 
 // 菲涅尔方程F
 // Fresnel-Schlick近似法接收一个参数F0，被称为0°入射角的反射率，或者说是直接(垂直)观察表面时有多少光线会被反射。
@@ -99,20 +148,12 @@ void main()
     vec3 toLightDir = ubo.directionToLight.xyz;
 
     vec3 lightColor = vec3(0.1);
-    vec3 albedoColor = vec3(0);
+    vec3 albedoColor = GetAlbedo().xyz;
 
-    if(ubo.use_texture > 0)
-    {
-        vec4 texColor = texture(diffuse_texture, fragUV);
-        albedoColor = texColor.xyz;
-    }
-    else
-    {
-        albedoColor = vec3(0.3, 0.3, 0.3);
-    }
-    float metallic = 0.3;
+
+    float metallic = GetMetallic();
     float specularScalar = 0.1;
-    float roughness = 0.4;
+    float roughness = GetRoughness();
 
     // 简单计算一下光照（BRDF）
     vec3 h = normalize(toLightDir + view);
@@ -139,5 +180,6 @@ void main()
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     //return material.specular_factor;
-    outColor = vec4((KD*albedoColor / PI + specular)*radiance*NdotL, 1.0);
+    vec3 ambient = albedoColor * 0.1;
+    outColor = vec4(ambient + (KD*albedoColor / PI + specular)*radiance*NdotL, 1.0);
 }

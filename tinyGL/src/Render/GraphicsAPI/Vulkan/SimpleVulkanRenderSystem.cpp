@@ -12,6 +12,7 @@ using namespace Kong;
 struct SimplePushConstantData
 {
     glm::mat4 modelMatrix{1.0f};
+    int use_texture {0};
 };
 
 SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VkRenderPass renderPass)
@@ -91,6 +92,7 @@ void SimpleVulkanRenderSystem::RenderGameObjects(const FrameInfo& frameInfo)
         
         SimplePushConstantData push{};
         push.modelMatrix = actor->GetModelMatrix();
+        push.use_texture = 0;
 
         vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -121,7 +123,10 @@ void SimpleVulkanRenderSystem::CreateDescriptorSetLayout()
     auto textureLayout = VulkanDescriptorSetLayout::Builder()
     // image 贴图数据
     .AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo
-    .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+    .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // normal
+    .AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // roughness
+    .AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // metallic
+    .AddBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // ambient_occlusion
     .Build();
     textureLayout->m_usage = VulkanDescriptorSetLayout::Texture;
     m_descriptorSetLayout.push_back(std::move(textureLayout));

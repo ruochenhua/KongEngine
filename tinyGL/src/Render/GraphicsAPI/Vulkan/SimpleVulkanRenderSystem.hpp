@@ -25,9 +25,11 @@ namespace Kong
         struct SimpleVulkanUbo
         {
             glm::mat4 projectionView {1.f};
-            alignas(16) glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, -3.f, -1.0f, 0.0});
-            alignas(16) glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
-            int use_texture {0};
+            glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, -3.f, -1.0f, 0.0});
+            glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
+
+            // SceneLightInfo sceneLightInfo;
+            
         };
         
         SimpleVulkanRenderSystem(VkRenderPass renderPass);

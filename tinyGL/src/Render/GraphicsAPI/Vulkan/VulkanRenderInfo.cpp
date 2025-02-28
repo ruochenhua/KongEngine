@@ -55,14 +55,11 @@ VulkanMaterialInfo::VulkanMaterialInfo()
     CreateDescriptorBuffer();
     
     auto nullTex = dynamic_cast<VulkanTexture*>(KongRenderModule::GetNullTex());
-    // 默认让它指向null_tex
-    m_diffuseImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    m_diffuseImageInfo.imageView = nullTex->m_imageView;
-    m_diffuseImageInfo.sampler = nullTex->m_sampler;
-
-    m_normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    m_normalImageInfo.imageView = nullTex->m_imageView;
-    m_normalImageInfo.sampler = nullTex->m_sampler;
+    m_imageInfoCache.emplace(ETextureType::diffuse, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    m_imageInfoCache.emplace(ETextureType::normal, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    m_imageInfoCache.emplace(ETextureType::roughness, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    m_imageInfoCache.emplace(ETextureType::metallic, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    m_imageInfoCache.emplace(ETextureType::ambient_occlusion, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
 }
 
 VulkanMaterialInfo::~VulkanMaterialInfo()
@@ -75,16 +72,10 @@ void VulkanMaterialInfo::AddMaterialByType(ETextureType textureType, std::weak_p
     RenderMaterialInfo::AddMaterialByType(textureType, texture);
     auto vulkanTexture = dynamic_cast<VulkanTexture*>(texture.lock().get());
     // 还需要创建对应的ImageInfo，在create descriptor set可以直接用到
-    
-    if (textureType == diffuse && vulkanTexture->m_imageView)
+    if (vulkanTexture->m_imageView != VK_NULL_HANDLE && m_imageInfoCache.find(textureType) != m_imageInfoCache.end())
     {
-        m_diffuseImageInfo.imageView = vulkanTexture->m_imageView;
-        m_diffuseImageInfo.sampler = vulkanTexture->m_sampler;
-    }
-    else if (textureType == normal && vulkanTexture->m_imageView)
-    {
-        m_normalImageInfo.imageView = vulkanTexture->m_imageView;
-        m_normalImageInfo.sampler = vulkanTexture->m_sampler;
+        m_imageInfoCache[textureType].imageView = vulkanTexture->m_imageView;
+        m_imageInfoCache[textureType].sampler = vulkanTexture->m_sampler;
     }
 }
 
@@ -125,8 +116,11 @@ void VulkanMaterialInfo::CreateDescriptorSet(VulkanDescriptorSetLayout* descript
             {
                 VkDescriptorSet newSet;
                 VulkanDescriptorWriter(*descriptorSetLayout, *descriptorPool)
-                .WriteImage(0, &m_diffuseImageInfo)
-                .WriteImage(1, &m_normalImageInfo)
+                .WriteImage(0, &m_imageInfoCache[ETextureType::diffuse])
+                .WriteImage(1, &m_imageInfoCache[ETextureType::normal])
+                .WriteImage(2, &m_imageInfoCache[ETextureType::roughness])
+                .WriteImage(3, &m_imageInfoCache[ETextureType::metallic])
+                .WriteImage(4, &m_imageInfoCache[ETextureType::ambient_occlusion])
                 .Build(newSet);
                 m_discriptorSets[i].emplace(VulkanDescriptorSetLayout::Texture, newSet);
             }

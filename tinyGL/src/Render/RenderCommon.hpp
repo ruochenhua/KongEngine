@@ -179,6 +179,7 @@ namespace Kong
     constexpr unsigned POINT_LIGHT_SHADOW_MAX = 4;
     struct SceneLightInfo
     {
+        // todo: has_dir_light和point light count试着用int
         glm::ivec4 has_dir_light = glm::ivec4(0);
         DirectionalLight directional_light;
         glm::ivec4 point_light_count = glm::ivec4(0);

@@ -14,7 +14,15 @@ using namespace std;
 
 mat4 CCamera::GetProjectionMatrix() const
 {
+#ifdef RENDER_IN_VULKAN
+	// vulkan的perspective是y轴向下，和directx和metal类似
+	mat4 projMat = perspectiveZO(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
+	projMat[1][1] *= -1;
+	return projMat;
+#else
+	// opengl则是y轴向上
 	return perspective(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
+#endif
 }
 
 mat4 CCamera::GetViewMatrix() const

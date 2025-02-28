@@ -92,7 +92,7 @@ void VulkanRenderer::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
 
     std::array<VkClearValue, 2> clearValues = {};
     // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth，所以只需要设置对应的颜色和depthStencil的clear值
-    clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
+    clearValues[0].color = { 0.f, 0.f, 0.f, 1.0f };
     clearValues[1].depthStencil = { 1.0f, 0 };
     
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());

@@ -152,7 +152,7 @@ void CMeshComponent::UpdateMeshUBO(const FrameInfo& frameInfo)
 		SimpleVulkanRenderSystem::SimpleVulkanUbo ubo{};
 		ubo.projectionView =camera->GetProjectionMatrix() * camera->GetViewMatrix();
 		ubo.cameraPosition = vec4(camera->GetPosition(), 1.0);
-		ubo.use_texture = vulkanMaterial->GetTextureByType(diffuse) ? 1 : 0;
+		// ubo.use_texture = vulkanMaterial->GetTextureByType(diffuse) ? 1 : 0;
       
 		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
 		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->Flush();

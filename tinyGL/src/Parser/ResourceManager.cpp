@@ -27,9 +27,9 @@ GLuint ResourceManager::GetOrLoadTexture(const std::string& texture_path, bool f
     return g_resourceManager->GetTexture(texture_path, flip_uv);
 }
 
-weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path, bool filp_uv)
+weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path)
 {
-	return g_resourceManager->GetTexture_new(texture_path, filp_uv);
+	return g_resourceManager->GetTexture_new(texture_path);
 }
 
 stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
@@ -52,7 +52,7 @@ stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
 	return rgbaData; // 返回新的 RGBA8 数据
 }
 
-weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path, bool flip_uv)
+weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path)
 {
 	if(texture_cache_new.find(texture_path) != texture_cache_new.end())
 	{
@@ -64,14 +64,20 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture
 	{
 		return weak_ptr<KongTexture>{};		
 	}
+
+	// opengl和vulkan是反过来的，所以一个要flip一个不需要
+#ifdef RENDER_IN_VULKAN
+	bool flip_uv = false;	
+#else
+	bool flip_uv = true;	
+#endif
+	
 	stbi_set_flip_vertically_on_load(flip_uv);
 	int width, height, nr_component;
 	auto data = stbi_load(texture_path.c_str(), &width, &height, &nr_component, 0);
 	assert(data, "load texture failed");
-	
-	// todo: opengl和vulkan这里要做区分
+
 #ifdef RENDER_IN_VULKAN
-	
 	auto new_tex = make_shared<VulkanTexture>();
 
 	// rgb8在GPU上的支持可能不够，转换成rgba
@@ -108,7 +114,6 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture
 	
 	// release memory
 	stbi_image_free(data);
-	
 	return texture_cache_new[texture_path];
 }
 

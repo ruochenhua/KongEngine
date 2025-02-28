@@ -1,4 +1,8 @@
-#version 450 
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+#include "common.glsl"
 
 layout(location=0) in vec3 position;
 layout(location=1) in vec3 normal;
@@ -13,6 +17,7 @@ layout(location=3) out mat3 TBN;
 
 layout(push_constant) uniform Push{
     mat4 modelMatrix;
+    int use_texture;
 } push;
 
 // descriptor set
@@ -20,7 +25,6 @@ layout(set=0, binding=0) uniform GlobalUbo {
     mat4 projectionView;
     vec4 directionToLight;
     vec4 cameraPositon;
-    int use_texture;
 } ubo;
 
 const float AMBIENT = 0.02;
