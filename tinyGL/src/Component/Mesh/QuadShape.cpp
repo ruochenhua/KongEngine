@@ -36,23 +36,16 @@ void CQuadShape::Draw(void* commandBuffer)
 void CQuadShape::InitRenderInfo()
 {
     // 屏幕mesh
-    // float quadVertices[] = {
-    //     // positions         // normals         // texture Coords
-    //     -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-    //     -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-    //      1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-    //      1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-    // };
-
     std::vector<Vertex> quadVertexArray = {
         {{-1,1, 0}, {0.0, 0.0, 1.0}, {0.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
         {{-1,-1, 0}, {0.0, 0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
         {{1,1, 0}, {0.0, 0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
-        {{1,-1, 0}, {0.0, 0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}}
+        {{1,-1, 0}, {0.0, 0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{1,1, 0}, {0.0, 0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{-1,-1, 0}, {0.0, 0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
     };
     
     mesh_resource = make_shared<MeshResource>();
-    // mesh_resource->mesh_list.push_back(CMesh());
     auto quadMesh = make_shared<CMesh>();
     
 #ifndef RENDER_IN_VULKAN
@@ -73,6 +66,7 @@ void CQuadShape::InitRenderInfo()
 #endif
     
     quadMesh->m_RenderInfo->vertex_buffer = std::move(vertex_buffer);
+    quadMesh->m_RenderInfo->vertices = quadVertexArray;
     mesh_resource->mesh_list.push_back(quadMesh);
 }
 

@@ -68,7 +68,7 @@ void VulkanPipeline::Bind(const VkCommandBuffer& commandBuffer)
 void VulkanPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo)
 {
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;    // 设定为triangle list
+    configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;    // 设定为triangle list，triangle strip也在这里设置
     configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
     configInfo.inputAssemblyInfo.pNext = nullptr;
     configInfo.inputAssemblyInfo.flags = 0;

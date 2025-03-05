@@ -4,6 +4,7 @@
 
 #include "Actor.hpp"
 #include "Parser/YamlParser.h"
+#include "Render/RenderModule.hpp"
 
 using namespace Kong;
 KongSceneManager g_SceneManager;
@@ -90,4 +91,9 @@ void KongSceneManager::LoadScene(const string& file_path)
     {
         actor->BeginPlay();
     }
+
+#ifdef RENDER_IN_VULKAN
+    // todo: 放其他地方
+    KongRenderModule::GetRenderModule().m_simpleRenderSystem->CreateMeshDescriptorSet();
+#endif
 }

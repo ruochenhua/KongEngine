@@ -3,8 +3,6 @@
 #include "Scene.hpp"
 #include "ui.h"
 #include "Window.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanDescriptor.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanRenderer.hpp"
 
 namespace Kong
 {
@@ -26,9 +24,6 @@ namespace Kong
 #endif
         KongRenderModule& m_RenderModule;
         KongSceneManager& m_SceneManager;
-
-#ifdef RENDER_IN_VULKAN
-        VulkanRenderer m_renderer;
-#endif
+        
     };
 }

@@ -18,11 +18,20 @@ layout(set=0, binding=0) uniform GlobalUbo {
     vec4 cameraPosition;
 } ubo;
 
-layout(set=1, binding=0) uniform sampler2D diffuse_texture;
-layout(set=1, binding=1) uniform sampler2D normal_texture;
-layout(set=1, binding=2) uniform sampler2D roughness_texture;
-layout(set=1, binding=3) uniform sampler2D metallic_texture;
-layout(set=1, binding=4) uniform sampler2D ambient_texture;
+layout(set=1, binding=0) uniform BaiscMaterial{
+    vec4 albedo;
+    float specular_factor;
+    float metallic;
+    float roughness;
+    float ambient;
+}material;
+
+layout(set=2, binding=0) uniform sampler2D diffuse_texture;
+layout(set=2, binding=1) uniform sampler2D normal_texture;
+layout(set=2, binding=2) uniform sampler2D roughness_texture;
+layout(set=2, binding=3) uniform sampler2D metallic_texture;
+layout(set=2, binding=4) uniform sampler2D ambient_texture;
+
 
 float PI = 3.1415926;
 
@@ -36,7 +45,7 @@ vec4 GetAlbedo()
         return pow(texture_albedo, vec4(2.2));
     }
 
-    return vec4(0.2, 0.3, 0.5, 1.0);
+    return material.albedo;
 }
 
 vec3 GetNormal()
@@ -62,7 +71,7 @@ float GetRoughness()
         return texture(roughness_texture, fragUV).r;
     }
 
-    return 0.0;
+    return material.roughness;
 }
 
 float GetMetallic()
@@ -73,7 +82,7 @@ float GetMetallic()
         return texture(metallic_texture, fragUV).r;
     }
 
-    return 0.0;
+    return material.metallic;
 }
 
 float GetAO()
@@ -84,7 +93,7 @@ float GetAO()
         return texture(ambient_texture, fragUV).r;
     }
 
-    return 0.1;
+    return material.ambient;
 }
 
 // 菲涅尔方程F
@@ -147,7 +156,7 @@ void main()
     vec3 objNormal = GetNormal();
     vec3 toLightDir = ubo.directionToLight.xyz;
 
-    vec3 lightColor = vec3(0.1);
+    vec3 lightColor = vec3(0.3);
     vec3 albedoColor = GetAlbedo().xyz;
 
 
@@ -182,4 +191,5 @@ void main()
     //return material.specular_factor;
     vec3 ambient = albedoColor * 0.1;
     outColor = vec4(ambient + (KD*albedoColor / PI + specular)*radiance*NdotL, 1.0);
+//    outColor = vec4(objNormal, 1.0);
 }

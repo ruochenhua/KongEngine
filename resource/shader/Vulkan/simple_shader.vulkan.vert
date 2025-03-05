@@ -27,8 +27,6 @@ layout(set=0, binding=0) uniform GlobalUbo {
     vec4 cameraPositon;
 } ubo;
 
-const float AMBIENT = 0.02;
-
 void main()
 {
     mat4 model = push.modelMatrix;

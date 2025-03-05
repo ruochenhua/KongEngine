@@ -14,8 +14,10 @@ namespace Kong
         enum DescriptorSetLayoutUsageType
         {
             GlobalData = 0, //全局参数，如相机位置，变换矩阵等等
-            BasicData,
+            BasicMaterial,
             Texture,
+            PostProcessTexture,
+            PostProcessData,
             None,
         };
         

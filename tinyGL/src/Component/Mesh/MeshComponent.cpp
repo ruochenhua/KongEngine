@@ -117,13 +117,21 @@ void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pi
 		    0, 1,
 		    &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
 		    	, 0, nullptr);
-		
+
 		vkCmdBindDescriptorSets(
 			frameInfo.commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			pipelineLayout,
 			1, 1,
-			&vulkanMaterial->m_discriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::Texture]
+			&vulkanMaterial->m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::BasicMaterial]
+				, 0, nullptr);
+		
+		vkCmdBindDescriptorSets(
+			frameInfo.commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			2, 1,
+			&vulkanMaterial->m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::Texture]
 				, 0, nullptr);
 		
 		render_vertex->Draw(frameInfo.commandBuffer);
@@ -132,32 +140,34 @@ void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pi
 
 void CMeshComponent::UpdateMeshUBO(const FrameInfo& frameInfo)
 {
-	// for(auto& mesh : mesh_resource->mesh_list)
-	// {
-	// 	shared_ptr<VulkanMaterialInfo> vulkanMaterial;
-	// 	if (use_override_material)
-	// 	{
-	// 		vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
-	// 	}
-	// 	else
-	// 	{
-	// 		vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
-	// 	}
-	// 	 
-	// 	if (!vulkanMaterial)
-	// 	{
-	// 		continue;
-	// 	}
-	//
-	// 	auto camera = KongRenderModule::GetRenderModule().GetCamera();
-	// 	SimpleVulkanRenderSystem::SimpleVulkanUbo ubo{};
-	// 	ubo.projectionView =camera->GetProjectionMatrix() * camera->GetViewMatrix();
-	// 	ubo.cameraPosition = vec4(camera->GetPosition(), 1.0);
-	// 	// ubo.use_texture = vulkanMaterial->GetTextureByType(diffuse) ? 1 : 0;
- //      
-	// 	vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
-	// 	vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->Flush();
-	// }
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		shared_ptr<VulkanMaterialInfo> vulkanMaterial;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
+		}
+		 
+		if (!vulkanMaterial)
+		{
+			continue;
+		}
+	
+		auto camera = KongRenderModule::GetRenderModule().GetCamera();
+		BasicMaterialUbo ubo{};
+		ubo.albedo = vulkanMaterial->albedo;
+		ubo.specular_factor = vulkanMaterial->specular_factor;
+		ubo.metallic = vulkanMaterial->metallic;
+		ubo.roughness = vulkanMaterial->roughness;
+		ubo.ambient = vulkanMaterial->ao;
+		
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->Flush();
+	}
 }
 
 void CMeshComponent::CreateMeshDescriptorSet(const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout, VulkanDescriptorPool* descriptorPool)

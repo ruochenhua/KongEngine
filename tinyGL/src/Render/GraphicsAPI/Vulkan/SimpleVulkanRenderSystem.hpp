@@ -7,6 +7,11 @@
 
 namespace Kong
 {
+    class VulkanSwapChain;
+}
+
+namespace Kong
+{
     class VulkanDescriptorPool;
     class VulkanBuffer;
     class VulkanDescriptorSetLayout;
@@ -21,7 +26,7 @@ namespace Kong
     class SimpleVulkanRenderSystem
     {
     public:
-        SimpleVulkanRenderSystem(VkRenderPass renderPass);
+        SimpleVulkanRenderSystem(VulkanSwapChain* swap_chain);
         ~SimpleVulkanRenderSystem();
 
         SimpleVulkanRenderSystem(const SimpleVulkanRenderSystem&) = delete;
@@ -29,19 +34,42 @@ namespace Kong
 
         void UpdateMeshUBO(const FrameInfo& frameInfo);
         void CreateMeshDescriptorSet();
-        void RenderGameObjects(const FrameInfo& frameInfo);
+        void Draw(const FrameInfo& frameInfo, VkCommandBuffer commandBuffer);
+
+        void BeginRenderPass(VkCommandBuffer commandBuffer);
+        void EndRenderPass(VkCommandBuffer commandBuffer);
+
+        VkImage GetColorImage() const { return m_image; }
+        VkImageView GetColorImageView() const { return m_imageView; }
+        VkSampler GetSampler() const {return m_sampler;}
     private:
         void CreateDescriptorSetLayout();
         void CreatePipelineLayout();
-        void CreatePipeline(VkRenderPass renderPass);
-
+        void CreatePipeline();
+        
+        void CreateRenderPass();
+        void CreateFrameBuffers();
+        
         std::unique_ptr<VulkanPipeline> m_pipeline;
         VkPipelineLayout m_pipelineLayout;
         
-        shared_ptr<VulkanGraphicsDevice> m_deviceRef;
-        
-        // 0=基础数据，1=贴图
+        // 0=全局数据，1=基础材质数据，2=贴图
         std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
+
+        VulkanSwapChain* m_swapChain {nullptr};
+
+        VkFramebuffer m_framebuffer;
+        
+        VkRenderPass m_renderPass {VK_NULL_HANDLE};
+        
+        VkImage m_image {VK_NULL_HANDLE};
+        VkImageView m_imageView {VK_NULL_HANDLE};
+        VkDeviceMemory m_imageMemory {VK_NULL_HANDLE};
+        VkSampler m_sampler {VK_NULL_HANDLE};
+
+        VkImage m_depthImage {VK_NULL_HANDLE};
+        VkImageView m_depthImageView {VK_NULL_HANDLE};
+        VkDeviceMemory m_depthImageMemory {VK_NULL_HANDLE};
     };
     
 }

@@ -11,6 +11,12 @@
 
 namespace Kong
 {
+	class VulkanPostprocessSystem;
+}
+
+namespace Kong
+{
+	class VulkanSwapChain;
 	class CCamera;
 
 	// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
@@ -90,7 +96,7 @@ namespace Kong
 		struct GlobalVulkanUbo
 		{
 			glm::mat4 projectionView {1.f};
-			glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, -3.f, -1.0f, 0.0});
+			glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, 3.f, -1.0f, 0.0});
 			glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
 
 			// SceneLightInfo sceneLightInfo;
@@ -104,6 +110,10 @@ namespace Kong
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
 		KongRenderModule() = default;
+		~KongRenderModule();
+
+		KongRenderModule(const KongRenderModule&) = delete;
+		KongRenderModule& operator=(const KongRenderModule&) = delete;
 		
 		int Init();
 		int Update(double delta);
@@ -133,17 +143,37 @@ namespace Kong
 #ifdef RENDER_IN_VULKAN
 		
 		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool{};
-		// vulkan的ubo相关，也是用于保存场景的基础信息
+		// vulkan的全局descriptorset，也是用于保存场景的基础信息
 		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorLayout;
 		std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
 		std::vector<VkDescriptorSet> m_descriptorSets;
+
+		int GetFrameIndex() const;
+
+		void BeginFrame();
+		void EndFrame();
+
+		void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
+
+		bool IsFrameInProgress() const {return m_isFrameStarted;}
+		VkCommandBuffer GetCurrentCommandBuffer() const;
+
+		VkRenderPass GetSwapChainRenderPass() const;
+		float GetAspectRatio() const;
 		
+		uint32_t m_currentImageIndex {0};
+		int m_currentFrameIndex {0};
+		bool m_isFrameStarted {false};
+
+		// todo: 放到private
+		std::unique_ptr<SimpleVulkanRenderSystem> m_simpleRenderSystem{nullptr};
+		std::unique_ptr<VulkanPostprocessSystem> m_vulkanPostProcessSystem{nullptr};
 #endif
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 */
 		UBOHelper matrix_ubo;
 	private:
-		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
 		void UpdateSceneRenderInfo();
 		void InitUBO();
@@ -157,18 +187,32 @@ namespace Kong
 		RenderResultInfo latestRenderResult{};
 	private:
 		friend class CYamlParser;
+		friend class KongSceneManager;
 		
 		GLuint m_renderToBuffer {0};    // 渲染到的buffer
 		GLuint m_renderToRbo {0};
 
 		weak_ptr<KongTexture> m_nullTex;
-		
+
+		// todo: 删掉，统一用m_nullTex;
 		GLuint null_tex_id			= GL_NONE;
 		shared_ptr<OpenGLShader> shadowmap_debug_shader;
+		
 #if SHADOWMAP_DEBUG
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
 #endif
+
+#ifdef RENDER_IN_VULKAN
+		void CreateCommandBuffers();
+		void FreeCommandBuffers();
+		void RecreateSwapChain();
+
+		std::unique_ptr<VulkanSwapChain> m_swapChain;
+		std::vector<VkCommandBuffer> m_commandBuffers;
+
+#endif
+		
 		
 		shared_ptr<CCamera> mainCamera{};
 		
@@ -178,9 +222,7 @@ namespace Kong
 		 *	SceneLightInfo light_info
 		 */
 		UBOHelper scene_light_ubo;
-
 		
-
 		// 天空盒
 		SkyboxRenderSystem m_skyboxRenderSystem;
 		// 延迟渲染

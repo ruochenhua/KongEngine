@@ -262,9 +262,13 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 		{
 			const auto& tangent = mesh->mTangents[i];
 			new_vertex.tangent = {tangent.x, tangent.y, tangent.z};
-
+		
 			const auto& bitangnet = mesh->mBitangents[i];
 			new_vertex.bitangent = {bitangnet.x, bitangnet.y, bitangnet.z};
+#ifdef RENDER_IN_VULKAN
+			// new_vertex.tangent *= -1;
+			// new_vertex.bitangent *= -1;
+#endif
 		}
 		else
 		{

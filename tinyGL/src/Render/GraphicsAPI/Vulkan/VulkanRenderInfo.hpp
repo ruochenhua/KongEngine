@@ -16,6 +16,15 @@ namespace Kong
         void InitRenderInfo() override;
     };
 
+    struct BasicMaterialUbo
+    {
+        glm::vec4 albedo{0.2, 0.3, 0.1, 1.0};
+        float specular_factor{1.0};
+        float metallic {0.5};
+        float roughness {0.5};
+        float ambient {1.0};
+    };
+    
     class VulkanMaterialInfo : public RenderMaterialInfo
     {
     public:
@@ -26,8 +35,8 @@ namespace Kong
         void AddMaterialByType(ETextureType textureType, std::weak_ptr<KongTexture> texture) override;
         void Initialize() override;
         
-        std::vector<std::map<VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType, VkDescriptorSet>> m_discriptorSets;
-        // std::vector<std::unique_ptr<VulkanBuffer>> m_uboBuffers;    // todo: ubo应该是全场景公用的吧
+        std::vector<std::map<VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType, VkDescriptorSet>> m_descriptorSets;
+        std::vector<std::unique_ptr<VulkanBuffer>> m_uboBuffers;  
 
         void CreateDescriptorSet(VulkanDescriptorSetLayout* descriptorSetLayout, VulkanDescriptorPool* descriptorPool);
     private:

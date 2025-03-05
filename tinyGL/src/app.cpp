@@ -4,7 +4,6 @@
 
 #include "Window.hpp"
 #include "Render/GraphicsAPI/Vulkan/SimpleVulkanRenderSystem.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 
 using namespace Kong;
 
@@ -40,10 +39,7 @@ void KongApp::Run()
 #ifdef RENDER_IN_VULKAN
     string scene_name = "scene/hello_ssr.yaml";
     KongSceneManager::GetSceneManager().LoadScene(scene_name);
-            
-    SimpleVulkanRenderSystem simpleRenderSystem{m_renderer.GetSwapChainRenderPass()};
-    simpleRenderSystem.CreateMeshDescriptorSet();
-    
+                
 #endif
     
     double current_time = glfwGetTime();
@@ -67,32 +63,8 @@ void KongApp::Run()
         {
             m_SceneManager.PreRenderUpdate(delta);
             
-            m_renderer.BeginFrame();
+            m_RenderModule.BeginFrame();
             m_RenderModule.Update(delta);
-            if (auto commandBuffer = m_renderer.GetCurrentCommandBuffer())
-            {
-                int frameIndex = m_renderer.GetFrameIndex();
-                FrameInfo frameInfo{
-                    frameIndex,
-                    static_cast<float>(delta),
-                    commandBuffer
-                };
-
-                simpleRenderSystem.UpdateMeshUBO(frameInfo);
-                // render
-                /* 每个frame之间可以有多个render pass，比如
-                 * begin offscreen shadow pass
-                 * render shadow casting object
-                 * end offscreen shadow pass
-                 * // reflection
-                 * // post process
-                 */
-                // 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
-                m_renderer.BeginSwapChainRenderPass(commandBuffer);
-                simpleRenderSystem.RenderGameObjects(frameInfo);
-                m_renderer.EndSwapChainRenderPass(commandBuffer);
-                m_renderer.EndFrame();
-            }
 
             current_time = new_time;
         }
@@ -116,11 +88,6 @@ void KongApp::Run()
     
     // cpu等待所有gpu任务完成
     vkDeviceWaitIdle(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice());
-    
-    // for (size_t i = 0; i < uboBuffers.size(); i++)
-    // {
-    //     uboBuffers[i] = nullptr;
-    // }
 
     ResourceManager::Clean();
 
