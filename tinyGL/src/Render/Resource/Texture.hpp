@@ -1,9 +1,9 @@
 #pragma once
-#include <string>
 #ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
 #endif
 #include "glad/glad.h"
+#include "Render/RenderCommon.hpp"
 
 namespace Kong
 {
@@ -57,7 +57,7 @@ namespace Kong
     public:
         KongTexture() = default;
         virtual ~KongTexture() = default;
-        virtual void CreateTexture(int width, int height, int nr_component, unsigned char* pixels) = 0;
+        virtual void CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels);
         virtual bool IsValid() = 0;
 
         virtual void Bind(unsigned int location) = 0;
@@ -70,7 +70,7 @@ namespace Kong
         VulkanTexture() = default;
         virtual ~VulkanTexture() override;
         bool IsValid() override;
-        void CreateTexture(int width, int height, int nr_component, unsigned char* pixels) override;
+        void CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels) override;
 
         void Bind(unsigned int location) override;
 

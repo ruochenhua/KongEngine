@@ -1,9 +1,12 @@
 #include "ui.h"
-#ifndef RENDER_IN_VULKAN
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+#ifdef RENDER_IN_VULKAN
+// #include <imgui_impl_vulkan.h>
+#else
 #include <imgui_impl_opengl3.h>
-
+#endif
 #include "Actor.hpp"
 #include "Utils.hpp"
 #include "Scene.hpp"
@@ -51,7 +54,7 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 	// 初始化imgui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -60,9 +63,19 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 	ImGui::StyleColorsDark();
 
 	// 初始化imgui后端
+#ifdef RENDER_IN_VULKAN
+	// auto windowModule = KongWindow::GetWindowModule();
+	// auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
+	//
+	// ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
+	// ImGui_ImplVulkan_InitInfo init_info = vulkanDevice->GetImGuiInitInfo();
+	//
+	// ImGui_ImplVulkan_Init(&init_info);
+	
+#else
 	ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
-
+#endif
 	
 	string file_directory = std::filesystem::current_path().parent_path().string() + "/resource/scene";
 	g_scene_files = GetSceneFiles(file_directory);
@@ -80,26 +93,35 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 
 void KongUIManager::PreRenderUpdate(double delta)
 {
+#ifdef RENDER_IN_VULKAN
+#else
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	
 	DescribeUIContent(delta);
+#endif
 }
 
 void KongUIManager::PostRenderUpdate()
 {
+#ifdef RENDER_IN_VULKAN
+#else
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	// (Your code calls glfwSwapBuffers() etc.)
+#endif
 }
 
 void KongUIManager::Destroy()
 {
+#ifdef RENDER_IN_VULKAN
+#else
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+#endif
 }
 
 void KongUIManager::DescribeUIContent(double delta)
@@ -246,4 +268,3 @@ ImVec4 KongUIManager::GetFrameRateColor(int framerate)
 	// terrible
 	return ImVec4(1.f, 0.f, 0.0f, 1.0f);
 }
-#endif

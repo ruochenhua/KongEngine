@@ -1,7 +1,7 @@
 struct DirectionalLight
 {
     vec4 light_dir;
-    vec3 light_color;
+    vec4 light_color;
     mat4 light_space_mat;
 };
 

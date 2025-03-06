@@ -1,9 +1,8 @@
 #include <chrono>
 
 #include "App.hpp"
-
+#include "Scene.hpp"
 #include "Window.hpp"
-#include "Render/GraphicsAPI/Vulkan/SimpleVulkanRenderSystem.hpp"
 
 using namespace Kong;
 
@@ -12,18 +11,13 @@ constexpr double FRAME_TIME_CAP = 1.0/60.0;
 
 KongApp::KongApp()
     : m_Window{KongWindow::GetWindowModule()}
-#ifndef RENDER_IN_VULKAN
     , m_UIManager{KongUIManager::GetUIManager()}
-#endif
     , m_RenderModule{KongRenderModule::GetRenderModule()}
     , m_SceneManager{KongSceneManager::GetSceneManager()}
 {
-#ifdef RENDER_IN_VULKAN
-   
-#else
-    m_UIManager.Init(m_Window.GetWindow());
-#endif
     m_RenderModule.Init();
+    // 需要rendermodule先初始化完，拿到descriptorpool等信息
+    m_UIManager.Init(m_Window.GetWindow());
 }
 
 KongApp::~KongApp()

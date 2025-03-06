@@ -1,6 +1,5 @@
 #pragma once
 #include "Render/RenderModule.hpp"
-#include "Scene.hpp"
 #include "ui.h"
 #include "Window.hpp"
 
@@ -19,9 +18,7 @@ namespace Kong
         
     private:
         KongWindow& m_Window;
-#ifndef RENDER_IN_VULKAN
         KongUIManager& m_UIManager;
-#endif
         KongRenderModule& m_RenderModule;
         KongSceneManager& m_SceneManager;
         

@@ -1,4 +1,8 @@
 #include "VulkanGraphicsDevice.hpp"
+
+// #include <imgui_impl_vulkan.h>
+
+#include "VulkanSwapChain.hpp"
 #ifdef RENDER_IN_VULKAN
 #include <iostream>
 #include <set>
@@ -59,6 +63,19 @@ std::shared_ptr<VulkanGraphicsDevice> VulkanGraphicsDevice::GetGraphicsDevice()
     }
     return g_VulkanGraphicsDevice;
 }
+
+// ImGui_ImplVulkan_InitInfo VulkanGraphicsDevice::GetImGuiInitInfo()
+// {
+//     ImGui_ImplVulkan_InitInfo init_info{};
+//     init_info.Instance = m_instance;
+//     init_info.Device = m_device;
+//     init_info.PhysicalDevice = m_physicalDevice;
+//     init_info.QueueFamily = FindQueueFamilies(m_physicalDevice).presentFamily;
+//     init_info.Queue = m_presentQueue;
+//     init_info.PipelineCache;
+//     
+//     return init_info;
+// }
 
 VulkanGraphicsDevice::VulkanGraphicsDevice()
 {

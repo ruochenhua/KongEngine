@@ -12,10 +12,6 @@
 namespace Kong
 {
 	class VulkanPostprocessSystem;
-}
-
-namespace Kong
-{
 	class VulkanSwapChain;
 	class CCamera;
 
@@ -96,11 +92,11 @@ namespace Kong
 		struct GlobalVulkanUbo
 		{
 			glm::mat4 projectionView {1.f};
-			glm::vec4 lightDirection = glm::normalize(glm::vec4{-1.f, 3.f, -1.0f, 0.0});
+			glm::vec4 lightDirection = {glm::normalize(glm::vec3{-1.f, 1.f, -1.0f}), 1.0};
 			glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
 
 			// SceneLightInfo sceneLightInfo;
-            
+            SceneLightInfo sceneLightInfo;
 		};
 		
 		static KongRenderModule& GetRenderModule();

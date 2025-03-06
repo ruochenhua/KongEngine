@@ -25,6 +25,8 @@ layout(set=0, binding=0) uniform GlobalUbo {
     mat4 projectionView;
     vec4 directionToLight;
     vec4 cameraPositon;
+
+    SceneLightInfo sceneLightInfo;
 } ubo;
 
 void main()

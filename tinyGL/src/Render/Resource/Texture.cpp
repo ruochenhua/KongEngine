@@ -152,6 +152,12 @@ void TextureBuilder::CreateTexture3D(GLuint& texture_id, const Texture3DCreateIn
     glBindTexture(tex_type, 0);
 }
 
+void KongTexture::CreateTexture(int width, int height, int nr_component, ETextureType textureType,
+    unsigned char* pixels)
+{
+    assert(0, "create texture method not implemented");
+}
+
 #ifdef RENDER_IN_VULKAN
 
 VulkanTexture::~VulkanTexture()
@@ -168,10 +174,11 @@ bool VulkanTexture::IsValid()
      return m_memory && m_image && m_imageView;
 }
 
-void VulkanTexture::CreateTexture(int width, int height, int nr_component, unsigned char* pixels)
+void VulkanTexture::CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels)
 {
 // todo: 这里放到vulkanbuffer里面
     // 创建纹理和内存
+    
     VkDeviceSize imageSize = width * height * nr_component;
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -183,18 +190,29 @@ void VulkanTexture::CreateTexture(int width, int height, int nr_component, unsig
     switch (nr_component)
     {
     case 1:
-        m_format = VK_FORMAT_R8_SRGB;
+        m_format = VK_FORMAT_R8_UNORM;
         break;
     case 2:
-        m_format = VK_FORMAT_R8G8_SRGB;
+        m_format = VK_FORMAT_R8G8_UNORM;
         break;
     case 3:
         // vulkan对rgb8的支持不足，大多数GPU设备都不支持，先屏蔽掉这个
         m_format = VK_FORMAT_R8G8B8_UNORM;
         break;
     case 4:
-        m_format = VK_FORMAT_R8G8B8A8_SRGB;
+        // note:diffuse颜色可以使用VK_FORMAT_R8G8B8A8_SRGB，这样将颜色存储为伽马空间可以省去后处理的颜色校正步骤
+        if (textureType == diffuse)
+        {
+            m_format = VK_FORMAT_R8G8B8A8_SRGB; 
+        }
+        else
+        {
+            m_format = VK_FORMAT_R8G8B8A8_UNORM;
+        }
         break;
+    default:
+        throw std::runtime_error("Invalid format");
+        break;        
     }
     void* data;
     vkMapMemory(device->GetDevice(), stagingBufferMemory, 0, imageSize, 0, &data);

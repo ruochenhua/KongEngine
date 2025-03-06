@@ -1,4 +1,8 @@
 #version 450
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+#include "common.glsl"
 
 layout(location=0) in vec3 fragPos;
 layout(location=1) in vec3 fragNormal;
@@ -16,6 +20,7 @@ layout(set=0, binding=0) uniform GlobalUbo {
     mat4 projectionView;
     vec4 directionToLight;
     vec4 cameraPosition;
+    SceneLightInfo sceneLightInfo;
 } ubo;
 
 layout(set=1, binding=0) uniform BaiscMaterial{
@@ -32,8 +37,7 @@ layout(set=2, binding=2) uniform sampler2D roughness_texture;
 layout(set=2, binding=3) uniform sampler2D metallic_texture;
 layout(set=2, binding=4) uniform sampler2D ambient_texture;
 
-
-float PI = 3.1415926;
+const float PI = 3.14159265359;
 
 vec4 GetAlbedo()
 {
@@ -42,6 +46,7 @@ vec4 GetAlbedo()
     {
         vec4 texture_albedo = texture(diffuse_texture, fragUV);
         // sRGB空间转换到线性空间
+//        return texture_albedo;
         return pow(texture_albedo, vec4(2.2));
     }
 
@@ -51,9 +56,9 @@ vec4 GetAlbedo()
 vec3 GetNormal()
 {
     float texture_size = textureSize(normal_texture, 0).x;
-    if(texture_size > 2.0)
+    if(texture_size > 1.0)
     {
-        vec3 texture_normal = texture(normal_texture, fragUV).rgb;
+        vec3 texture_normal = texture(normal_texture, fragUV).xyz;
         // 从[0,1]映射到[-1,1]
         vec3 tex_normal = normalize(texture_normal*2.0 - 1.0);
         return normalize(TBN * tex_normal);
@@ -154,14 +159,16 @@ void main()
 {
     vec3 view = normalize(ubo.cameraPosition.xyz - fragPos);
     vec3 objNormal = GetNormal();
-    vec3 toLightDir = ubo.directionToLight.xyz;
+    DirectionalLight dirLight = ubo.sceneLightInfo.directional_light;
 
-    vec3 lightColor = vec3(0.3);
+    vec3 toLightDir = -dirLight.light_dir.xyz;
+
+    vec3 lightColor = dirLight.light_color.xyz;
     vec3 albedoColor = GetAlbedo().xyz;
 
 
     float metallic = GetMetallic();
-    float specularScalar = 0.1;
+    float specularScalar = 1.0;
     float roughness = GetRoughness();
 
     // 简单计算一下光照（BRDF）
@@ -189,7 +196,6 @@ void main()
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     //return material.specular_factor;
-    vec3 ambient = albedoColor * 0.1;
+    vec3 ambient = albedoColor * F0*0.1;
     outColor = vec4(ambient + (KD*albedoColor / PI + specular)*radiance*NdotL, 1.0);
-//    outColor = vec4(objNormal, 1.0);
 }

@@ -17,6 +17,7 @@ layout(location=0) out vec4 outColor;
 void main()
 {
     vec3 scene_color = texture(scene_texture, fragUV).rgb;
+    //    outColor = vec4(0.1, 0.3, 0.1, 1.0);
     // reinhard色调映射
     vec3 mapped = vec3(1.0)-exp(-scene_color * pp_ubo.exposure);
 
@@ -24,6 +25,5 @@ void main()
     mapped = pow(mapped, vec3(1.0/gamma));
 
     outColor = vec4(mapped, 1.0);
-
-//    outColor = vec4(0.1, 0.3, 0.1, 1.0);
+    outColor = vec4(scene_color, 1.0);
 }

@@ -91,7 +91,7 @@ int KongRenderModule::Init()
 		vec3(0.0f, 1.0f, 0.0f));
 	
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
-	m_nullTex = ResourceManager::GetOrLoadTexture_new(null_tex_path);
+	m_nullTex = ResourceManager::GetOrLoadTexture_new(diffuse, null_tex_path);
 	
 #ifdef RENDER_IN_VULKAN
 	// 创建描述符集池子
@@ -329,8 +329,7 @@ void KongRenderModule::UpdateSceneRenderInfo()
 	
 	// 更新光源UBO
 	SceneLightInfo light_info;
-	bool has_dir_light = !scene_render_info.scene_dirlight.expired(); 
-	if(has_dir_light)
+	if(bool has_dir_light = !scene_render_info.scene_dirlight.expired())
 	{
 		light_info.has_dir_light = ivec4(1);
 		auto dir_light = scene_render_info.scene_dirlight.lock();
@@ -373,10 +372,24 @@ void KongRenderModule::UpdateSceneRenderInfo()
 	}
 			
 	light_info.point_light_count = ivec4(point_light_count);
+
+#ifdef RENDER_IN_VULKAN
+	GlobalVulkanUbo ubo{};
+	ubo.projectionView = mainCamera->GetProjectionMatrix() * mainCamera->GetViewMatrix();
+	ubo.cameraPosition = vec4(mainCamera->GetPosition(), 1.0f);
 	
+	ubo.sceneLightInfo = light_info;
+	
+	for (const auto& m_uniformBuffer : m_uniformBuffers)
+	{
+		m_uniformBuffer->WriteToBuffer(&ubo);
+		m_uniformBuffer->Flush();
+	}
+#else
 	scene_light_ubo.Bind();
 	scene_light_ubo.UpdateData(light_info, "light_info");
 	scene_light_ubo.EndBind();
+#endif
 }
 
 
@@ -470,18 +483,8 @@ void KongRenderModule::InitMainFBO()
 int KongRenderModule::Update(double delta)
 {
 	mainCamera->Update(delta);
+	UpdateSceneRenderInfo();
 #ifdef RENDER_IN_VULKAN
-	GlobalVulkanUbo ubo{};
-	ubo.projectionView = mainCamera->GetProjectionMatrix() * mainCamera->GetViewMatrix();
-	ubo.cameraPosition = vec4(mainCamera->GetPosition(), 1.0f);
-
-	// todo: frameIndex
-	for (const auto& m_uniformBuffer : m_uniformBuffers)
-	{
-		m_uniformBuffer->WriteToBuffer(&ubo);
-		m_uniformBuffer->Flush();
-	}
-	
 	if (auto commandBuffer = GetCurrentCommandBuffer())
 	{
 		int frameIndex = GetFrameIndex();

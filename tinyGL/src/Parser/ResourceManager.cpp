@@ -27,9 +27,9 @@ GLuint ResourceManager::GetOrLoadTexture(const std::string& texture_path, bool f
     return g_resourceManager->GetTexture(texture_path, flip_uv);
 }
 
-weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(const std::string& texture_path)
+weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(ETextureType textureType, const std::string& texture_path)
 {
-	return g_resourceManager->GetTexture_new(texture_path);
+	return g_resourceManager->GetTexture_new(textureType, texture_path);
 }
 
 stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
@@ -52,7 +52,7 @@ stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
 	return rgbaData; // 返回新的 RGBA8 数据
 }
 
-weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture_path)
+weak_ptr<KongTexture> ResourceManager::GetTexture_new(ETextureType textureType, const std::string& texture_path)
 {
 	if(texture_cache_new.find(texture_path) != texture_cache_new.end())
 	{
@@ -87,7 +87,7 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(const std::string& texture
 		nr_component = 4;
 	}
 	
-	new_tex->CreateTexture(width, height, nr_component, data);
+	new_tex->CreateTexture(width, height, nr_component, textureType, data);
 	texture_cache_new.emplace(texture_path, new_tex);
 	
 #else
@@ -183,6 +183,9 @@ shared_ptr<MeshResource> ResourceManager::GetMesh(const std::string& model_path)
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(model_path,
 		aiProcess_CalcTangentSpace
+#ifdef RENDER_IN_VULKAN
+		|aiProcess_MakeLeftHanded
+#endif
 		|aiProcess_Triangulate
 		|aiProcess_OptimizeMeshes
 		|aiProcess_GenSmoothNormals
@@ -265,15 +268,15 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 		
 			const auto& bitangnet = mesh->mBitangents[i];
 			new_vertex.bitangent = {bitangnet.x, bitangnet.y, bitangnet.z};
-#ifdef RENDER_IN_VULKAN
-			// new_vertex.tangent *= -1;
-			// new_vertex.bitangent *= -1;
-#endif
 		}
 		else
 		{
 			new_vertex.tangent = {1, 0, 0};
+#ifdef RENDER_IN_VULKAN
+			new_vertex.bitangent = {0, 0, -1};
+#else
 			new_vertex.bitangent = {0, 0, 1};
+#endif
 		}
 
 		new_mesh->m_RenderInfo->vertices.emplace_back(new_vertex);
@@ -316,16 +319,15 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				string tex_path = directory + "/" + tex_str.C_Str();
 
 				
-				// mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(diffuse, GetOrLoadTexture_new(diffuse, tex_path));
 			}
 			else if(diffuse_count > 0)
 			{
 				aiString tex_str;
 				material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
-				// mesh_material->diffuse_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::diffuse, GetOrLoadTexture_new(tex_path));
+				
+				mesh_material->textures.emplace(diffuse, GetOrLoadTexture_new(diffuse, tex_path));
 			}
 		
 
@@ -342,7 +344,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				material->GetTexture(aiTextureType_HEIGHT, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
 				// mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(normal, GetOrLoadTexture_new(normal, tex_path));
 			}
 			unsigned normal_count = material->GetTextureCount(aiTextureType_NORMALS);
 			if(normal_count > 0)
@@ -351,7 +353,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				material->GetTexture(aiTextureType_NORMALS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
 				// mesh_material->normal_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::normal, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(normal, GetOrLoadTexture_new(normal, tex_path));
 			}
 		
 			// unsigned clear_coat_count = material->GetTextureCount(aiTextureType_CLEARCOAT);
@@ -370,7 +372,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
 				// mesh_material->roughness_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::roughness, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(roughness, GetOrLoadTexture_new(roughness, tex_path));
 			}
 
 			unsigned metallic_count = material->GetTextureCount(aiTextureType_METALNESS);
@@ -380,7 +382,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				material->GetTexture(aiTextureType_METALNESS, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
 				// mesh_material->metallic_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::metallic, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(metallic, GetOrLoadTexture_new(metallic, tex_path));
 			}
 
 			unsigned ambient_count = material->GetTextureCount(aiTextureType_AMBIENT);
@@ -390,7 +392,7 @@ void ResourceManager::ProcessAssimpMesh(aiMesh* mesh,
 				material->GetTexture(aiTextureType_AMBIENT, 0, &tex_str);
 				string tex_path = directory + "/" + tex_str.C_Str();
 				// mesh_material->ao_tex_id = GetOrLoadTexture(tex_path);
-				mesh_material->textures.emplace(ETextureType::ambient_occlusion, GetOrLoadTexture_new(tex_path));
+				mesh_material->textures.emplace(ambient_occlusion, GetOrLoadTexture_new(ambient_occlusion,tex_path));
 			}
 		}
 	}

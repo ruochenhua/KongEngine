@@ -129,7 +129,7 @@ namespace YamlParser
                 }
                 else
                 {
-                    tmp_material->AddMaterialByType(diffuse, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>())));
+                    tmp_material->AddMaterialByType(diffuse, ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>())));
                 }
             }
 
@@ -141,7 +141,7 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->AddMaterialByType(metallic, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>())));
+                    tmp_material->AddMaterialByType(metallic, ResourceManager::GetOrLoadTexture_new(metallic, CSceneLoader::ToResourcePath(material_node["metallic"].as<string>())));
                 }
             }
 
@@ -153,7 +153,7 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->AddMaterialByType(roughness, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>())));
+                    tmp_material->AddMaterialByType(roughness, ResourceManager::GetOrLoadTexture_new(roughness, CSceneLoader::ToResourcePath(material_node["roughness"].as<string>())));
                 }    
             }
 
@@ -165,13 +165,13 @@ namespace YamlParser
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material->AddMaterialByType(ambient_occlusion, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["ao"].as<string>())));
+                    tmp_material->AddMaterialByType(ambient_occlusion, ResourceManager::GetOrLoadTexture_new(ambient_occlusion, CSceneLoader::ToResourcePath(material_node["ao"].as<string>())));
                 }    
             }
             
             if(material_node["normal"])
             {
-                tmp_material->AddMaterialByType(normal, ResourceManager::GetOrLoadTexture_new(CSceneLoader::ToResourcePath(material_node["normal"].as<string>())));
+                tmp_material->AddMaterialByType(normal, ResourceManager::GetOrLoadTexture_new(normal, CSceneLoader::ToResourcePath(material_node["normal"].as<string>())));
             }
 
             mesh_component->override_render_info->material = tmp_material;

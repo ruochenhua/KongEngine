@@ -15,7 +15,7 @@
 #include "glm/vec4.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
 #include "Resource/Buffer.hpp"
-#include "Resource/Texture.hpp"
+//#include "Resource/Texture.hpp"
 
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
@@ -23,6 +23,7 @@
 
 namespace Kong
 {
+    class KongTexture;
     class CPointLightComponent;
     class CDirectionalLightComponent;
 

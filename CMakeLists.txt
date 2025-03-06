@@ -23,25 +23,24 @@ set(3RD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
 add_subdirectory(${3RD_PARTY_DIR})
 
 # imgui编译
-if(Vulkan_FOUND AND USE_VULKAN)
-else()
+# if(Vulkan_FOUND AND USE_VULKAN)
+# else()
 set(IMGUI_DIR ${3RD_PARTY_DIR}/imgui)
 file(GLOB IMGUI_SRC ${IMGUI_DIR}/*.cpp)
 file(GLOB IMGUI_BACKEND_SRC ${IMGUI_DIR}/backends/*.cpp)
-endif()
+# endif()
 
 file(GLOB_RECURSE MAIN_SRC ${SRC_DIR}/*.cpp)
 file(GLOB_RECURSE MAIN_HEAD ${SRC_DIR}/*.h ${SRC_DIR}/*.hpp)
 
-if(Vulkan_FOUND AND USE_VULKAN)
-add_executable(KongEngine ${MAIN_HEAD} ${MAIN_SRC})
-
-else()
+# if(Vulkan_FOUND AND USE_VULKAN)
+# add_executable(KongEngine ${MAIN_HEAD} ${MAIN_SRC})
+# else()
 add_executable(KongEngine ${MAIN_HEAD} ${MAIN_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND_SRC})
 
 target_include_directories(KongEngine PRIVATE ${IMGUI_DIR})
 target_include_directories(KongEngine PRIVATE ${IMGUI_DIR}/backends)
-endif()
+# endif()
 
 # include_directories(KongEngine ${3RD_PARTY_DIR})
 include_directories(KongEngine tinyGL/src)

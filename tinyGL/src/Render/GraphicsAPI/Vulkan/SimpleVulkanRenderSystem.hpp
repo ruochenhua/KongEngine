@@ -8,10 +8,6 @@
 namespace Kong
 {
     class VulkanSwapChain;
-}
-
-namespace Kong
-{
     class VulkanDescriptorPool;
     class VulkanBuffer;
     class VulkanDescriptorSetLayout;

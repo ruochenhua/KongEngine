@@ -4,6 +4,8 @@
 
 #include "../GraphicsDevice.hpp"
 
+struct ImGui_ImplVulkan_InitInfo;
+
 namespace Kong
 {
     struct SwapChainSupportDetails
@@ -28,7 +30,10 @@ namespace Kong
     {
     public:
         static std::shared_ptr<VulkanGraphicsDevice> GetGraphicsDevice();
-        
+
+        // ImGui_ImplVulkan_InitInfo GetImGuiInitInfo();
+
+        VkPhysicalDevice GetPhysicsDevice() const {return m_physicalDevice;}
         VulkanGraphicsDevice();
         ~VulkanGraphicsDevice() override;
         
