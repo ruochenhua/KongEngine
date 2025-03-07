@@ -5,6 +5,7 @@
 #include "Actor.hpp"
 #include "Parser/YamlParser.h"
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
 
 using namespace Kong;
 KongSceneManager g_SceneManager;

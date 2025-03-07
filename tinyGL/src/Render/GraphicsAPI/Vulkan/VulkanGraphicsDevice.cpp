@@ -2,7 +2,6 @@
 
 // #include <imgui_impl_vulkan.h>
 
-#include "VulkanSwapChain.hpp"
 #ifdef RENDER_IN_VULKAN
 #include <iostream>
 #include <set>

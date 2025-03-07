@@ -1,13 +1,15 @@
-#include "SimpleVulkanRenderSystem.hpp"
+#include "VkSimpleRenderSystem.hpp"
 
 #include <array>
 #include <imgui/imgui.h>
 
 #include "Actor.hpp"
 #include "Scene.hpp"
-#include "VulkanDescriptor.hpp"
-#include "VulkanSwapChain.hpp"
+#include "VulkanRenderSystem.hpp"
+
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanPipeline.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
@@ -15,11 +17,10 @@ using namespace Kong;
 struct SimplePushConstantData
 {
     glm::mat4 modelMatrix{1.0f};
-    int use_texture {0};
 };
 
 SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VulkanSwapChain* swapChain)
-    :m_swapChain(swapChain)
+    :VulkanRenderSystem(swapChain)
 {
     CreateRenderPass();
     CreateFrameBuffers();
@@ -91,12 +92,11 @@ void SimpleVulkanRenderSystem::CreateMeshDescriptorSet()
     }
 }
 
-void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo, VkCommandBuffer commandBuffer)
+void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo)
 {
-    BeginRenderPass(commandBuffer);
+    BeginRenderPass(frameInfo.commandBuffer);
     
     m_pipeline->Bind(frameInfo.commandBuffer);
-    int frameIndex = frameInfo.frameIndex;
     
     auto actors = KongSceneManager::GetActors();
     for (auto actor : actors)
@@ -115,7 +115,6 @@ void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo, VkCommandBuffer 
         
         SimplePushConstantData push{};
         push.modelMatrix = actor->GetModelMatrix();
-        push.use_texture = 0;
 
         vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -124,47 +123,7 @@ void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo, VkCommandBuffer 
         mesh_component->Draw(frameInfo, m_pipelineLayout);
     }
 
-    EndRenderPass(commandBuffer);
-}
-
-void SimpleVulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer)
-{
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_renderPass;
-    renderPassInfo.framebuffer = m_framebuffer;
-
-    renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = m_swapChain->GetSwapChainExtent();
-
-    std::array<VkClearValue, 2> clearValues = {};
-    // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth，所以只需要设置对应的颜色和depthStencil的clear值
-    clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
-    clearValues[1].depthStencil = { 1.0f, 0 };
-    
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-    
-    // inline类型代表直接执行command buffer中的渲染指令，不存在引用其他command buffer
-    // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS代表有引用的情况，两种不能混合使用
-    // 启用render pass
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(m_swapChain->GetSwapChainExtent().width);
-    viewport.height = static_cast<float>(m_swapChain->GetSwapChainExtent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    VkRect2D scissor{{0,0}, m_swapChain->GetSwapChainExtent()};
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-}
-
-void SimpleVulkanRenderSystem::EndRenderPass(VkCommandBuffer commandBuffer)
-{
-    vkCmdEndRenderPass(commandBuffer);
+    EndRenderPass(frameInfo.commandBuffer);
 }
 
 void SimpleVulkanRenderSystem::CreateDescriptorSetLayout()
@@ -261,7 +220,7 @@ void SimpleVulkanRenderSystem::CreateRenderPass()
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // 表示该附件在渲染结束后用于呈现
+    // !colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // 表示该附件在渲染结束后用于呈现
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // 表示该附件用于shader的读入（喂给后处理）
 
     // 颜色附件引用

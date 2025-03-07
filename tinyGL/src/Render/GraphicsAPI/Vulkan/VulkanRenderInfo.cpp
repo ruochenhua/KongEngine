@@ -1,6 +1,5 @@
 #include "VulkanRenderInfo.hpp"
 
-#include "SimpleVulkanRenderSystem.hpp"
 #include "VulkanDescriptor.hpp"
 #include "VulkanSwapChain.hpp"
 #include "Render/RenderModule.hpp"

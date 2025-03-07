@@ -17,7 +17,6 @@ layout(location=3) out mat3 TBN;
 
 layout(push_constant) uniform Push{
     mat4 modelMatrix;
-    int use_texture;
 } push;
 
 // descriptor set

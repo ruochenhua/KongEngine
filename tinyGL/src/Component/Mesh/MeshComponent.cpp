@@ -6,6 +6,7 @@
 
 #include "glm/gtc/random.hpp"
 #include "Parser/ResourceManager.h"
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 
 using namespace Kong;

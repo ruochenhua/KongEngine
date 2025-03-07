@@ -21,8 +21,10 @@
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
-#include "GraphicsAPI/Vulkan/VulkanPostprocessSystem.hpp"
+#include "GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
+#include "GraphicsAPI/Vulkan/RenderSystem/VkPostprocessRenderSystem.hpp"
+#include "GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
 
 using namespace Kong;
 using namespace glm;
@@ -143,8 +145,14 @@ int KongRenderModule::Init()
 		
 	m_simpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get());
 	m_simpleRenderSystem->CreateMeshDescriptorSet();
+	
 
-	m_vulkanPostProcessSystem = make_unique<VulkanPostprocessSystem>(m_swapChain.get(), m_descriptorPool.get());
+	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
+		m_swapChain.get(), m_descriptorPool.get(),
+		m_simpleRenderSystem->GetColorImageView(), m_simpleRenderSystem->GetSampler()
+	};
+	
+	m_vulkanPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
 	
 	return 0;
 }
@@ -499,13 +507,13 @@ int KongRenderModule::Update(double delta)
 		/* 每个frame之间可以有多个render pass*/
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
 		
-		m_simpleRenderSystem->Draw(frameInfo, commandBuffer);
+		m_simpleRenderSystem->Draw(frameInfo);
 		
 
 		// begin render pass
-		BeginSwapChainRenderPass(commandBuffer);
+		// BeginSwapChainRenderPass(commandBuffer);
 		m_vulkanPostProcessSystem->Draw(frameInfo);
-		EndSwapChainRenderPass(commandBuffer);
+		// EndSwapChainRenderPass(commandBuffer);
 		// end render pass
 		
 		EndFrame();

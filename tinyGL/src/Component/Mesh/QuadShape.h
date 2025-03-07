@@ -9,5 +9,7 @@ namespace Kong
         CQuadShape();
         void Draw(void* commandBuffer = nullptr) override;
         virtual void InitRenderInfo() override;
+
+        std::shared_ptr<CMesh> GetMesh();
     };
 }

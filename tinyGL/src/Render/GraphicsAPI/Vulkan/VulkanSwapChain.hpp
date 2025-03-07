@@ -3,7 +3,6 @@
 #ifdef RENDER_IN_VULKAN
 namespace Kong
 {
-    
     class VulkanSwapChain
     {
     public:

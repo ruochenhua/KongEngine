@@ -1,9 +1,11 @@
 #pragma once
+#include "VulkanRenderSystem.hpp"
 #include "Render/RenderSystem/DeferRenderSystem.hpp"
 #ifdef RENDER_IN_VULKAN
 
 namespace Kong
 {
+    class VulkanPipeline;
     class VulkanSwapChain;
 
     struct VulkanPostprocessUbo
@@ -13,10 +15,18 @@ namespace Kong
     };
     
     
-    class VulkanPostprocessSystem
+    class VulkanPostprocessSystem : public VulkanRenderSystem
     {
     public:
-        VulkanPostprocessSystem(VulkanSwapChain* swapChain, VulkanDescriptorPool* descriptorPool);
+        struct VulkanPostprocessCreateInfo
+        {
+            VulkanSwapChain *swapChain {nullptr};
+            VulkanDescriptorPool *descriptorPool {nullptr};
+            VkImageView imageView {VK_NULL_HANDLE};
+            VkSampler sampler {VK_NULL_HANDLE};            
+        };
+        
+        VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo);
         ~VulkanPostprocessSystem();
 
         void Draw(const FrameInfo& frameInfo);
@@ -29,26 +39,20 @@ namespace Kong
         void CreateDescriptorSetLayout();
         void CreatePipelineLayout();
         void CreatePipeline();
-        void CreateRenderPass();
-        void CreateDescriptorBuffer();
-        // 后处理的framebuffer应该就是swapchain的framebuffers
-        // todo: 感觉frame buffers应该还是移到这里比较好
-        void CreateFrameBuffers() {}
-
-        std::unique_ptr<VulkanPipeline> m_pipeline;
-        VkPipelineLayout m_pipelineLayout {VK_NULL_HANDLE};
-
-        // scene/bright texture
-        std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
-
-        VulkanSwapChain* m_swapChain {nullptr};
         
+        void CreateDescriptorBuffer();
+        // *后处理的framebuffer应该就是swapchain的framebuffers
+        void CreateDescriptorSet(const VulkanPostprocessCreateInfo &createInfo);
+        
+        
+        
+        // scene/bright texture
+        // std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
         std::vector<std::map<VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType, VkDescriptorSet>> m_descriptorSets;
         
         std::unique_ptr<CQuadShape> quadShape {nullptr};
 
         VkDescriptorImageInfo m_imageInfo {VK_NULL_HANDLE};
-
         std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
     };
 }

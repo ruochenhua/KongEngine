@@ -1,6 +1,7 @@
 #include "QuadShape.h"
 
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 #endif
@@ -68,5 +69,13 @@ void CQuadShape::InitRenderInfo()
     quadMesh->m_RenderInfo->vertex_buffer = std::move(vertex_buffer);
     quadMesh->m_RenderInfo->vertices = quadVertexArray;
     mesh_resource->mesh_list.push_back(quadMesh);
+}
+
+std::shared_ptr<CMesh> CQuadShape::GetMesh()
+{
+    if (mesh_resource->mesh_list.size() == 0)
+        return nullptr;
+    
+    return mesh_resource->mesh_list[0];
 }
 

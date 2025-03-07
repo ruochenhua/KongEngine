@@ -3,9 +3,8 @@
 #include "Component/Component.h"
 #include "Parser/ResourceManager.h"
 #include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
-#include "Render/GraphicsAPI/Vulkan/SimpleVulkanRenderSystem.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#include "Render/GraphicsAPI/Vulkan/RenderSystem/VulkanRenderSystem.hpp"
 #include "Shader/OpenGL/OpenGLShader.h"
 
 struct aiMesh;

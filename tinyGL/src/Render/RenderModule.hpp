@@ -11,6 +11,7 @@
 
 namespace Kong
 {
+	class SimpleVulkanRenderSystem;
 	class VulkanPostprocessSystem;
 	class VulkanSwapChain;
 	class CCamera;
