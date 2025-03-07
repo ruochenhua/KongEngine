@@ -1,4 +1,4 @@
-@@ -0,0 +1,51 @@
+
 #pragma once
 #include "VulkanRenderSystem.hpp"
 #include "Component/Mesh/BoxShape.h"
@@ -50,4 +50,3 @@ namespace Kong
 }
 
 #endif
-No newline at end of file
