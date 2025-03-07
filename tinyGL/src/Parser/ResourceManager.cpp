@@ -32,6 +32,12 @@ weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(ETextureType texture
 	return g_resourceManager->GetTexture_new(textureType, texture_path);
 }
 
+std::shared_ptr<KongTexture> ResourceManager::GetOrLoadCubeTexture(ETextureType textureType,
+	const std::vector<std::string>& texturePathList)
+{
+	return g_resourceManager->GetCubeTexture(textureType, texturePathList);
+}
+
 stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
 	stbi_uc* rgbaData = new stbi_uc[pixelCount*4];
 	
@@ -59,7 +65,6 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(ETextureType textureType, 
 		return texture_cache_new[texture_path];
 	}
 
-	GLuint texture_id = 0;
 	if (texture_path.empty())
 	{
 		return weak_ptr<KongTexture>{};		
@@ -115,6 +120,43 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(ETextureType textureType, 
 	// release memory
 	stbi_image_free(data);
 	return texture_cache_new[texture_path];
+}
+
+std::shared_ptr<KongTexture> ResourceManager::GetCubeTexture(ETextureType textureType,
+	const std::vector<std::string>& texturePathList)
+{
+	assert(texturePathList.size() == 6 && "cube map path error!");
+
+
+	bool flip_uv = false;	
+	stbi_set_flip_vertically_on_load(flip_uv);
+
+	int width, height, nr_component;
+	stbi_uc* cubeMapData[6];
+	for (int i = 0; i < 6; ++i)
+	{
+		auto texturePath = texturePathList[i];
+		cubeMapData[i] = stbi_load(texturePath.c_str(), &width, &height, &nr_component, 0);
+		assert(cubeMapData[i], "load texture failed");
+
+		// rgb8在GPU上的支持可能不够，转换成rgba
+		if (nr_component == 3)
+		{
+			cubeMapData[i] = ConvertRGB8ToRGBA8(cubeMapData[i], width * height);
+			nr_component = 4;
+		}
+	}
+	
+	auto new_tex = make_shared<VulkanTexture>();
+	new_tex->CreateCubemap(width, height, nr_component, textureType, cubeMapData);
+	
+	// release memory
+	for (int i = 0; i < 6; ++i)
+	{
+		stbi_image_free(cubeMapData[i]);
+	}
+
+	return new_tex;
 }
 
 void ResourceManager::Clean()

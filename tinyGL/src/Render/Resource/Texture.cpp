@@ -252,6 +252,11 @@ void VulkanTexture::CreateTexture(int width, int height, int nr_component, EText
     CreateTextureSampler();
 }
 
+void VulkanTexture::CreateCubemap(int width, int height, int nr_component, ETextureType textureType,
+    unsigned char* pixels[6])
+{
+    // 创建立方体贴图
+}
 
 
 void VulkanTexture::Bind(unsigned int location)
@@ -307,7 +312,7 @@ void VulkanTexture::TransitionImageLayout(VkImage image, VkImageLayout oldLayout
     VulkanGraphicsDevice::GetGraphicsDevice()->EndSingleTimeCommands(commandBuffer);
 }
 
-void VulkanTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height)
+void VulkanTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer)
 {
     VkCommandBuffer commandBuffer = VulkanGraphicsDevice::GetGraphicsDevice()->BeginSingleTimeCommands();
 
@@ -317,7 +322,7 @@ void VulkanTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, int width,
     region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.baseArrayLayer = subresourceLayer;  // 面索引，cubemap会有六个面
     region.imageSubresource.layerCount = 1;
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {

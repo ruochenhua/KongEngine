@@ -71,7 +71,7 @@ namespace Kong
         virtual ~VulkanTexture() override;
         bool IsValid() override;
         void CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels) override;
-
+        void CreateCubemap(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels[6]);
         void Bind(unsigned int location) override;
 
         VkImage m_image{ nullptr };
@@ -83,7 +83,7 @@ namespace Kong
         // 转换图像布局
         void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
         // 复制缓冲区到图像
-        void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height);
+        void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer = 0);
         // 创建纹理图像视图, 为了让着色器能够访问纹理图像
         VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
         // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值

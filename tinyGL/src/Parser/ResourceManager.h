@@ -25,7 +25,10 @@ namespace Kong
         GLuint GetTexture(const std::string & texture_path, bool flip_uv);
         
         static std::weak_ptr<KongTexture> GetOrLoadTexture_new(ETextureType textureType,const std::string & texture_path);
+        static std::shared_ptr<KongTexture> GetOrLoadCubeTexture(ETextureType textureType, const std::vector<std::string> &texturePathList);
+        
         std::weak_ptr<KongTexture> GetTexture_new(ETextureType textureType, const std::string & texture_path);
+        std::shared_ptr<KongTexture> GetCubeTexture(ETextureType textureType, const std::vector<std::string> &texturePathList);
         
         static void Clean();
         

@@ -508,13 +508,7 @@ int KongRenderModule::Update(double delta)
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
 		
 		m_simpleRenderSystem->Draw(frameInfo);
-		
-
-		// begin render pass
-		// BeginSwapChainRenderPass(commandBuffer);
 		m_vulkanPostProcessSystem->Draw(frameInfo);
-		// EndSwapChainRenderPass(commandBuffer);
-		// end render pass
 		
 		EndFrame();
 	}

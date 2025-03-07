@@ -182,7 +182,6 @@ void SimpleVulkanRenderSystem::CreatePipeline()
 {
     assert(m_pipelineLayout != nullptr && "pipelineLayout is null");
     
-    // 使用swapchain的大小而不是Windows的，因为这两个有可能不是一一对应
     PipelineConfigInfo pipelineConfig{};
     VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
     pipelineConfig.renderPass = m_renderPass;
@@ -195,12 +194,14 @@ void SimpleVulkanRenderSystem::CreatePipeline()
 
 void SimpleVulkanRenderSystem::CreateRenderPass()
 {
-     // 深度附件描述
+    // 深度附件描述
     VkAttachmentDescription depthAttachment = {};
     depthAttachment.format = m_swapChain->FindDepthFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;        // 设定多重采样(1表示不采样)
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;           // 渲染通道开始时对深度附件数据的加载操作(这里表示开始时清空附件)
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;     // 渲染通道结束时对深度附件数据的加载操作(这里表示不关心)
+    // depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;     // 渲染通道结束时对深度附件数据的加载操作(这里表示不关心)
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     // !渲染通道结束时对深度附件数据的加载操作(保存结果)
+    
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;    // 渲染通道开始和结束时对模板缓冲区的操作
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;          // 指定附件在渲染通道开始时的图像布局(这里表示不关心)
