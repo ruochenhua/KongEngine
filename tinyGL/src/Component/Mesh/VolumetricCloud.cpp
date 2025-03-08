@@ -99,14 +99,18 @@ VolumetricCloud::VolumetricCloud()
 
     // 创建cloud相关texture并绑定
     glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
-    unsigned width = window_size.x;
-    unsigned height = window_size.y;
+    int width = window_size.x;
+    int height = window_size.y;
 
     // todo: 窗口重设大小时需要重新设置材质的大小
-    cloud_tex = GenerateTexture2D(width, height);
-    bloom_tex = GenerateTexture2D(width, height);
-    alphaness_tex = GenerateTexture2D(width, height);
-    depth_tex = GenerateTexture2D(width, height);
+	TextureCreateInfo create_info {
+		GL_TEXTURE_2D, GL_RGBA32F, GL_RGBA, GL_FLOAT, width, height,
+		GL_REPEAT, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR 
+	};
+    cloud_tex = dynamic_pointer_cast<OpenGLTexture>(TextureBuilder::CreateTexture_new(create_info));
+    bloom_tex = dynamic_pointer_cast<OpenGLTexture>(TextureBuilder::CreateTexture_new(create_info));
+    alphaness_tex = dynamic_pointer_cast<OpenGLTexture>(TextureBuilder::CreateTexture_new(create_info));
+    depth_tex = dynamic_pointer_cast<OpenGLTexture>(TextureBuilder::CreateTexture_new(create_info));
 }
 
 void VolumetricCloud::PreRenderUpdate() const
@@ -139,10 +143,10 @@ void VolumetricCloud::DrawShadowInfo(shared_ptr<OpenGLShader> simple_shader)
 	auto dir_light_ptr = dir_light.lock();
 	
 	glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
-    glBindImageTexture(0, cloud_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, bloom_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glBindImageTexture(2, alphaness_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glBindImageTexture(3, depth_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(0, cloud_tex->GetTextureId(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, bloom_tex->GetTextureId(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(2, alphaness_tex->GetTextureId(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(3, depth_tex->GetTextureId(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     cloud_compute_shader_->Use();
 	cloud_compute_shader_->SetVec2("iResolution", glm::vec2(window_size.x, window_size.y));
@@ -184,22 +188,4 @@ void VolumetricCloud::DrawShadowInfo(shared_ptr<OpenGLShader> simple_shader)
 	//actual draw
 	glDispatchCompute(window_size.x/CLOUD_REZ, window_size.y/CLOUD_REZ, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-}
-
-GLuint VolumetricCloud::GenerateTexture2D(unsigned w, unsigned h)
-{
-    unsigned int tex_output;
-    glGenTextures(1, &tex_output);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex_output);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, NULL);
-
-    glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-    return tex_output;
 }

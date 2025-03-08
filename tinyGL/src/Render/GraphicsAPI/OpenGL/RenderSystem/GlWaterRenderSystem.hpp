@@ -1,13 +1,18 @@
 #pragma once
 #include <memory>
 
-#include "RenderSystem.hpp"
+#include "OpenGLRenderSystem.hpp"
+
+namespace Kong
+{
+    class KongTexture;
+}
 
 namespace Kong
 {
     class AActor;
 
-    class WaterRenderSystem : public KongRenderSystem
+    class GlWaterRenderSystem : public OpenGLRenderSystem
     {
     public:
         void Init() override;
@@ -25,11 +30,13 @@ namespace Kong
         // 反射部分，需要变换相机角度重新渲染
         GLuint water_reflection_fbo = GL_NONE;
         GLuint water_reflection_rbo = GL_NONE;
-        GLuint water_reflection_texture = GL_NONE;
+        // GLuint water_reflection_texture = GL_NONE;
+        std::shared_ptr<KongTexture> water_reflection_texture;
 
         // 折射部分，先使用延迟渲染的结果复制过来
         GLuint water_refraction_fbo = GL_NONE;
-        GLuint water_refraction_texture = GL_NONE;
+        // GLuint water_refraction_texture = GL_NONE;
+        std::shared_ptr<KongTexture> water_refraction_texture;
         
         void GenerateWaterRenderTextures(int width, int height);
 

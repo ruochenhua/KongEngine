@@ -1,10 +1,11 @@
 #pragma once
 #include "VulkanRenderSystem.hpp"
-#include "Render/RenderSystem/DeferRenderSystem.hpp"
 #ifdef RENDER_IN_VULKAN
 
 namespace Kong
 {
+    class VulkanBuffer;
+    class CQuadShape;
     class VulkanPipeline;
     class VulkanSwapChain;
 

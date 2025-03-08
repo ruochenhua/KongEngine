@@ -3,6 +3,8 @@
 
 namespace Kong
 {
+    class OpenGLTexture;
+
     class CloudModel
     {
     public:
@@ -11,7 +13,7 @@ namespace Kong
         
     private:
         friend class VolumetricCloud;
-        friend class SkyboxRenderSystem;
+        friend class GlSkyboxRenderSystem;
         
         shared_ptr<OpenGLShader> perlin_worley_comp_shader;
         shared_ptr<OpenGLShader> worley_comp_shader;
@@ -44,14 +46,13 @@ namespace Kong
         void DrawShadowInfo(shared_ptr<OpenGLShader> simple_shader) override;
         
         // cloud process
-        GLuint cloud_tex, bloom_tex, alphaness_tex, depth_tex;
+        shared_ptr<OpenGLTexture> cloud_tex, bloom_tex, alphaness_tex, depth_tex;
+        
     private:
-        friend class SkyboxRenderSystem;
+        friend class GlSkyboxRenderSystem;
         
         shared_ptr<CloudModel> cloud_model_;
         shared_ptr<OpenGLShader> cloud_compute_shader_;
-        
-        GLuint GenerateTexture2D(unsigned w, unsigned h);
     };
 }
 

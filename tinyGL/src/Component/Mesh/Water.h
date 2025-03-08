@@ -1,5 +1,6 @@
 #pragma once
 #include "QuadShape.h"
+#include "Render/Resource/Texture.hpp"
 
 namespace Kong
 {
@@ -17,9 +18,9 @@ namespace Kong
         void LoadNormalTexture(const string& texture_path);
     private:
 		// dudv贴图
-        GLuint dudv_texture = 0;
+        std::weak_ptr<KongTexture> dudv_texture;
         // normal map
-        GLuint normal_texture = 0;
+        std::weak_ptr<KongTexture> normal_texture;
     };    
 }
 

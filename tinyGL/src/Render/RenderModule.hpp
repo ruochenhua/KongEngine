@@ -1,16 +1,20 @@
 #pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
-#include "RenderSystem/DeferRenderSystem.hpp"
-#include "RenderSystem/SSReflectionRenderSystem.hpp"
-#include "RenderSystem/WaterRenderSystem.hpp"
-#include "RenderSystem/PostProcessRenderSystem.hpp"
-#include "RenderSystem/RenderSystem.hpp"
-#include "RenderSystem/SkyboxRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlDeferRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/OpenGLRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlSSReflectionRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlWaterRenderSystem.hpp"
+
 #include "Shader/OpenGL/OpenGLShader.h"
 
 namespace Kong
 {
+	class CQuadShape;
+	class VulkanBuffer;
+	class VulkanDescriptorSetLayout;
+	class VulkanDescriptorPool;
 	class SimpleVulkanRenderSystem;
 	class VulkanPostprocessSystem;
 	class VulkanSwapChain;
@@ -101,7 +105,6 @@ namespace Kong
 		};
 		
 		static KongRenderModule& GetRenderModule();
-		static GLuint GetNullTexId();
 		static KongTexture* GetNullTex();
 		static glm::vec2 GetNearFar();
 		static shared_ptr<CQuadShape> GetScreenShape();
@@ -135,7 +138,7 @@ namespace Kong
 		
 		GLuint m_renderToTextures[FRAGOUT_TEXTURE_COUNT] = {0, 0, 0};
 
-		KongRenderSystem* GetRenderSystemByType(RenderSystemType type);
+		OpenGLRenderSystem* GetRenderSystemByType(RenderSystemType type);
 
 #ifdef RENDER_IN_VULKAN
 		
@@ -192,7 +195,6 @@ namespace Kong
 		weak_ptr<KongTexture> m_nullTex;
 
 		// todo: 删掉，统一用m_nullTex;
-		GLuint null_tex_id			= GL_NONE;
 		shared_ptr<OpenGLShader> shadowmap_debug_shader;
 		
 #if SHADOWMAP_DEBUG
@@ -221,15 +223,15 @@ namespace Kong
 		UBOHelper scene_light_ubo;
 		
 		// 天空盒
-		SkyboxRenderSystem m_skyboxRenderSystem;
+		GlSkyboxRenderSystem m_skyboxRenderSystem;
 		// 延迟渲染
-		DeferRenderSystem m_deferRenderSystem;
+		GlDeferRenderSystem m_deferRenderSystem;
 		// 后处理
-		PostProcessRenderSystem m_postProcessRenderSystem;
+		GlPostProcessRenderSystem m_postProcessRenderSystem;
 		// 屏幕空间反射
-		SSReflectionRenderSystem m_ssReflectionRenderSystem;
+		GlSSReflectionRenderSystem m_ssReflectionRenderSystem;
 		// 水体渲染实现
-		WaterRenderSystem m_waterRenderSystem;
+		GlWaterRenderSystem m_waterRenderSystem;
 		
 		shared_ptr<CQuadShape> m_quadShape;
 	};

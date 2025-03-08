@@ -1,4 +1,4 @@
-#include "PostProcessRenderSystem.hpp"
+#include "GlPostProcessRenderSystem.hpp"
 #ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #endif
@@ -7,12 +7,12 @@
 #include "Window.hpp"
 using namespace Kong;
 
-PostProcessRenderSystem::PostProcessRenderSystem()
+GlPostProcessRenderSystem::GlPostProcessRenderSystem()
 {
     m_Type = RenderSystemType::POST_PROCESS;
 }
 
-void PostProcessRenderSystem::Init()
+void GlPostProcessRenderSystem::Init()
 {
     glm::ivec2 window_size = KongWindow::GetWindowModule().windowSize;
     window_width = window_size.x;
@@ -34,7 +34,7 @@ void PostProcessRenderSystem::Init()
     InitQuad();
 }
 
-void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
+void GlPostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
 {
     window_width = width;
     window_height = height;
@@ -46,7 +46,7 @@ void PostProcessRenderSystem::OnWindowResize(unsigned width, unsigned height)
     radical_blur->GenerateTexture(window_width, window_height);
 }
 
-RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+RenderResultInfo GlPostProcessRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
     // post process往屏幕上（frame buffer 0）渲染
@@ -95,7 +95,7 @@ RenderResultInfo PostProcessRenderSystem::Draw(double delta, const RenderResultI
     return render_result_info;
 }
 
-void PostProcessRenderSystem::DrawUI()
+void GlPostProcessRenderSystem::DrawUI()
 {
 #ifndef RENDER_IN_VULKAN
     ImGui::Begin("Post Process");
@@ -128,7 +128,7 @@ void PostProcessRenderSystem::DrawUI()
     
 }
 
-void PostProcessRenderSystem::InitQuad()
+void GlPostProcessRenderSystem::InitQuad()
 {
     // 屏幕mesh
     float quadVertices[] = {

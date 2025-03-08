@@ -2,7 +2,7 @@
 #include "Component/Mesh/BoxShape.h"
 #include "Common.h"
 #include "Render/RenderCommon.hpp"
-#include "RenderSystem.hpp"
+#include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/OpenGL/SkyboxShader.h"
 
@@ -16,10 +16,10 @@ namespace Kong
 		atmosphere,
 	};
 	
-	class SkyboxRenderSystem : public KongRenderSystem
+	class GlSkyboxRenderSystem : public OpenGLRenderSystem
 	{
 	public:
-		SkyboxRenderSystem();
+		GlSkyboxRenderSystem();
 		void Init() override;
 		void DrawUI() override;
 		RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module) override;

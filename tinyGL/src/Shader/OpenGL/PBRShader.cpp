@@ -50,7 +50,8 @@ void PBRShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 	SetFloat("roughness", render_material->roughness);
 	SetFloat("ao", render_material->ao);
 
-	GLuint null_tex_id = KongRenderModule::GetNullTexId();
+	auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+	GLuint null_tex_id = nullTex->GetTextureId();
 	render_material->BindTextureByType(diffuse, DIFFUSE_TEX_SHADER_ID);
 	render_material->BindTextureByType(normal,  NORMAL_TEX_SHADER_ID);
 	render_material->BindTextureByType(roughness, ROUGHNESS_TEX_SHADER_ID);
@@ -59,7 +60,7 @@ void PBRShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 	
 	// todo: 天空盒贴图需要每次都更新吗?
 	auto& render_module = KongRenderModule::GetRenderModule();
-	auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module.GetRenderSystemByType(RenderSystemType::SKYBOX));
+	auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module.GetRenderSystemByType(RenderSystemType::SKYBOX));
 	// 添加天空盒贴图
 	GLuint skybox_tex_id = skybox_sys->GetSkyBoxTextureId();
 	glBindTextureUnit(GL_TEXTURE0 + SKYBOX_TEX_SHADER_ID, skybox_tex_id);

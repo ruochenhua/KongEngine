@@ -1,4 +1,4 @@
-#include "SkyboxRenderSystem.hpp"
+#include "GlSkyboxRenderSystem.hpp"
 #ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #endif
@@ -16,12 +16,12 @@ constexpr int CUBE_MAP_RES = 1024;
 
 #define USE_HDR_SKYBOX 1
 
-SkyboxRenderSystem::SkyboxRenderSystem()
+GlSkyboxRenderSystem::GlSkyboxRenderSystem()
 {
 	m_Type = RenderSystemType::SKYBOX;
 }
 
-void SkyboxRenderSystem::Init()
+void GlSkyboxRenderSystem::Init()
 {
 	box_mesh = make_shared<CBoxShape>();
 	// 这里begin play一下会创建一下对应的顶点buffer等数据
@@ -140,7 +140,7 @@ void SkyboxRenderSystem::Init()
 	volumetric_cloud_ = make_shared<VolumetricCloud>();
 }
 
-void SkyboxRenderSystem::DrawUI()
+void GlSkyboxRenderSystem::DrawUI()
 {
 #ifndef RENDER_IN_VULKAN
 	if(ImGui::TreeNode("skybox"))
@@ -158,7 +158,7 @@ void SkyboxRenderSystem::DrawUI()
 #endif
 }
 
-RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module)
+RenderResultInfo GlSkyboxRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info, KongRenderModule* render_module)
 {
 	if (render_module == nullptr || render_sky_env_status == 0)
 	{
@@ -178,7 +178,7 @@ RenderResultInfo SkyboxRenderSystem::Draw(double delta, const RenderResultInfo& 
 	return render_result_info;
 }
 
-void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
+void GlSkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
 {
 	int width, height, nr_component;
 	stbi_set_flip_vertically_on_load(true);
@@ -313,7 +313,7 @@ void SkyboxRenderSystem::PreprocessIBL(const string& hdr_file_path)
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void SkyboxRenderSystem::Render(int render_sky_status, GLuint depth_texture)
+void GlSkyboxRenderSystem::Render(int render_sky_status, GLuint depth_texture)
 {
 	switch (render_sky_status)
 	{
@@ -350,7 +350,7 @@ void SkyboxRenderSystem::Render(int render_sky_status, GLuint depth_texture)
 	}
 }
 
-void SkyboxRenderSystem::RenderCloud(GLuint depth_texture)
+void GlSkyboxRenderSystem::RenderCloud(GLuint depth_texture)
 {
 	// 参照工程是在后处理里面渲染的：https://github.com/fede-vaccaro/TerrainEngine-OpenGL
 	// 我们可以直接在skybox里面画
@@ -396,13 +396,13 @@ void SkyboxRenderSystem::RenderCloud(GLuint depth_texture)
 	KongRenderModule::GetScreenShape()->Draw();
 }
 
-void SkyboxRenderSystem::ChangeSkybox()
+void GlSkyboxRenderSystem::ChangeSkybox()
 {
 	current_skybox_idx = (current_skybox_idx + 1) % skybox_res_list.size();
 	PreprocessIBL(skybox_res_list[current_skybox_idx]);
 }
 
-void SkyboxRenderSystem::PreRenderUpdate()
+void GlSkyboxRenderSystem::PreRenderUpdate()
 {
 	if(render_cloud)
 	{

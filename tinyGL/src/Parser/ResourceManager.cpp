@@ -32,12 +32,6 @@ weak_ptr<KongTexture> ResourceManager::GetOrLoadTexture_new(ETextureType texture
 	return g_resourceManager->GetTexture_new(textureType, texture_path);
 }
 
-std::shared_ptr<KongTexture> ResourceManager::GetOrLoadCubeTexture(ETextureType textureType,
-	const std::vector<std::string>& texturePathList)
-{
-	return g_resourceManager->GetCubeTexture(textureType, texturePathList);
-}
-
 stbi_uc* ConvertRGB8ToRGBA8(stbi_uc* rgbData, size_t pixelCount) {
 	stbi_uc* rgbaData = new stbi_uc[pixelCount*4];
 	
@@ -122,6 +116,13 @@ weak_ptr<KongTexture> ResourceManager::GetTexture_new(ETextureType textureType, 
 	return texture_cache_new[texture_path];
 }
 
+#ifdef RENDER_IN_VULKAN
+std::shared_ptr<KongTexture> ResourceManager::GetOrLoadCubeTexture(ETextureType textureType,
+	const std::vector<std::string>& texturePathList)
+{
+	return g_resourceManager->GetCubeTexture(textureType, texturePathList);
+}
+
 std::shared_ptr<KongTexture> ResourceManager::GetCubeTexture(ETextureType textureType,
 	const std::vector<std::string>& texturePathList)
 {
@@ -158,7 +159,7 @@ std::shared_ptr<KongTexture> ResourceManager::GetCubeTexture(ETextureType textur
 
 	return new_tex;
 }
-
+#endif
 void ResourceManager::Clean()
 {
 	if (!g_resourceManager)

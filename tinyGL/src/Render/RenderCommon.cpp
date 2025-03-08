@@ -16,8 +16,8 @@ void RenderMaterialInfo::BindTextureByType(ETextureType textureType, unsigned in
     }
     else
     {
-        GLuint null_tex_id = KongRenderModule::GetNullTexId();
-        glBindTextureUnit(location, null_tex_id);
+        auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+        glBindTextureUnit(location, nullTex->GetTextureId());
     }
 }
 

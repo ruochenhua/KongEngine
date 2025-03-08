@@ -1,15 +1,15 @@
 #pragma once
-#include "RenderSystem.hpp"
+#include "OpenGLRenderSystem.hpp"
 #include "Shader/OpenGL/PostprocessShader.h"
 #include "Shader/OpenGL/OpenGLShader.h"
 
 
 namespace Kong
 {
-    class PostProcessRenderSystem : public KongRenderSystem
+    class GlPostProcessRenderSystem : public OpenGLRenderSystem
     {
     public:
-        PostProcessRenderSystem();
+        GlPostProcessRenderSystem();
         
         void Init() override;
         void OnWindowResize(unsigned width, unsigned height);

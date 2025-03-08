@@ -1,8 +1,8 @@
 #pragma once
 #include <unordered_map>
 
-#include "PostProcessRenderSystem.hpp"
-#include "RenderSystem.hpp"
+#include "GlPostProcessRenderSystem.hpp"
+#include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/QuadShape.h"
 #include "Shader/OpenGL/DeferInfoShader.h"
 
@@ -28,7 +28,7 @@ namespace Kong
         void GenerateSSAOTextures(int width, int height);
     };
     
-    class DeferRenderSystem : public KongRenderSystem
+    class GlDeferRenderSystem : public OpenGLRenderSystem
     {
     public:
         enum class DeferResType : uint8_t
@@ -39,7 +39,7 @@ namespace Kong
             Orm
         };
 
-        DeferRenderSystem();
+        GlDeferRenderSystem();
         
         void Init() override;
 

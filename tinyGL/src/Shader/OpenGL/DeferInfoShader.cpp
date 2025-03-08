@@ -81,7 +81,10 @@ DeferredBRDFShader::DeferredBRDFShader()
 
 void DeferredBRDFShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 {
-	GLuint null_tex_id = KongRenderModule::GetNullTexId();
+	auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+	
+
+	GLuint null_tex_id = nullTex->GetTextureId();
 	int texture_idx = 8;
 	// 贴图0-3分别是position/normal/albedo/orm, 已经IBL相关贴图，下面的从8开始算
 	// todo: 天空盒贴图需要每次都更新吗？整理一下贴图对应的index吧

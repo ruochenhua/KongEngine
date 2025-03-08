@@ -3,6 +3,7 @@
 #include <yaml-cpp/node/detail/memory.h>
 
 #include "common.h"
+#include "Render/RenderModule.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
 
 using namespace Kong;
@@ -79,6 +80,13 @@ void TextureBuilder::CreateTexture( GLuint& texture_id, const TextureCreateInfo&
     glGenerateTextureMipmap(texture_id);
 }
 
+std::shared_ptr<KongTexture> TextureBuilder::CreateTexture_new(const TextureCreateInfo& profile)
+{
+    auto new_tex = make_shared<OpenGLTexture>();
+    CreateTexture(new_tex->m_texId, profile);
+    return new_tex;
+}
+
 void TextureBuilder::CreateTexture2D(GLuint& texture_id, int width, int height, GLenum format, unsigned char* data)
 {
     TextureCreateInfo texture_info {};
@@ -89,37 +97,6 @@ void TextureBuilder::CreateTexture2D(GLuint& texture_id, int width, int height, 
 
     // 默认的一些配置
     CreateTexture(texture_id, texture_info);
-    return;
-
-    //////////// DSA
-    int levels = static_cast<int>(log2(max(width, height))) + 1;
-    glCreateTextures(texture_info.texture_type, 1, &texture_id);
-    
-    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, texture_info.wrapS);
-    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, texture_info.wrapT);
-    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_R, texture_info.wrapR);
-    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, texture_info.minFilter);
-    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, texture_info.magFilter);
-    
-    glTextureStorage2D(texture_id, levels, texture_info.internalFormat,
-    static_cast<GLsizei>(texture_info.width),
-    static_cast<GLsizei>(texture_info.height));
-    
-    if (data)
-    {
-        // 暂时还没有不同等级的区分
-        // for (int level = 0; level < levels; level++)
-        // {
-        //     int mipWidth = std::max(1, width >> level);
-        //     int mipHeight = std::max(1, height >> level);
-        //     glTextureSubImage2D(texture_id, level, 0, 0, mipWidth, mipHeight,
-        //         texture_info.format, texture_info.data_type, texture_info.data);    
-        // }
-        glTextureSubImage2D(texture_id, 0, 0, 0, width, height,
-                texture_info.format, texture_info.data_type, texture_info.data);    
-    }
-    
-    glGenerateTextureMipmap(texture_id);
 }
 
 void TextureBuilder::CreateTexture3D(GLuint& texture_id, const Texture3DCreateInfo& profile)
@@ -403,17 +380,20 @@ OpenGLTexture::~OpenGLTexture()
 
 void OpenGLTexture::Bind(unsigned int location)
 {
-    glBindTextureUnit(location, m_texId);
+    if (IsValid())
+    {
+        glBindTextureUnit(location, m_texId);
+    }
+    else
+    {
+        auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+        glBindTextureUnit(location, nullTex->GetTextureId());
+    }
 }
 
 bool OpenGLTexture::IsValid()
 {
     return m_texId != GL_NONE;
-}
-
-void OpenGLTexture::LoadTexture(const std::string& fileName)
-{
-    
 }
 
 #endif

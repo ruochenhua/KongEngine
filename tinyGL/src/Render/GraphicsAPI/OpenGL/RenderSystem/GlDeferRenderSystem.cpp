@@ -1,4 +1,4 @@
-#include "DeferRenderSystem.hpp"
+#include "GlDeferRenderSystem.hpp"
 #ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #endif
@@ -101,13 +101,13 @@ void SSAOHelper::GenerateSSAOTextures(int width, int height)
 	ssao_shader_->SetVec2("screen_size", vec2(width, height));
 }
 
-DeferRenderSystem::DeferRenderSystem()
+GlDeferRenderSystem::GlDeferRenderSystem()
 {
 	m_Type = RenderSystemType::DEFERRED;
 }
 
 
-void DeferRenderSystem::Init()
+void GlDeferRenderSystem::Init()
 {
     glGenFramebuffers(1, &m_infoBuffer);
 
@@ -134,7 +134,7 @@ void DeferRenderSystem::Init()
 	m_deferredBRDFShader = make_shared<DeferredBRDFShader>();
 }
 
-RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+RenderResultInfo GlDeferRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
     // 渲染到g buffer上
@@ -161,7 +161,7 @@ RenderResultInfo DeferRenderSystem::Draw(double delta, const RenderResultInfo& r
 		GetPositionTexture()};
 }
 
-void DeferRenderSystem::DrawUI()
+void GlDeferRenderSystem::DrawUI()
 {
 #ifndef RENDER_IN_VULKAN
 	ImGui::Checkbox("ssao", &use_ssao);
@@ -181,32 +181,32 @@ void DeferRenderSystem::DrawUI()
 	
 }
 
-GLuint DeferRenderSystem::GetPositionTexture()
+GLuint GlDeferRenderSystem::GetPositionTexture()
 {
     return m_deferredResourceMap[DeferResType::Position];
 }
 
-GLuint DeferRenderSystem::GetNormalTexture()
+GLuint GlDeferRenderSystem::GetNormalTexture()
 {
     return m_deferredResourceMap[DeferResType::Normal];
 }
 
-GLuint DeferRenderSystem::GetAlbedoTexture()
+GLuint GlDeferRenderSystem::GetAlbedoTexture()
 {
     return m_deferredResourceMap[DeferResType::Albedo];
 }
 
-GLuint DeferRenderSystem::GetOrmTexture()
+GLuint GlDeferRenderSystem::GetOrmTexture()
 {
     return m_deferredResourceMap[DeferResType::Orm];
 }
 
-GLuint DeferRenderSystem::GetFrameBuffer() const
+GLuint GlDeferRenderSystem::GetFrameBuffer() const
 {
     return m_infoBuffer;
 }
 
-void DeferRenderSystem::GenerateDeferInfoTextures(int width, int height)
+void GlDeferRenderSystem::GenerateDeferInfoTextures(int width, int height)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_infoBuffer);
 
@@ -254,7 +254,7 @@ void DeferRenderSystem::GenerateDeferInfoTextures(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
+void GlDeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
 {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -276,7 +276,7 @@ void DeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
             continue;
         }
 
-		auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
+		auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
     	
         mesh_shader->Use();
         // 等于1代表渲染skybox，会需要用到环境贴图
@@ -286,7 +286,7 @@ void DeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
     }
 }
 
-void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModule* render_module)
+void GlDeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModule* render_module)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, render_to_buffer);
     // 渲染到当前的scene framebuffer上
@@ -324,7 +324,7 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModul
 	glBindTextureUnit(texture_idx++, GetAlbedoTexture());
 	glBindTextureUnit(texture_idx++, GetOrmTexture());
 	
-	auto skybox_sys = dynamic_cast<SkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
+	auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
     m_deferredBRDFShader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
 	// auto& render_module = KongRenderModule::GetRenderModule();
 	glBindTextureUnit(texture_idx++, skybox_sys->GetSkyBoxTextureId());
@@ -346,7 +346,7 @@ void DeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderModul
 	
 }
 
-void DeferRenderSystem::SSAORender()
+void GlDeferRenderSystem::SSAORender()
 {
 	// 处理SSAO效果
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ssaoHelper.ssao_fbo);

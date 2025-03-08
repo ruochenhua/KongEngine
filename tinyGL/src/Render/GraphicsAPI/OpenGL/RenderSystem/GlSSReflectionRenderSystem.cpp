@@ -1,21 +1,21 @@
-﻿#include "SSReflectionRenderSystem.hpp"
+﻿#include "GlSSReflectionRenderSystem.hpp"
 
 #include "Render/RenderModule.hpp"
 #include "Shader/OpenGL/DeferInfoShader.h"
 
 using namespace Kong;
 
-SSReflectionRenderSystem::SSReflectionRenderSystem()
+GlSSReflectionRenderSystem::GlSSReflectionRenderSystem()
 {
     m_Type = RenderSystemType::SS_REFLECTION;
 }
 
-void SSReflectionRenderSystem::Init()
+void GlSSReflectionRenderSystem::Init()
 {
     m_ssReflectionShader = std::make_shared<SSReflectionShader>();
 }
 
-RenderResultInfo SSReflectionRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+RenderResultInfo GlSSReflectionRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
     // scene color：post_process.GetScreenTexture()
@@ -28,7 +28,7 @@ RenderResultInfo SSReflectionRenderSystem::Draw(double delta, const RenderResult
     glDisable(GL_DEPTH_TEST);
 	
     m_ssReflectionShader->Use();
-	auto defer_render_system = dynamic_cast<DeferRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::DEFERRED));
+	auto defer_render_system = dynamic_cast<GlDeferRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::DEFERRED));
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, defer_render_system->GetPositionTexture());
@@ -46,7 +46,7 @@ RenderResultInfo SSReflectionRenderSystem::Draw(double delta, const RenderResult
     return render_result_info;
 }
 
-void SSReflectionRenderSystem::DrawUI()
+void GlSSReflectionRenderSystem::DrawUI()
 {
     
 }

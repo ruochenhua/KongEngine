@@ -62,10 +62,6 @@ KongRenderModule& KongRenderModule::GetRenderModule()
 {
 	return g_renderModule;
 }
-GLuint KongRenderModule::GetNullTexId()
-{
-	return g_renderModule.null_tex_id;
-}
 
 KongTexture* KongRenderModule::GetNullTex()
 {
@@ -84,7 +80,9 @@ shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 
 KongRenderModule::~KongRenderModule()
 {
+#ifdef RENDER_IN_VULKAN
 	FreeCommandBuffers();
+#endif
 }
 
 int KongRenderModule::Init()
@@ -126,11 +124,6 @@ int KongRenderModule::Init()
 	shadowmap_debug_shader->SetInt("shadow_map", 0);
 #endif
 	
-	// load null texture
-	
-	null_tex_id = ResourceManager::GetOrLoadTexture(null_tex_path);
-
-	
 	// add render system
 	m_skyboxRenderSystem.Init();
 	m_deferRenderSystem.Init();
@@ -142,7 +135,7 @@ int KongRenderModule::Init()
 	
 	InitUBO();
 	
-		
+#ifdef RENDER_IN_VULKAN
 	m_simpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get());
 	m_simpleRenderSystem->CreateMeshDescriptorSet();
 	
@@ -153,11 +146,13 @@ int KongRenderModule::Init()
 	};
 	
 	m_vulkanPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
+#endif
 	
+
 	return 0;
 }
 
-KongRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
+OpenGLRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
 {
 	switch (type)
 	{

@@ -159,7 +159,6 @@ void OpenGLShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_materi
 	法线矩阵被定义为「模型矩阵左上角3x3部分的逆矩阵的转置矩阵」
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	 */
-	GLuint null_tex_id = KongRenderModule::GetNullTexId();
 	render_material->BindTextureByType(diffuse, 0);
 	render_material->BindTextureByType(normal, 1);
 }

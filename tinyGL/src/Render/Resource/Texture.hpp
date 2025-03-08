@@ -45,6 +45,7 @@ namespace Kong
         GLuint GetTextureId() const {return texture_id;}
 
         static void CreateTexture(GLuint& texture_id, const TextureCreateInfo& profile);
+        static std::shared_ptr<KongTexture> CreateTexture_new(const TextureCreateInfo& profile);
         static void CreateTexture2D(GLuint& texture_id, int width, int height, GLenum format, unsigned char* data = nullptr);
         static void CreateTexture3D(GLuint& texture_id, const Texture3DCreateInfo& profile);
     protected:
@@ -101,9 +102,9 @@ namespace Kong
         void Bind(unsigned int location) override;
         
         bool IsValid() override;
-        void LoadTexture(const std::string& fileName) override;
     private:
         friend class ResourceManager;
+        friend class TextureBuilder;
         GLuint m_texId {GL_NONE};
     };
 #endif

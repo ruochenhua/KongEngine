@@ -32,7 +32,7 @@ namespace Kong
         GLuint terrain_vao = GL_NONE;
         GLuint terrain_vbo = GL_NONE;
         
-        GLuint terrain_height_map = GL_NONE;
+        weak_ptr<KongTexture> terrain_height_map;
         
         std::vector<float> height_data;
         std::vector<unsigned int> height_indices;
@@ -44,13 +44,13 @@ namespace Kong
         
         bool render_wireframe = false;
 
-        GLuint grass_albedo_texture = GL_NONE;
-        GLuint grass_normal_texture = GL_NONE;
-
-        GLuint sand_albedo_texture = GL_NONE;
-        GLuint sand_normal_texture = GL_NONE;
+        weak_ptr<KongTexture> grass_albedo_texture;
+        weak_ptr<KongTexture> grass_normal_texture;
         
-        GLuint rock_albedo_texture = GL_NONE;
-        GLuint rock_normal_texture = GL_NONE;
+        weak_ptr<KongTexture> sand_albedo_texture;
+        weak_ptr<KongTexture> sand_normal_texture;
+
+        weak_ptr<KongTexture> rock_albedo_texture;
+        weak_ptr<KongTexture> rock_normal_texture;
     };
 }

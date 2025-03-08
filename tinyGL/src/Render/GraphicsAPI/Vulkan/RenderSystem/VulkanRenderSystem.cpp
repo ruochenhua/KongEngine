@@ -4,8 +4,9 @@
 
 #include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 
-using namespace Kong;
 #ifdef RENDER_IN_VULKAN
+
+using namespace Kong;
 
 VulkanRenderSystem::VulkanRenderSystem(VulkanSwapChain* swapChain)
     :m_swapChain(swapChain)

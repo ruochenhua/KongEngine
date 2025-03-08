@@ -1,17 +1,17 @@
 ﻿#pragma once
 #include <memory>
 
-#include "RenderSystem.hpp"
+#include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/QuadShape.h"
 
 namespace Kong
 {
     class SSReflectionShader;
 
-    class SSReflectionRenderSystem : public KongRenderSystem
+    class GlSSReflectionRenderSystem : public OpenGLRenderSystem
     {
     public:
-        SSReflectionRenderSystem();
+        GlSSReflectionRenderSystem();
         
         void Init() override;
         RenderResultInfo Draw(double delta,

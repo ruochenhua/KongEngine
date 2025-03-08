@@ -1,4 +1,4 @@
-#include "WaterRenderSystem.hpp"
+#include "GlWaterRenderSystem.hpp"
 
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
@@ -15,7 +15,7 @@ namespace Kong
 
 using namespace Kong;
 
-void WaterRenderSystem::Init()
+void GlWaterRenderSystem::Init()
 {
     auto window_size = KongWindow::GetWindowModule().windowSize;
     // water相关的buffer初始化
@@ -25,7 +25,7 @@ void WaterRenderSystem::Init()
     GenerateWaterRenderTextures(window_size.x, window_size.y);
 }
 
-RenderResultInfo WaterRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
+RenderResultInfo GlWaterRenderSystem::Draw(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
     // 此时传入的render_result_info应该指向的是main framebuffer
@@ -81,12 +81,12 @@ RenderResultInfo WaterRenderSystem::Draw(double delta, const RenderResultInfo& r
     return render_result_info;
 }
 
-void WaterRenderSystem::DrawUI()
+void GlWaterRenderSystem::DrawUI()
 {
-    KongRenderSystem::DrawUI();
+    OpenGLRenderSystem::DrawUI();
 }
 
-void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_result_info,
+void GlWaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_result_info,
     KongRenderModule* render_module)
 {
     glEnable(GL_CULL_FACE);
@@ -111,9 +111,9 @@ void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_r
         auto mesh_shader = water_comp->shader_data;
 
         mesh_shader->Use();
-        glBindTextureUnit(0, water_reflection_texture);
-        glBindTextureUnit(1, water_refraction_texture);
-		
+        water_reflection_texture->Bind(0);
+        water_refraction_texture->Bind(1);
+        
         // 等于1代表渲染skybox，会需要用到环境贴图
         // mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
         mesh_shader->SetMat4("model", water_actor->GetModelMatrix());
@@ -132,9 +132,9 @@ void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_r
         auto mesh_shader = gerstner_water->shader_data;
 
         mesh_shader->Use();
-        glBindTextureUnit(0, water_reflection_texture);
-        glBindTextureUnit(1, water_refraction_texture);
-
+        water_reflection_texture->Bind(0);
+        water_refraction_texture->Bind(1);
+        
 		
         // 等于1代表渲染skybox，会需要用到环境贴图
         // mesh_shader->SetBool("b_render_skybox", render_sky_env_status == 1);
@@ -146,7 +146,7 @@ void WaterRenderSystem::DrawWater(double delta, const RenderResultInfo& render_r
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void WaterRenderSystem::GenerateWaterRenderTextures(int width, int height)
+void GlWaterRenderSystem::GenerateWaterRenderTextures(int width, int height)
 {
     // 水面反射相关的buffer
     glBindFramebuffer(GL_FRAMEBUFFER, water_reflection_fbo);
@@ -154,9 +154,9 @@ void WaterRenderSystem::GenerateWaterRenderTextures(int width, int height)
         GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT, width, height,
             GL_REPEAT, GL_REPEAT, GL_REPEAT, GL_LINEAR
         };
-    TextureBuilder::CreateTexture(water_reflection_texture, water_tex_create_info);
-	
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_reflection_texture, 0);
+
+    water_reflection_texture = TextureBuilder::CreateTexture_new(water_tex_create_info);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dynamic_pointer_cast<OpenGLTexture>(water_reflection_texture)->GetTextureId(), 0);
 	
     if (!water_reflection_rbo)
     {
@@ -175,10 +175,9 @@ void WaterRenderSystem::GenerateWaterRenderTextures(int width, int height)
 
     // 水面折射相关的buffer
     glBindFramebuffer(GL_FRAMEBUFFER, water_refraction_fbo);
-
-    TextureBuilder::CreateTexture(water_refraction_texture, water_tex_create_info);
-	
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, water_refraction_texture, 0);
+    
+    water_refraction_texture = TextureBuilder::CreateTexture_new(water_tex_create_info);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dynamic_pointer_cast<OpenGLTexture>(water_refraction_texture)->GetTextureId(), 0);
 	
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {

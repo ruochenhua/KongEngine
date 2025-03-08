@@ -32,26 +32,22 @@ void Water::Draw(void* commandBuffer)
 {
     shader_data->Use();
     auto& render_info = mesh_resource->mesh_list[0]->m_RenderInfo;
-#if USE_DSA
-    glBindTextureUnit(2, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
-    glBindTextureUnit(3, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());
-#else
-    glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : CRender::GetNullTexId());
 
-    glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : CRender::GetNullTexId());
-#endif
+    if (auto tex = dudv_texture.lock()) tex->Bind(2);
+    if (auto tex = normal_texture.lock()) tex->Bind(3);
+
     render_info->vertex_buffer->Bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Water::LoadDudvMapTexture(const string& texture_path)
 {
-    dudv_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+    // 类型对opengl没区别
+    dudv_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(texture_path));
 }
 
 void Water::LoadNormalTexture(const string& texture_path)
 {
-    normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+    // 类型对opengl没区别
+    normal_texture = ResourceManager::GetOrLoadTexture_new(normal, CSceneLoader::ToResourcePath(texture_path));
 }
