@@ -95,6 +95,6 @@ void KongSceneManager::LoadScene(const string& file_path)
 
 #ifdef RENDER_IN_VULKAN
     // todo: 放其他地方
-    KongRenderModule::GetRenderModule().m_simpleRenderSystem->CreateMeshDescriptorSet();
+    KongRenderModule::GetRenderModule().m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
 #endif
 }

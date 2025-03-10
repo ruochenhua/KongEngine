@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "Scene.hpp"
 #include "Render/RenderModule.hpp"
 
 using namespace Kong;
@@ -26,12 +27,32 @@ VulkanSkyBoxRenderSystem::~VulkanSkyBoxRenderSystem()
 {
     auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
     vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+    vkDestroyRenderPass(device, m_renderPass, nullptr);
 }
 
 void VulkanSkyBoxRenderSystem::Draw(const FrameInfo& frameInfo)
 {
     BeginRenderPass(frameInfo.commandBuffer);
 
+    m_pipeline->Bind(frameInfo.commandBuffer);
+    // 全局变量，控制在render module中
+    vkCmdBindDescriptorSets(
+        frameInfo.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipelineLayout,
+        0, 1,
+        &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
+            , 0, nullptr);
+    
+    vkCmdBindDescriptorSets(
+        frameInfo.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipelineLayout, 1, 1,
+        &m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType::Texture],
+        0, nullptr);
+
+    m_boxShape->Draw(frameInfo.commandBuffer);
+    
     EndRenderPass(frameInfo.commandBuffer);
 }
 
@@ -72,8 +93,14 @@ void VulkanSkyBoxRenderSystem::CreatePipeline()
     
     PipelineConfigInfo pipelineConfig{};
     VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
-    pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;    // 这里关掉深度写入，深度测试保持开启
-    
+    // !这里关掉深度写入，深度测试保持开启
+    pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
+    // !开启前面剔除，等于glCullFace(GL_FRONT)这一步
+    pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    pipelineConfig.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   // 用逆时针这一面作为front
+    // * 比较方法这里使用less_or_equal，天空盒深度为1.0的时候才不会出现z fighting
+    pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;   
+        
     pipelineConfig.renderPass = m_renderPass;
     pipelineConfig.pipelineLayout = m_pipelineLayout;
     
@@ -96,7 +123,8 @@ void VulkanSkyBoxRenderSystem::CreateRenderPass()
 
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;    // 渲染通道开始和结束时对模板缓冲区的操作
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;          // 指定附件在渲染通道开始时的图像布局(这里表示不关心)
+    // 指定附件在渲染通道开始时的图像布局,这里需不能用UNDEFINED因为是加载并复用了模型渲染的数据
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;    
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 指定附件在渲染通道结束时的图像布局(这里表示用于深度模板附近的最佳布局)
 
     // 深度附件引用:定义子通道中如何引用深度附件
@@ -112,7 +140,8 @@ void VulkanSkyBoxRenderSystem::CreateRenderPass()
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     // 渲染通道结束时保存颜色数据,以便后续呈现
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // 指定附件在渲染通道开始时的图像布局,这里需不能用UNDEFINED因为是加载并复用了模型渲染的数据
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     // !colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // 表示该附件在渲染结束后用于呈现
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // 表示该附件用于shader的读入（喂给后处理）
 
@@ -160,71 +189,26 @@ void VulkanSkyBoxRenderSystem::CreateRenderPass()
 
 void VulkanSkyBoxRenderSystem::CreateCubeImage()
 {
-    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
-    auto extent = m_swapChain->GetSwapChainExtent();
+    /**
+    立方体贴图的面是有顺序的。面索引对应如下关系：
+        0：+X（左）
+        1：-X（右）
+        2：+Y（上）
+        3：-Y（下）
+        4：+Z（前）
+        5：-Z（后）
+     */
+    m_cubeMap = dynamic_pointer_cast<VulkanTexture>(ResourceManager::GetOrLoadCubeTexture(diffuse, {
+        
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_lf.tga"),
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_rt.tga"),
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_up.tga"),
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_dn.tga"),
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_ft.tga"),
+        CSceneLoader::ToResourcePath("/sky_box/dark_sky/darkskies_bk.tga"),
+    }));
 
-    // color image
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = extent.width;
-    imageInfo.extent.height = extent.height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 6;  // cubemap为六面
-    imageInfo.format = m_swapChain->GetSwapChainImageFormat();
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;   // 只是用作sample
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = 0;
-
-    VulkanGraphicsDevice::GetGraphicsDevice()->CreateImageWithInfo(imageInfo,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_imageMemory);
-
-    VkImageViewCreateInfo viewInfo = {};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = m_image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-    viewInfo.format = m_swapChain->GetSwapChainImageFormat();
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 6;       // cubemap为6层
-    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    if (vkCreateImageView(device, &viewInfo, nullptr, &m_imageView) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create image views");
-    }
-    
-    // 创建sampler
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 5.0f;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    if (vkCreateSampler(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
+    m_imageInfo = {m_cubeMap->m_sampler, m_cubeMap->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 }
 
 void VulkanSkyBoxRenderSystem::CreateDescriptorSet(const VulkanSkyBoxCreateInfo& createInfo)

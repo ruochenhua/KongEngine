@@ -31,6 +31,7 @@ namespace Kong
         VkImage GetColorImage() const { return m_image; }
         VkImageView GetColorImageView() const { return m_imageView; }
         VkSampler GetSampler() const {return m_sampler;}
+        VkFramebuffer GetFrameBuffer() const { return m_framebuffer; }
     private:
         void CreateDescriptorSetLayout();
         void CreatePipelineLayout();

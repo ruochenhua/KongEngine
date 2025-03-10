@@ -39,11 +39,8 @@ namespace Kong
         
         std::unique_ptr<CBoxShape> m_boxShape {nullptr};
         // todo: 放这里面
-        VulkanTexture m_cubeMap;
-        VkImage m_image;
-        VkImageView m_imageView;
-        VkSampler m_sampler;
-        VkDeviceMemory m_imageMemory;
+        shared_ptr<VulkanTexture> m_cubeMap;
+
         
         VkDescriptorImageInfo m_imageInfo {VK_NULL_HANDLE};
     };

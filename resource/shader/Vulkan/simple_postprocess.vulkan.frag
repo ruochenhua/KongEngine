@@ -1,10 +1,5 @@
 #version 450
 
-//layout(push_constant) uniform Push{
-//    float camera_exposure;
-//    int use_bloom;
-//} push;
-
 layout(set=0, binding=0) uniform sampler2D scene_texture;
 layout(set=1, binding=0) uniform PostProcessUbo{
     float exposure;

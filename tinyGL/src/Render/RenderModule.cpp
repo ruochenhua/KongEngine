@@ -25,6 +25,7 @@
 #include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkPostprocessRenderSystem.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
+#include "GraphicsAPI/Vulkan/RenderSystem/VkSkyBoxRenderSystem.hpp"
 
 using namespace Kong;
 using namespace glm;
@@ -136,16 +137,25 @@ int KongRenderModule::Init()
 	InitUBO();
 	
 #ifdef RENDER_IN_VULKAN
-	m_simpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get());
-	m_simpleRenderSystem->CreateMeshDescriptorSet();
+	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get());
+	// mesh需要初始化descriptorset
+	// todo:可能要放到其他地方 
+	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();	
 	
+	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
+		m_swapChain.get(),
+		m_vkSimpleRenderSystem->GetFrameBuffer(),
+		m_descriptorPool.get()
+	};
+	
+	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
 
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
 		m_swapChain.get(), m_descriptorPool.get(),
-		m_simpleRenderSystem->GetColorImageView(), m_simpleRenderSystem->GetSampler()
+		m_vkSimpleRenderSystem->GetColorImageView(), m_vkSimpleRenderSystem->GetSampler()
 	};
 	
-	m_vulkanPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
+	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
 #endif
 	
 
@@ -378,7 +388,8 @@ void KongRenderModule::UpdateSceneRenderInfo()
 
 #ifdef RENDER_IN_VULKAN
 	GlobalVulkanUbo ubo{};
-	ubo.projectionView = mainCamera->GetProjectionMatrix() * mainCamera->GetViewMatrix();
+	ubo.projection = mainCamera->GetProjectionMatrix();
+	ubo.view = mainCamera->GetViewMatrix();
 	ubo.cameraPosition = vec4(mainCamera->GetPosition(), 1.0f);
 	
 	ubo.sceneLightInfo = light_info;
@@ -497,13 +508,14 @@ int KongRenderModule::Update(double delta)
 			commandBuffer
 		};
 
-		m_simpleRenderSystem->UpdateMeshUBO(frameInfo);
+		m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
 		// render
 		/* 每个frame之间可以有多个render pass*/
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
 		
-		m_simpleRenderSystem->Draw(frameInfo);
-		m_vulkanPostProcessSystem->Draw(frameInfo);
+		m_vkSimpleRenderSystem->Draw(frameInfo);
+		m_vkSkyboxSystem->Draw(frameInfo);
+		m_vkPostProcessSystem->Draw(frameInfo);
 		
 		EndFrame();
 	}

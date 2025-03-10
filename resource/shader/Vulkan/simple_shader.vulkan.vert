@@ -21,8 +21,8 @@ layout(push_constant) uniform Push{
 
 // descriptor set
 layout(set=0, binding=0) uniform GlobalUbo {
-    mat4 projectionView;
-    vec4 directionToLight;
+    mat4 projection;
+    mat4 view;
     vec4 cameraPositon;
 
     SceneLightInfo sceneLightInfo;
@@ -32,7 +32,7 @@ void main()
 {
     mat4 model = push.modelMatrix;
 
-    gl_Position = ubo.projectionView * model * vec4(position, 1.0);
+    gl_Position = ubo.projection * ubo.view * model * vec4(position, 1.0);
     fragPos = (model * vec4(position, 1.0)).xyz;
     fragNormal = normalize(mat3(transpose(inverse(model))) * normal);
     fragUV = uv;

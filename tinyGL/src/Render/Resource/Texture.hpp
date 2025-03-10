@@ -82,15 +82,15 @@ namespace Kong
         VkFormat m_format{ VK_FORMAT_MAX_ENUM };
     private:
         // 转换图像布局
-        void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, int arrayLayer = 0);
         // 复制缓冲区到图像
-        void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer = 0);
+        void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer = 0, int layerCount = 1);
         // 创建纹理图像视图, 为了让着色器能够访问纹理图像
-        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, int layerCount = 1);
         // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值
         void CreateTextureSampler();
     };
-#else
+#endif
     class OpenGLTexture : public KongTexture
     {
     public:
@@ -107,7 +107,4 @@ namespace Kong
         friend class TextureBuilder;
         GLuint m_texId {GL_NONE};
     };
-#endif
-    
-    
 }

@@ -17,6 +17,7 @@ namespace Kong
 	class VulkanDescriptorPool;
 	class SimpleVulkanRenderSystem;
 	class VulkanPostprocessSystem;
+	class VulkanSkyBoxRenderSystem;
 	class VulkanSwapChain;
 	class CCamera;
 
@@ -96,8 +97,9 @@ namespace Kong
 	public:
 		struct GlobalVulkanUbo
 		{
-			glm::mat4 projectionView {1.f};
-			glm::vec4 lightDirection = {glm::normalize(glm::vec3{-1.f, 1.f, -1.0f}), 1.0};
+			glm::mat4 projection {1.f};
+			glm::mat4 view {1.f};
+			
 			glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
 
 			// SceneLightInfo sceneLightInfo;
@@ -167,8 +169,9 @@ namespace Kong
 		bool m_isFrameStarted {false};
 
 		// todo: 放到private
-		std::unique_ptr<SimpleVulkanRenderSystem> m_simpleRenderSystem{nullptr};
-		std::unique_ptr<VulkanPostprocessSystem> m_vulkanPostProcessSystem{nullptr};
+		std::unique_ptr<SimpleVulkanRenderSystem> m_vkSimpleRenderSystem{nullptr};
+		std::unique_ptr<VulkanPostprocessSystem> m_vkPostProcessSystem{nullptr};
+		std::unique_ptr<VulkanSkyBoxRenderSystem> m_vkSkyboxSystem{nullptr};
 #endif
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 */

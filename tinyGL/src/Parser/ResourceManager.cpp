@@ -127,8 +127,7 @@ std::shared_ptr<KongTexture> ResourceManager::GetCubeTexture(ETextureType textur
 	const std::vector<std::string>& texturePathList)
 {
 	assert(texturePathList.size() == 6 && "cube map path error!");
-
-
+	
 	bool flip_uv = false;	
 	stbi_set_flip_vertically_on_load(flip_uv);
 
