@@ -3,13 +3,13 @@
 #include <array>
 
 #include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
+#include "Render/RenderModule.hpp"
 
 #ifdef RENDER_IN_VULKAN
-
 using namespace Kong;
 
-VulkanRenderSystem::VulkanRenderSystem(VulkanSwapChain* swapChain)
-    :m_swapChain(swapChain)
+VulkanRenderSystem::VulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule)
+    :m_swapChain(swapChain), m_renderModule(renderModule)
 {
 }
 

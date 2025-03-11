@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #ifdef RENDER_IN_VULKAN
-// #include <imgui_impl_vulkan.h>
+#include <imgui_impl_vulkan.h>
 #else
 #include <imgui_impl_opengl3.h>
 #endif
@@ -14,6 +14,7 @@
 #include <filesystem>
 
 #include "Component/Mesh/Terrain.h"
+#include "Render/RenderModule.hpp"
 
 using namespace Kong;
 
@@ -64,11 +65,56 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 
 	// 初始化imgui后端
 #ifdef RENDER_IN_VULKAN
-	// auto windowModule = KongWindow::GetWindowModule();
-	// auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
+	
+	
+	auto windowModule = KongWindow::GetWindowModule();
+	auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
+
+	VkDescriptorPoolSize pool_sizes[] =
+		{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	if(vkCreateDescriptorPool(vulkanDevice->GetDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create imgui descriptor pool");
+	}
+	
 	//
-	// ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
-	// ImGui_ImplVulkan_InitInfo init_info = vulkanDevice->GetImGuiInitInfo();
+	ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
+	ImGui_ImplVulkan_InitInfo init_info{};
+	init_info.Instance = vulkanDevice->m_instance;
+	init_info.Device = vulkanDevice->m_device;
+	init_info.PhysicalDevice = vulkanDevice->m_physicalDevice;
+	init_info.QueueFamily = vulkanDevice->FindQueueFamilies(vulkanDevice->m_physicalDevice).graphicsFamily;
+	init_info.Queue = vulkanDevice->m_graphicsQueue;
+	init_info.PipelineCache = VK_NULL_HANDLE;
+	init_info.MinImageCount = 2;
+	init_info.ImageCount = 2;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.RenderPass = KongRenderModule::GetRenderModule().GetSwapChainRenderPass();
+	init_info.Subpass = 0;
+	init_info.DescriptorPool = imguiPool;
+
+	ImGui_ImplVulkan_Init(&init_info);
+	
 	//
 	// ImGui_ImplVulkan_Init(&init_info);
 	
@@ -94,18 +140,20 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 void KongUIManager::PreRenderUpdate(double delta)
 {
 #ifdef RENDER_IN_VULKAN
+	ImGui_ImplVulkan_NewFrame();
 #else
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-	
-	DescribeUIContent(delta);
 #endif
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	DescribeUIContent(delta);
+	
 }
 
 void KongUIManager::PostRenderUpdate()
 {
 #ifdef RENDER_IN_VULKAN
+	ImGui::EndFrame();
 #else
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
@@ -117,11 +165,13 @@ void KongUIManager::PostRenderUpdate()
 void KongUIManager::Destroy()
 {
 #ifdef RENDER_IN_VULKAN
+	ImGui_ImplVulkan_Shutdown();
+	vkDestroyDescriptorPool(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), imguiPool, nullptr);
 #else
 	ImGui_ImplOpenGL3_Shutdown();
+#endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-#endif
 }
 
 void KongUIManager::DescribeUIContent(double delta)

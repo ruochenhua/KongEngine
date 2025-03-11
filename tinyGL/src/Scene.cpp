@@ -81,6 +81,10 @@ vector<shared_ptr<AActor>> KongSceneManager::GetSceneActors_Implement()
 
 void KongSceneManager::LoadScene(const string& file_path)
 {
+#ifdef RENDER_IN_VULKAN
+    // 需要等待GPU任务执行完才能释放掉原来的actor
+    vkDeviceWaitIdle(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice());
+#endif
     for(auto& actor : scene_actors)
     {
         actor.reset();
@@ -95,6 +99,6 @@ void KongSceneManager::LoadScene(const string& file_path)
 
 #ifdef RENDER_IN_VULKAN
     // todo: 放其他地方
-    KongRenderModule::GetRenderModule().m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+    KongRenderModule::GetRenderModule().OnReloadScene();
 #endif
 }

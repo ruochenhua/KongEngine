@@ -10,4 +10,5 @@ string CBoxShape::box_model_path = "Engine/box/box.obj";
 CBoxShape::CBoxShape()
 {
     ImportObj(CSceneLoader::ToResourcePath(box_model_path));
+    InitRenderInfo();
 }

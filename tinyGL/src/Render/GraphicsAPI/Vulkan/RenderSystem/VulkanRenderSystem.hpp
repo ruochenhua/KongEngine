@@ -11,6 +11,7 @@
 
 namespace Kong
 {
+    class KongRenderModule;
 
     struct FrameInfo
     {
@@ -22,7 +23,7 @@ namespace Kong
     class VulkanRenderSystem
     {
     public:
-        VulkanRenderSystem(VulkanSwapChain* swapChain);
+        VulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule);
         virtual ~VulkanRenderSystem() = default;
 
         void BeginRenderPass(VkCommandBuffer commandBuffer);
@@ -40,6 +41,8 @@ namespace Kong
         VkPipelineLayout m_pipelineLayout {VK_NULL_HANDLE};
         
         std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
+
+        KongRenderModule* m_renderModule {nullptr};
     };
 }
 #endif

@@ -19,8 +19,8 @@ struct SimplePushConstantData
     glm::mat4 modelMatrix{1.0f};
 };
 
-SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VulkanSwapChain* swapChain)
-    :VulkanRenderSystem(swapChain)
+SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule)
+    :VulkanRenderSystem(swapChain, renderModule)
 {
     CreateRenderPass();
     CreateFrameBuffers();

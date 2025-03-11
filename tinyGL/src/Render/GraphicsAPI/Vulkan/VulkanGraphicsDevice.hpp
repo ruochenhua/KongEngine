@@ -31,8 +31,6 @@ namespace Kong
     public:
         static std::shared_ptr<VulkanGraphicsDevice> GetGraphicsDevice();
 
-        // ImGui_ImplVulkan_InitInfo GetImGuiInitInfo();
-
         VkPhysicalDevice GetPhysicsDevice() const {return m_physicalDevice;}
         VulkanGraphicsDevice();
         ~VulkanGraphicsDevice() override;
@@ -71,6 +69,7 @@ namespace Kong
         void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
         
     private:
+        friend class KongUIManager;
         VkInstance m_instance {VK_NULL_HANDLE};
         VkDebugUtilsMessengerEXT m_debugMessenger {VK_NULL_HANDLE};
         VkSurfaceKHR m_surface {VK_NULL_HANDLE};

@@ -17,7 +17,7 @@ namespace Kong
             VulkanDescriptorPool* descriptorPool {nullptr};
         };
     
-        VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo &createInfo);
+        VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo &createInfo, KongRenderModule* renderModule);
         virtual ~VulkanSkyBoxRenderSystem();
 
         VulkanSkyBoxRenderSystem(const VulkanSkyBoxRenderSystem &) = delete;

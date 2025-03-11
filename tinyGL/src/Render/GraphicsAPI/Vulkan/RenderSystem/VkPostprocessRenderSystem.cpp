@@ -2,6 +2,7 @@
 #include "VkPostprocessRenderSystem.hpp"
 
 #include <array>
+#include <imgui_impl_vulkan.h>
 
 #include "Render/RenderModule.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
@@ -11,8 +12,8 @@
 #ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
-VulkanPostprocessSystem::VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo)
-    : VulkanRenderSystem(createInfo.swapChain)
+VulkanPostprocessSystem::VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo, KongRenderModule* renderModule)
+    : VulkanRenderSystem(createInfo.swapChain, renderModule)
 {
     // CreateRenderPass();
     m_renderPass = m_swapChain->GetRenderPass();
@@ -65,7 +66,10 @@ void VulkanPostprocessSystem::Draw(const FrameInfo& frameInfo)
     {
         quadMesh->m_RenderInfo->Draw(frameInfo.commandBuffer);
     }
-    
+
+    // todo：暂时先放在这里
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frameInfo.commandBuffer);
     EndRenderPass(frameInfo.commandBuffer);
 }
 

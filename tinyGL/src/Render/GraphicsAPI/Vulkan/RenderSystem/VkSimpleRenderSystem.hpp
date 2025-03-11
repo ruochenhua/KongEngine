@@ -18,7 +18,7 @@ namespace Kong
     class SimpleVulkanRenderSystem : public VulkanRenderSystem
     {
     public:
-        SimpleVulkanRenderSystem(VulkanSwapChain* swap_chain);
+        SimpleVulkanRenderSystem(VulkanSwapChain* swap_chain, KongRenderModule* renderModule);
         ~SimpleVulkanRenderSystem();
 
         SimpleVulkanRenderSystem(const SimpleVulkanRenderSystem&) = delete;

@@ -1,7 +1,5 @@
 ﻿#include "CameraComponent.h"
-#ifndef RENDER_IN_VULKAN
 #include <imgui.h>
-#endif
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
@@ -135,10 +133,9 @@ void CCamera::Update(double delta)
 		MoveUp();
 	}
 	
-#ifndef RENDER_IN_VULKAN
+
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse)
-#endif
 	{
 		if(glfwGetMouseButton(render_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{

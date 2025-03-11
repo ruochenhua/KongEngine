@@ -126,9 +126,9 @@ namespace Kong
 		void OnWindowResize(int width, int height);
 
 		void SetRenderWater(const weak_ptr<AActor>& water_actor);
-
+		void OnReloadScene();
+				
 		double render_time = 0.0;
-		
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		RenderResultInfo RenderSceneObject(GLuint target_fbo = GL_NONE);
 		

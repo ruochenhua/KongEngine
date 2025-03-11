@@ -7,8 +7,8 @@
 
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
-VulkanSkyBoxRenderSystem::VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo& createInfo)
-    : VulkanRenderSystem(createInfo.swapChain)
+VulkanSkyBoxRenderSystem::VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo& createInfo, KongRenderModule* renderModule)
+    : VulkanRenderSystem(createInfo.swapChain, renderModule)
 {
     // !frame buffer应该和之前的渲染system输出到的framebuffer是一样的
     // 可能是simple Render，可能是defer Render

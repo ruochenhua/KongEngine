@@ -6,6 +6,7 @@
 #include <imgui.h>
 #endif
 #include <array>
+#include <imgui_impl_vulkan.h>
 #include <random>
 
 #include "Actor.hpp"
@@ -96,8 +97,8 @@ int KongRenderModule::Init()
 	
 #ifdef RENDER_IN_VULKAN
 	// 创建描述符集池子
-	int meshCount = 10 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
-	int meshTexCount = 5;
+	int meshCount = 30 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+	int meshTexCount = 30;
 	m_descriptorPool = VulkanDescriptorPool::Builder()
 			   .SetMaxSets(meshCount)  // 简单设置一个最大数量
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
@@ -137,7 +138,7 @@ int KongRenderModule::Init()
 	InitUBO();
 	
 #ifdef RENDER_IN_VULKAN
-	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get());
+	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get(), this);
 	// mesh需要初始化descriptorset
 	// todo:可能要放到其他地方 
 	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();	
@@ -148,14 +149,14 @@ int KongRenderModule::Init()
 		m_descriptorPool.get()
 	};
 	
-	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
+	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo, this);
 
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
 		m_swapChain.get(), m_descriptorPool.get(),
 		m_vkSimpleRenderSystem->GetColorImageView(), m_vkSimpleRenderSystem->GetSampler()
 	};
 	
-	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
+	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo, this);
 #endif
 	
 
@@ -515,9 +516,7 @@ int KongRenderModule::Update(double delta)
 		
 		m_vkSimpleRenderSystem->Draw(frameInfo);
 		m_vkSkyboxSystem->Draw(frameInfo);
-		m_vkPostProcessSystem->Draw(frameInfo);
-		
-		EndFrame();
+		m_vkPostProcessSystem->Draw(frameInfo);		
 	}
 #else
 	render_time += delta;
@@ -785,4 +784,11 @@ void KongRenderModule::OnWindowResize(int width, int height)
 void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
 {
 	m_waterRenderSystem.m_waterActor = render_water_actor;
+}
+
+void KongRenderModule::OnReloadScene()
+{
+#ifdef RENDER_IN_VULKAN
+	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+#endif
 }
