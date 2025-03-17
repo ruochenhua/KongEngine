@@ -69,10 +69,16 @@ namespace Kong
     {
     public:
         VulkanTexture() = default;
+        VulkanTexture(const VkImageCreateInfo& profile);
         virtual ~VulkanTexture() override;
         bool IsValid() override;
         void CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels) override;
         void CreateCubemap(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels[6]);
+        // 创建纹理图像视图, 为了让着色器能够访问纹理图像
+        void CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags, int layerCount = 1);
+        // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值
+        void CreateTextureSampler();
+        
         void Bind(unsigned int location) override;
 
         VkImage m_image{ nullptr };
@@ -85,10 +91,7 @@ namespace Kong
         void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, int arrayLayer = 0);
         // 复制缓冲区到图像
         void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer = 0, int layerCount = 1);
-        // 创建纹理图像视图, 为了让着色器能够访问纹理图像
-        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, int layerCount = 1);
-        // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值
-        void CreateTextureSampler();
+
     };
 #endif
     class OpenGLTexture : public KongTexture

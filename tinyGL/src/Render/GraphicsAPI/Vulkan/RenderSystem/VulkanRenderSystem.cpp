@@ -8,9 +8,14 @@
 #ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
-VulkanRenderSystem::VulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule)
-    :m_swapChain(swapChain), m_renderModule(renderModule)
+VulkanRenderSystem::VulkanRenderSystem()
+    :m_swapChain(KongRenderModule::GetRenderModule().GetSwapChain())
 {
+    // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth。
+    // 所以只需要设置对应的颜色和depthStencil的clear值
+    m_clearValues.resize(2);
+    m_clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    m_clearValues[1].depthStencil = { 1.0f, 0 };
 }
 
 void VulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer)
@@ -22,14 +27,9 @@ void VulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer)
 
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_swapChain->GetSwapChainExtent();
-
-    std::array<VkClearValue, 2> clearValues = {};
-    // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth，所以只需要设置对应的颜色和depthStencil的clear值
-    clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
-    clearValues[1].depthStencil = { 1.0f, 0 };
     
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(m_clearValues.size());
+    renderPassInfo.pClearValues = m_clearValues.data();
     
     // inline类型代表直接执行command buffer中的渲染指令，不存在引用其他command buffer
     // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS代表有引用的情况，两种不能混合使用

@@ -23,7 +23,7 @@ namespace Kong
     class VulkanRenderSystem
     {
     public:
-        VulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule);
+        VulkanRenderSystem();
         virtual ~VulkanRenderSystem() = default;
 
         void BeginRenderPass(VkCommandBuffer commandBuffer);
@@ -43,6 +43,7 @@ namespace Kong
         std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
 
         KongRenderModule* m_renderModule {nullptr};
+        std::vector<VkClearValue> m_clearValues;
     };
 }
 #endif

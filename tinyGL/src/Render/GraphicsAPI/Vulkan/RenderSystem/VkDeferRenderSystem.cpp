@@ -1,0 +1,461 @@
+#include "VkDeferRenderSystem.hpp"
+
+#include <array>
+
+#include "Actor.hpp"
+#include "Scene.hpp"
+#include "Render/RenderModule.hpp"
+#include "Render/Resource/Texture.hpp"
+
+using namespace Kong;
+
+#ifdef RENDER_IN_VULKAN
+
+VkDeferRenderSystem::VkDeferRenderSystem()
+{
+    CreateDeferGeometryTexture();
+    CreateDeferColorDescriptorSetLayout();
+    CreateDeferColorPipelineLayout();
+    CreateRenderPass();
+    CreateFrameBuffers();
+    CreatePipeline();
+    CreateDescriptorSets();
+    
+    // ��Ӧframebuffer��render pass���趨��attachment0-4��color��attachment5��depth��
+    // ���ö�Ӧ����ɫ��depthStencil��clearֵ
+    m_clearValues.resize(6);
+    m_clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_clearValues[1].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_clearValues[2].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_clearValues[3].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_clearValues[4].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_clearValues[5].depthStencil = { 1.0f, 0 };
+    m_quadShape = make_unique<CQuadShape>();
+}
+
+VkDeferRenderSystem::~VkDeferRenderSystem()
+{
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+
+    vkDestroyRenderPass(device, m_renderPass, nullptr);
+    vkDestroyFramebuffer(device, m_framebuffer, nullptr);
+
+    vkDestroyPipelineLayout(device, m_deferColorPipelineLayout, nullptr);
+}
+
+void VkDeferRenderSystem::Draw(const FrameInfo& frameInfo)
+{
+    // ¼���ӳ���Ⱦ����Ⱦ����
+    BeginRenderPass(frameInfo.commandBuffer);
+    
+    // ���ν׶�
+    m_pipeline->Bind(frameInfo.commandBuffer);
+    // geometry phase draw
+    auto actors = KongSceneManager::GetActors();
+    for (auto actor : actors)
+    {
+        auto mesh_component = actor->GetComponent<CMeshComponent>();
+        if (!mesh_component)
+        {
+            continue;
+        }
+
+        auto mesh_shader = mesh_component->shader_data;
+        SimplePushConstantData push{};
+        push.modelMatrix = actor->GetModelMatrix();
+
+        vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(SimplePushConstantData), &push);
+        
+        mesh_component->Draw(frameInfo, m_pipelineLayout);
+    }
+    
+    
+    // �л�����һ��subpass
+    vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+    
+    // ���ս׶�
+    m_deferColorPipeline->Bind(frameInfo.commandBuffer);
+    // ȫ�ֱ�����������render module��
+    vkCmdBindDescriptorSets(
+        frameInfo.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_deferColorPipelineLayout,
+        0, 1,
+        &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
+            , 0, nullptr);
+
+    vkCmdBindDescriptorSets(
+        frameInfo.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_deferColorPipelineLayout,
+        1, 1,
+        &m_deferColorDescriptorSets[frameInfo.frameIndex]
+            , 0, nullptr);
+            
+            
+    // lighting phase draw
+    if (auto quadMesh = m_quadShape->GetMesh())
+    {
+        quadMesh->m_RenderInfo->Draw(frameInfo.commandBuffer);
+    }
+    
+    EndRenderPass(frameInfo.commandBuffer);
+}
+
+void VkDeferRenderSystem::CreatePipeline()
+{
+    assert(m_pipelineLayout != nullptr && "pipelineLayout is null");
+    {
+        PipelineConfigInfo pipelineConfig{};
+        VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
+        std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(4);
+        for (auto& attachment : colorBlendAttachments)
+        {
+            attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;    // �������ص�ʱ������Щɫֵ
+            attachment.blendEnable = VK_FALSE;     //glEnable(GL_BLEND)
+        }
+
+        pipelineConfig.colorBlendAttachment = colorBlendAttachments;
+        pipelineConfig.colorBlendInfo.attachmentCount = colorBlendAttachments.size();
+        pipelineConfig.colorBlendInfo.pAttachments = colorBlendAttachments.data();
+        
+        pipelineConfig.renderPass = m_renderPass;
+        pipelineConfig.pipelineLayout = m_pipelineLayout;
+        pipelineConfig.subpass = 0;
+        m_pipeline = std::make_unique<VulkanPipeline>(std::map<EShaderType, std::string>{
+            {vs, "shader/Vulkan/defer/defer_geo.vulkan.vert.spv"},
+            {fs, "shader/Vulkan/defer/defer_geo.vulkan.frag.spv"}},
+            pipelineConfig);
+    }
+
+    {
+        PipelineConfigInfo pipelineConfig{};
+        VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
+        pipelineConfig.renderPass = m_renderPass;
+        pipelineConfig.pipelineLayout = m_deferColorPipelineLayout;
+        pipelineConfig.subpass = 1;    
+        m_deferColorPipeline = std::make_unique<VulkanPipeline>(std::map<EShaderType, std::string>{
+            {vs, "shader/Vulkan/defer/defer_lighting.vulkan.vert.spv"},
+            {fs, "shader/Vulkan/defer/defer_lighting.vulkan.frag.spv"}},
+            pipelineConfig);
+    }
+}
+
+void VkDeferRenderSystem::CreateRenderPass()
+{
+    std::vector<VkAttachmentDescription> geoStageOutputAttachments = {};
+    // ���ν׶ε����
+    {
+        // 0λ��
+        VkAttachmentDescription positionAttachment = {};
+        positionAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        positionAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        positionAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        positionAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // ��Ⱦͨ������ʱ������ɫ����,�Ա��������
+        positionAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        positionAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        positionAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        positionAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;  // ����ɫ�׶ε�shader��ȡ
+        geoStageOutputAttachments.push_back(positionAttachment);
+        
+        // 1����
+        VkAttachmentDescription normalAttachment = {};
+        normalAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        normalAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        normalAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        normalAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        normalAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        normalAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        normalAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        normalAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        geoStageOutputAttachments.push_back(normalAttachment);
+        
+        // 2��ɫ
+        VkAttachmentDescription albedoAttachment = {};
+        albedoAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        albedoAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        albedoAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        albedoAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        albedoAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        albedoAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        albedoAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        albedoAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        geoStageOutputAttachments.push_back(albedoAttachment);
+        
+        // 3����
+        VkAttachmentDescription ormAttachment = {};
+        ormAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        ormAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        ormAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        ormAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        ormAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        ormAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        ormAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        ormAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        geoStageOutputAttachments.push_back(ormAttachment);
+
+        // 4���ս׶�����ĸ���
+        VkAttachmentDescription outputColorAttachment = {};
+        outputColorAttachment.format = VK_FORMAT_R8G8B8A8_SRGB;
+        outputColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        outputColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        outputColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        outputColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        outputColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        outputColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        outputColorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        geoStageOutputAttachments.push_back(outputColorAttachment);
+    }
+
+    // 5��ȸ�������
+    VkAttachmentDescription depthAttachment = {};
+    depthAttachment.format = m_swapChain->FindDepthFormat();
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;        // �趨���ز���(1��ʾ������)
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;           // ��Ⱦͨ����ʼʱ����ȸ������ݵļ��ز���(�����ʾ��ʼʱ��ո���)
+    // depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;     // ��Ⱦͨ������ʱ����ȸ������ݵļ��ز���(�����ʾ������)
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     // !��Ⱦͨ������ʱ����ȸ������ݵļ��ز���(������)
+    
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;    // ��Ⱦͨ����ʼ�ͽ���ʱ��ģ�建�����Ĳ���
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;          // ָ����������Ⱦͨ����ʼʱ��ͼ�񲼾�(�����ʾ������)
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // ָ����������Ⱦͨ������ʱ��ͼ�񲼾�(�����ʾ�������ģ�帽������Ѳ���)
+    geoStageOutputAttachments.push_back(depthAttachment);
+    
+    // ���ν׶���ɫ��������
+    std::vector<VkAttachmentReference> geoStageAttachmentRefs = {};
+    for (int i = 0; i < geoStageOutputAttachments.size()-1; i++)    // ��������depth
+    {
+        VkAttachmentReference colorAttachmentRef = {};
+        colorAttachmentRef.attachment = static_cast<uint32_t>(i);  // ��ʾ��һ������
+        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;   // ��ʾ������ɫ��������Ѳ���
+        geoStageAttachmentRefs.push_back(colorAttachmentRef);
+    }
+
+    // ��ȸ�������
+    VkAttachmentReference depthAttachmentRef = {};
+    depthAttachmentRef.attachment = static_cast<uint32_t>(geoStageOutputAttachments.size()-1); //depth�����һλ
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    
+    /*
+     * һ����Ⱦͨ�����԰��������ͨ����ÿ����ͨ��������һ���ض�����Ⱦ������������Ƽ����塢���к���ȡ�
+     * ��ͨ�������ڲ��л���ȾĿ�������£���ͬһ�鸽��ִ�ж����Ⱦ�������Ӷ����ٲ���Ҫ���ڴ������ͬ��������
+     */
+    // ��ͨ������:����һ����ͨ������ͨ������Ⱦͨ���е�һ����Ⱦ���衣
+    std::vector<VkSubpassDescription> subpasses(2);
+    // ������Ⱦ��ͨ��
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;// ָ���󶨵Ĺ�������(�����ʾ��ͼ�ι���)
+    subpasses[0].colorAttachmentCount = static_cast<uint32_t>(geoStageAttachmentRefs.size()-1);// ��ɫ��������
+    subpasses[0].pColorAttachments = geoStageAttachmentRefs.data();// ��ɫ�������õ�ָ��
+    subpasses[0].pDepthStencilAttachment = &depthAttachmentRef;// ���ģ�帽�����õ�ָ��
+
+    // *���ڴӵ�һ����ͨ��д�����ɫ�����ж�ȡ���ݡ�
+    // layout����ΪVK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL����ʾ�ø���������ɫ����ȡ��������Ѳ��֡�
+    std::vector<VkAttachmentReference> inputAttachmentRefs;
+    for (int i = 0; i < geoStageOutputAttachments.size()-2; i++)
+    {
+        VkAttachmentReference inputAttachmentRef = {};
+        inputAttachmentRef.attachment = static_cast<uint32_t>(i);
+        inputAttachmentRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        inputAttachmentRefs.push_back(inputAttachmentRef);
+    }
+    
+    // *���ڽ����ռ���Ľ��д����ɫ������
+    // layout����ΪVK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL����ʾ������ɫ������������Ѳ��֡�
+    VkAttachmentReference outputAttachmentRef = {};
+    outputAttachmentRef.attachment = geoStageOutputAttachments.size() - 2;  //���һ���������ɫ����
+    outputAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    // ������Ⱦͨ��
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].inputAttachmentCount = static_cast<uint32_t>(inputAttachmentRefs.size());
+    subpasses[1].pInputAttachments = inputAttachmentRefs.data();
+    subpasses[1].colorAttachmentCount = 1;
+    subpasses[1].pColorAttachments = &outputAttachmentRef;
+    subpasses[1].pDepthStencilAttachment = &depthAttachmentRef;
+    
+    /*
+     * ��ͨ����������������ͨ��֮���ִ��˳�������������ϵ��
+     * ��ȷ��һ����ͨ������һ����ͨ������ض�������ſ�ʼִ�У��Ӷ���֤��Ⱦ�������ȷ�ԡ�
+     */
+    // ��ͨ������:������ͨ��֮���������ϵ��ȷ����Ⱦ��������ȷ˳��ִ�С�
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;    // ָ��Դ��ͨ��������������srcSubpass = 0��ʾ��һ����ͨ����
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;   // ָ��Դ��ͨ���з������������ķ������ͣ�VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT��ʾ��ɫ����д�������
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // ָ��Դ��ͨ���з������������Ĺ��߽׶Σ�
+    
+    dependency.dstSubpass = 1;  // ָ��Ŀ����ͨ��������������dstSubpass = 1��ʾ�ڶ�����ͨ����
+    dependency.dstStageMask= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // ָ��Ŀ����ͨ��������������Ҫ�ȴ��Ĺ��߽׶Σ�
+    dependency.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
+    | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // ָ��Ŀ����ͨ��������������Ҫ�ȴ��ķ������ͣ�VK_ACCESS_INPUT_ATTACHMENT_READ_BIT��ʾ���븽����ȡ������
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; // ָ�����������ͣ�VK_DEPENDENCY_BY_REGION_BIT��ʾ�����ǰ�������еģ���ֻ����ص������ڽ���ͬ��
+
+    
+    // ������Ⱦͨ��
+    std::vector<VkAttachmentDescription> attachments = {geoStageOutputAttachments};
+    //attachments.push_back(depthAttachment); // �������
+    
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = static_cast<uint32_t>(subpasses.size());
+    renderPassInfo.pSubpasses = subpasses.data();
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create render pass");
+    }
+}
+
+void VkDeferRenderSystem::CreateDescriptorSets()
+{
+    
+    std::vector<VkImageView> imageViews = {
+        m_positionTexture->m_imageView,
+        m_normalTexture->m_imageView,
+        m_albedoTexture->m_imageView,
+        m_ormTexture->m_imageView,
+    };
+    
+    std::vector<VkDescriptorImageInfo> imageInfos(imageViews.size());
+    for (int i = 0; i < imageViews.size(); i++)
+    {
+        imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfos[i].imageView = imageViews[i];
+    }
+
+    auto descriptorPool = KongRenderModule::GetRenderModule().m_descriptorPool.get();
+    m_deferColorDescriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+    for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        VkDescriptorSet newTextureSet;
+        VulkanDescriptorWriter(*m_deferColorDescriptorSetLayouts[0], *descriptorPool)
+        .WriteImage(0, &imageInfos[0])
+        .WriteImage(1, &imageInfos[1])
+        .WriteImage(2, &imageInfos[2])
+        .WriteImage(3, &imageInfos[3])
+        
+        .Build(m_deferColorDescriptorSets[i]);
+    }
+}
+
+void VkDeferRenderSystem::CreateFrameBuffers()
+{
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    auto extent = m_swapChain->GetSwapChainExtent();
+    
+    VkFramebufferCreateInfo framebufferInfo = {};
+    // std::array<VkImageView, 2> attachments = {m_sceneTexture->m_imageView, m_depthTexture->m_imageView};
+    std::array<VkImageView, 6> attachments = {
+        m_positionTexture->m_imageView,
+        m_normalTexture->m_imageView,
+        m_albedoTexture->m_imageView,
+        m_ormTexture->m_imageView,
+        m_sceneTexture->m_imageView,
+        m_depthTexture->m_imageView
+    };
+    
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = m_renderPass;
+    framebufferInfo.attachmentCount = attachments.size();
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.width = extent.width;
+    framebufferInfo.height = extent.height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(
+        device,
+        &framebufferInfo,
+        nullptr,
+        &m_framebuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create framebuffer");
+    }
+}
+
+void VkDeferRenderSystem::CreateDeferColorDescriptorSetLayout()
+{
+    auto textureLayout = VulkanDescriptorSetLayout::Builder()
+    // �����ǹ��ս׶Σ���Ҫ��ȡ���ν׶�subpass�������ʹ��VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+    .AddBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // position texture
+    .AddBinding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // normal texture
+    .AddBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo texture
+    .AddBinding(3, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // orm texture
+    .Build();
+
+    textureLayout->m_usage = VulkanDescriptorSetLayout::Texture;
+    m_deferColorDescriptorSetLayouts.push_back(std::move(textureLayout));
+}
+
+void VkDeferRenderSystem::CreateDeferColorPipelineLayout()
+{
+    // set��˳�����vector�У�set0,set1,set2 ...
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    // �ȷ�ȫ�ֵ�descriptor set layout
+    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
+    for (auto& layout : m_deferColorDescriptorSetLayouts)
+    {
+        descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());
+    }
+    
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    // descriptor set layout
+    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
+    if (vkCreatePipelineLayout(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(),
+        &pipelineLayoutInfo, nullptr, &m_deferColorPipelineLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+}
+
+void VkDeferRenderSystem::CreateDeferGeometryTexture()
+{
+    VkDevice device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    VkExtent2D extent = m_swapChain->GetSwapChainExtent();
+    VkFormat imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+    
+    // �����Ȱ���color image�ĸ�ʽ����position��normal��albedo��orm����
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = extent.width;
+    imageInfo.extent.height = extent.height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags = 0;
+    
+    m_positionTexture = make_unique<VulkanTexture>(imageInfo);
+    m_positionTexture->CreateImageView(imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_positionTexture->CreateTextureSampler();
+
+    m_normalTexture = make_unique<VulkanTexture>(imageInfo);
+    m_normalTexture->CreateImageView(imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_normalTexture->CreateTextureSampler();
+
+    m_albedoTexture = make_unique<VulkanTexture>(imageInfo);
+    m_albedoTexture->CreateImageView(imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_albedoTexture->CreateTextureSampler();
+
+    m_ormTexture = make_unique<VulkanTexture>(imageInfo);
+    m_ormTexture->CreateImageView(imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_ormTexture->CreateTextureSampler();
+    
+}
+
+#endif

@@ -12,8 +12,7 @@
 #ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
-VulkanPostprocessSystem::VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo, KongRenderModule* renderModule)
-    : VulkanRenderSystem(createInfo.swapChain, renderModule)
+VulkanPostprocessSystem::VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo)
 {
     // CreateRenderPass();
     m_renderPass = m_swapChain->GetRenderPass();

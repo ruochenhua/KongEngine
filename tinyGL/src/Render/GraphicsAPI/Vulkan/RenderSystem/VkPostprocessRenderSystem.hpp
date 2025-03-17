@@ -27,7 +27,7 @@ namespace Kong
             VkSampler sampler {VK_NULL_HANDLE};            
         };
         
-        VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo, KongRenderModule* renderModule);
+        VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo);
         ~VulkanPostprocessSystem();
 
         void Draw(const FrameInfo& frameInfo);

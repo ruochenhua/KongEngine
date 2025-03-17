@@ -137,6 +137,12 @@ void KongTexture::CreateTexture(int width, int height, int nr_component, ETextur
 
 #ifdef RENDER_IN_VULKAN
 
+VulkanTexture::VulkanTexture(const VkImageCreateInfo& profile)
+{
+    VkMemoryPropertyFlags defaultMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VulkanGraphicsDevice::GetGraphicsDevice()->CreateImageWithInfo(profile, defaultMemFlags, m_image, m_memory);
+}
+
 VulkanTexture::~VulkanTexture()
 {
     auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
@@ -223,7 +229,7 @@ void VulkanTexture::CreateTexture(int width, int height, int nr_component, EText
     vkFreeMemory(device->GetDevice(), stagingBufferMemory, nullptr);
 
     // 创建纹理图像imageview
-    m_imageView = CreateImageView(m_image, m_format, VK_IMAGE_ASPECT_COLOR_BIT);
+    CreateImageView(m_format, VK_IMAGE_ASPECT_COLOR_BIT);
 
     // 创建采样器
     CreateTextureSampler();
@@ -303,7 +309,7 @@ void VulkanTexture::CreateCubemap(int width, int height, int nr_component, EText
     }
 
     // 创建纹理图像imageview
-    m_imageView = CreateImageView(m_image, m_format, VK_IMAGE_ASPECT_COLOR_BIT, 6);
+    CreateImageView(m_format, VK_IMAGE_ASPECT_COLOR_BIT, 6);
     
     // 创建采样器
     CreateTextureSampler();
@@ -397,7 +403,7 @@ void VulkanTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, int width,
     VulkanGraphicsDevice::GetGraphicsDevice()->EndSingleTimeCommands(commandBuffer);
 }
 
-VkImageView VulkanTexture::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, int layerCount)
+void VulkanTexture::CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags, int layerCount)
 {
     VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
     if (layerCount > 1)
@@ -408,7 +414,7 @@ VkImageView VulkanTexture::CreateImageView(VkImage image, VkFormat format, VkIma
     }
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
+    viewInfo.image = m_image;
     viewInfo.viewType = viewType;
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
@@ -416,13 +422,10 @@ VkImageView VulkanTexture::CreateImageView(VkImage image, VkFormat format, VkIma
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = layerCount;
-
-    VkImageView imageView;
-    if (vkCreateImageView(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    
+    if (vkCreateImageView(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &viewInfo, nullptr, &m_imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture image view!");
     }
-
-    return imageView;
 }
 
 void VulkanTexture::CreateTextureSampler()

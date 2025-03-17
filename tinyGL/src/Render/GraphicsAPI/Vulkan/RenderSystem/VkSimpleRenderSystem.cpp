@@ -14,83 +14,21 @@
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
 
-struct SimplePushConstantData
-{
-    glm::mat4 modelMatrix{1.0f};
-};
-
-SimpleVulkanRenderSystem::SimpleVulkanRenderSystem(VulkanSwapChain* swapChain, KongRenderModule* renderModule)
-    :VulkanRenderSystem(swapChain, renderModule)
+SimpleVulkanRenderSystem::SimpleVulkanRenderSystem()
 {
     CreateRenderPass();
     CreateFrameBuffers();
-    CreateDescriptorSetLayout();
-    CreatePipelineLayout();
     CreatePipeline();
 }
 
 SimpleVulkanRenderSystem::~SimpleVulkanRenderSystem()
 {
     auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
-    vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+    // vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
     vkDestroyRenderPass(device, m_renderPass, nullptr);
-
     vkDestroyFramebuffer(device, m_framebuffer, nullptr);
-
-    vkDestroyImage(device, m_image, nullptr);
-    vkFreeMemory(device, m_imageMemory, nullptr);
-    vkDestroyImageView(device, m_imageView, nullptr);
-
-    vkDestroyImage(device, m_depthImage, nullptr);
-    vkFreeMemory(device, m_depthImageMemory, nullptr);
-    vkDestroyImageView(device, m_depthImageView, nullptr);
-
-    vkDestroySampler(device, m_sampler, nullptr);
 }
 
-void SimpleVulkanRenderSystem::UpdateMeshUBO(const FrameInfo& frameInfo)
-{
-    auto actors = KongSceneManager::GetActors();
-    for (auto actor : actors)
-    {
-        auto mesh_component = actor->GetComponent<CMeshComponent>();
-        if (!mesh_component)
-        {
-            continue;
-        }
-
-        auto mesh_shader = mesh_component->shader_data;
-        if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader))
-        {
-            continue;
-        }
-
-        mesh_component->UpdateMeshUBO(frameInfo);
-    }
-}
-
-void SimpleVulkanRenderSystem::CreateMeshDescriptorSet()
-{
-    
-    auto actors = KongSceneManager::GetActors();
-    for (auto actor : actors)
-    {
-        auto mesh_component = actor->GetComponent<CMeshComponent>();
-        if (!mesh_component)
-        {
-            continue;
-        }
-
-        auto mesh_shader = mesh_component->shader_data;
-        if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader) || dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader))
-        {
-            continue;
-        }
-
-        mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout,
-            KongRenderModule::GetRenderModule().m_descriptorPool.get());
-    }
-}
 
 void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo)
 {
@@ -124,58 +62,6 @@ void SimpleVulkanRenderSystem::Draw(const FrameInfo& frameInfo)
     }
 
     EndRenderPass(frameInfo.commandBuffer);
-}
-
-void SimpleVulkanRenderSystem::CreateDescriptorSetLayout()
-{
-    // 基础的材质信息，只需要给到fragment shader
-    auto basicMaterialLayout = VulkanDescriptorSetLayout::Builder()
-    .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-    .Build();
-    basicMaterialLayout->m_usage = VulkanDescriptorSetLayout::BasicMaterial;
-    m_descriptorSetLayout.push_back(std::move(basicMaterialLayout));
-    
-    auto textureLayout = VulkanDescriptorSetLayout::Builder()
-    // image 贴图数据
-    .AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo
-    .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // normal
-    .AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // roughness
-    .AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // metallic
-    .AddBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // ambient_occlusion
-    .Build();
-    textureLayout->m_usage = VulkanDescriptorSetLayout::Texture;
-    m_descriptorSetLayout.push_back(std::move(textureLayout));
-}
-
-void SimpleVulkanRenderSystem::CreatePipelineLayout()
-{
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(SimplePushConstantData);
-
-    // set按顺序存在vector中，set0,set1,set2 ...
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    // 先放全局的descriptor set layout
-    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
-    for (auto& layout : m_descriptorSetLayout)
-    {
-        descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());
-    }
-    
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    // descriptor set layout
-    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-    // 用于将一些小量的数据送到shader中
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-    if (vkCreatePipelineLayout(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
 }
 
 void SimpleVulkanRenderSystem::CreatePipeline()
@@ -278,96 +164,9 @@ void SimpleVulkanRenderSystem::CreateFrameBuffers()
 {
     auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
     auto extent = m_swapChain->GetSwapChainExtent();
-
-    // color image
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = extent.width;
-    imageInfo.extent.height = extent.height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = m_swapChain->GetSwapChainImageFormat();
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = 0;
-
-    VulkanGraphicsDevice::GetGraphicsDevice()->CreateImageWithInfo(imageInfo,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_imageMemory);
-
-    VkImageViewCreateInfo viewInfo = {};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = m_image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = m_swapChain->GetSwapChainImageFormat();
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    if (vkCreateImageView(device, &viewInfo, nullptr, &m_imageView) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create image views");
-    }
-
-    // depth image
-    VkFormat depthFormat = m_swapChain->FindDepthFormat();
-
-    {
-        // 创建深度图像
-        VkImageCreateInfo depthImageInfo = {};
-        depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
-        depthImageInfo.extent.width = extent.width;
-        depthImageInfo.extent.height = extent.height;
-        depthImageInfo.extent.depth = 1;
-        depthImageInfo.mipLevels = 1;
-        depthImageInfo.arrayLayers = 1;
-        depthImageInfo.format = depthFormat;
-        depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        depthImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        depthImageInfo.flags = 0;
-
-        // 根据配置好的 imageInfo 创建深度图像，并分配设备本地内存（VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT），
-        // 将创建的深度图像句柄存储在 m_depthImages[i] 中，分配的内存句柄存储在 m_depthImageMemorys[i] 中。
-        VulkanGraphicsDevice::GetGraphicsDevice()->CreateImageWithInfo(
-            depthImageInfo,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            m_depthImage,
-            m_depthImageMemory);
-
-        // 创建深度图像视图
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = m_depthImage;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = depthFormat;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(device, &viewInfo, nullptr, &m_depthImageView) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create image views");
-        }
-    }
     
     VkFramebufferCreateInfo framebufferInfo = {};
-    std::array<VkImageView, 2> attachments = {m_imageView, m_depthImageView};
+    std::array<VkImageView, 2> attachments = {m_sceneTexture->m_imageView, m_depthTexture->m_imageView};
 
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = m_renderPass;
@@ -384,29 +183,6 @@ void SimpleVulkanRenderSystem::CreateFrameBuffers()
         &m_framebuffer) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create framebuffer");
-    }
-
-    // 创建sampler
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 5.0f;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    if (vkCreateSampler(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
     }
 }
 

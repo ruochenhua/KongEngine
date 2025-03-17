@@ -6,6 +6,7 @@
 #include "GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
 #include "GraphicsAPI/OpenGL/RenderSystem/GlSSReflectionRenderSystem.hpp"
 #include "GraphicsAPI/OpenGL/RenderSystem/GlWaterRenderSystem.hpp"
+#include "GraphicsAPI/Vulkan/RenderSystem/VkDeferRenderSystem.hpp"
 
 #include "Shader/OpenGL/OpenGLShader.h"
 
@@ -168,8 +169,11 @@ namespace Kong
 		int m_currentFrameIndex {0};
 		bool m_isFrameStarted {false};
 
+		VulkanSwapChain* GetSwapChain();
+
 		// todo: 放到private
 		std::unique_ptr<SimpleVulkanRenderSystem> m_vkSimpleRenderSystem{nullptr};
+		std::unique_ptr<VkDeferRenderSystem> m_vkDeferRenderSystem{nullptr};
 		std::unique_ptr<VulkanPostprocessSystem> m_vkPostProcessSystem{nullptr};
 		std::unique_ptr<VulkanSkyBoxRenderSystem> m_vkSkyboxSystem{nullptr};
 #endif

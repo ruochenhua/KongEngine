@@ -103,6 +103,7 @@ int KongRenderModule::Init()
 			   .SetMaxSets(meshCount)  // 简单设置一个最大数量
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
+				.AddPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, meshTexCount)
 			   .Build();
 
 	CreateCommandBuffers();
@@ -133,32 +134,43 @@ int KongRenderModule::Init()
 	m_ssReflectionRenderSystem.Init();
 	m_waterRenderSystem.Init();
 #endif
-
 	
 	InitUBO();
 	
 #ifdef RENDER_IN_VULKAN
-	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>(m_swapChain.get(), this);
-	// mesh需要初始化descriptorset
-	// todo:可能要放到其他地方 
-	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();	
-	
+	// m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
+	// // mesh需要初始化descriptorset
+	// // todo:可能要放到其他地方 
+	// m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+	//
+	// VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
+	// 	m_vkSimpleRenderSystem->GetFrameBuffer(),
+	// 	m_descriptorPool.get()
+	// };
+	//
+	// m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
+	//
+	// VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
+	// 	m_swapChain.get(), m_descriptorPool.get(),
+	// 	m_vkSimpleRenderSystem->GetColorImageView(), m_vkSimpleRenderSystem->GetSampler()
+	// };
+
+	m_vkDeferRenderSystem = make_unique<VkDeferRenderSystem>();
+	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
 	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
-		m_swapChain.get(),
-		m_vkSimpleRenderSystem->GetFrameBuffer(),
+		m_vkDeferRenderSystem->GetFrameBuffer(),
 		m_descriptorPool.get()
 	};
 	
-	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo, this);
+	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
 
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
 		m_swapChain.get(), m_descriptorPool.get(),
-		m_vkSimpleRenderSystem->GetColorImageView(), m_vkSimpleRenderSystem->GetSampler()
+		m_vkDeferRenderSystem->GetColorImageView(), m_vkDeferRenderSystem->GetSampler()
 	};
 	
-	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo, this);
+	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
 #endif
-	
 
 	return 0;
 }
@@ -304,6 +316,11 @@ VkRenderPass KongRenderModule::GetSwapChainRenderPass() const
 float KongRenderModule::GetAspectRatio() const
 {
 	return m_swapChain->GetExtentAspectRatio();
+}
+
+VulkanSwapChain* KongRenderModule::GetSwapChain()
+{
+	return m_swapChain.get();
 }
 #endif
 
@@ -514,8 +531,9 @@ int KongRenderModule::Update(double delta)
 		/* 每个frame之间可以有多个render pass*/
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
 		
-		m_vkSimpleRenderSystem->Draw(frameInfo);
-		m_vkSkyboxSystem->Draw(frameInfo);
+		// m_vkSimpleRenderSystem->Draw(frameInfo);
+		m_vkDeferRenderSystem->Draw(frameInfo);
+		// m_vkSkyboxSystem->Draw(frameInfo);
 		m_vkPostProcessSystem->Draw(frameInfo);		
 	}
 #else
@@ -789,6 +807,8 @@ void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor
 void KongRenderModule::OnReloadScene()
 {
 #ifdef RENDER_IN_VULKAN
-	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+	// todo: 放其他地方
+	// m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
 #endif
 }

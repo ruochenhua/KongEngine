@@ -12,12 +12,11 @@ namespace Kong
     public:
         struct VulkanSkyBoxCreateInfo
         {
-            VulkanSwapChain* swapChain {nullptr};
             VkFramebuffer frameBuffer {VK_NULL_HANDLE};
             VulkanDescriptorPool* descriptorPool {nullptr};
         };
     
-        VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo &createInfo, KongRenderModule* renderModule);
+        VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo &createInfo);
         virtual ~VulkanSkyBoxRenderSystem();
 
         VulkanSkyBoxRenderSystem(const VulkanSkyBoxRenderSystem &) = delete;
