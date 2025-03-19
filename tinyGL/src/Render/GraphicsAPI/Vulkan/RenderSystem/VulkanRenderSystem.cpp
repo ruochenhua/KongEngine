@@ -14,7 +14,7 @@ VulkanRenderSystem::VulkanRenderSystem()
     // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth。
     // 所以只需要设置对应的颜色和depthStencil的clear值
     m_clearValues.resize(2);
-    m_clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    m_clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
     m_clearValues[1].depthStencil = { 1.0f, 0 };
 }
 

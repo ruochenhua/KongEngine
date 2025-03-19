@@ -31,7 +31,7 @@
 using namespace Kong;
 using namespace glm;
 using namespace std;
-#define DEFER_TERRAIN true
+#define VK_DEFER true
 
 static KongRenderModule g_renderModule;
 
@@ -138,38 +138,44 @@ int KongRenderModule::Init()
 	InitUBO();
 	
 #ifdef RENDER_IN_VULKAN
-	// m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
-	// // mesh需要初始化descriptorset
-	// // todo:可能要放到其他地方 
-	// m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
-	//
-	// VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
-	// 	m_vkSimpleRenderSystem->GetFrameBuffer(),
-	// 	m_descriptorPool.get()
-	// };
-	//
-	// m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
-	//
-	// VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
-	// 	m_swapChain.get(), m_descriptorPool.get(),
-	// 	m_vkSimpleRenderSystem->GetColorImageView(), m_vkSimpleRenderSystem->GetSampler()
-	// };
-
+#if VK_DEFER
 	m_vkDeferRenderSystem = make_unique<VkDeferRenderSystem>();
 	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
 	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
-		m_vkDeferRenderSystem->GetFrameBuffer(),
-		m_descriptorPool.get()
+		m_descriptorPool.get(),
+		m_vkDeferRenderSystem->GetColorTexture(),
+		m_vkDeferRenderSystem->GetDepthTexture(),
 	};
 	
 	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
-
+	
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
 		m_swapChain.get(), m_descriptorPool.get(),
-		m_vkDeferRenderSystem->GetColorImageView(), m_vkDeferRenderSystem->GetSampler()
+		m_vkDeferRenderSystem->GetColorTexture()->m_imageView, 
+		m_vkDeferRenderSystem->GetColorTexture()->m_sampler
+	};
+#else
+	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
+	// mesh需要初始化descriptorset
+	// todo:可能要放到其他地方 
+	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+	
+	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
+		m_descriptorPool.get(),
+		m_vkSimpleRenderSystem->GetColorTexture(),
+		m_vkSimpleRenderSystem->GetDepthTextureget()
 	};
 	
+	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
+	
+	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
+		m_swapChain.get(), m_descriptorPool.get(),
+		m_vkSimpleRenderSystem->GetColorTexture()->m_imageView,
+		m_vkSimpleRenderSystem->GetColorTexture()->m_sampler,
+	};
+#endif
 	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
+	
 #endif
 
 	return 0;
@@ -514,8 +520,10 @@ void KongRenderModule::InitMainFBO()
 
 int KongRenderModule::Update(double delta)
 {
+	render_time += delta;
 	mainCamera->Update(delta);
 	UpdateSceneRenderInfo();
+	RenderShadowMap();
 #ifdef RENDER_IN_VULKAN
 	if (auto commandBuffer = GetCurrentCommandBuffer())
 	{
@@ -526,23 +534,26 @@ int KongRenderModule::Update(double delta)
 			commandBuffer
 		};
 
-		m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
 		// render
 		/* 每个frame之间可以有多个render pass*/
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
 		
-		// m_vkSimpleRenderSystem->Draw(frameInfo);
+#if VK_DEFER
+		m_vkDeferRenderSystem->UpdateMeshUBO(frameInfo);
 		m_vkDeferRenderSystem->Draw(frameInfo);
-		// m_vkSkyboxSystem->Draw(frameInfo);
+#else
+		m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
+		m_vkSimpleRenderSystem->Draw(frameInfo);
+#endif
+		
+		m_vkSkyboxSystem->Draw(frameInfo);
 		m_vkPostProcessSystem->Draw(frameInfo);		
 	}
 #else
-	render_time += delta;
 	// 更新场景信息
-	UpdateSceneRenderInfo();
+	
 	m_skyboxRenderSystem.PreRenderUpdate();
 	
-	RenderShadowMap();
 	// 更新UBO里的相机数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
@@ -632,9 +643,7 @@ void KongRenderModule::RenderNonDeferSceneObjects() const
 		auto mesh_shader = mesh_component->shader_data;
 		// 跳过延迟渲染的mesh和水体的部分
 		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
-#if DEFER_TERRAIN
 			|| dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader)
-#endif
 			|| dynamic_pointer_cast<Water>(mesh_component)
 			|| dynamic_pointer_cast<GerstnerWaveWater>(mesh_component))
 		{
@@ -655,9 +664,11 @@ void KongRenderModule::RenderShadowMap()
 	// shadowmap 需要正面剔除，避免阴影悬浮
 	// todo: 处理内部有开口模型或者平面该如何处理？
 	// note: 剔除front好像shadow bias不填阴影效果也比较正常？
+#ifndef RENDER_IN_VULKAN 
 	glCullFace(GL_FRONT);
 	glViewport(0,0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-
+#endif
+	
 	// auto scene_lights = CScene::GetScene()->GetSceneLights();
 	if(!scene_render_info.scene_dirlight.expired())
 	{
@@ -808,7 +819,11 @@ void KongRenderModule::OnReloadScene()
 {
 #ifdef RENDER_IN_VULKAN
 	// todo: 放其他地方
-	// m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+#if VK_DEFER
 	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
+#else
+	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
+#endif
+	
 #endif
 }

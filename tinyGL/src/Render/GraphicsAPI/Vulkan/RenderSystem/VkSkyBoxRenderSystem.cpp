@@ -9,9 +9,7 @@ using namespace Kong;
 #ifdef RENDER_IN_VULKAN
 VulkanSkyBoxRenderSystem::VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo& createInfo)
 {
-    // !frame buffer应该和之前的渲染system输出到的framebuffer是一样的
     // 可能是simple Render，可能是defer Render
-    m_framebuffer = createInfo.frameBuffer;
     m_boxShape = make_unique<CBoxShape>();
 
     CreateRenderPass();
@@ -20,6 +18,8 @@ VulkanSkyBoxRenderSystem::VulkanSkyBoxRenderSystem(const VulkanSkyBoxCreateInfo&
     CreatePipeline();
     CreateCubeImage();
     CreateDescriptorSet(createInfo);
+    // CreateTextures();
+    CreateFramebuffer(createInfo);
 }
 
 VulkanSkyBoxRenderSystem::~VulkanSkyBoxRenderSystem()
@@ -27,10 +27,12 @@ VulkanSkyBoxRenderSystem::~VulkanSkyBoxRenderSystem()
     auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
     vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
     vkDestroyRenderPass(device, m_renderPass, nullptr);
+    vkDestroyFramebuffer(device, m_framebuffer, nullptr);
 }
 
 void VulkanSkyBoxRenderSystem::Draw(const FrameInfo& frameInfo)
 {
+    SetBarrier(frameInfo.commandBuffer);
     BeginRenderPass(frameInfo.commandBuffer);
 
     m_pipeline->Bind(frameInfo.commandBuffer);
@@ -93,12 +95,13 @@ void VulkanSkyBoxRenderSystem::CreatePipeline()
     PipelineConfigInfo pipelineConfig{};
     VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
     // !这里关掉深度写入，深度测试保持开启
+    // pipelineConfig.depthStencilInfo.depthTestEnable = VK_FALSE;
     pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
     // !开启前面剔除，等于glCullFace(GL_FRONT)这一步
     pipelineConfig.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
     pipelineConfig.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   // 用逆时针这一面作为front
     // * 比较方法这里使用less_or_equal，天空盒深度为1.0的时候才不会出现z fighting
-    pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;   
+    pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
         
     pipelineConfig.renderPass = m_renderPass;
     pipelineConfig.pipelineLayout = m_pipelineLayout;
@@ -140,7 +143,7 @@ void VulkanSkyBoxRenderSystem::CreateRenderPass()
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     // 指定附件在渲染通道开始时的图像布局,这里需不能用UNDEFINED因为是加载并复用了模型渲染的数据
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     // !colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // 表示该附件在渲染结束后用于呈现
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // 表示该附件用于shader的读入（喂给后处理）
 
@@ -221,6 +224,90 @@ void VulkanSkyBoxRenderSystem::CreateDescriptorSet(const VulkanSkyBoxCreateInfo&
         .Build(newTextureSet);
         m_descriptorSets[i].emplace(VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType::Texture, newTextureSet);
     }
+}
+
+void VulkanSkyBoxRenderSystem::CreateFramebuffer(const VulkanSkyBoxCreateInfo& createInfo)
+{
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    auto extent = m_swapChain->GetSwapChainExtent();
+    
+    VkFramebufferCreateInfo framebufferInfo = {};
+    std::array<VkImageView, 2> attachments = {
+        createInfo.inputSceneTexture->m_imageView,
+        createInfo.inputDepthTexture->m_imageView
+    };
+
+    m_inputSceneTexture = createInfo.inputSceneTexture;
+    m_inputDepthTexture = createInfo.inputDepthTexture;
+    
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = m_renderPass;
+    framebufferInfo.attachmentCount = attachments.size();
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.width = extent.width;
+    framebufferInfo.height = extent.height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(
+        device,
+        &framebufferInfo,
+        nullptr,
+        &m_framebuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create framebuffer");
+    }
+}
+
+void VulkanSkyBoxRenderSystem::SetBarrier(VkCommandBuffer commandBuffer)
+{
+    // 进入天空盒渲染之前，需要设置图像的 barrier，以保证延迟渲染的结果正确输出到image上后再进行天空盒渲染
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // 延迟渲染阶段的输出图像使用的布局
+    barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // 天空盒渲染阶段所需的布局
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; // 当使用单队列时可忽略
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; // 同上
+    barrier.image = m_inputSceneTexture->m_image; // 延迟渲染的输出图像
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // 需要与上一步的写入相关的记得清理
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // 之后需要作为采样器读取
+    // 手动指定用何种图形 API 提供的同步亮点使用
+    vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // 上一个阶段的管道
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // 当前阶段的管道
+        0, // 标志
+        0, nullptr,  // 依赖于 srcAccessMask 或 dstAccessMask 设置的内存屏障
+        0, nullptr,  // 数组的内存屏障
+        1, &barrier  // 图像内存屏障
+    );
+    
+    // 再设置深度图像的 barrier
+    VkImageMemoryBarrier depthBarrier = {};
+    depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    depthBarrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 上一阶段的布局
+    depthBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 为读取新的布局
+    depthBarrier.image = m_inputDepthTexture->m_image; // 深度图像
+    depthBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT; // 深度 aspect
+    depthBarrier.subresourceRange.baseMipLevel = 0;
+    depthBarrier.subresourceRange.levelCount = 1;
+    depthBarrier.subresourceRange.baseArrayLayer = 0;
+    depthBarrier.subresourceRange.layerCount = 1;
+    depthBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // 上个阶段的写入操作
+    depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT; // 当前阶段的读取操作
+
+    // 再次设置 barrier
+    vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // 上一个阶段
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, // 当前目标阶段
+        0, // 标志
+        0, nullptr,  // srcAccessMask 和 dstAccessMask
+        0, nullptr,  // 数组的内存屏障
+        1, &depthBarrier  // 深度图像内存屏障
+    );
 }
 
 #endif

@@ -23,19 +23,20 @@ namespace Kong
         virtual void Draw(const FrameInfo& frameInfo);
         void UpdateMeshUBO(const FrameInfo& frameInfo);
         void CreateMeshDescriptorSet();
-
-        VkImage GetColorImage() const;
-        VkImageView GetColorImageView() const;
-        VkSampler GetSampler() const;
+        
         VkFramebuffer GetFrameBuffer() const { return m_framebuffer; }
+
+        VulkanTexture* GetColorTexture() const;
+        VulkanTexture* GetDepthTexture() const;
+        
     protected:
-        // *simple model render��defer renderģ�Ͳ��descriptor set layoutӦ����ͨ�õ�
+        // *simple model render和defer render（几何阶段）的descriptor set layout是一样的
         void CreateDescriptorSetLayout();
         void CreatePipelineLayout();
         void CreateTextures();
-
+    
         std::unique_ptr<VulkanTexture> m_sceneTexture;
-        std::unique_ptr<VulkanTexture> m_depthTexture;        
+        std::unique_ptr<VulkanTexture> m_depthTexture;    
     };
     
 }

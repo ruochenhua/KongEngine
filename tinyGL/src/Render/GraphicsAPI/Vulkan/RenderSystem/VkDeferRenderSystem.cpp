@@ -45,10 +45,8 @@ VkDeferRenderSystem::~VkDeferRenderSystem()
 
 void VkDeferRenderSystem::Draw(const FrameInfo& frameInfo)
 {
-    // ¼���ӳ���Ⱦ����Ⱦ����
     BeginRenderPass(frameInfo.commandBuffer);
     
-    // ���ν׶�
     m_pipeline->Bind(frameInfo.commandBuffer);
     // geometry phase draw
     auto actors = KongSceneManager::GetActors();
@@ -136,7 +134,9 @@ void VkDeferRenderSystem::CreatePipeline()
         VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = m_renderPass;
         pipelineConfig.pipelineLayout = m_deferColorPipelineLayout;
-        pipelineConfig.subpass = 1;    
+        pipelineConfig.subpass = 1;
+        // !光照阶段修改深度附件，否则后面的步骤会出错
+        pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
         m_deferColorPipeline = std::make_unique<VulkanPipeline>(std::map<EShaderType, std::string>{
             {vs, "shader/Vulkan/defer/defer_lighting.vulkan.vert.spv"},
             {fs, "shader/Vulkan/defer/defer_lighting.vulkan.frag.spv"}},
@@ -213,46 +213,45 @@ void VkDeferRenderSystem::CreateRenderPass()
     // 5��ȸ�������
     VkAttachmentDescription depthAttachment = {};
     depthAttachment.format = m_swapChain->FindDepthFormat();
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;        // �趨���ز���(1��ʾ������)
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;           // ��Ⱦͨ����ʼʱ����ȸ������ݵļ��ز���(�����ʾ��ʼʱ��ո���)
-    // depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;     // ��Ⱦͨ������ʱ����ȸ������ݵļ��ز���(�����ʾ������)
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     // !��Ⱦͨ������ʱ����ȸ������ݵļ��ز���(������)
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;        
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;   
+    // depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     
     
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;    // ��Ⱦͨ����ʼ�ͽ���ʱ��ģ�建�����Ĳ���
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;          // ָ����������Ⱦͨ����ʼʱ��ͼ�񲼾�(�����ʾ������)
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // ָ����������Ⱦͨ������ʱ��ͼ�񲼾�(�����ʾ�������ģ�帽������Ѳ���)
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;      
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     geoStageOutputAttachments.push_back(depthAttachment);
     
     // ���ν׶���ɫ��������
     std::vector<VkAttachmentReference> geoStageAttachmentRefs = {};
-    for (int i = 0; i < geoStageOutputAttachments.size()-1; i++)    // ��������depth
+    for (int i = 0; i < geoStageOutputAttachments.size()-1; i++)    
     {
         VkAttachmentReference colorAttachmentRef = {};
-        colorAttachmentRef.attachment = static_cast<uint32_t>(i);  // ��ʾ��һ������
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;   // ��ʾ������ɫ��������Ѳ���
+        colorAttachmentRef.attachment = static_cast<uint32_t>(i);  
+        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;  
         geoStageAttachmentRefs.push_back(colorAttachmentRef);
     }
 
     // ��ȸ�������
     VkAttachmentReference depthAttachmentRef = {};
-    depthAttachmentRef.attachment = static_cast<uint32_t>(geoStageOutputAttachments.size()-1); //depth�����һλ
+    depthAttachmentRef.attachment = static_cast<uint32_t>(geoStageOutputAttachments.size()-1); //depth位置在最后
     depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     
     /*
-     * һ����Ⱦͨ�����԰��������ͨ����ÿ����ͨ��������һ���ض�����Ⱦ������������Ƽ����塢���к���ȡ�
-     * ��ͨ�������ڲ��л���ȾĿ�������£���ͬһ�鸽��ִ�ж����Ⱦ�������Ӷ����ٲ���Ҫ���ڴ������ͬ��������
+     * 子通道依赖用于描述子通道之间的执行顺序和数据依赖关系。
+     * 它确保一个子通道在另一个子通道完成特定操作后才开始执行，从而保证渲染结果的正确性。
      */
-    // ��ͨ������:����һ����ͨ������ͨ������Ⱦͨ���е�һ����Ⱦ���衣
+    // 子通道依赖:定义子通道之间的依赖关系，确保渲染操作按正确顺序执行。
     std::vector<VkSubpassDescription> subpasses(2);
-    // ������Ⱦ��ͨ��
-    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;// ָ���󶨵Ĺ�������(�����ʾ��ͼ�ι���)
-    subpasses[0].colorAttachmentCount = static_cast<uint32_t>(geoStageAttachmentRefs.size()-1);// ��ɫ��������
-    subpasses[0].pColorAttachments = geoStageAttachmentRefs.data();// ��ɫ�������õ�ָ��
-    subpasses[0].pDepthStencilAttachment = &depthAttachmentRef;// ���ģ�帽�����õ�ָ��
+    // 两个subpass
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;// 指定绑定的管线类型(这里表示绑定图形管线)
+    subpasses[0].colorAttachmentCount = static_cast<uint32_t>(geoStageAttachmentRefs.size()-1); // 颜色附件数量
+    subpasses[0].pColorAttachments = geoStageAttachmentRefs.data(); // 颜色附件引用的指针
+    subpasses[0].pDepthStencilAttachment = &depthAttachmentRef;// 深度模板附件引用的指针
 
-    // *���ڴӵ�һ����ͨ��д�����ɫ�����ж�ȡ���ݡ�
-    // layout����ΪVK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL����ʾ�ø���������ɫ����ȡ��������Ѳ��֡�
+    // 几何阶段作为光照阶段输入的attachment refs
     std::vector<VkAttachmentReference> inputAttachmentRefs;
     for (int i = 0; i < geoStageOutputAttachments.size()-2; i++)
     {
@@ -262,41 +261,36 @@ void VkDeferRenderSystem::CreateRenderPass()
         inputAttachmentRefs.push_back(inputAttachmentRef);
     }
     
-    // *���ڽ����ռ���Ľ��д����ɫ������
-    // layout����ΪVK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL����ʾ������ɫ������������Ѳ��֡�
     VkAttachmentReference outputAttachmentRef = {};
-    outputAttachmentRef.attachment = geoStageOutputAttachments.size() - 2;  //���һ���������ɫ����
+    outputAttachmentRef.attachment = geoStageOutputAttachments.size() - 2;  
     outputAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    // ������Ⱦͨ��
     subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpasses[1].inputAttachmentCount = static_cast<uint32_t>(inputAttachmentRefs.size());
     subpasses[1].pInputAttachments = inputAttachmentRefs.data();
     subpasses[1].colorAttachmentCount = 1;
     subpasses[1].pColorAttachments = &outputAttachmentRef;
+    // !光照阶段不需要传入depth，不需要深度附件否则后面的步骤会出错
     subpasses[1].pDepthStencilAttachment = &depthAttachmentRef;
     
     /*
-     * ��ͨ����������������ͨ��֮���ִ��˳�������������ϵ��
-     * ��ȷ��һ����ͨ������һ����ͨ������ض�������ſ�ʼִ�У��Ӷ���֤��Ⱦ�������ȷ�ԡ�
+     * 子通道依赖用于描述子通道之间的执行顺序和数据依赖关系。
+     * 它确保一个子通道在另一个子通道完成特定操作后才开始执行，从而保证渲染结果的正确性。
      */
-    // ��ͨ������:������ͨ��֮���������ϵ��ȷ����Ⱦ��������ȷ˳��ִ�С�
+    // 子通道依赖:定义子通道之间的依赖关系，确保渲染操作按正确顺序执行。
     VkSubpassDependency dependency = {};
-    dependency.srcSubpass = 0;    // ָ��Դ��ͨ��������������srcSubpass = 0��ʾ��һ����ͨ����
-    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;   // ָ��Դ��ͨ���з������������ķ������ͣ�VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT��ʾ��ɫ����д�������
+    dependency.srcSubpass = 0;   
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;   // 指定源子通道的访问掩码(这里表示不关心)
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // ָ��Դ��ͨ���з������������Ĺ��߽׶Σ�
+    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // 指定管线阶段(这里表示包括颜色附件输出阶段和早期片段测试阶段)
     
-    dependency.dstSubpass = 1;  // ָ��Ŀ����ͨ��������������dstSubpass = 1��ʾ�ڶ�����ͨ����
+    dependency.dstSubpass = 1;  // 指定目标子通道
     dependency.dstStageMask= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // ָ��Ŀ����ͨ��������������Ҫ�ȴ��Ĺ��߽׶Σ�
+    | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;   // 指定目标子通道的管线阶段,和源子通道相同
     dependency.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
-    | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // ָ��Ŀ����ͨ��������������Ҫ�ȴ��ķ������ͣ�VK_ACCESS_INPUT_ATTACHMENT_READ_BIT��ʾ���븽����ȡ������
-    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; // ָ�����������ͣ�VK_DEPENDENCY_BY_REGION_BIT��ʾ�����ǰ�������еģ���ֻ����ص������ڽ���ͬ��
-
+    | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // 指定目标子通道访问掩码,包括颜色附件写入和深度模板附件写入操作
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; // VK_DEPENDENCY_BY_REGION_BIT表示存在subpass前后的依赖关系
     
-    // ������Ⱦͨ��
     std::vector<VkAttachmentDescription> attachments = {geoStageOutputAttachments};
-    //attachments.push_back(depthAttachment); // �������
     
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -330,6 +324,11 @@ void VkDeferRenderSystem::CreateDescriptorSets()
         imageInfos[i].imageView = imageViews[i];
     }
 
+    
+    auto nullTex = dynamic_cast<VulkanTexture*>(KongRenderModule::GetNullTex());
+    VkDescriptorImageInfo imageInfo {nullTex->m_sampler, nullTex->m_imageView,
+    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    
     auto descriptorPool = KongRenderModule::GetRenderModule().m_descriptorPool.get();
     m_deferColorDescriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
     for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
@@ -340,7 +339,7 @@ void VkDeferRenderSystem::CreateDescriptorSets()
         .WriteImage(1, &imageInfos[1])
         .WriteImage(2, &imageInfos[2])
         .WriteImage(3, &imageInfos[3])
-        
+        .WriteImage(4, &imageInfo)
         .Build(m_deferColorDescriptorSets[i]);
     }
 }
@@ -382,11 +381,12 @@ void VkDeferRenderSystem::CreateFrameBuffers()
 void VkDeferRenderSystem::CreateDeferColorDescriptorSetLayout()
 {
     auto textureLayout = VulkanDescriptorSetLayout::Builder()
-    // �����ǹ��ս׶Σ���Ҫ��ȡ���ν׶�subpass�������ʹ��VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+    // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
     .AddBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // position texture
     .AddBinding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // normal texture
     .AddBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // albedo texture
     .AddBinding(3, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // orm texture
+    .AddBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1) // direct shadow map   
     .Build();
 
     textureLayout->m_usage = VulkanDescriptorSetLayout::Texture;
@@ -409,7 +409,7 @@ void VkDeferRenderSystem::CreateDeferColorPipelineLayout()
     // descriptor set layout
     pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-
+    
     if (vkCreatePipelineLayout(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(),
         &pipelineLayoutInfo, nullptr, &m_deferColorPipelineLayout) != VK_SUCCESS)
     {

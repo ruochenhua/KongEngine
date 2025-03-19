@@ -76,20 +76,14 @@ void VkModelRenderSystem::CreateMeshDescriptorSet()
     }
 }
 
-
-VkImage VkModelRenderSystem::GetColorImage() const
+VulkanTexture* VkModelRenderSystem::GetColorTexture() const
 {
-    return m_sceneTexture->m_image;
+    return m_sceneTexture.get();
 }
 
-VkImageView VkModelRenderSystem::GetColorImageView() const
+VulkanTexture* VkModelRenderSystem::GetDepthTexture() const
 {
-    return m_sceneTexture->m_imageView;
-}
-
-VkSampler VkModelRenderSystem::GetSampler() const
-{
-    return m_sceneTexture->m_sampler;
+    return m_depthTexture.get();
 }
 
 void VkModelRenderSystem::CreateDescriptorSetLayout()
@@ -120,9 +114,9 @@ void VkModelRenderSystem::CreatePipelineLayout()
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(SimplePushConstantData);
 
-    // set��˳�����vector�У�set0,set1,set2 ...
+    // set放在vector中，从set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    // �ȷ�ȫ�ֵ�descriptor set layout
+    // descriptor set layout
     descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)
     {
@@ -134,7 +128,6 @@ void VkModelRenderSystem::CreatePipelineLayout()
     // descriptor set layout
     pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-    // ���ڽ�һЩС���������͵�shader��
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 

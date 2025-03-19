@@ -16,7 +16,7 @@ layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput in
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput inNormal;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput inAlbedo;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput inOrm;
-
+layout(set = 1, binding = 4) uniform sampler2D shadowmap;
 layout(location=0) out vec4 outColor;
 
 

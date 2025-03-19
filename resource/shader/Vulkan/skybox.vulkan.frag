@@ -13,6 +13,6 @@ layout(set=1, binding=0) uniform samplerCube cubemap;
 void main()
 {
 
-    outColor = vec4(0.4, 0.2, 0.1, 1.0);
+//    outColor = vec4(0.4, 0.2, 0.1, 1.0);
     outColor = texture(cubemap, normalize(cubeUV));
 }
