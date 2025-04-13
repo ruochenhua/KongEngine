@@ -258,6 +258,7 @@ void VulkanSkyBoxRenderSystem::CreateFramebuffer(const VulkanSkyBoxCreateInfo& c
     }
 }
 
+//* 设置 barrier
 void VulkanSkyBoxRenderSystem::SetBarrier(VkCommandBuffer commandBuffer)
 {
     // 进入天空盒渲染之前，需要设置图像的 barrier，以保证延迟渲染的结果正确输出到image上后再进行天空盒渲染
@@ -275,6 +276,7 @@ void VulkanSkyBoxRenderSystem::SetBarrier(VkCommandBuffer commandBuffer)
     barrier.subresourceRange.layerCount = 1;
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // 需要与上一步的写入相关的记得清理
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // 之后需要作为采样器读取
+
     // 手动指定用何种图形 API 提供的同步亮点使用
     vkCmdPipelineBarrier(commandBuffer,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // 上一个阶段的管道
