@@ -31,6 +31,8 @@ KongApp::~KongApp()
 
 void KongApp::Run()
 {
+    // 直接加载测试场景
+    KongSceneManager::GetSceneManager().LoadScene("scene/hello_ssr.yaml");
     double current_time = glfwGetTime();
     while (!glfwWindowShouldClose(m_Window.GetWindow()))
     {

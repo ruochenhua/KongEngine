@@ -6,6 +6,10 @@ set(CMAKE_CXX_EXTENSIONS 17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(MSVC)
+    add_compile_options(/wd4819)    #屏蔽掉4819warning
+endif()
+
 # 查找OpenGL
 find_package(OpenGL REQUIRED)
 

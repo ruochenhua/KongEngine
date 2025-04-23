@@ -30,6 +30,7 @@ namespace Kong
 
 #ifdef RENDER_IN_VULKAN
 		void Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout);
+		void DrawShadow(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout);
 		void UpdateMeshUBO(const FrameInfo& frameInfo);
 		void CreateMeshDescriptorSet(const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout, VulkanDescriptorPool* descriptorPool);
 #endif

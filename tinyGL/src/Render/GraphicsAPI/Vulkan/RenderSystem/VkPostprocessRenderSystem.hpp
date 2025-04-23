@@ -41,11 +41,10 @@ namespace Kong
         void CreatePipelineLayout();
         void CreatePipeline();
         
-        void CreateDescriptorBuffer();
         // *后处理的framebuffer应该就是swapchain的framebuffers
         void CreateDescriptorSet(const VulkanPostprocessCreateInfo &createInfo);
         
-        
+        bool initShadow {false};
         
         // scene/bright texture
         // std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
@@ -54,7 +53,6 @@ namespace Kong
         std::unique_ptr<CQuadShape> quadShape {nullptr};
 
         VkDescriptorImageInfo m_imageInfo {VK_NULL_HANDLE};
-        std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
     };
 }
 #endif

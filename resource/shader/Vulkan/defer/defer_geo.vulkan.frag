@@ -51,7 +51,7 @@ vec4 GetAlbedo()
 //        return texture_albedo;
         return pow(texture_albedo, vec4(2.2));
     }
-
+    return vec4(0.1, 0.7, 0.7, 1.0);
     return material.albedo;
 }
 

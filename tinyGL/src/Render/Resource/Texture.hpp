@@ -78,7 +78,7 @@ namespace Kong
         void CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags, int layerCount = 1);
         // 创建纹理采样器, 采样器定义了如何从纹理中采样颜色值
         void CreateTextureSampler();
-        
+        void CreateDepthTextureSampler();
         void Bind(unsigned int location) override;
 
         VkImage m_image{ nullptr };

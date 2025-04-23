@@ -16,8 +16,50 @@ layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput in
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput inNormal;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput inAlbedo;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput inOrm;
-layout(set = 1, binding = 4) uniform sampler2D shadowmap;
+/*
+sampler2DShadow：专门用于 阴影贴图（深度纹理） 的采样，存储的是单通道深度值（而非颜色）
+*/
+layout(set = 1, binding = 4) uniform sampler2DShadow shadowmap_tex;
+
 layout(location=0) out vec4 outColor;
+
+// 计算阴影
+float ShadowCalculation_DirLight(vec4 frag_world_pos)
+{
+    mat4 light_space_mat = ubo.sceneLightInfo.directional_light.light_space_mat;
+    // 转换到-1,1的范围，再转到0,1的范围
+    vec4 frag_pos_light_space = light_space_mat * frag_world_pos;
+    // perform perspective divide
+    vec3 proj_coord = frag_pos_light_space.xyz / frag_pos_light_space.w;
+    // transform to [0,1] range
+    // !!!注意注意，这里只对xy做[0,1]映射，不能修改z，否则深度比较会出错
+    proj_coord.xy = proj_coord.xy * 0.5 + 0.5;
+
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+    if (proj_coord.z > 1.0 || proj_coord.z < 0.0) return 1.0;
+
+    float shadow = 0.0f;
+
+    // PCF
+    vec2 texel_size = 1.0 / vec2(textureSize(shadowmap_tex, 0));
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            // * shadowmap_tex使用sampler2DShadowmap时vulkan中会利用硬件加速自动比较深度
+            shadow += texture(shadowmap_tex, vec3(proj_coord.xy + vec2(x, y) * texel_size, proj_coord.z-0.01));
+            // * shadowmap_tex用sampler2D使用下面这种
+//            float pcf_depth = texture(shadowmap_tex, proj_coord.xy + vec2(x, y) * texel_size).r;
+//            shadow += pcf_depth > (proj_coord.z - 0.005) ? 0.0 : 1.0;
+        }
+    }
+    shadow /= 9.0;
+    
+    // 为了统一sampler2D和sampler2DShadow的返回，使用sampler2D时这里处理一下
+//    shadow = (1.0 - shadow)
+
+    return shadow;
+}
 
 
 const float PI = 3.14159265359;
@@ -92,6 +134,9 @@ void main()
     vec3 lightColor = dirLight.light_color.xyz;
     vec3 albedoColor = subpassLoad(inAlbedo).rgb;
 
+//    float shadowColor = texture(shadowmap_tex, TexCoords).r;
+//    outColor = vec4(vec3(shadowColor), 1.0);
+//    return;
 
     float metallic = orm.z;
     float specularScalar = orm.w;
@@ -99,7 +144,7 @@ void main()
 
     // 简单计算一下光照（BRDF）
     vec3 h = normalize(toLightDir + view);
-    vec3 radiance = lightColor * 180.0 / PI;   //修正一下light_color的值，免得需要的值太大了
+    vec3 radiance = lightColor;   //修正一下light_color的值，免得需要的值太大了
 
     float NDF = DistributionGGX(objNormal, h, roughness);
     float G = GeometrySmith(objNormal, view, toLightDir, roughness);
@@ -122,7 +167,10 @@ void main()
 
     // return (KD*obj_albedo / PI)*radiance*NdotL;
     //return material.specular_factor;
-    vec3 ambient = albedoColor * F0*0.1;
-    outColor = vec4(ambient + (KD*albedoColor / PI + specular)*radiance*NdotL, 1.0);
-//    outColor = vec4(0.1, 0.2, 0.3, 1.0);
+    vec3 ambient = albedoColor * 0.1;
+    vec3 dir_light = (KD*albedoColor / PI + specular)*radiance*NdotL;
+
+    float shadow = ShadowCalculation_DirLight(subpassLoad(inPosition));
+    dir_light *= shadow;
+    outColor = vec4(ambient + dir_light, 1.0);
 }

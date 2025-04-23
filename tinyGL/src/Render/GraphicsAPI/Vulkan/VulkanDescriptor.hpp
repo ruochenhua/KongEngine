@@ -14,6 +14,7 @@ namespace Kong
         enum DescriptorSetLayoutUsageType
         {
             GlobalData = 0, //全局参数，如相机位置，变换矩阵等等
+            Default,        //默认类型,有些系统内不需要做区分,只有一个descriptor set
             BasicMaterial,
             Texture,
             PostProcessTexture,

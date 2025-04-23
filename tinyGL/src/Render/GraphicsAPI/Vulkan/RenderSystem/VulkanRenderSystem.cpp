@@ -16,17 +16,20 @@ VulkanRenderSystem::VulkanRenderSystem()
     m_clearValues.resize(2);
     m_clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
     m_clearValues[1].depthStencil = { 1.0f, 0 };
+
+    renderAreaExtent = m_swapChain->GetSwapChainExtent();
 }
 
-void VulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer)
+void VulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer)
 {
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = m_renderPass;
-    renderPassInfo.framebuffer = m_framebuffer;
+    // 没有传入framebuffer的话就用默认的系统统一framebuffer
+    renderPassInfo.framebuffer = framebuffer == VK_NULL_HANDLE ? m_framebuffer : framebuffer;
 
     renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = m_swapChain->GetSwapChainExtent();
+    renderPassInfo.renderArea.extent = renderAreaExtent;
     
     renderPassInfo.clearValueCount = static_cast<uint32_t>(m_clearValues.size());
     renderPassInfo.pClearValues = m_clearValues.data();
@@ -39,11 +42,11 @@ void VulkanRenderSystem::BeginRenderPass(VkCommandBuffer commandBuffer)
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(m_swapChain->GetSwapChainExtent().width);
-    viewport.height = static_cast<float>(m_swapChain->GetSwapChainExtent().height);
+    viewport.width = static_cast<float>(renderAreaExtent.width); //static_cast<float>(m_swapChain->GetSwapChainExtent().width);
+    viewport.height = static_cast<float>(renderAreaExtent.height); //static_cast<float>(m_swapChain->GetSwapChainExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    VkRect2D scissor{{0,0}, m_swapChain->GetSwapChainExtent()};
+    VkRect2D scissor{{0,0}, renderAreaExtent};
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
@@ -52,5 +55,7 @@ void VulkanRenderSystem::EndRenderPass(VkCommandBuffer commandBuffer)
 {
     vkCmdEndRenderPass(commandBuffer);
 }
+
+
 
 #endif

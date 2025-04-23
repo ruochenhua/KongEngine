@@ -59,6 +59,7 @@ VulkanMaterialInfo::VulkanMaterialInfo()
     m_imageInfoCache.emplace(ETextureType::roughness, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     m_imageInfoCache.emplace(ETextureType::metallic, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     m_imageInfoCache.emplace(ETextureType::ambient_occlusion, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    m_imageInfoCache.emplace(ETextureType::shadowmap, VkDescriptorImageInfo{nullTex->m_sampler, nullTex->m_imageView, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
 }
 
 VulkanMaterialInfo::~VulkanMaterialInfo()

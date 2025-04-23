@@ -19,7 +19,7 @@ namespace Kong
 	class SimpleVulkanRenderSystem;
 	class VulkanPostprocessSystem;
 	class VulkanSkyBoxRenderSystem;
-	//class VkShadowMapRenderSystem;
+	class VkShadowMapRenderSystem;
 	class VulkanSwapChain;
 	class CCamera;
 
@@ -182,7 +182,7 @@ namespace Kong
 		// 天空盒渲染系统
 		std::unique_ptr<VulkanSkyBoxRenderSystem> m_vkSkyboxSystem{nullptr};
 		// 阴影图渲染系统
-		//std::unique_ptr<VkShadowMapRenderSystem> m_vkShadowMapSystem{nullptr};
+		std::unique_ptr<VkShadowMapRenderSystem> m_vkShadowMapSystem{nullptr};
 #endif
 		/* 矩阵UBO，保存场景基础的矩阵信息
 		 */

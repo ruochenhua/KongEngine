@@ -65,9 +65,6 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 
 	// 初始化imgui后端
 #ifdef RENDER_IN_VULKAN
-	
-	
-	auto windowModule = KongWindow::GetWindowModule();
 	auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
 
 	VkDescriptorPoolSize pool_sizes[] =

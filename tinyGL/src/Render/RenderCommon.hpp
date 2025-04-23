@@ -53,6 +53,7 @@ namespace Kong
         roughness,
         metallic,
         ambient_occlusion,
+        shadowmap,
     };
 
     enum EShaderType 

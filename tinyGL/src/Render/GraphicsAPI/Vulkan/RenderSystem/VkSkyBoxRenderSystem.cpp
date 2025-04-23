@@ -114,8 +114,7 @@ void VulkanSkyBoxRenderSystem::CreatePipeline()
 
 void VulkanSkyBoxRenderSystem::CreateRenderPass()
 {
-    // todo: 考虑在defer Render框架下，skybox作为defer Render pass的subpass实现
-     // 深度附件描述
+    // 深度附件描述
     VkAttachmentDescription depthAttachment = {};
     depthAttachment.format = m_swapChain->FindDepthFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;        // 设定多重采样(1表示不采样)

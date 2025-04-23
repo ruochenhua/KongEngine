@@ -25,6 +25,7 @@
 #include "GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkPostprocessRenderSystem.hpp"
+#include "GraphicsAPI/Vulkan/RenderSystem/VkShadowMapRenderSystem.h"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkSkyBoxRenderSystem.hpp"
 
@@ -102,6 +103,7 @@ int KongRenderModule::Init()
 	m_descriptorPool = VulkanDescriptorPool::Builder()
 			   .SetMaxSets(meshCount)  // 简单设置一个最大数量
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
+				.AddPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, meshCount)
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
 				.AddPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, meshTexCount)
 			   .Build();
@@ -138,6 +140,10 @@ int KongRenderModule::Init()
 	InitUBO();
 	
 #ifdef RENDER_IN_VULKAN
+	// 创建阴影系统
+	VulkanShadowMapCreateInfo shadowMapCreateInfo {m_descriptorPool.get()};
+	m_vkShadowMapSystem = make_unique<VkShadowMapRenderSystem>(shadowMapCreateInfo);
+	
 #if VK_DEFER
 	m_vkDeferRenderSystem = make_unique<VkDeferRenderSystem>();
 	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
@@ -154,6 +160,7 @@ int KongRenderModule::Init()
 		m_vkDeferRenderSystem->GetColorTexture()->m_imageView, 
 		m_vkDeferRenderSystem->GetColorTexture()->m_sampler
 	};
+	
 #else
 	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
 	// mesh需要初始化descriptorset
@@ -163,7 +170,7 @@ int KongRenderModule::Init()
 	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
 		m_descriptorPool.get(),
 		m_vkSimpleRenderSystem->GetColorTexture(),
-		m_vkSimpleRenderSystem->GetDepthTextureget()
+		m_vkSimpleRenderSystem->GetDepthTexture()
 	};
 	
 	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
@@ -537,6 +544,9 @@ int KongRenderModule::Update(double delta)
 		// render
 		/* 每个frame之间可以有多个render pass*/
 		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
+
+		// 先渲染阴影
+		m_vkShadowMapSystem->Draw(frameInfo);
 		
 #if VK_DEFER
 		m_vkDeferRenderSystem->UpdateMeshUBO(frameInfo);
@@ -547,6 +557,15 @@ int KongRenderModule::Update(double delta)
 #endif
 		
 		m_vkSkyboxSystem->Draw(frameInfo);
+
+		VkImageView shadowmapView = m_vkShadowMapSystem->GetShadowMapDebugImageView();
+		VkSampler shadowmapSampler = m_vkShadowMapSystem->GetShadowMapDebugSampler();
+
+		if (shadowmapView != VK_NULL_HANDLE && shadowmapSampler != VK_NULL_HANDLE)
+		{
+			
+		}
+		
 		m_vkPostProcessSystem->Draw(frameInfo);		
 	}
 #else
@@ -819,6 +838,7 @@ void KongRenderModule::OnReloadScene()
 {
 #ifdef RENDER_IN_VULKAN
 	// todo: 放其他地方
+	m_vkShadowMapSystem->InitLightShadowMapResource(m_descriptorPool.get());
 #if VK_DEFER
 	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
 #else

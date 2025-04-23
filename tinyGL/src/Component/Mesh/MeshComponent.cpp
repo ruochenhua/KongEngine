@@ -139,6 +139,16 @@ void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pi
 	}
 }
 
+void CMeshComponent::DrawShadow(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout)
+{
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		auto& render_vertex = mesh->m_RenderInfo;
+
+		render_vertex->Draw(frameInfo.commandBuffer);
+	}
+}
+
 void CMeshComponent::UpdateMeshUBO(const FrameInfo& frameInfo)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
