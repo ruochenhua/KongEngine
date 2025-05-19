@@ -1,4 +1,5 @@
 #include "VulkanPipeline.hpp"
+#include "VulkanPipeline.hpp"
 
 #include <iostream>
 
@@ -45,15 +46,28 @@ VulkanPipeline::VulkanPipeline(std::map<EShaderType, std::string>& shaderPaths,
                                const PipelineConfigInfo& configInfo)
         : m_deviceRef(VulkanGraphicsDevice::GetGraphicsDevice())
 {
-    CreateGraphicsPipeline(shaderPaths, configInfo);
+    // 创建shader pipeline
+    if (shaderPaths.count(EShaderType::cs) > 0)
+    {
+        // compute shader
+        CreateComputePipeline(shaderPaths, configInfo);
+        m_pipelineType = EPipelineType::COMPUTE_PIPELINE;
+    }
+    else
+    {
+        // graphics shader
+        CreateGraphicsPipeline(shaderPaths, configInfo);
+        m_pipelineType = EPipelineType::GRAPHICS_PIPELINE;
+    }
 }
 
 VulkanPipeline::~VulkanPipeline()
 {
     auto device = m_deviceRef->GetDevice();
-    vkDestroyShaderModule(device, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
-    vkDestroyPipeline(device, m_graphicsPipeline, nullptr);
+    if (vertexShaderModule!=VK_NULL_HANDLE) vkDestroyShaderModule(device, vertexShaderModule, nullptr);
+    if (fragmentShaderModule!=VK_NULL_HANDLE) vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
+    if (computeShaderModule!=VK_NULL_HANDLE) vkDestroyShaderModule(device, computeShaderModule, nullptr);
+    vkDestroyPipeline(device, m_pipeline, nullptr);
 }
 
 void VulkanPipeline::Bind(const VkCommandBuffer& commandBuffer)
@@ -62,7 +76,16 @@ void VulkanPipeline::Bind(const VkCommandBuffer& commandBuffer)
      * VK_PIPELINE_BIND_POINT_GRAPHICS表示这是一个graphics
      * 其他类型还包括: VK_PIPELINE_BIND_POINT_COMPUTE和VK_PIPELINE_BIND_POINT_RAY_TRACING     
      */
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+    if (m_pipelineType == EPipelineType::COMPUTE_PIPELINE)
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
+    }
+    else
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);    
+    }
+    // todo: 其他类型
+    
 }
 
 void VulkanPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo)
@@ -214,7 +237,35 @@ void VulkanPipeline::CreateGraphicsPipeline(std::map<EShaderType, std::string>& 
     pipelineInfo.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(m_deviceRef->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
-        nullptr, &m_graphicsPipeline) != VK_SUCCESS)
+        nullptr, &m_pipeline) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create graphics pipeline!");
+    }
+}
+
+void VulkanPipeline::CreateComputePipeline(std::map<EShaderType, std::string>& shaderPaths, const PipelineConfigInfo& configInfo)
+{
+    auto csData = Utils::ReadFile(CSceneLoader::ToResourcePath(shaderPaths[cs]));
+    std::cout << "frag code size: " << csData.size() << "\n";
+
+    CreateShaderModule(csData, &computeShaderModule);
+    
+    VkPipelineShaderStageCreateInfo shaderStages;
+    shaderStages.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shaderStages.module = computeShaderModule;
+    shaderStages.pName = "main";
+    shaderStages.flags = 0;
+    shaderStages.pNext = nullptr;
+    shaderStages.pSpecializationInfo = nullptr;
+
+    VkComputePipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage = shaderStages;
+    pipelineInfo.layout = configInfo.pipelineLayout;
+    
+    if (vkCreateComputePipelines(m_deviceRef->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
+        nullptr, &m_pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }

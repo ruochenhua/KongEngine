@@ -86,9 +86,10 @@ namespace Kong
         VkImageView m_imageView{ nullptr };
         VkSampler m_sampler{ nullptr };
         VkFormat m_format{ VK_FORMAT_MAX_ENUM };
-    private:
         // 转换图像布局
         void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, int arrayLayer = 0);
+        
+    private:
         // 复制缓冲区到图像
         void CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer = 0, int layerCount = 1);
 

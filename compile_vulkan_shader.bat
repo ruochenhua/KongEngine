@@ -28,5 +28,16 @@ for /R "%SHADER_DIR%" %%f in (*.vulkan.frag) do (
     )
 )
 
+rem 编译计算着色器
+for /R "%SHADER_DIR%" %%f in (*.vulkan.comp) do (
+    %VULKAN_SDK%\Bin\glslc.exe "%%f" -o "%%~dpnf.comp.spv" 2>nul
+    if !errorlevel! neq 0 (
+        echo [ERROR] Failed to compile %%f
+        %VULKAN_SDK%\Bin\glslc.exe "%%f" -o "%%~dpnf.comp.spv"
+        echo Press any key to continue...
+        pause >nul
+    )
+)
+
 echo All shaders compiled successfully
 pause

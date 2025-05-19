@@ -1,0 +1,30 @@
+// blur.comp
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+//layout(binding = 0, rgba8) uniform readonly image2D inputImage;
+layout(binding = 0) uniform sampler2D inputImage;
+layout(binding = 1, rgba8) uniform writeonly image2D outputImage;
+
+const int blurRadius = 3; // 模糊半径
+
+void main() {
+    ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
+    //ivec2 imageSize = imageSize(inputImage);
+    ivec2 imageSize = textureSize(inputImage, 0);
+
+    // 边界检查
+    if (texCoord.x >= imageSize.x || texCoord.y >= imageSize.y) return;
+
+    vec4 sum = vec4(0);
+    int count = 0;
+
+    // 水平方向采样
+    for (int i = -blurRadius; i <= blurRadius; ++i) {
+        int x = clamp(texCoord.x + i, 0, imageSize.x - 1);
+        //sum += imageLoad(inputImage, ivec2(x, texCoord.y));
+        sum += texture(inputImage, ivec2(0.5, 0.5));
+        count++;
+    }
+
+    imageStore(outputImage, texCoord, sum / count);
+}

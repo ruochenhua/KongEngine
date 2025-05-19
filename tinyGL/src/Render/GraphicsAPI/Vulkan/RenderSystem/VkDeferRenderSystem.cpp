@@ -243,7 +243,12 @@ void VkDeferRenderSystem::CreateRenderPass()
 
         // 4���ս׶�����ĸ���
         VkAttachmentDescription outputColorAttachment = {};
+#if USE_COMPUTE_POSTPROCESS
+        outputColorAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+#else
         outputColorAttachment.format = VK_FORMAT_R8G8B8A8_SRGB;
+#endif
+        
         outputColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         outputColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         outputColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -467,7 +472,6 @@ void VkDeferRenderSystem::CreateDeferGeometryTexture()
     VkExtent2D extent = m_swapChain->GetSwapChainExtent();
     VkFormat imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
     
-    // �����Ȱ���color image�ĸ�ʽ����position��normal��albedo��orm����
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;

@@ -106,6 +106,7 @@ int KongRenderModule::Init()
 				.AddPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, meshCount)
 			   .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
 				.AddPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, meshTexCount)
+				.AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, meshTexCount)
 			   .Build();
 
 	CreateCommandBuffers();
@@ -158,7 +159,8 @@ int KongRenderModule::Init()
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
 		m_swapChain.get(), m_descriptorPool.get(),
 		m_vkDeferRenderSystem->GetColorTexture()->m_imageView, 
-		m_vkDeferRenderSystem->GetColorTexture()->m_sampler
+		m_vkDeferRenderSystem->GetColorTexture()->m_sampler,
+		m_vkDeferRenderSystem->GetColorTexture()->m_image
 	};
 	
 #else

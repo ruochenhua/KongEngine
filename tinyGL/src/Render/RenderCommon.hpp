@@ -20,6 +20,7 @@
 #define SHADOWMAP_DEBUG 0
 #define USE_CSM 1
 
+#define USE_COMPUTE_POSTPROCESS 0   // 使用compute shader实现着色
 
 namespace Kong
 {

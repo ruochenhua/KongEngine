@@ -34,6 +34,12 @@ namespace Kong
     class VulkanPipeline
     {
     public:
+        enum EPipelineType
+        {
+            GRAPHICS_PIPELINE,      // 图形pipeline
+            COMPUTE_PIPELINE,       // 计算pipeline
+            TYPE_MAX,
+        };
         VulkanPipeline(std::map<EShaderType, std::string>& shaderPaths,
             const PipelineConfigInfo& configInfo);
         ~VulkanPipeline();
@@ -46,12 +52,17 @@ namespace Kong
         
     private:
         void CreateGraphicsPipeline(std::map<EShaderType, std::string>& shaderPaths, const PipelineConfigInfo& configInfo);
+        void CreateComputePipeline(std::map<EShaderType, std::string>& shaderPaths, const PipelineConfigInfo& configInfo);
+        
         void CreateShaderModule(const std::string& shaderCode, VkShaderModule* shaderModule);
         
         shared_ptr<VulkanGraphicsDevice> m_deviceRef;
-        VkPipeline m_graphicsPipeline;
-        VkShaderModule vertexShaderModule;
-        VkShaderModule fragmentShaderModule;
+        VkPipeline m_pipeline;
+        VkShaderModule vertexShaderModule {VK_NULL_HANDLE};
+        VkShaderModule fragmentShaderModule {VK_NULL_HANDLE};
+        VkShaderModule computeShaderModule {VK_NULL_HANDLE};
+
+        EPipelineType m_pipelineType {TYPE_MAX};
     };
 }
 #endif

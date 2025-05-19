@@ -1,5 +1,5 @@
 #include "VulkanSwapChain.hpp"
-
+#include "Render/RenderCommon.hpp"
 #include <array>
 #include <iostream>
 #ifdef RENDER_IN_VULKAN
@@ -473,7 +473,12 @@ VkSurfaceFormatKHR VulkanSwapChain::ChooseSwapSurfaceFormat(const std::vector<Vk
 {
     for (const auto& availableFormat : availableFormats)
     {
+        
+#if USE_COMPUTE_POSTPROCESS
+        if (availableFormat.format == VK_FORMAT_R8G8B8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+#else
         if (availableFormat.format == VK_FORMAT_R8G8B8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+#endif
         {
             return availableFormat;
         }
