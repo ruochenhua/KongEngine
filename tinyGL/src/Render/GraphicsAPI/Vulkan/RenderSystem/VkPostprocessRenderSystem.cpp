@@ -6,7 +6,6 @@
 #include "Actor.hpp"
 #include "Component/LightComponent.h"
 #include "Render/RenderModule.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanPipeline.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 

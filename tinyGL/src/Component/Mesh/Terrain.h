@@ -23,8 +23,8 @@ namespace Kong
         void Draw(void* commandBuffer = nullptr) override;
         void InitRenderInfo() override;
         
-        int terrain_size = 10000;
-        int terrain_res = 100;
+        int terrain_size = 20000;
+        int terrain_res = 400;
         
     private:
         // 读取高度图
