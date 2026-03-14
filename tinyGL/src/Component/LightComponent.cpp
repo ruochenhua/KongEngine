@@ -1,20 +1,33 @@
-#include "LightComponent.h"
+﻿#include "LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "glm/gtx/euler_angles.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 using namespace Kong;
 using namespace glm;
 const float SHADOWMAP_NEAR_PLANE = 0.1f;
 const float SHADOWMAP_FAR_PLANE = 30.0f;
+struct VulkanShadowMapUbo
+{
+    // 后面改用csm会传入多个mat
+    glm::mat4 light_space_mat;
+};
 
 CLightComponent::CLightComponent(ELightType in_type)
     : light_type(in_type)
 {
    // shadowmap_shader = make_shared<ShadowMapShader>();
+}
+
+CLightComponent::~CLightComponent()
+{
+#ifdef RENDER_IN_VULKAN
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    vkDestroyFramebuffer(device, m_shadowFrameBuffer, nullptr);
+#endif
 }
 
 GLuint CLightComponent::GetShadowMapTexture() const
@@ -25,9 +38,12 @@ GLuint CLightComponent::GetShadowMapTexture() const
 CDirectionalLightComponent::CDirectionalLightComponent()
     : CLightComponent(ELightType::directional_light)
 {
+#ifndef RENDER_IN_VULKAN
     shadowmap_shader = ShaderManager::GetShader("directional_light_shadowmap");
     assert(shadowmap_shader.get(), "fail to get shadow map shader");
+#endif
 }
+
 
 GLuint CDirectionalLightComponent::GetShadowMapTexture() const
 {
@@ -93,7 +109,7 @@ void CDirectionalLightComponent::RenderShadowMap()
         shadowmap_shader->SetMat4("light_space_mat[0]", light_space_mat);
 #endif
         
-        render_obj->SimpleDraw(shadowmap_shader);
+        render_obj->DrawShadowInfo(shadowmap_shader);
     }
     // 渲染rsm信息
     if(enable_rsm)
@@ -125,12 +141,12 @@ void CDirectionalLightComponent::RenderShadowMap()
             rsm_shader->SetFloat("light_intensity", light_intensity);
             
             mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
-            vec3 light_pos = light_dir * -10.f;
+            vec3 light_pos = light_dir * -10.f;    // 用相机位置更新平行光的位置
             mat4 light_view = lookAt(light_pos, vec3(0,0,0), vec3(0, 1, 0));
             light_space_mat = light_proj * light_view;
             rsm_shader->SetMat4("light_space_mat", light_space_matrices[0]);
         
-            render_obj->SimpleDraw(rsm_shader);
+            render_obj->DrawShadowInfo(rsm_shader);
         }
     }
     
@@ -215,7 +231,7 @@ void CDirectionalLightComponent::TurnOnReflectiveShadowMap(bool b_turn_on)
             {EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.vert")},
             {EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/reflective_shadowmap.frag")}
         };
-        rsm_shader = make_shared<Shader>(shader_path_map);
+        rsm_shader = make_shared<OpenGLShader>(shader_path_map);
         
         glGenFramebuffers(1, &rsm_fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo);
@@ -253,7 +269,110 @@ void CDirectionalLightComponent::TurnOnReflectiveShadowMap(bool b_turn_on)
         glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     }
 }
+#ifdef RENDER_IN_VULKAN
+void CDirectionalLightComponent::InitShadowMap(VkRenderPass renderPass,
+            VulkanDescriptorPool* descriptorPool,
+            const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout)
+{
+    // 创建深度图像
+    CreateTextures();
+    // 创建framebuffer,依赖传入render pass
+    CreateFramebuffer(renderPass);
+    CreateDescriptorBuffer();
+    // 创建descriptor set,依赖传入set layout和descriptor pool
+    // CreateDescriptorSet(descriptorSetLayout, descriptorPool);
+}
 
+void CDirectionalLightComponent::RenderShadowMap(const FrameInfo& frameInfo, VkPipelineLayout pipelineLayout)
+{
+    auto camera = KongRenderModule::GetRenderModule().GetCamera();
+    auto camera_pos = camera->GetPosition();
+    vec3 center_pos = vec3(0, 0, 0);
+    // center_pos = camera_pos;
+    mat4 light_proj = ortho(-20.f, 20.f, -20.f, 20.f, SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE);
+                                      
+    vec3 light_pos = light_dir * -10.f + center_pos;
+    // !注意up的反向
+    mat4 light_view = lookAt(light_pos, center_pos, vec3(0, -1, 0));
+    light_space_mat = light_proj * light_view;
+    
+    auto actors = KongSceneManager::GetActors();
+    for (auto actor : actors)
+    {
+        auto mesh_component = actor->GetComponent<CMeshComponent>();
+        if (!mesh_component)
+        {
+            continue;
+        }
+
+        auto mesh_shader = mesh_component->shader_data;
+        VkModelRenderSystem::SimplePushConstantData pushData {actor->GetModelMatrix()};
+
+        vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(pushData), &pushData);
+        
+        // VulkanShadowMapUbo ubo{};
+        // // camera_near_far = KongRenderModule::GetNearFar();
+        // // light_space_mat = CalLightSpaceMatrix(camera_near_far.x, camera_near_far.y);        
+        // ubo.light_space_mat = light_space_mat;
+        // for (const auto& uniformBuffer : m_uniformBuffers)
+        // {
+        //     uniformBuffer->WriteToBuffer(&ubo);
+        //     uniformBuffer->Flush();
+        // }
+        vkCmdBindDescriptorSets(
+            frameInfo.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipelineLayout,
+            0, 1,
+            &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
+                , 0, nullptr);
+        
+        // vkCmdBindDescriptorSets(
+        //     frameInfo.commandBuffer,
+        //     VK_PIPELINE_BIND_POINT_GRAPHICS,
+        //     pipelineLayout,
+        //     0, 1,
+        //     
+        //     &m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::Default]
+        //         , 0, nullptr);
+        
+        mesh_component->DrawShadow(frameInfo, pipelineLayout);
+    }
+}
+
+void CDirectionalLightComponent::ConvertDepthTextureLayout(const FrameInfo& frameInfo)
+{
+    // 创建图像内存屏障
+    VkImageMemoryBarrier imageMemoryBarrier = {};
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.image = m_depthTexture->m_image;
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    imageMemoryBarrier.subresourceRange.levelCount = 1;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    imageMemoryBarrier.subresourceRange.layerCount = 1;
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    // 调用 vkCmdPipelineBarrier
+    vkCmdPipelineBarrier(
+        frameInfo.commandBuffer,
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &imageMemoryBarrier
+    );
+}
+
+#endif
 std::vector<glm::vec4> CDirectionalLightComponent::GetFrustumCornersWorldSpace(const glm::mat4& proj_view)
 {
     const auto inv = glm::inverse(proj_view);
@@ -355,6 +474,80 @@ std::vector<glm::mat4> CDirectionalLightComponent::GetLightSpaceMatrices()
     return ret;
 }
 
+#ifdef RENDER_IN_VULKAN
+void CDirectionalLightComponent::CreateDescriptorSet(const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout, VulkanDescriptorPool* descriptorPool)
+{
+    m_descriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+    for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        VkDescriptorSet newSet;
+        auto bufferInfo = m_uniformBuffers[i]->DescriptorInfo();
+        VulkanDescriptorWriter(*descriptorSetLayout[0], *descriptorPool)
+        .WriteBuffer(0, &bufferInfo)
+        .Build(newSet);
+        m_descriptorSets[i].emplace(VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType::Default, newSet);
+    }
+}
+
+void CDirectionalLightComponent::CreateFramebuffer(VkRenderPass renderPass)
+{
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    
+    VkFramebufferCreateInfo framebufferInfo = {};
+
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = &m_depthTexture->m_imageView;
+    // 按照阴影贴图设置大小创建
+    framebufferInfo.width = SHADOW_RESOLUTION;
+    framebufferInfo.height = SHADOW_RESOLUTION;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(
+        device,
+        &framebufferInfo,
+        nullptr,
+        &m_shadowFrameBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create framebuffer");
+    }
+}
+
+void CDirectionalLightComponent::CreateTextures()
+{
+    // 创建深度贴图
+    VkFormat depthFormat = KongRenderModule::GetRenderModule().GetSwapChain()->FindDepthFormat();
+    
+    VkImageCreateInfo depthImageInfo = {};
+    depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+    depthImageInfo.extent.width = SHADOW_RESOLUTION;
+    depthImageInfo.extent.height = SHADOW_RESOLUTION;
+    depthImageInfo.extent.depth = 1;
+    
+    depthImageInfo.mipLevels = 1;
+    depthImageInfo.arrayLayers = 1;
+    depthImageInfo.format = depthFormat;
+    depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depthImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;   // 为了渲染深度图，需要增加采样图像用法
+    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    depthImageInfo.flags = 0;
+    
+    m_depthTexture = make_unique<VulkanTexture>(depthImageInfo);
+    m_depthTexture->CreateImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    // m_depthTexture->CreateTextureSampler();
+    m_depthTexture->CreateDepthTextureSampler();
+}
+
+void CDirectionalLightComponent::CreateDescriptorBuffer()
+{
+    m_uniformBuffers = VulkanRenderSystem::CreateDescriptorBuffer<VulkanShadowMapUbo>();
+}
+#endif
+
 CPointLightComponent::CPointLightComponent()
     : CLightComponent(ELightType::point_light)
 {
@@ -396,22 +589,23 @@ void CPointLightComponent::RenderShadowMap()
         
         for(auto& mesh : render_obj->mesh_resource->mesh_list)
         {
-            const SVertex& render_vertex = mesh.m_RenderInfo.vertex;
-            glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
 		
             mat4 model_mat = actor->GetModelMatrix();
             // mat4 mvp = projection_mat * mainCamera->GetViewMatrix() * model_mat; //
             UpdateShadowMapInfo(model_mat, vec2(SHADOWMAP_NEAR_PLANE, SHADOWMAP_FAR_PLANE));
                         // Draw the triangle !
             // if no index, use draw array
-            if(render_vertex.index_buffer == GL_NONE)
-            {
-                glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); // Starting from vertex 0; 3 vertices total -> 1 triangle	
-            }
-            else
-            {		
-                glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
-            }
+            
+            mesh->m_RenderInfo->Draw(nullptr);
+            // glBindVertexArray(render_vertex.vertex_array_id);	// 绑定VAO
+            // if(!mesh->m_RenderInfo->index_buffer)
+            // {
+            //     glDrawArrays(GL_TRIANGLES, 0, mesh->vertices.size()); // Starting from vertex 0; 3 vertices total -> 1 triangle	
+            // }
+            // else
+            // {		
+            //     glDrawElements(GL_TRIANGLES, mesh->m_Index.size(), GL_UNSIGNED_INT, 0);
+            // }
         }
         glBindVertexArray(GL_NONE);	// 解绑VAO
     }

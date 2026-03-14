@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "MeshComponent.h"
 
 namespace Kong
@@ -7,10 +7,9 @@ namespace Kong
     {
     public:
         CQuadShape();
-        virtual void Draw(const SSceneLightInfo& scene_render_info) override;
-        void Draw();
+        void Draw(void* commandBuffer = nullptr) override;
         virtual void InitRenderInfo() override;
 
-        void BindVAO();
+        std::shared_ptr<CMesh> GetMesh();
     };
 }

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "glm/glm.hpp"
 namespace Tap
 {
@@ -7,7 +7,7 @@ namespace Tap
 	class CIntegration
 	{
 	public:
-		//¼òµ¥µÄÅ·À­¼ÆËã·½·¨ semi implicit
+		//ï¿½òµ¥µï¿½Å·ï¿½ï¿½ï¿½ï¿½ï¿½ã·½ï¿½ï¿½ semi implicit
 		static void EulerIntegration(CRigidBody* rb, double dt);
 	private:
 	};

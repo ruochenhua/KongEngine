@@ -1,23 +1,43 @@
-#pragma once
+﻿#pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
-#include "Render/PostProcessRenderSystem.hpp"
-#include "Render/RenderSystem.hpp"
-#include "Render/SkyboxRenderSystem.hpp"
-#include "Component/Mesh/Water.h"
-#include "Shader/DeferInfoShader.h"
-#include "Shader/Shader.h"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlDeferRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/OpenGLRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlSSReflectionRenderSystem.hpp"
+#include "GraphicsAPI/OpenGL/RenderSystem/GlWaterRenderSystem.hpp"
+#ifdef RENDER_IN_VULKAN
+#include "GraphicsAPI/Vulkan/RenderSystem/VkDeferRenderSystem.hpp"
+#endif
+#include "Render/Abstraction/IRenderSystem.hpp"
+#include "Render/Abstraction/RenderSystemAdapter.hpp"
+#include "Render/Abstraction/Types.hpp"
+
+#include "Shader/OpenGL/OpenGLShader.h"
+
+#include <vector>
+#include <memory>
 
 namespace Kong
 {
-	class FinalPostprocessShader;
-	class CPointLightComponent;
-	class CDirectionalLightComponent;
-	class CMeshComponent;
-	class CModelMeshComponent;
+	class CQuadShape;
+	class VulkanBuffer;
+	class VulkanDescriptorSetLayout;
+	class VulkanDescriptorPool;
+	class SimpleVulkanRenderSystem;
+	class VulkanPostprocessSystem;
+	class VulkanSkyBoxRenderSystem;
+	class VkShadowMapRenderSystem;
+	class VulkanSwapChain;
 	class CCamera;
 
 	// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
+	/*
+	 *  mat4 view
+	 *  mat4 projection
+	 *  vec4 cam_pos;
+	 *  vec4 near_far;
+	 */
 	class UBOHelper
 	{
 	public:
@@ -80,173 +100,142 @@ namespace Kong
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, &data);
 	}
 #endif
-	
-	// 延迟渲染的数据结构
-	struct DeferBuffer
-	{
-		GLuint g_buffer_	= 0;
-		GLuint g_position_	= 0;
-		GLuint g_normal_	= 0;
-		GLuint g_albedo_	= 0;
-		GLuint g_orm_		= 0;	//o:ao, r:roughness, m: metallic
-		GLuint g_rbo_		= 0;
-		
-		void Init(unsigned width, unsigned height);
-		void GenerateDeferRenderTextures(int width, int height);
-		// 延迟渲染着色器
-		shared_ptr<DeferredBRDFShader> defer_render_shader;
-	};
 
-	// ssao渲染相关
-	struct SSAOHelper
-	{
-		unsigned ssao_kernel_count = 64;
-		unsigned ssao_noise_size = 4;
-		vector<glm::vec3> ssao_kernal_samples;
-		vector<glm::vec3> ssao_kernal_noises;
-		
-		GLuint ssao_fbo = GL_NONE;
-		GLuint SSAO_BlurFBO = GL_NONE;
-		GLuint ssao_noise_texture = GL_NONE;
-		GLuint ssao_result_texture = GL_NONE;
-		GLuint ssao_blur_texture = GL_NONE;
-		shared_ptr<SSAOShader> ssao_shader_;
-		shared_ptr<Shader> ssao_blur_shader_;
-
-		void Init(int width, int height);
-		void GenerateSSAOTextures(int width, int height);
-	};
-
-	// water渲染相关
-	struct WaterRenderHelper
-	{
-		weak_ptr<AActor> water_actor;
-		// 反射部分，需要变换相机角度重新渲染
-		GLuint water_reflection_fbo = GL_NONE;
-		GLuint water_reflection_rbo = GL_NONE;
-		GLuint water_reflection_texture = GL_NONE;
-
-		// 折射部分，先使用延迟渲染的结果复制过来
-		GLuint water_refraction_fbo = GL_NONE;
-		GLuint water_refraction_texture = GL_NONE;
-		
-		void Init(int width, int height);
-		void GenerateWaterRenderTextures(int width, int height);
-
-		float total_move = 0.0f;
-		float move_speed = 0.01f;
-	};
 	
 	class KongRenderModule
 	{
 	public:
+		struct GlobalVulkanUbo
+		{
+			glm::mat4 projection {1.f};
+			glm::mat4 view {1.f};
+			
+			glm::vec4 cameraPosition = glm::normalize(glm::vec4{1.f, 0.f, 0.f, 1.f});
+
+			// SceneLightInfo sceneLightInfo;
+            SceneLightInfo sceneLightInfo;
+		};
+		
 		static KongRenderModule& GetRenderModule();
-		static GLuint GetNullTexId();
+		static KongTexture* GetNullTex();
 		static glm::vec2 GetNearFar();
 		static shared_ptr<CQuadShape> GetScreenShape();
 		
 		KongRenderModule() = default;
+		~KongRenderModule();
 
-		GLuint GetSkyboxTexture() const;
-		GLuint GetSkyboxDiffuseIrradianceTexture() const;
-		GLuint GetSkyboxPrefilterTexture() const;
-		GLuint GetSkyboxBRDFLutTexture() const;
+		KongRenderModule(const KongRenderModule&) = delete;
+		KongRenderModule& operator=(const KongRenderModule&) = delete;
 		
-		GLuint GetLatestDepthTexture() const;
 		int Init();
 		int Update(double delta);
+		/** 统一 RHI 路径：传入当前帧上下文，按 m_renderSystems 顺序执行各 Pass */
+		int Update(double delta, IFrameContext* frameContext);
 		void RenderUI(double delta);
 		
-		void DoPostProcess();
-		
-		CCamera* GetCamera() {return mainCamera;}
+		shared_ptr<CCamera> GetCamera() const {return mainCamera;}
 
-
-		void ChangeSkybox();
 		void OnWindowResize(int width, int height);
 
 		void SetRenderWater(const weak_ptr<AActor>& water_actor);
-
+		void OnReloadScene();
+				
 		double render_time = 0.0;
-		
-		PostProcessRenderSystem post_process;
-		int render_sky_env_status = 2;
-		// 启用屏幕空间环境光遮蔽
-		bool use_ssao = false;
-		// 启用反射阴影贴图
-		bool use_rsm = false;
-		float rsm_intensity = 0.04f;
-		int rsm_sample_count = 32;
-		
-		vector<glm::vec4> rsm_samples_and_weights;
-		// 启用PCSS
-		bool use_pcss = false;
-		float pcss_radius = 1.0f;
-		float pcss_light_scale = 0.1f;
-		int pcss_sample_count = 36;
+		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
+		RenderResultInfo RenderSceneObject(GLuint target_fbo = GL_NONE);
 		
 		// 启用屏幕空间反射
 		bool use_screen_space_reflection = true;
-		SkyboxRenderSystem m_SkyBox;
-		
+
 		// 场景光源信息
 		SSceneLightInfo scene_render_info;
+		
+		GLuint m_renderToTextures[FRAGOUT_TEXTURE_COUNT] = {0, 0, 0};
+
+		OpenGLRenderSystem* GetRenderSystemByType(RenderSystemType type);
+
+#ifdef RENDER_IN_VULKAN
+		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool{};
+		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorLayout;
+		std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
+		std::vector<VkDescriptorSet> m_descriptorSets;
+
+		int GetFrameIndex() const;
+		void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		bool IsFrameInProgress() const;
+		VkCommandBuffer GetCurrentCommandBuffer() const;
+		VkRenderPass GetSwapChainRenderPass() const;
+		float GetAspectRatio() const;
+		VulkanSwapChain* GetSwapChain() const;
+
+		// todo: 放到private
+		// 简单渲染系统
+		std::unique_ptr<SimpleVulkanRenderSystem> m_vkSimpleRenderSystem{nullptr};
+		// 延迟渲染系统
+		std::unique_ptr<VkDeferRenderSystem> m_vkDeferRenderSystem{nullptr};
+		// 后处理渲染系统
+		std::unique_ptr<VulkanPostprocessSystem> m_vkPostProcessSystem{nullptr};
+		// 天空盒渲染系统
+		std::unique_ptr<VulkanSkyBoxRenderSystem> m_vkSkyboxSystem{nullptr};
+		// 阴影图渲染系统
+		std::unique_ptr<VkShadowMapRenderSystem> m_vkShadowMapSystem{nullptr};
+#endif
+		/* 矩阵UBO，保存场景基础的矩阵信息
+		 */
+		UBOHelper matrix_ubo;
 	private:
-		int InitCamera();
 		// 更新场景的渲染信息（光照、相机等等）
 		void UpdateSceneRenderInfo();
 		void InitUBO();
-		void RenderSkyBox(GLuint depth_texture = 0);
+		void InitMainFBO();
+		
 		// 渲染不支持延迟渲染的物体
 		void RenderNonDeferSceneObjects() const;
-		// 延迟渲染，将场景渲染到GBuffer上
-		void DeferRenderSceneToGBuffer() const;
-		// 利用GBuffer的信息，渲染光照
-		void DeferRenderSceneLighting() const;
-		// 渲染水
-		void RenderWater();
-		
-		void SSAORender() const;
-		void SSReflectionRender() const;
-		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
-		void CollectLightInfo();
-		void RenderSceneObject(bool water_reflection);
 		
 		void RenderShadowMap();
+
+		RenderResultInfo latestRenderResult{};
 	private:
+		friend class CYamlParser;
+		friend class KongSceneManager;
 		
-		GLuint null_tex_id			= GL_NONE;
+		GLuint m_renderToBuffer {0};    // 渲染到的buffer
+		GLuint m_renderToRbo {0};
+
+		weak_ptr<KongTexture> m_nullTex;
+
+		// todo: 删掉，统一用m_nullTex;
+		shared_ptr<OpenGLShader> shadowmap_debug_shader;
 		
-		shared_ptr<Shader> shadowmap_debug_shader;
+#if SHADOWMAP_DEBUG
 		GLuint m_QuadVAO = GL_NONE;
 		GLuint m_QuadVBO = GL_NONE;
+#endif
 
-		CCamera* mainCamera = nullptr;
-		/* 矩阵UBO，保存场景基础的矩阵信息
-		 *  mat4 model
-		 *  mat4 view
-		 *  mat4 projection
-		 *  vec3 cam_pos;
-		 */
-		UBOHelper matrix_ubo;
+		shared_ptr<CCamera> mainCamera{};
+		
 
 		// 光照UBO，保存场景基础的光照信息
 		/*		
 		 *	SceneLightInfo light_info
 		 */
 		UBOHelper scene_light_ubo;
-
+		
+		// 天空盒
+		GlSkyboxRenderSystem m_skyboxRenderSystem;
 		// 延迟渲染
-		DeferBuffer defer_buffer_;
-		// ssao实现
-		SSAOHelper ssao_helper_;
-		// 水体渲染实现
-		WaterRenderHelper water_render_helper_;
-
-		shared_ptr<CQuadShape> quad_shape;
+		GlDeferRenderSystem m_deferRenderSystem;
+		// 后处理
+		GlPostProcessRenderSystem m_postProcessRenderSystem;
 		// 屏幕空间反射
-		shared_ptr<SSReflectionShader> ssreflection_shader;
+		GlSSReflectionRenderSystem m_ssReflectionRenderSystem;
+		// 水体渲染实现
+		GlWaterRenderSystem m_waterRenderSystem;
+		
+		shared_ptr<CQuadShape> m_quadShape;
 
-		std::vector<KongRenderSystem> m_renderSystems;
+		/** 按固定顺序注册的渲染 Pass，由 Update(delta, frameContext) 统一驱动 */
+		std::vector<std::unique_ptr<IRenderSystem>> m_renderSystems;
 	};
 }

@@ -1,4 +1,4 @@
-#ifndef _BRDF_COMMON_GLSL_
+﻿#ifndef _BRDF_COMMON_GLSL_
 #define _BRDF_COMMON_GLSL_
 
 struct BRDFMaterial

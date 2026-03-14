@@ -1,4 +1,4 @@
-#ifndef _RSM_SAMPLE_POINTS_GLSL_
+﻿#ifndef _RSM_SAMPLE_POINTS_GLSL_
 #define _RSM_SAMPLE_POINTS_GLSL_
 
 const uint N_SAMPLES = 151;

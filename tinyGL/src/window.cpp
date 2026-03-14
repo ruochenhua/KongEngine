@@ -1,49 +1,49 @@
+﻿#include <iostream>
+
 #include "Window.hpp"
 #include "common.h"
 #include <stdexcept>
+#include "Render/Abstraction/BackendType.hpp"
+#include "Render/Abstraction/DeviceFactory.hpp"
 
 using namespace Kong;
 
-static KongWindow g_WindowModule;
+static KongWindow* g_WindowModule = nullptr;
 
 KongWindow& KongWindow::GetWindowModule()
 {
-    return g_WindowModule;
+    if (g_WindowModule == nullptr)
+    {
+        g_WindowModule = new KongWindow();
+    }
+    return *g_WindowModule;
 }
 
 KongWindow::KongWindow()
 {
+#ifdef RENDER_IN_VULKAN
+    BackendType backend = BackendType::Vulkan;
+#else
+    BackendType backend = BackendType::OpenGL;
+#endif
+    auto devicePtr = CreateGraphicsDevice(backend);
+    m_device = devicePtr.get();
+    m_window = static_cast<GLFWwindow*>(m_device->Init(windowSize.x, windowSize.y));
+    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW3");
     }
-
-    // 初始化opengl
-    glfwWindowHint(GLFW_SAMPLES, 2);    // 抗锯齿
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-    m_window = glfwCreateWindow(windowSize.x, windowSize.y, "Kong Sample", nullptr, nullptr);
-    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
-
-    if (m_window == nullptr)
-    {
-        glfwTerminate();
-        throw std::runtime_error("Failed to create glfw window");
-    }
-
-    glfwMakeContextCurrent(m_window);
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-    {
-        throw std::runtime_error("Failed to initialize GLAD");
-    }
-
+    
     glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetWindowUserPointer(m_window, this);   // 指定window的类型
     glfwSetWindowSizeCallback(m_window, frameBufferResizeCallback);
-    
+}
+
+KongWindow::~KongWindow()
+{
+    std::cout << "Destroying window\n";
 }
 
 GLFWwindow* KongWindow::GetWindow()

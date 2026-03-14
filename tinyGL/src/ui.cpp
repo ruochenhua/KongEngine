@@ -1,9 +1,12 @@
-#include "ui.h"
+﻿#include "ui.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+#ifdef RENDER_IN_VULKAN
+#include <imgui_impl_vulkan.h>
+#else
 #include <imgui_impl_opengl3.h>
-
+#endif
 #include "Actor.hpp"
 #include "Utils.hpp"
 #include "Scene.hpp"
@@ -11,6 +14,7 @@
 #include <filesystem>
 
 #include "Component/Mesh/Terrain.h"
+#include "Render/RenderModule.hpp"
 
 using namespace Kong;
 
@@ -51,7 +55,7 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 	// 初始化imgui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -60,9 +64,61 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 	ImGui::StyleColorsDark();
 
 	// 初始化imgui后端
+#ifdef RENDER_IN_VULKAN
+	auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
+
+	VkDescriptorPoolSize pool_sizes[] =
+		{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	if(vkCreateDescriptorPool(vulkanDevice->GetDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create imgui descriptor pool");
+	}
+	
+	//
+	ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
+	ImGui_ImplVulkan_InitInfo init_info{};
+	init_info.Instance = vulkanDevice->m_instance;
+	init_info.Device = vulkanDevice->m_device;
+	init_info.PhysicalDevice = vulkanDevice->m_physicalDevice;
+	init_info.QueueFamily = vulkanDevice->FindQueueFamilies(vulkanDevice->m_physicalDevice).graphicsFamily;
+	init_info.Queue = vulkanDevice->m_graphicsQueue;
+	init_info.PipelineCache = VK_NULL_HANDLE;
+	init_info.MinImageCount = 2;
+	init_info.ImageCount = 2;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.RenderPass = KongRenderModule::GetRenderModule().GetSwapChainRenderPass();
+	init_info.Subpass = 0;
+	init_info.DescriptorPool = imguiPool;
+
+	ImGui_ImplVulkan_Init(&init_info);
+	
+	//
+	// ImGui_ImplVulkan_Init(&init_info);
+	
+#else
 	ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
-
+#endif
 	
 	string file_directory = std::filesystem::current_path().parent_path().string() + "/resource/scene";
 	g_scene_files = GetSceneFiles(file_directory);
@@ -80,24 +136,37 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 
 void KongUIManager::PreRenderUpdate(double delta)
 {
+#ifdef RENDER_IN_VULKAN
+	ImGui_ImplVulkan_NewFrame();
+#else
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+#endif
+	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	
 	DescribeUIContent(delta);
+	
 }
 
 void KongUIManager::PostRenderUpdate()
 {
+#ifdef RENDER_IN_VULKAN
+	ImGui::EndFrame();
+#else
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	// (Your code calls glfwSwapBuffers() etc.)
+#endif
 }
 
 void KongUIManager::Destroy()
 {
+#ifdef RENDER_IN_VULKAN
+	ImGui_ImplVulkan_Shutdown();
+	vkDestroyDescriptorPool(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), imguiPool, nullptr);
+#else
 	ImGui_ImplOpenGL3_Shutdown();
+#endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 }
@@ -202,6 +271,7 @@ void KongUIManager::DescribeUIContent(double delta)
 						ImGui::DragFloat("freq", &terrain->freq, 0.0001f, 0.f, 1.0f);
 						ImGui::DragFloat("power", &terrain->power, 0.02f, 0.f, 32.f);
 						ImGui::DragInt("octaves", &terrain->octaves, 0.02f, 0, 100);
+						ImGui::DragFloat("height shift", &terrain->height_shift_, 0.1f, -100.0, 100.0);
 						ImGui::TreePop();
 					}
 				}

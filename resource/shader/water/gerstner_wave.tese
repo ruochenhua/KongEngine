@@ -1,5 +1,4 @@
-#version 450 compatibility
-#extension GL_ARB_shading_language_include : require
+﻿#version 450 compatibility
 #include "/common/common.glsl"
 #include "/common/noise_gen.glsl"
 // tessellation primitive generator没有shader代码， 它根据tcs的输出数据和tes的输入数据结构设定计算
@@ -64,7 +63,7 @@ vec3 GerstnerWave(vec3 p, vec4 wave_variables, float speed_factor, inout vec3 bi
 //    p_normal = vec3(-tangent.y, tangent.x, 0);
 
     return vec3(wave_direction.x * _amplitude * cos(f),
-                _amplitude*sin(f),
+                _amplitude*sin(f) * 10,
                 wave_direction.y * _amplitude * cos(f));
 }
 
@@ -110,12 +109,12 @@ void main(){
     vec4 wave_list[wave_num] = vec4[wave_num](
             // direction.x, direction.y, steepness, wave_length
         vec4(0.5, 0.5, 0.05, 201),
-        vec4(6.0, 2.0, 0.10, 153),
+        vec4(6.0, -2.0, 0.10, 153),
         vec4(1.0, 5.0, 0.13, 98),
-        vec4(0.5, 1.5, 0.22, 73),
+        vec4(-0.5, -1.5, 0.22, 73),
         vec4(3.5, 1.5, 0.23, 52),
-        vec4(2.5, 5.0, 0.32, 37),
-        vec4(4.5, 2.4, 0.37, 13),
+        vec4(-2.5, 5.0, 0.32, 37),
+        vec4(4.5, -2.4, 0.37, 13),
         vec4(0.75, 1.2, 0.08, 3.3)
     );
     float total_steepness = 0.0;

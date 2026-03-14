@@ -1,5 +1,4 @@
 ﻿#version 450 compatibility
-#extension GL_ARB_shading_language_include : require
 #include "/common/common.glsl" 
 layout(location = 0) in vec3 in_pos;
 

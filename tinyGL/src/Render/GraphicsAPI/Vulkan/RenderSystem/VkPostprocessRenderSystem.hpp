@@ -1,0 +1,62 @@
+﻿#pragma once
+#include "VulkanRenderSystem.hpp"
+
+#ifdef RENDER_IN_VULKAN
+
+namespace Kong
+{
+    class VulkanTexture;
+    class VulkanBuffer;
+    class CQuadShape;
+    class VulkanPipeline;
+    class VulkanSwapChain;
+    struct VulkanPostprocessUbo
+    {
+        float exposure {0.1f};
+        int bloom {0};
+    };
+
+    class VulkanPostprocessSystem : public VulkanRenderSystem
+    {
+    public:
+        struct VulkanPostprocessCreateInfo
+        {
+            VulkanSwapChain *swapChain {nullptr};
+            VulkanDescriptorPool *descriptorPool {nullptr};
+            VkImageView imageView {VK_NULL_HANDLE};
+            VkSampler sampler {VK_NULL_HANDLE};          
+            VkImage image;
+        };
+        
+        VulkanPostprocessSystem(const VulkanPostprocessCreateInfo &createInfo);
+        ~VulkanPostprocessSystem();
+
+        void Draw(const FrameInfo& frameInfo);
+        VulkanPostprocessSystem(const VulkanPostprocessSystem&) = delete;
+        VulkanPostprocessSystem& operator=(const VulkanPostprocessSystem&) = delete;
+    private:
+        // VkRenderPass m_renderPass {VK_NULL_HANDLE};
+
+        // todo: 这个流程可能每个vulkan render system都会有，考虑流程化
+        void CreateDescriptorSetLayout();
+        void CreatePipelineLayout();
+        void CreatePipeline();
+        void CreateComputeResultTexture();
+
+        // *后处理的framebuffer应该就是swapchain的framebuffers
+        void CreateDescriptorSet(const VulkanPostprocessCreateInfo &createInfo);
+        
+        bool initShadow {false};
+        
+        // scene/bright texture
+        // std::vector<std::unique_ptr<VulkanDescriptorSetLayout>> m_descriptorSetLayout;
+        std::vector<std::map<VulkanDescriptorSetLayout::DescriptorSetLayoutUsageType, VkDescriptorSet>> m_descriptorSets;
+        
+        std::unique_ptr<CQuadShape> quadShape {nullptr};
+
+        VkDescriptorImageInfo m_imageInfo {VK_NULL_HANDLE};
+        unique_ptr<VulkanTexture> m_csResultTexture;
+        VkImage m_sceneImage;
+    };
+}
+#endif

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "Intergration.h"
 #include "RigidBody.h"
 
@@ -9,13 +9,13 @@ namespace Tap
 
 	void CIntegration::EulerIntegration(CRigidBody* rb, double dt)
 	{				
-		//Ðý×ª		
+		//ï¿½ï¿½×ª		
 		if (rb->GetRigidBodyType() != RIGIDBODY_DYNAMIC)
 			return;
 
 		// TODO: apply damping later
 
-		//Î»ÖÃ
+		//Î»ï¿½ï¿½
 		glm::vec3 pos = rb->m_Transform.GetPosition();
 		//printf("rb %d pos %f %f %f\n", rb->GetID(), pos.x, pos.y, pos.z);
 		rb->m_Transform.SetPosition(pos + rb->m_LinearMomentom*(float)dt * rb->m_MassInv);

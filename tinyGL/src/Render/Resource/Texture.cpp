@@ -1,0 +1,522 @@
+﻿#include "Texture.hpp"
+
+#include <yaml-cpp/node/detail/memory.h>
+
+#include "common.h"
+#include "Render/RenderModule.hpp"
+#ifdef RENDER_IN_VULKAN
+#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
+#endif
+
+using namespace Kong;
+
+void TextureBuilder::CreateTexture( GLuint& texture_id, const TextureCreateInfo& profile)
+{
+    // 如果这个id已经绑定了texture，先清理掉原来的
+    if(texture_id)
+    {
+        glDeleteTextures(1, &texture_id);
+        texture_id = GL_NONE;
+    }
+    
+    auto tex_type = profile.texture_type;
+    
+    /////////// NO DSA
+    glGenTextures(1, &texture_id);
+    glBindTexture(tex_type, texture_id);
+    
+    if (tex_type == GL_TEXTURE_CUBE_MAP)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, profile.internalFormat,
+                profile.width, profile.height, 0, profile.format, profile.data_type, profile.data);    
+        }
+    }
+    else if (tex_type == GL_TEXTURE_2D)
+    {
+        glTexImage2D(tex_type, 0, profile.internalFormat,
+            profile.width, profile.height, 0, profile.format, profile.data_type, profile.data);
+    }
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_S, profile.wrapS);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_T, profile.wrapT);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_R, profile.wrapR);
+    glTexParameteri(tex_type, GL_TEXTURE_MIN_FILTER, profile.minFilter);
+    glTexParameteri(tex_type, GL_TEXTURE_MAG_FILTER, profile.magFilter);
+    glGenerateMipmap(tex_type);
+    
+    glBindTexture(tex_type, 0);
+    return;
+
+    // 使用 DSA 创建纹理
+    glCreateTextures(tex_type, 1, &texture_id);
+
+    // 计算 Mipmap 级别
+    int levels = static_cast<int>(std::log2(std::max(profile.width, profile.height))) + 1;
+
+    // 分配纹理存储
+    if (tex_type == GL_TEXTURE_CUBE_MAP) {
+        glTextureStorage2D(texture_id, levels, profile.internalFormat, profile.width, profile.height);
+        // for (int i = 0; i < 6; i++)
+        // {
+        //     glTextureSubImage2D(texture_id, 0, 0, 0, profile.width, profile.height,
+        //                         profile.format, profile.data_type, profile.data);
+        // }
+    } else if (tex_type == GL_TEXTURE_2D) {
+        glTextureStorage2D(texture_id, levels, profile.internalFormat, profile.width, profile.height);
+        if (profile.data)
+        {
+            glTextureSubImage2D(texture_id, 0, 0, 0, profile.width, profile.height,
+                                profile.format, profile.data_type, profile.data);
+        }
+    }
+
+    // 设置纹理参数
+    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, profile.wrapS);
+    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, profile.wrapT);
+    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_R, profile.wrapR);
+    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, profile.minFilter);
+    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, profile.magFilter);
+
+    // 生成 Mipmap
+    glGenerateTextureMipmap(texture_id);
+}
+
+std::shared_ptr<KongTexture> TextureBuilder::CreateTexture_new(const TextureCreateInfo& profile)
+{
+    auto new_tex = make_shared<OpenGLTexture>();
+    CreateTexture(new_tex->m_texId, profile);
+    return new_tex;
+}
+
+void TextureBuilder::CreateTexture2D(GLuint& texture_id, int width, int height, GLenum format, unsigned char* data)
+{
+    TextureCreateInfo texture_info {};
+    texture_info.width = width;
+    texture_info.height = height;
+    texture_info.format = format;
+    texture_info.data = data;
+
+    // 默认的一些配置
+    CreateTexture(texture_id, texture_info);
+}
+
+void TextureBuilder::CreateTexture3D(GLuint& texture_id, const Texture3DCreateInfo& profile)
+{
+    // 如果这个id已经绑定了texture，先清理掉原来的
+    if(texture_id)
+    {
+        glDeleteTextures(1, &texture_id);
+        texture_id = GL_NONE;
+    }
+    
+    auto tex_type = profile.texture_type;
+    glGenTextures(1, &texture_id);
+    glBindTexture(tex_type, texture_id);
+    
+    glTexImage3D(tex_type, 0, profile.internalFormat,
+        profile.width, profile.height, profile.depth, 0,
+        profile.format, profile.data_type, profile.data);
+
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_S, profile.wrapS);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_T, profile.wrapT);
+    glTexParameteri(tex_type, GL_TEXTURE_WRAP_R, profile.wrapR);
+    glTexParameteri(tex_type, GL_TEXTURE_MIN_FILTER, profile.minFilter);
+    glTexParameteri(tex_type, GL_TEXTURE_MAG_FILTER, profile.magFilter);
+
+    glTexParameterfv(tex_type, GL_TEXTURE_BORDER_COLOR, profile.borderColor);
+    
+    glGenerateMipmap(tex_type);
+
+    glBindTexture(tex_type, 0);
+}
+
+void KongTexture::CreateTexture(int width, int height, int nr_component, ETextureType textureType,
+    unsigned char* pixels)
+{
+    assert(0, "create texture method not implemented");
+}
+
+#ifdef RENDER_IN_VULKAN
+
+VulkanTexture::VulkanTexture(const VkImageCreateInfo& profile)
+{
+    VkMemoryPropertyFlags defaultMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VulkanGraphicsDevice::GetGraphicsDevice()->CreateImageWithInfo(profile, defaultMemFlags, m_image, m_memory);
+}
+
+VulkanTexture::~VulkanTexture()
+{
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice();
+    vkDestroySampler(device, m_sampler, nullptr);
+    vkDestroyImage(device, m_image, nullptr);
+    vkDestroyImageView(device, m_imageView, nullptr);
+    vkFreeMemory(device, m_memory, nullptr);
+}
+
+bool VulkanTexture::IsValid()
+{
+     return m_memory && m_image && m_imageView;
+}
+
+void VulkanTexture::CreateTexture(int width, int height, int nr_component, ETextureType textureType, unsigned char* pixels)
+{
+// todo: 这里放到vulkanbuffer里面
+    // 创建纹理和内存
+    
+    VkDeviceSize imageSize = width * height * nr_component;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice();
+    device->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    switch (nr_component)
+    {
+    case 1:
+        m_format = VK_FORMAT_R8_UNORM;
+        break;
+    case 2:
+        m_format = VK_FORMAT_R8G8_UNORM;
+        break;
+    case 3:
+        // vulkan对rgb8的支持不足，大多数GPU设备都不支持，先屏蔽掉这个
+        m_format = VK_FORMAT_R8G8B8_UNORM;
+        break;
+    case 4:
+        // note:diffuse颜色可以使用VK_FORMAT_R8G8B8A8_SRGB，这样将颜色存储为伽马空间可以省去后处理的颜色校正步骤
+        if (textureType == diffuse)
+        {
+            m_format = VK_FORMAT_R8G8B8A8_SRGB; 
+        }
+        else
+        {
+            m_format = VK_FORMAT_R8G8B8A8_UNORM;
+        }
+        break;
+    default:
+        throw std::runtime_error("Invalid format");
+        break;        
+    }
+    void* data;
+    vkMapMemory(device->GetDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+    memcpy(data, pixels, imageSize);
+    vkUnmapMemory(device->GetDevice(), stagingBufferMemory);
+
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = static_cast<int>(std::log2(width)) + 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = m_format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL; // 平铺方式
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;    // 初始布局
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT; // 使用方式
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;  // 抗锯齿, 这里只能填1因为usage为DST的image限制为使用1_BIT
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;  // 共享模式,exclusive代表只能在一个队列中使用,不共享
+    imageInfo.flags = 0;
+    
+    device->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_memory);
+
+    TransitionImageLayout(m_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(stagingBuffer, m_image, width, height);
+    TransitionImageLayout(m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(device->GetDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(device->GetDevice(), stagingBufferMemory, nullptr);
+
+    // 创建纹理图像imageview
+    CreateImageView(m_format, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    // 创建采样器
+    CreateTextureSampler();
+}
+
+void VulkanTexture::CreateCubemap(int width, int height, int nr_component, ETextureType textureType,
+    unsigned char* pixels[6])
+{
+    VkDeviceSize imageSize = width * height * nr_component;
+    auto device = VulkanGraphicsDevice::GetGraphicsDevice();
+
+    switch (nr_component)
+    {
+    case 1:
+        m_format = VK_FORMAT_R8_UNORM;
+        break;
+    case 2:
+        m_format = VK_FORMAT_R8G8_UNORM;
+        break;
+    case 3:
+        // vulkan对rgb8的支持不足，大多数GPU设备都不支持，先屏蔽掉这个
+            m_format = VK_FORMAT_R8G8B8_UNORM;
+        break;
+    case 4:
+        // note:diffuse颜色可以使用VK_FORMAT_R8G8B8A8_SRGB，这样将颜色存储为伽马空间可以省去后处理的颜色校正步骤
+            if (textureType == diffuse)
+            {
+                m_format = VK_FORMAT_R8G8B8A8_SRGB; 
+            }
+            else
+            {
+                m_format = VK_FORMAT_R8G8B8A8_UNORM;
+            }
+        break;
+    default:
+        throw std::runtime_error("Invalid format");
+    }
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = static_cast<int>(std::log2(width)) + 1;
+    imageInfo.arrayLayers = 6;
+    imageInfo.format = m_format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;  // cubemap这里需要添加flag
+    
+    device->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_memory);
+    
+    // 创建立方体贴图
+    for (int i = 0; i < 6; ++i)
+    {
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+
+        device->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device->GetDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+        memcpy(data, pixels[i], imageSize);
+        vkUnmapMemory(device->GetDevice(), stagingBufferMemory);
+        
+        TransitionImageLayout(m_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i);
+        CopyBufferToImage(stagingBuffer, m_image, width, height, i, 6);
+        TransitionImageLayout(m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, i);
+
+        vkDestroyBuffer(device->GetDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(device->GetDevice(), stagingBufferMemory, nullptr);
+    }
+
+    // 创建纹理图像imageview
+    CreateImageView(m_format, VK_IMAGE_ASPECT_COLOR_BIT, 6);
+    
+    // 创建采样器
+    CreateTextureSampler();
+}
+
+
+void VulkanTexture::Bind(unsigned int location)
+{
+    
+}
+
+void VulkanTexture::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, int arrayLayer)
+{
+    VkCommandBuffer commandBuffer = VulkanGraphicsDevice::GetGraphicsDevice()->BeginSingleTimeCommands();
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = arrayLayer;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags sourceStage;
+    VkPipelineStageFlags destinationStage;
+
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL)
+    {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
+    else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        throw std::invalid_argument("unsupported layout transition!");
+    }
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        sourceStage, destinationStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    VulkanGraphicsDevice::GetGraphicsDevice()->EndSingleTimeCommands(commandBuffer);
+}
+
+void VulkanTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, int width, int height, int subresourceLayer,  int layerCount)
+{
+    // 开始命令缓冲区
+    VkCommandBuffer commandBuffer = VulkanGraphicsDevice::GetGraphicsDevice()->BeginSingleTimeCommands();
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0; // 假设是从缓冲区的开始拷贝
+    region.bufferRowLength = 0; // 图像的行长度（这里为0使用整个缓冲区）
+    region.bufferImageHeight = 0; // 图像的高度（这里为0使用整个缓冲区）
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // 图像的颜色部分
+    region.imageSubresource.mipLevel = 0;  // 当前mip level
+    region.imageSubresource.baseArrayLayer = subresourceLayer;  // 面索引，cubemap会有六个面, 编号（0到5）
+    region.imageSubresource.layerCount = 1;  // 只复制一层
+
+    region.imageOffset = {0, 0, 0};  // 偏移设置为左下角
+    // 设置图像的宽度和高度
+    region.imageExtent = {
+        static_cast<uint32_t>(width),
+        static_cast<uint32_t>(height),
+        1
+    };
+
+    // 执行复制命令
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
+    // 结束命令缓冲发送
+    VulkanGraphicsDevice::GetGraphicsDevice()->EndSingleTimeCommands(commandBuffer);
+}
+
+void VulkanTexture::CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags, int layerCount)
+{
+    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+    if (layerCount > 1)
+    {
+        // 先简单处理下cubemap的情况
+        viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        layerCount = 6;
+    }
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = m_image;
+    viewInfo.viewType = viewType;
+    viewInfo.format = format;
+    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = layerCount;
+    
+    if (vkCreateImageView(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &viewInfo, nullptr, &m_imageView) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture image view!");
+    }
+}
+
+void VulkanTexture::CreateTextureSampler()
+{
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    if (vkCreateSampler(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+}
+
+void VulkanTexture::CreateDepthTextureSampler()
+{
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.maxAnisotropy = 16.0;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    samplerInfo.compareEnable = VK_TRUE;
+    samplerInfo.compareOp = VK_COMPARE_OP_LESS;
+
+    if (vkCreateSampler(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+}
+
+#endif
+
+OpenGLTexture::~OpenGLTexture()
+{
+    if (m_texId)
+    {
+        glDeleteTextures(1, &m_texId);
+        m_texId = GL_NONE;
+    }
+}
+
+void OpenGLTexture::Bind(unsigned int location)
+{
+    if (IsValid())
+    {
+        glBindTextureUnit(location, m_texId);
+    }
+    else
+    {
+        auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+        glBindTextureUnit(location, nullTex->GetTextureId());
+    }
+}
+
+bool OpenGLTexture::IsValid()
+{
+    return m_texId != GL_NONE;
+}
+
+
+

@@ -1,4 +1,4 @@
-#ifndef _CLOUD_NOISE_GEN_GLSL_
+﻿#ifndef _CLOUD_NOISE_GEN_GLSL_
 #define _CLOUD_NOISE_GEN_GLSL_
 
 float hash(int n)

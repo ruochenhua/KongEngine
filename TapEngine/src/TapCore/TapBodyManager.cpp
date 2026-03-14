@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TapBodyManager.h"
 #include "Intergration.h"
 
@@ -38,7 +38,7 @@ namespace Tap
 
 	void CBodyManager::ProcessIntegration(double dt)
 	{
-		// ¼òµ¥¶ÔËùÓÐmapÀïÃæµÄ½øÐÐµü´ú
+		// ï¿½òµ¥¶ï¿½ï¿½ï¿½ï¿½ï¿½mapï¿½ï¿½ï¿½ï¿½Ä½ï¿½ï¿½Ðµï¿½ï¿½ï¿½
 		for (auto& rb_iter : m_mRigidBodyMap)
 		{
 			//simple eular

@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "MeshComponent.h"
 
 namespace Kong
 {
+    class OpenGLTexture;
+
     class CloudModel
     {
     public:
@@ -11,11 +13,11 @@ namespace Kong
         
     private:
         friend class VolumetricCloud;
-        friend class SkyboxRenderSystem;
+        friend class GlSkyboxRenderSystem;
         
-        shared_ptr<Shader> perlin_worley_comp_shader;
-        shared_ptr<Shader> worley_comp_shader;
-        shared_ptr<Shader> weather_compute_shader;
+        shared_ptr<OpenGLShader> perlin_worley_comp_shader;
+        shared_ptr<OpenGLShader> worley_comp_shader;
+        shared_ptr<OpenGLShader> weather_compute_shader;
         // control parameter
         float coverage = 0.15f, cloud_speed = 200.f, crispiness = 50.f, curliness = 0.5f, density = 0.02f, absorption = 0.35f;
         float earth_radius = 600000.0, sphere_inner_radius = 3500.0f, sphere_outer_radius = 12000.0f;
@@ -41,17 +43,16 @@ namespace Kong
 
         // update ui
         void PreRenderUpdate() const;
-        void SimpleDraw(shared_ptr<Shader> simple_shader) override;
+        void DrawShadowInfo(shared_ptr<OpenGLShader> simple_shader) override;
         
         // cloud process
-        GLuint cloud_tex, bloom_tex, alphaness_tex, depth_tex;
+        shared_ptr<OpenGLTexture> cloud_tex, bloom_tex, alphaness_tex, depth_tex;
+        
     private:
-        friend class SkyboxRenderSystem;
+        friend class GlSkyboxRenderSystem;
         
         shared_ptr<CloudModel> cloud_model_;
-        shared_ptr<Shader> cloud_compute_shader_;
-        
-        GLuint GenerateTexture2D(unsigned w, unsigned h);
+        shared_ptr<OpenGLShader> cloud_compute_shader_;
     };
 }
 

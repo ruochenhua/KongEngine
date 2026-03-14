@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 #include "Shape.h"
 
 namespace Tap
 {
 	struct SSphereShapeDesc : public SShapeDesc
 	{
-		//Çò×´³õÊ¼»¯²ÎÊý,°ë¾¶
+		//ï¿½ï¿½×´ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ë¾¶
 		SSphereShapeDesc(float radius);
 
 		float _radius;

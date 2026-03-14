@@ -1,5 +1,6 @@
 #pragma once
 #include "QuadShape.h"
+#include "Render/Resource/Texture.hpp"
 
 namespace Kong
 {
@@ -9,17 +10,17 @@ namespace Kong
     public:
         Water();
 
-        void SimpleDraw(shared_ptr<Shader> simple_draw_shader) override;
-        
-        void Draw(const SSceneLightInfo& scene_render_info) override;
+        void InitRenderInfo() override;
+        void DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader) override;
+        void Draw(void* commandBuffer = nullptr) override;
 
         void LoadDudvMapTexture(const string& texture_path);
         void LoadNormalTexture(const string& texture_path);
     private:
 		// dudv贴图
-        GLuint dudv_texture = 0;
+        std::weak_ptr<KongTexture> dudv_texture;
         // normal map
-        GLuint normal_texture = 0;
+        std::weak_ptr<KongTexture> normal_texture;
     };    
 }
 

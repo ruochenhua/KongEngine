@@ -1,9 +1,13 @@
-#include "Actor.hpp"
+﻿#include "Actor.hpp"
 
 #include "Component/Mesh/MeshComponent.h"
 #include "Component/LightComponent.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/euler_angles.hpp"
+
+#ifdef RENDER_IN_VULKAN
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#endif
 using namespace Kong;
 using namespace glm;
 
@@ -32,7 +36,7 @@ void AActor::PreRenderUpdate(double delta)
     if(light_comp && mesh_comp)
     {
     	mesh_comp->use_override_material = true;
-        mesh_comp->override_render_info.material.albedo = glm::vec4(light_comp->light_color, 1.0);
+        mesh_comp->override_render_info->material->albedo = glm::vec4(light_comp->light_color, 1.0);
 
     	auto dir_light_comp = dynamic_cast<CDirectionalLightComponent*>(light_comp.get());
     	if(dir_light_comp)
@@ -87,33 +91,34 @@ void AActor::InitInstancingData()
 
 void AActor::BindInstancingToMesh(weak_ptr<CMeshComponent> mesh_comp)
 {
-	auto mesh_ptr = mesh_comp.lock();
-
-	CMesh& mesh = mesh_ptr->mesh_resource->mesh_list[0];
-	auto& render_vertex = mesh.m_RenderInfo.vertex;
-	glGenBuffers(1, &render_vertex.instance_buffer);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, render_vertex.instance_buffer);
-	render_vertex.instance_count = instancing_info.count+1;
-	glBufferData(GL_ARRAY_BUFFER, render_vertex.instance_count * sizeof(glm::mat4), &instancing_model_mat[0], GL_STATIC_DRAW);
-	
-	glBindVertexArray(render_vertex.vertex_array_id);
-	GLsizei vec4_size = sizeof(glm::vec4);
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)0);
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size));
-	glEnableVertexAttribArray(5);
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*2));
-	glEnableVertexAttribArray(6);
-	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*3));
-	
-	glVertexAttribDivisor(3, 1);
-	glVertexAttribDivisor(4, 1);
-	glVertexAttribDivisor(5, 1);
-	glVertexAttribDivisor(6, 1);
-	
-	glBindVertexArray(0);
+	// todo: 全部重新整理一遍
+	// auto mesh_ptr = mesh_comp.lock();
+	//
+	// auto mesh = mesh_ptr->mesh_resource->mesh_list[0];
+	// auto& render_vertex = mesh->m_RenderInfo;
+	// glGenBuffers(1, &render_vertex->instance_buffer);
+	//
+	// glBindBuffer(GL_ARRAY_BUFFER, render_vertex->instance_buffer);
+	// render_vertex->instance_count = instancing_info.count+1;
+	// glBufferData(GL_ARRAY_BUFFER, render_vertex->instance_count * sizeof(glm::mat4), &instancing_model_mat[0], GL_STATIC_DRAW);
+	//
+	// glBindVertexArray(render_vertex.vertex_array_id);
+	// GLsizei vec4_size = sizeof(glm::vec4);
+	// glEnableVertexAttribArray(3);
+	// glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)0);
+	// glEnableVertexAttribArray(4);
+	// glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size));
+	// glEnableVertexAttribArray(5);
+	// glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*2));
+	// glEnableVertexAttribArray(6);
+	// glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (void*)(vec4_size*3));
+	//
+	// glVertexAttribDivisor(3, 1);
+	// glVertexAttribDivisor(4, 1);
+	// glVertexAttribDivisor(5, 1);
+	// glVertexAttribDivisor(6, 1);
+	//
+	// glBindVertexArray(0);
 }
 
 const mat4& AActor::GetInstancingModelMat(unsigned idx) const

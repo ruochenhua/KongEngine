@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 out vec4 FragColor;
 in vec3 WorldPos;
 

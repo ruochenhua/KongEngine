@@ -1,4 +1,4 @@
-Credits to Samuel (arshlevon) Sharit
+﻿Credits to Samuel (arshlevon) Sharit
 ---
 
 Date: Tue, 27 Jan 2015 19:24:30 -0800

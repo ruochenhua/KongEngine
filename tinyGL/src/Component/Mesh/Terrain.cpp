@@ -1,13 +1,13 @@
 ﻿#include "Terrain.h"
 
+#include <algorithm>
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
-#include "Texture.hpp"
+#include "Render/Resource/Texture.hpp"
 #include "Component/LightComponent.h"
 
 using namespace Kong;
-#define USE_TCS 1
 
 Terrain::Terrain()
 {
@@ -29,18 +29,18 @@ Terrain::Terrain()
     string grass_albedo_path = grass_dir + "stylized-grass1_albedo.png";
     string grass_normal_path = grass_dir + "stylized-grass1_normal-ogl.png";
 
-    grass_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_albedo_path));
-    grass_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(grass_normal_path));
+    grass_albedo_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(grass_albedo_path));
+    grass_normal_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(grass_normal_path));
     
     string rock_albedo_path = rock_snow_dir + "rock-snow-ice1-2k_Base_Color.png";
     string rock_normal_path = rock_snow_dir + "rock-snow-ice1-2k_Normal-ogl.png";
-    rock_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_albedo_path));
-    rock_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(rock_normal_path));
+    rock_albedo_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(rock_albedo_path));
+    rock_normal_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(rock_normal_path));
     
     string sand_albedo_path = sand_dir + "wavy-sand_albedo.png";
     string sand_normal_path = sand_dir + "wavy-sand_normal-ogl.png";
-    sand_albedo_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_albedo_path));
-    sand_normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(sand_normal_path));
+    sand_albedo_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(sand_albedo_path));
+    sand_normal_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(sand_normal_path));
     
     shader_data->Use();
     shader_data->SetInt("height_map", 0);
@@ -59,18 +59,72 @@ Terrain::Terrain(const string& file_name)
     LoadHeightMap(file_name);
 }
 
-void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
+void Terrain::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
+    return;
 #if USE_TCS
     // shader_data->SetVec3("cam_pos", CRender::GetRender()->GetCamera()->GetPosition());
-    GLuint height_map_id = terrain_height_map > 0 ? terrain_height_map : KongRenderModule::GetNullTexId();
-#if USE_DSA
-    glBindTextureUnit(0, height_map_id);
+    auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+
+    if (terrain_height_map.lock()) terrain_height_map.lock()->Bind(0);
+    
+    auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
+    if(!dir_light.expired())
+    {
+        auto dir_light_ptr = dir_light.lock();
+        shader_data->SetInt("csm_level_count", dir_light_ptr->csm_distances.size());
+        
+        for(int i = 0; i < dir_light_ptr->light_space_matrices.size(); ++i)
+        {
+            stringstream ss;
+            ss << "light_space_matrices[" << i << "]";
+            shader_data->SetMat4(ss.str(), dir_light_ptr->light_space_matrices[i]);
+        }
+        shader_data->SetInt("light_space_matrix_count", dir_light_ptr->light_space_matrices.size());
+    }
+    
+    glDrawArrays(GL_PATCHES, 0, 4*terrain_res*terrain_res);
+
 #else
-    glActiveTexture(GL_TEXTURE0); 
-    glBindTexture(GL_TEXTURE_2D, height_map_id);
+    for(unsigned int strip = 0; strip < num_strips; ++strip)
+    {
+        glDrawElements(GL_LINE_STRIP,
+            num_verts_per_strip+2, GL_UNSIGNED_INT,
+            (void*)(sizeof(unsigned int) * strip * (num_verts_per_strip+2)));
+    }
 #endif
-    GLuint csm_id = KongRenderModule::GetNullTexId();
+    
+}
+
+void Terrain::Draw(void* commandBuffer)
+{
+    // glDisable(GL_CULL_FACE);
+    shader_data->Use();
+    glBindVertexArray(terrain_vao);
+    shader_data->SetInt("octaves", octaves);
+    shader_data->SetFloat("amplitude", amplitude);
+    shader_data->SetFloat("freq", freq);
+    shader_data->SetFloat("power", power);
+    shader_data->SetFloat("height_scale", height_scale_);
+    shader_data->SetFloat("height_shift", height_shift_);
+    shader_data->SetInt("terrain_size", terrain_size);
+    shader_data->SetInt("terrain_res", terrain_res);
+    shader_data->SetMat4("model", mat4(1.0));
+
+#if USE_TCS
+    auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
+    
+    if (auto tex = terrain_height_map.lock())
+    {
+        tex->Bind(0);
+    }
+    else
+    {
+        nullTex->Bind(0);   
+    }
+
+    
+    GLuint csm_id = nullTex->GetTextureId();
     auto dir_light = KongRenderModule::GetRenderModule().scene_render_info.scene_dirlight;
     if(!dir_light.expired())
     {
@@ -92,36 +146,14 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
         }
         shader_data->SetInt("light_space_matrix_count", dir_light_ptr->light_space_matrices.size());
     }
-#if USE_DSA
+    
     glBindTextureUnit(1, csm_id);
-    glBindTextureUnit(2, grass_albedo_texture);
-    glBindTextureUnit(3, grass_normal_texture);
-    glBindTextureUnit(4, sand_albedo_texture);
-    glBindTextureUnit(5, sand_normal_texture);
-    glBindTextureUnit(6, rock_albedo_texture);
-    glBindTextureUnit(7, rock_normal_texture);
-#else
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, csm_id);
-    
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, grass_albedo_texture);
-    
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, grass_normal_texture);
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, sand_albedo_texture);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, sand_normal_texture);
-    
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, rock_albedo_texture);
-    
-    glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D, rock_normal_texture);
-#endif
+    if (auto tex = grass_albedo_texture.lock()) tex->Bind(2);
+    if (auto tex = grass_normal_texture.lock()) tex->Bind(3);
+    if (auto tex = sand_albedo_texture.lock()) tex->Bind(4);
+    if (auto tex = sand_normal_texture.lock()) tex->Bind(5);
+    if (auto tex = rock_albedo_texture.lock()) tex->Bind(6);
+    if (auto tex = rock_normal_texture.lock()) tex->Bind(7);
     
     if(render_wireframe)
     {
@@ -134,7 +166,6 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);    
     }
-
 #else
     for(unsigned int strip = 0; strip < num_strips; ++strip)
     {
@@ -143,26 +174,6 @@ void Terrain::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
             (void*)(sizeof(unsigned int) * strip * (num_verts_per_strip+2)));
     }
 #endif
-    
-}
-
-void Terrain::Draw(const SSceneLightInfo& scene_render_info)
-{
-    // glDisable(GL_CULL_FACE);
-    shader_data->Use();
-    glBindVertexArray(terrain_vao);
-    shader_data->SetInt("octaves", octaves);
-    shader_data->SetFloat("amplitude", amplitude);
-    shader_data->SetFloat("freq", freq);
-    shader_data->SetFloat("power", power);
-    shader_data->SetFloat("height_scale", height_scale_);
-    shader_data->SetFloat("height_shift", height_shift_);
-    shader_data->SetInt("terrain_size", terrain_size);
-    shader_data->SetInt("terrain_res", terrain_res);
-    shader_data->SetMat4("model", mat4(1.0));
-    SimpleDraw(nullptr);
-    
-    // glEnable(GL_CULL_FACE);
 }
 
 void Terrain::InitRenderInfo()
@@ -230,41 +241,39 @@ void Terrain::InitRenderInfo()
 
 int Terrain::LoadHeightMap(const string& file_name)
 {
-    int nrChannels, width, height;
-    unsigned char *data = stbi_load(file_name.c_str(), &width, &height, &nrChannels, 0);
 #if USE_TCS
-    TextureBuilder::CreateTexture2D(terrain_height_map, width, height, GL_RGBA, data);
+    terrain_height_map = ResourceManager::GetOrLoadTexture_new(diffuse, file_name);   
 #else
-    
-    terrain_res = 1;
-    for(unsigned int i = 0; i < height; i++)
-    {
-        for(unsigned int j = 0; j < width; j++)
-        {
+    // 限制网格分辨率，避免 4096x4096 等大 heightmap 产生数百万顶点导致极卡（原 terrain_res=1 会逐像素建网格）
+    const unsigned int max_res = 256u;
+    unsigned int step = std::max(1u, std::min(height, width) / max_res);
+    terrain_res = static_cast<int>(step);
+    const unsigned int rows = (height - 1) / step + 1;
+    const unsigned int cols = (width - 1) / step + 1;
+    height_data.reserve(rows * cols * 3);
+    for (unsigned int si = 0; si < rows; ++si) {
+        unsigned int i = si * step;
+        if (i >= height) i = height - 1;
+        for (unsigned int sj = 0; sj < cols; ++sj) {
+            unsigned int j = sj * step;
+            if (j >= width) j = width - 1;
             unsigned char* texel = data + (j + width * i) * nrChannels;
             unsigned char y = texel[0];
-
             height_data.push_back(-height/2.0f + i);
             height_data.push_back((int)y*16 - 16);
             height_data.push_back(-width/2.0f + j);
         }
     }
-    
-    for(unsigned int i = 0; i < height-1; i+=terrain_res)
-    {
-        for(unsigned int j = 0; j < width; j+=terrain_res)
-        {
-            for(unsigned int k = 0; k < 2; k++)
-            {
-                height_indices.push_back(j + width * (i+k));
-            }
+    height_indices.clear();
+    for (unsigned int si = 0; si + 1 < rows; ++si) {
+        for (unsigned int sj = 0; sj < cols; ++sj) {
+            height_indices.push_back(si * cols + sj);
+            height_indices.push_back((si + 1) * cols + sj);
         }
     }
-
-    num_strips = (height - 1)/terrain_res;
-    num_verts_per_strip = (width/terrain_res) * 2 - 2;
+    num_strips = rows - 1;
+    num_verts_per_strip = cols * 2 - 2;
 #endif
     
-    stbi_image_free(data);
     return 1;
 }

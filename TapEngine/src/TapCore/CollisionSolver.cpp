@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CollisionSolver.h"
 #include "SphereShape.h"
 #include "BoxShape.h"
@@ -40,17 +40,17 @@ namespace Tap
 
 			//calculate impulse
 			//lower part
-			//¹ßÐÔÕÅÁ¿µÄÄæ¾ØÕó
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			glm::mat3 inertia_inv_1 = glm::inverse(rb_1->m_InertiaTensor);
 			glm::mat3 inertia_inv_2 = glm::inverse(rb_2->m_InertiaTensor);
-			//¸ÕÌåµÄÖÊÐÄµ½½Ó´¥µãµÄÏòÁ¿			
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½Ó´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½			
 			glm::vec3 to_contact_1 = manifold._hit_pos - rb_1->m_Transform.GetPosition();
 			glm::vec3 to_contact_2 = manifold._hit_pos - rb_2->m_Transform.GetPosition();
-			//normalÓÃÍ³Ò»Ò»¸öÏà¶ÔÓÚµÚÒ»¸ö¸ÕÌåµÄ
+			//normalï¿½ï¿½Í³Ò»Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			glm::vec3 p1 = inertia_inv_1 * (glm::cross(glm::cross(to_contact_1, normal), to_contact_1));
 			glm::vec3 p2 = inertia_inv_2 * (glm::cross(glm::cross(to_contact_2, normal), to_contact_2));
 
-			//Èç¹û²»ÊÇ¶¯Ì¬ÀàÐÍ£¬massÊÇÎÞÇî´ó£¬mass inv¾ÍÊÇ0
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½Ì¬ï¿½ï¿½ï¿½Í£ï¿½massï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mass invï¿½ï¿½ï¿½ï¿½0
 			float mass_inv_1 = (rb_1->GetRigidBodyType() == RIGIDBODY_DYNAMIC) ? rb_1->m_MassInv : 0;
 			float mass_inv_2 = (rb_2->GetRigidBodyType() == RIGIDBODY_DYNAMIC) ? rb_2->m_MassInv : 0;
 
@@ -79,7 +79,7 @@ namespace Tap
 
 	bool CCollisionSolver::DetectRigidBodyCollision(CRigidBody* rb_0, CRigidBody* rb_1)
 	{
-		//Ä¿Ç°ÏÈ×öÁ½¸öÇòÌåµÄ
+		//Ä¿Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		if (rb_0->m_Shape->GetShapeType() == SHAPE_SPHERE && rb_1->m_Shape->GetShapeType() == SHAPE_SPHERE)
 		{
 			SCollisionManifold collision;
@@ -165,7 +165,7 @@ namespace Tap
 		float dis = glm::distance(pos_0, pos_1);
 		float radius_sum = shape_0->GetRadius() + shape_1->GetRadius();
 
-		if (dis > radius_sum)	//»òÕß²ÉÓÃÆ½·½
+		if (dis > radius_sum)	//ï¿½ï¿½ï¿½ß²ï¿½ï¿½ï¿½Æ½ï¿½ï¿½
 		{
 			return false;
 		}
@@ -181,8 +181,8 @@ namespace Tap
 		manifold._hit_normal = unit_dir;
 		manifold._hit_depth = hit_depth;
 
-		float dis_p0_2_hit = shape_0->GetRadius() - hit_depth * 0.5f;	//p0µ½Åö×²µãµÄ¾àÀë
-		manifold._hit_pos = pos_0 + unit_dir * dis_p0_2_hit;	//Åö×²µã
+		float dis_p0_2_hit = shape_0->GetRadius() - hit_depth * 0.5f;	//p0ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½
+		manifold._hit_pos = pos_0 + unit_dir * dis_p0_2_hit;	//ï¿½ï¿½×²ï¿½ï¿½
 
 		
 // 		//debug print
@@ -208,7 +208,7 @@ namespace Tap
 			return false;
 		}
 
-		 //¸ù¾ÝSATÅÐ¶ÏÁ½¸öboxÊÇ·ñÅö×²£¬ÐèÒª»ñÈ¡Á½¸öºÐ×ÓµÄÈý¸öÖáÏòµÄ·½ÏòºÍ³¤¶È
+		 //ï¿½ï¿½ï¿½ï¿½SATï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½boxï¿½Ç·ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Í³ï¿½ï¿½ï¿½
 		auto& t0 = rb_0->GetTransform();
 		auto& t1 = rb_1->GetTransform();
 

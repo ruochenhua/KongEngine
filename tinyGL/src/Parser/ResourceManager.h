@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "common.h"
-#include "Render/RenderCommon.h"
+#include "Render/RenderCommon.hpp"
 
 struct aiMesh;
 struct aiScene;
@@ -12,7 +12,7 @@ namespace Kong
     struct MeshResource
     {
         string directory;
-        vector<CMesh> mesh_list;
+        vector<shared_ptr<CMesh>> mesh_list;
     };
 
     // 资管管理类
@@ -21,10 +21,19 @@ namespace Kong
     public:
         static shared_ptr<MeshResource> GetOrLoadMesh(const std::string & model_path);
         static GLuint GetOrLoadTexture(const std::string & texture_path, bool filp_uv = true);
-
         // 贴图
         GLuint GetTexture(const std::string & texture_path, bool flip_uv);
+        
+        static std::weak_ptr<KongTexture> GetOrLoadTexture_new(ETextureType textureType,const std::string & texture_path);
+        std::weak_ptr<KongTexture> GetTexture_new(ETextureType textureType, const std::string & texture_path);
 
+#ifdef RENDER_IN_VULKAN
+        static std::shared_ptr<KongTexture> GetOrLoadCubeTexture(ETextureType textureType, const std::vector<std::string> &texturePathList);
+        std::shared_ptr<KongTexture> GetCubeTexture(ETextureType textureType, const std::vector<std::string> &texturePathList);
+#endif
+        
+        static void Clean();
+        
         // mesh
         shared_ptr<MeshResource> GetMesh(const std::string & mesh_path);
 
@@ -33,6 +42,8 @@ namespace Kong
     private:
         // 贴图储存
         map<string, GLuint> texture_cache;
+        map<string, shared_ptr<KongTexture>> texture_cache_new;
+        
         // 模型资源存储
         map<string, shared_ptr<MeshResource>> mesh_cache; 
     };

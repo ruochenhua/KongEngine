@@ -1,14 +1,25 @@
-#include "MeshComponent.h"
+﻿#include "MeshComponent.h"
 //#include "OBJ_Loader.h"
 
 #include "Render/RenderModule.hpp"
-#include "Shader/Shader.h"
+#include "Shader/OpenGL/OpenGLShader.h"
 
 #include "glm/gtc/random.hpp"
 #include "Parser/ResourceManager.h"
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 
 using namespace Kong;
 using namespace glm;
+
+CMeshComponent::CMeshComponent()
+#ifdef RENDER_IN_VULKAN
+ : override_render_info(std::make_unique<VulkanRenderInfo>())
+#else
+ : override_render_info(std::make_unique<OpenGLRenderInfo>())
+#endif
+{
+}
 
 void CMeshComponent::BeginPlay()
 {
@@ -16,188 +27,60 @@ void CMeshComponent::BeginPlay()
 	InitRenderInfo();
 }
 
-void CMeshComponent::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
+void CMeshComponent::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
+		auto& render_vertex = mesh->m_RenderInfo;
 		if(simple_draw_shader)
 		{
 			if(use_override_material)
 			{
-				simple_draw_shader->SetVec4("albedo", override_render_info.material.albedo);	
+				simple_draw_shader->SetVec4("albedo", override_render_info->material->albedo);	
 			}
 			else
 			{
-				simple_draw_shader->SetVec4("albedo", mesh.m_RenderInfo.material.albedo);		
+				simple_draw_shader->SetVec4("albedo", mesh->m_RenderInfo->material->albedo);		
 			}
 			
 		}
-		glBindVertexArray(render_vertex.vertex_array_id);
-		// Draw the triangle !
-		// if no index, use draw array
-		if(render_vertex.index_buffer == GL_NONE)
-		{
-			if(render_vertex.instance_buffer != GL_NONE)
-			{
-				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArraysInstanced(GL_TRIANGLES, 0,
-					render_vertex.vertex_size / render_vertex.stride_count,
-					render_vertex.instance_count);
-			}
-			else
-			{
-				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); 	
-			}
-		}
-		else
-		{
-			if(render_vertex.instance_buffer != GL_NONE)
-			{
-				glDrawElementsInstanced(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0, render_vertex.instance_count);
-			}
-			else
-			{
-				glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
-			}
-		}
 		
-		glBindVertexArray(GL_NONE);	// 解绑VAO
+		render_vertex->Draw(nullptr);
 	}
 }
 
-void CMeshComponent::Draw(const SSceneLightInfo& scene_render_info)
+void CMeshComponent::Draw(void* commandBuffer)
 {
-	shader_data->Use();
+	if (shader_data)
+		shader_data->Use();
+	
 	for(auto& mesh : mesh_resource->mesh_list)
 	{
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
+		auto& render_vertex = mesh->m_RenderInfo;
 		
-		glBindVertexArray(render_vertex.vertex_array_id);
-		if(use_override_material)
+		if (shader_data)
 		{
-			shader_data->UpdateRenderData(override_render_info.material, scene_render_info);
-		}
-		else
-		{
-			shader_data->UpdateRenderData(mesh.m_RenderInfo.material, scene_render_info);
-		}
-		// Draw the triangle !
-		// if no index, use draw array
-		if(render_vertex.index_buffer == GL_NONE)
-		{
-			if(render_vertex.instance_buffer != GL_NONE)
+			if(use_override_material)
 			{
-				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArraysInstanced(GL_TRIANGLES, 0,
-					render_vertex.vertex_size / render_vertex.stride_count,
-					render_vertex.instance_count);
+				shader_data->UpdateRenderData(override_render_info->material);
 			}
 			else
 			{
-				// Starting from vertex 0; 3 vertices total -> 1 triangle
-				glDrawArrays(GL_TRIANGLES, 0, render_vertex.vertex_size / render_vertex.stride_count); 	
+				shader_data->UpdateRenderData(mesh->m_RenderInfo->material);
 			}
 		}
-		else
-		{
-			if(render_vertex.instance_buffer != GL_NONE)
-			{
-				glDrawElementsInstanced(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0, render_vertex.instance_count);
-			}
-			else
-			{
-				glDrawElements(GL_TRIANGLES, render_vertex.indices_count, GL_UNSIGNED_INT, 0);
-			}
-		}
-		
-		glBindVertexArray(GL_NONE);	// 解绑VAO
+
+		render_vertex->Draw(commandBuffer);
 	}
 }
 
 void CMeshComponent::InitRenderInfo()
 {
 	// compile shader map
-	for(auto& mesh : mesh_resource->mesh_list)
+	for(auto mesh : mesh_resource->mesh_list)
 	{
 		// 构建默认的shader数据结构，数据齐全，但是冗余
-		auto& render_vertex = mesh.m_RenderInfo.vertex;
-		std::vector<float> vertices = mesh.GetVertices();
-		
-		glGenVertexArrays(1, &render_vertex.vertex_array_id);
-		glBindVertexArray(render_vertex.vertex_array_id);
-
-		//init vertex buffer
-		glGenBuffers(1, &render_vertex.vertex_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.vertex_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-
-		//vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER,  render_vertex.vertex_buffer);
-		glVertexAttribPointer(
-			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
-		glEnableVertexAttribArray(0);
-
-		//normal buffer
-		std::vector<float> normals = mesh.GetNormals();
-		glGenBuffers(1, &render_vertex.normal_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.normal_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*normals.size(), &normals[0], GL_STATIC_DRAW);
-
-		glVertexAttribPointer(1, 3,GL_FLOAT,GL_FALSE,0, (void*)0);
-		glEnableVertexAttribArray(1);
-
-		// texcoord
-		std::vector<float> tex_coords = mesh.GetTextureCoords();
-		glGenBuffers(1, &render_vertex.texture_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, render_vertex.texture_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tex_coords.size(), &tex_coords[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,0,(void*)0);
-		glEnableVertexAttribArray(2);
-
-		// tangent
-		vector<float> tangents = mesh.GetTangents();
-		if(!tangents.empty())
-		{
-			glGenBuffers(1, &render_vertex.tangent_buffer);
-			glBindBuffer(GL_ARRAY_BUFFER, render_vertex.tangent_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*tangents.size(), &tangents[0], GL_STATIC_DRAW);
-			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glEnableVertexAttribArray(3);
-		}
-		
-		// bitangent
-		vector<float> bitangents = mesh.GetBitangents();
-		if(!bitangents.empty())
-		{
-			glGenBuffers(1, &render_vertex.bitangent_buffer);
-			glBindBuffer(GL_ARRAY_BUFFER, render_vertex.bitangent_buffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
-			glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glEnableVertexAttribArray(4);
-		}
-		
-		// index buffer
-		std::vector<unsigned int> indices = mesh.GetIndices();
-		if(!indices.empty())
-		{
-			glGenBuffers(1, &render_vertex.index_buffer);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_vertex.index_buffer);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), &indices[0], GL_STATIC_DRAW);
-		}
-
-		glBindVertexArray(GL_NONE);
-
-		// m_RenderInfo._program_id = LoadShaders(shader_paths[0], shader_paths[1]);
-		render_vertex.vertex_size = vertices.size();
-		render_vertex.indices_count = indices.size();
+		mesh->m_RenderInfo->InitRenderInfo();
 	}
 }
 
@@ -206,35 +89,132 @@ bool CMeshComponent::IsBlend()
 	return shader_data->bIsBlend;
 }
 
-std::vector<float> CMesh::GetVertices() const
+#ifdef RENDER_IN_VULKAN
+void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout)
 {
-	return m_Vertex;
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		auto& render_vertex = mesh->m_RenderInfo;
+
+		shared_ptr<VulkanMaterialInfo> vulkanMaterial;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
+		}
+		if (!vulkanMaterial)
+		{
+			continue;
+		}
+
+		// 全局变量，控制在render module中
+		vkCmdBindDescriptorSets(
+		    frameInfo.commandBuffer,
+		    VK_PIPELINE_BIND_POINT_GRAPHICS,
+		    pipelineLayout,
+		    0, 1,
+		    &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
+		    	, 0, nullptr);
+
+		vkCmdBindDescriptorSets(
+			frameInfo.commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			1, 1,
+			&vulkanMaterial->m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::BasicMaterial]
+				, 0, nullptr);
+		
+		vkCmdBindDescriptorSets(
+			frameInfo.commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			2, 1,
+			&vulkanMaterial->m_descriptorSets[frameInfo.frameIndex][VulkanDescriptorSetLayout::Texture]
+				, 0, nullptr);
+		
+		render_vertex->Draw(frameInfo.commandBuffer);
+	}
 }
 
-std::vector<float> CMesh::GetTextureCoords() const
+void CMeshComponent::DrawShadow(const FrameInfo& frameInfo, const VkPipelineLayout& pipelineLayout)
 {
-	return m_TexCoord;
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		auto& render_vertex = mesh->m_RenderInfo;
+
+		render_vertex->Draw(frameInfo.commandBuffer);
+	}
 }
 
-std::vector<float> CMesh::GetNormals() const
+void CMeshComponent::UpdateMeshUBO(const FrameInfo& frameInfo)
 {
-	return m_Normal;
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		shared_ptr<VulkanMaterialInfo> vulkanMaterial;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material);
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material);	
+		}
+		 
+		if (!vulkanMaterial)
+		{
+			continue;
+		}
+	
+		auto camera = KongRenderModule::GetRenderModule().GetCamera();
+		BasicMaterialUbo ubo{};
+		ubo.albedo = vulkanMaterial->albedo;
+		ubo.specular_factor = vulkanMaterial->specular_factor;
+		ubo.metallic = vulkanMaterial->metallic;
+		ubo.roughness = vulkanMaterial->roughness;
+		ubo.ambient = vulkanMaterial->ao;
+		
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
+		vulkanMaterial->m_uboBuffers[frameInfo.frameIndex]->Flush();
+	}
 }
 
-vector<unsigned int> CMesh::GetIndices() const
+void CMeshComponent::CreateMeshDescriptorSet(const std::vector<std::unique_ptr<VulkanDescriptorSetLayout>>& descriptorSetLayout, VulkanDescriptorPool* descriptorPool)
 {
-	return m_Index;
+	for(auto& mesh : mesh_resource->mesh_list)
+	{
+		VulkanMaterialInfo* vulkanMaterial = nullptr;
+		if (use_override_material)
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(override_render_info->material).get();
+			if (!vulkanMaterial)
+			{
+				continue;
+			}
+			for (auto& layout : descriptorSetLayout)
+			{
+				vulkanMaterial->CreateDescriptorSet(layout.get(), descriptorPool);	
+			}
+			break;
+		}
+		else
+		{
+			vulkanMaterial = dynamic_pointer_cast<VulkanMaterialInfo>(mesh->m_RenderInfo->material).get();
+			if (!vulkanMaterial)
+			{
+				continue;
+			}
+			for (auto& layout : descriptorSetLayout)
+			{
+				vulkanMaterial->CreateDescriptorSet(layout.get(), descriptorPool);	
+			}
+		}
+	}
+	
 }
-
-vector<float> CMesh::GetTangents() const
-{
-	return m_Tangent;
-}
-
-vector<float> CMesh::GetBitangents() const
-{
-	return m_Bitangent;
-}
+#endif
 
 int CMeshComponent::ImportObj(const std::string& model_path)
 {

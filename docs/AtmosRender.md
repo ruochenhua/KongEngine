@@ -1,4 +1,4 @@
-# Real-Time Volumetric Rendering学习记录
+﻿# Real-Time Volumetric Rendering学习记录
 [文章链接]("https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf")
 
 https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf

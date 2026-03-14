@@ -1,5 +1,4 @@
 ﻿#include "CameraComponent.h"
-
 #include <imgui.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
@@ -13,7 +12,15 @@ using namespace std;
 
 mat4 CCamera::GetProjectionMatrix() const
 {
+#ifdef RENDER_IN_VULKAN
+	// vulkan的perspective是y轴向下，和directx和metal类似
+	mat4 projMat = perspective(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
+	projMat[1][1] *= -1;
+	return projMat;
+#else
+	// opengl则是y轴向上
 	return perspective(m_screenInfo._fov, m_screenInfo._aspect_ratio, m_screenInfo._near, m_screenInfo._far);
+#endif
 }
 
 mat4 CCamera::GetViewMatrix() const
@@ -49,7 +56,7 @@ void CCamera::InvertPitch()
 
 void CCamera::UpdateRotation(double delta)
 {
-	auto window_module = KongWindow::GetWindowModule();
+	auto& window_module = KongWindow::GetWindowModule();
 	auto window = window_module.GetWindow();
 	double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);	
@@ -83,7 +90,7 @@ void CCamera::OnPYRUpdated()
 
 void CCamera::Update(double delta)
 {
-	auto window_module = KongWindow::GetWindowModule();
+	auto& window_module = KongWindow::GetWindowModule();
 	m_screenInfo._aspect_ratio = window_module.aspectRatio;
 	UpdateRotation(delta);
 	auto render_window = window_module.GetWindow();
@@ -125,6 +132,7 @@ void CCamera::Update(double delta)
 	{
 		MoveUp();
 	}
+	
 
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse)
@@ -150,21 +158,6 @@ void CCamera::Update(double delta)
 	// m_center = vec3(transform_mat * vec4(m_center, 1));
 
 	m_moveVec = vec3(0, 0, 0);
-}
-
-void CCamera::InitControl()
-{
-	// CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_PRESS, MoveForward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_PRESS, MoveBackward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_PRESS, MoveLeft);
-	// CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_PRESS, MoveRight);
-	// CMessage::BindKeyToFunction(GLFW_KEY_W, GLFW_REPEAT, MoveForward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_S, GLFW_REPEAT, MoveBackward);
-	// CMessage::BindKeyToFunction(GLFW_KEY_A, GLFW_REPEAT, MoveLeft);
-	// CMessage::BindKeyToFunction(GLFW_KEY_D, GLFW_REPEAT, MoveRight);
-	//
-	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, RotateStart);
-	// CMessage::BindMouseToFunction(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, RotateEnd);
 }
 
 void CCamera::MoveForward()

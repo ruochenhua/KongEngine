@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <unordered_map>
 #include "RigidBody.h"
 #include "CollisionSolver.h"
@@ -27,6 +27,6 @@ namespace Tap
     private:
         int m_nextID;
         std::unordered_map<int, RigidBodyUPtr> m_mRigidBodyMap;  //rigid body vector
-		std::unique_ptr<CCollisionSolver> m_pCollisionSolver;	//´¦Àírigid bodyÖ®¼äµÄÅö×²
+		std::unique_ptr<CCollisionSolver> m_pCollisionSolver;	//ï¿½ï¿½ï¿½ï¿½rigid bodyÖ®ï¿½ï¿½ï¿½ï¿½ï¿½×²
     };
 };

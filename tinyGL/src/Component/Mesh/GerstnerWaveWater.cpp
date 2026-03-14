@@ -1,4 +1,4 @@
-
+﻿
 #include "GerstnerWaveWater.h"
 
 #include "Render/RenderModule.hpp"
@@ -16,7 +16,7 @@ GerstnerWaveWater::GerstnerWaveWater()
         {tes, CSceneLoader::ToResourcePath("shader/water/gerstner_wave.tese")}
     };
 
-    shader_data = make_shared<Shader>(shader_path_map);
+    shader_data = make_shared<OpenGLShader>(shader_path_map);
 
     shader_data->Use();
     shader_data->SetInt("reflection_texture", 0);
@@ -25,30 +25,23 @@ GerstnerWaveWater::GerstnerWaveWater()
     shader_data->SetInt("normal_map", 3);
 }
 
-void GerstnerWaveWater::Draw(const SSceneLightInfo& scene_render_info)
+void GerstnerWaveWater::Draw(void* commandBuffer)
 {
     // glDisable(GL_CULL_FACE);
     shader_data->Use();    
     glBindVertexArray(gerstner_wave_vao);
-    // shader_data->SetInt("octaves", octaves);
-    // shader_data->SetFloat("amplitude", amplitude);
-    // shader_data->SetFloat("freq", freq);
-    // shader_data->SetFloat("power", power);
     shader_data->SetFloat("height_scale", height_scale_);
     shader_data->SetFloat("height_shift", height_shift_);
     shader_data->SetInt("terrain_size", water_size);
     shader_data->SetInt("terrain_res", water_resolution);
 
-    glActiveTexture(GL_TEXTURE2);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, dudv_texture > 0 ? dudv_texture : KongRenderModule::GetNullTexId());
-
-    glActiveTexture(GL_TEXTURE3);   // 前面有reflection和refraction texture，这里从texture2开始
-    glBindTexture(GL_TEXTURE_2D, normal_texture > 0 ? normal_texture : KongRenderModule::GetNullTexId());
+    if (!dudv_texture.expired()) dudv_texture.lock()->Bind(2);
+    if (!normal_texture.expired()) normal_texture.lock()->Bind(3);
     
-    SimpleDraw(nullptr);
+    DrawShadowInfo(nullptr);
 }
 
-void GerstnerWaveWater::SimpleDraw(shared_ptr<Shader> simple_draw_shader)
+void GerstnerWaveWater::DrawShadowInfo(shared_ptr<OpenGLShader> simple_draw_shader)
 {
     shader_data->SetVec3("cam_pos", KongRenderModule::GetRenderModule().GetCamera()->GetPosition());
     // render_wireframe = true;
@@ -125,11 +118,13 @@ void GerstnerWaveWater::InitRenderInfo()
 
 void GerstnerWaveWater::LoadDudvMapTexture(const string& texture_path)
 {
-    dudv_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+    // 类型对opengl没区别
+    dudv_texture = ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(texture_path));
 }
 
 void GerstnerWaveWater::LoadNormalTexture(const string& texture_path)
 {
-    normal_texture = ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(texture_path));
+    // 类型对opengl没区别
+    normal_texture = ResourceManager::GetOrLoadTexture_new(normal, CSceneLoader::ToResourcePath(texture_path));
 }
 

@@ -1,4 +1,4 @@
-#include "YamlParser.h"
+﻿#include "YamlParser.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -14,6 +14,9 @@
 #include "Component/Mesh/Terrain.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtc/random.hpp"
+#ifdef RENDER_IN_VULKAN
+#include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#endif
 
 using namespace Kong;
 
@@ -84,6 +87,7 @@ namespace YamlParser
 
     void ParseMeshMaterial(YAML::Node mesh_node, shared_ptr<CMeshComponent> mesh_component)
     {
+#ifndef RENDER_IN_VULKAN
         // 创建shader
         if(mesh_node["shader_type"])
         {
@@ -105,24 +109,29 @@ namespace YamlParser
                     CSceneLoader::ToResourcePath(shader_node["fs"].as<string>()));
             }
 
-            mesh_component->shader_data = make_shared<Shader>(shader_cache);
+            mesh_component->shader_data = make_shared<OpenGLShader>(shader_cache);
         }
 
+#endif
         if(mesh_node["material"])
         {
             auto material_node = mesh_node["material"];
             // 读取材质信息
-            SMaterial tmp_material;
+#ifdef RENDER_IN_VULKAN
+            std::shared_ptr<VulkanMaterialInfo> tmp_material = make_shared<VulkanMaterialInfo>();
+#else
+            std::shared_ptr<RenderMaterialInfo> tmp_material = make_shared<RenderMaterialInfo>();
+#endif
+      
             if(material_node["diffuse"])
             {
                 if(material_node["diffuse"].IsSequence())
                 {
-                    tmp_material.albedo = glm::vec4(ParseVec3(material_node["diffuse"].as<vector<float>>()), 1.0);    
+                    tmp_material->albedo = glm::vec4(ParseVec3(material_node["diffuse"].as<vector<float>>()), 1.0);    
                 }
                 else
                 {
-                    tmp_material.diffuse_tex_id =
-                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>()));
+                    tmp_material->AddMaterialByType(diffuse, ResourceManager::GetOrLoadTexture_new(diffuse, CSceneLoader::ToResourcePath(material_node["diffuse"].as<string>())));
                 }
             }
 
@@ -130,12 +139,11 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.metallic = material_node["metallic"].as<float>();
+                    tmp_material->metallic = material_node["metallic"].as<float>();
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.metallic_tex_id =
-                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["metallic"].as<string>()));
+                    tmp_material->AddMaterialByType(metallic, ResourceManager::GetOrLoadTexture_new(metallic, CSceneLoader::ToResourcePath(material_node["metallic"].as<string>())));
                 }
             }
 
@@ -143,12 +151,11 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.roughness = material_node["roughness"].as<float>();    
+                    tmp_material->roughness = material_node["roughness"].as<float>();    
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.roughness_tex_id =
-                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["roughness"].as<string>()));
+                    tmp_material->AddMaterialByType(roughness, ResourceManager::GetOrLoadTexture_new(roughness, CSceneLoader::ToResourcePath(material_node["roughness"].as<string>())));
                 }    
             }
 
@@ -156,22 +163,21 @@ namespace YamlParser
             {
                 try
                 {
-                    tmp_material.ao = material_node["ao"].as<float>();    
+                    tmp_material->ao = material_node["ao"].as<float>();    
                 }
                 catch (const YAML::BadConversion& e)
                 {
-                    tmp_material.ao_tex_id =
-                        ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["ao"].as<string>()));
+                    tmp_material->AddMaterialByType(ambient_occlusion, ResourceManager::GetOrLoadTexture_new(ambient_occlusion, CSceneLoader::ToResourcePath(material_node["ao"].as<string>())));
                 }    
             }
             
             if(material_node["normal"])
             {
-                tmp_material.normal_tex_id =
-                    ResourceManager::GetOrLoadTexture(CSceneLoader::ToResourcePath(material_node["normal"].as<string>()));
+                tmp_material->AddMaterialByType(normal, ResourceManager::GetOrLoadTexture_new(normal, CSceneLoader::ToResourcePath(material_node["normal"].as<string>())));
             }
 
-            mesh_component->override_render_info.material = tmp_material;
+            mesh_component->override_render_info->material = tmp_material;
+            mesh_component->override_render_info->material->Initialize();
             mesh_component->use_override_material = true;
         }
     }
@@ -321,7 +327,7 @@ namespace YamlParser
                     dirlight_comp->light_intensity = component["light_intensity"].as<float>(); 
                     dirlight_comp->light_color *= dirlight_comp->light_intensity;
                 }
-
+#ifndef RENDER_IN_VULKAN
                 // 平行光默认打开阴影贴图
                 if(component["make_shadow"])
                 {
@@ -336,7 +342,7 @@ namespace YamlParser
                 {
                     dirlight_comp->TurnOnReflectiveShadowMap(component["reflective_shadow_map"].as<bool>());    
                 }
-                
+#endif                
                 new_actor->AddComponent(dirlight_comp);
             }
             else if(component_type == "point_light")
@@ -357,13 +363,13 @@ namespace YamlParser
                     // 填了光的强度的话，需要乘上去
                     pointlight_comp->light_color *= component["light_intensity"].as<float>();
                 }
-
+#ifndef RENDER_IN_VULKAN
                 // 点光源默认不开启阴影贴图
                 if(component["make_shadow"])
                 {
                     pointlight_comp->TurnOnShadowMap(component["make_shadow"].as<bool>());
                 }
-                
+#endif
                 new_actor->AddComponent(pointlight_comp);
             }
         }
@@ -420,13 +426,13 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
             if(skybox_node["render_sky_env_status"])
             {
                 auto render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
-                render_sys.render_sky_env_status = render_sky_env_status;
+                render_sys.m_skyboxRenderSystem.render_sky_env_status = render_sky_env_status;
             }
 
             if(skybox_node["render_cloud"])
             {
                 auto render_cloud = skybox_node["render_cloud"].as<bool>();
-                render_sys.m_SkyBox.render_cloud = render_cloud;
+                render_sys.m_skyboxRenderSystem.render_cloud = render_cloud;
             }
         }
     }

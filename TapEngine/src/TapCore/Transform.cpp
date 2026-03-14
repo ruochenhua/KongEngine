@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "Transform.h"
 #include <glm/gtx/quaternion.hpp>
 
@@ -29,7 +29,7 @@ namespace Tap
 
 	glm::mat4 CTransform::GetMatrix() const
 	{		
-		//½«srt½áºÏ³ÉÒ»¸ö×ªÖÃ¾ØÕó
+		//ï¿½ï¿½srtï¿½ï¿½Ï³ï¿½Ò»ï¿½ï¿½×ªï¿½Ã¾ï¿½ï¿½ï¿½
 		glm::mat4 transformMatrix = glm::identity<glm::mat4>();
 		glm::mat4 rot_mat = glm::toMat4(m_Rot);										
 

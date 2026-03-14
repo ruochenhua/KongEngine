@@ -1,0 +1,698 @@
+﻿#include "VulkanGraphicsDevice.hpp"
+
+#ifdef RENDER_IN_VULKAN
+#include "VkBufferRHI.hpp"
+#include "VkFrameContext.hpp"
+#include "VulkanSwapChain.hpp"
+#include "Window.hpp"
+#include <iostream>
+#include <set>
+#include <unordered_set>
+#include <vulkan/vulkan_core.h>
+using namespace Kong;
+
+static std::shared_ptr<VulkanGraphicsDevice> g_VulkanGraphicsDevice {nullptr};
+
+// local callback functions
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+    void *pUserData) {
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
+}
+
+VkResult CreateDebugUtilsMessengerEXT(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDebugUtilsMessengerEXT *pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+        instance,
+        "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debugMessenger,
+    const VkAllocationCallbacks *pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+        instance,
+        "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+
+std::shared_ptr<VulkanGraphicsDevice> VulkanGraphicsDevice::GetGraphicsDevice()
+{
+    if (!g_VulkanGraphicsDevice)
+    {
+        g_VulkanGraphicsDevice = make_shared<VulkanGraphicsDevice>();
+    }
+    return g_VulkanGraphicsDevice;
+}
+
+
+VulkanGraphicsDevice::VulkanGraphicsDevice()
+{
+    m_API = GraphicsAPI::VULKAN;
+}
+
+VulkanGraphicsDevice::~VulkanGraphicsDevice()
+{
+    if (m_instance == VK_NULL_HANDLE)
+        return;
+
+    FreeCommandBuffers();
+    m_swapChain.reset();
+
+    vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+    vkDestroyDevice(m_device, nullptr);
+
+    if (m_enableValidationLayers)
+    {
+        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+    }
+
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+    vkDestroyInstance(m_instance, nullptr);
+}
+ 
+void* VulkanGraphicsDevice::Init(int width, int height)
+{
+    if (!glfwInit())
+    {
+        throw std::runtime_error("Failed to initialize GLFW3");
+    }
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+    GLFWwindow* window = glfwCreateWindow(width, height, "Kong Sample(Vulkan)", nullptr, nullptr);
+    if (!window)
+    {
+        glfwTerminate();
+        throw std::runtime_error("Failed to create GLFW window");
+    }
+    glfwSetWindowUserPointer(window, this);
+    InitVulkanDevice(window);
+
+    m_extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    CreateCommandBuffers();
+    RecreateSwapChain();
+
+    return static_cast<void*>(window);
+}
+
+IFrameContext& VulkanGraphicsDevice::BeginFrame()
+{
+    assert(!m_isFrameStarted && "cannot begin frame when frame already in progress");
+    auto result = m_swapChain->AcquireNextImage(&m_currentImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        RecreateSwapChain();
+        result = m_swapChain->AcquireNextImage(&m_currentImageIndex);
+    }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("failed to acquire swap chain image");
+    m_isFrameStarted = true;
+    VkCommandBuffer cb = m_commandBuffers[m_currentFrameIndex];
+    m_frameContext.SetCommandBuffer(cb);
+    m_frameContext.SetFrameIndex(m_currentFrameIndex);
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if (vkBeginCommandBuffer(cb, &beginInfo) != VK_SUCCESS)
+        throw std::runtime_error("failed to begin recording command buffer");
+    return m_frameContext;
+}
+
+void VulkanGraphicsDevice::EndFrame()
+{
+    assert(m_isFrameStarted && "cannot end frame when frame not in progress");
+    VkCommandBuffer cb = m_commandBuffers[m_currentFrameIndex];
+    if (vkEndCommandBuffer(cb) != VK_SUCCESS)
+        throw std::runtime_error("failed to end command buffer");
+    auto result = m_swapChain->SubmitCommandBuffers(&cb, &m_currentImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        RecreateSwapChain();
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to submit command buffer frame");
+    m_isFrameStarted = false;
+    m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+}
+
+VkCommandBuffer VulkanGraphicsDevice::GetCurrentCommandBuffer() const
+{
+    assert(m_isFrameStarted && "cannot get command buffer when frame not in progress");
+    return m_commandBuffers[m_currentFrameIndex];
+}
+
+int VulkanGraphicsDevice::GetFrameIndex() const
+{
+    assert(m_isFrameStarted && "cannot get frame index when frame not in progress");
+    return m_currentFrameIndex;
+}
+
+void VulkanGraphicsDevice::CreateCommandBuffers()
+{
+    m_commandBuffers.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
+    if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+        throw std::runtime_error("failed to allocate command buffers!");
+}
+
+void VulkanGraphicsDevice::FreeCommandBuffers()
+{
+    if (m_commandBuffers.empty()) return;
+    vkFreeCommandBuffers(m_device, m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    m_commandBuffers.clear();
+}
+
+void VulkanGraphicsDevice::RecreateSwapChain()
+{
+    while (m_extent.width == 0 || m_extent.height == 0)
+    {
+        m_extent.width = static_cast<uint32_t>(KongWindow::GetWindowModule().windowSize.x);
+        m_extent.height = static_cast<uint32_t>(KongWindow::GetWindowModule().windowSize.y);
+        if (m_extent.width == 0 || m_extent.height == 0)
+            glfwWaitEvents();
+    }
+    if (m_swapChain == nullptr)
+        m_swapChain = std::make_unique<VulkanSwapChain>(*this, m_extent);
+    else
+    {
+        std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapChain);
+        m_swapChain = std::make_unique<VulkanSwapChain>(*this, m_extent, oldSwapChain);
+        if (!oldSwapChain->CompareSwapChainFormats(*m_swapChain.get()))
+            throw std::runtime_error("failed to create swap chain!");
+    }
+}
+
+std::unique_ptr<IBuffer> VulkanGraphicsDevice::CreateBuffer(const BufferDesc& desc)
+{
+#ifdef RENDER_IN_VULKAN
+    return std::make_unique<VkBufferRHI>(desc);
+#else
+    (void)desc;
+    return nullptr;
+#endif
+}
+
+std::unique_ptr<ITexture> VulkanGraphicsDevice::CreateTexture(const TextureDesc& desc)
+{
+    (void)desc;
+    return nullptr;
+}
+
+void VulkanGraphicsDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+    VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+
+    vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+}
+
+uint32_t VulkanGraphicsDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+    {
+        if ((typeFilter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Failed to find suitable memory type");
+}
+
+VkFormat VulkanGraphicsDevice::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+    VkFormatFeatureFlags features)
+{
+    for (VkFormat format : candidates)
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+        {
+            return format;
+        }
+        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+        {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("Failed to find supporting format");
+}
+
+void VulkanGraphicsDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties,
+    VkImage& image, VkDeviceMemory& imageMemory)
+{
+    if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create image");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_device, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate image memory");
+    }
+
+    if (vkBindImageMemory(m_device, image, imageMemory, 0) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to bind image memory");
+    }
+}
+
+VkCommandBuffer VulkanGraphicsDevice::BeginSingleTimeCommands()
+{
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void VulkanGraphicsDevice::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphicsQueue);
+
+    vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
+}
+
+void VulkanGraphicsDevice::InitVulkanDevice(GLFWwindow* window)
+{
+    CreateInstance();
+    SetupDebugMessenger();
+    CreateSurface(window);
+    PickPhysicalDevice();
+    CreateLogicalDevice();
+    CreateCommandPool();
+}
+
+void VulkanGraphicsDevice::CreateInstance()
+{
+    if (m_enableValidationLayers && !CheckValidationLayerSupport())
+    {
+        throw std::runtime_error("Validation layers not supported");
+    }
+
+    // app 信息
+    VkApplicationInfo appInfo {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "Kong Sample(Vulkan)";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "Kong Engine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_0;
+
+    // instance信息
+    VkInstanceCreateInfo createInfo {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+
+    auto extensions = GetRequiredExtensions();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    if (m_enableValidationLayers)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+        createInfo.ppEnabledLayerNames = m_validationLayers.data();
+
+        PopulateDebugMessengerCreateInfo(debugCreateInfo);
+        
+        createInfo.pNext = &debugCreateInfo;
+    }
+    else
+    {
+        createInfo.enabledLayerCount = 0;
+        createInfo.pNext = nullptr;
+    }
+
+    if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create instance");
+    }
+
+    CheckRequiredInstanceExtensions();
+}
+
+void VulkanGraphicsDevice::SetupDebugMessenger()
+{
+    if (!m_enableValidationLayers) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    PopulateDebugMessengerCreateInfo(debugCreateInfo);
+    if (CreateDebugUtilsMessengerEXT(m_instance, &debugCreateInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create debug messenger");
+    }
+}
+
+void VulkanGraphicsDevice::CreateSurface(GLFWwindow* window)
+{
+    if (glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface)!=VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create window surface");
+    }
+}
+
+void VulkanGraphicsDevice::PickPhysicalDevice()
+{
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+    if (deviceCount == 0)
+    {
+        throw std::runtime_error("failed to find GPUs with Vulkan support");
+    }
+
+    std::cout << "Found " << deviceCount << " GPUs\n";
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+
+    for (const auto& device : devices)
+    {
+        if (CheckDeivceSuitable(device))
+        {
+            m_physicalDevice = device;
+            break;
+        }
+    }
+
+    if (m_physicalDevice == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("failed to find a suitable GPU");
+    }
+
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &m_properties);
+    std::cout << "physical device: " << m_properties.deviceName << "\n";
+}
+
+void VulkanGraphicsDevice::CreateLogicalDevice()
+{
+    QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies {indices.graphicsFamily, indices.presentFamily};
+
+    float queuePriorities = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriorities;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+
+    if (m_enableValidationLayers)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+        createInfo.ppEnabledLayerNames = m_validationLayers.data();
+    }
+    else
+    {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create logical device");
+    }
+
+    vkGetDeviceQueue(m_device, indices.graphicsFamily, 0, &m_graphicsQueue);
+    vkGetDeviceQueue(m_device, indices.presentFamily, 0, &m_presentQueue);
+}
+
+void VulkanGraphicsDevice::CreateCommandPool()
+{
+    QueueFamilyIndices queueFamilies = FindQueueFamilies(m_physicalDevice);
+
+    VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+    cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    cmdPoolCreateInfo.queueFamilyIndex = queueFamilies.graphicsFamily;
+    cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    if (vkCreateCommandPool(m_device, &cmdPoolCreateInfo, nullptr, &m_commandPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create command pool");
+    }
+}
+
+bool VulkanGraphicsDevice::CheckValidationLayerSupport()
+{
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    bool layer_found = false;
+    for (const char* layer_name : m_validationLayers)
+    {
+        for (const auto& layer_properties : available_layers)
+        {
+            if (strcmp(layer_name, layer_properties.layerName) == 0)
+            {
+                layer_found = true;
+                break;
+            }
+        }
+    }
+
+    return layer_found;
+}
+
+std::vector<const char*> VulkanGraphicsDevice::GetRequiredExtensions()
+{
+    uint32_t extension_count = 0;
+    const char** extension_names = glfwGetRequiredInstanceExtensions(&extension_count);
+
+    std::vector<const char*> extensions(extension_names, extension_names + extension_count);
+
+    if (m_enableValidationLayers)
+    {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
+    return extensions;
+}
+
+void VulkanGraphicsDevice::CheckRequiredInstanceExtensions()
+{
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+    std::cout << "available extensions:\n" ;
+    unordered_set<std::string> available;
+    for (const auto &extension : extensions) {
+        std::cout << "\t" << extension.extensionName << "\n";
+        available.insert(extension.extensionName);
+    }
+
+    std::cout << "required extensions:\n";
+    auto requiredExtensions = GetRequiredExtensions();
+    for (const auto &required : requiredExtensions) {
+        std::cout << "\t" << required << "\n";
+        if (available.find(required) == available.end()) {
+            throw std::runtime_error("Missing required glfw extension");
+        }
+    }
+}
+
+void VulkanGraphicsDevice::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+    createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = DebugCallback;
+    createInfo.pUserData = nullptr;  // Optional
+}
+
+bool VulkanGraphicsDevice::CheckDeivceSuitable(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices = FindQueueFamilies(device);
+
+    bool extensionsSupported = CheckDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate &&
+           supportedFeatures.samplerAnisotropy;
+}
+
+QueueFamilyIndices VulkanGraphicsDevice::FindQueueFamilies(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto &queue_family : queueFamilies) {
+        if (queue_family.queueCount > 0 && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+            indices.graphicsFamilyHasValue = true;
+        }
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+        if (queue_family.queueCount > 0 && presentSupport) {
+            indices.presentFamily = i;
+            indices.presentFamilyHasValue = true;
+        }
+        if (indices.isComplete()) {
+            break;
+        }
+
+        i++;
+    }
+
+    return indices;
+}
+
+bool VulkanGraphicsDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(
+        device,
+        nullptr,
+        &extensionCount,
+        availableExtensions.data());
+
+    set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+
+    for (const auto &extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
+SwapChainSupportDetails VulkanGraphicsDevice::QuerySwapChainSupport(VkPhysicalDevice device)
+{
+    SwapChainSupportDetails details;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+
+    if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data());
+    }
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device,
+            m_surface,
+            &presentModeCount,
+            details.presentModes.data());
+    }
+    return details;
+}
+
+#endif

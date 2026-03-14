@@ -1,5 +1,9 @@
-#pragma once
+﻿#pragma once
+
 #include <imgui.h>
+#ifdef RENDER_IN_VULKAN
+#include <imgui_impl_vulkan.h>
+#endif
 
 #include "Window.hpp"
 
@@ -24,5 +28,10 @@ namespace Kong
 
         float process_time[TIME_RECORD_COUNT];
         int process_time_offset {0};
+#ifdef RENDER_IN_VULKAN
+        // ImGui_ImplVulkanH_Window m_mainWindowData;
+	    VkDescriptorPool imguiPool;
+#endif
+        
     };
 }
