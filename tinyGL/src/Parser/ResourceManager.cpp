@@ -1,4 +1,4 @@
-#include "ResourceManager.h"
+﻿#include "ResourceManager.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -9,7 +9,9 @@
 #include "stb_image.h"
 
 #include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
+#endif
 #include "Render/Resource/Texture.hpp"
 using namespace Kong;
 using namespace glm;

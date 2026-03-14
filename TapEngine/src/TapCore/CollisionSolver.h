@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "glm/glm.hpp"
 #include "RigidBody.h"
 #include <unordered_map>
@@ -25,22 +25,22 @@ namespace Tap
 	class CCollisionSolver
 	{
 	public:
-		//½øÐÐÅö×²¼ì²â
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½
 		bool Detect(std::unordered_map<int, RigidBodyUPtr>& rb_map);
-		//½â¾öÅö×²
+		//ï¿½ï¿½ï¿½ï¿½ï¿½×²
 		bool Solve();
-		//»ñÈ¡Åö×²¼ÇÂ¼
+		//ï¿½ï¿½È¡ï¿½ï¿½×²ï¿½ï¿½Â¼
 		const std::vector<SCollisionManifold>& GetCollisionManifold() const;
 
 	private:
 		std::vector<SCollisionManifold> m_vCollisionManifold;
 
 	private:
-		//Á½¸ö¸ÕÌåµÄÅö×²¼ì²â
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½
 		bool DetectRigidBodyCollision(CRigidBody* rb_0, CRigidBody* rb_1);
 
-		//Ê©¼Ó³åÁ¿
-		//lower partÊÇ³åÁ¿¼ÆËã·½³ÌÊ½µÄ·ÖÄ¸£¬ÒòÎªÁ½¸ö¸ÕÌåÕâ¸öÁ¿ÊÇÒ»ÑùµÄ£¬ËùÒÔÖ»¼ÆËãÒ»´Î
+		//Ê©ï¿½Ó³ï¿½ï¿½ï¿½
+		//lower partï¿½Ç³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ã·½ï¿½ï¿½Ê½ï¿½Ä·ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 		void ApplyImpulse(CRigidBody *rb, const glm::vec3& relative_vel, const glm::vec3& hit_normal, const glm::vec3& to_contact, float lower_part);
 	};
 

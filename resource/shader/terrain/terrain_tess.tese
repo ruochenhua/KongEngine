@@ -1,5 +1,4 @@
-#version 450 compatibility
-#extension GL_ARB_shading_language_include : require
+﻿#version 450 compatibility
 #include "/common/common.glsl"
 #include "/common/noise_gen.glsl"
 // tessellation primitive generator没有shader代码， 它根据tcs的输出数据和tes的输入数据结构设定计算

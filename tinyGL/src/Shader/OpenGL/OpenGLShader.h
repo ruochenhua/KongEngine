@@ -1,26 +1,40 @@
-#pragma once
+﻿#pragma once
 
 #include "Common.h"
 #include "Render/RenderCommon.hpp"
+#include <map>
+#include <set>
 
 namespace Kong
 {
 	class AActor;
 	class ShaderManager;
-	
+
 	// shader的主类型，后面每个shader的类型都会建一个类集成Shader类
 	// 每个shader子类对应相同的shader编译文件，所以按理来说是可以每个类型的shader加载一次就行，而不需要每个模型加载一次，性能得以优化
-    class OpenGLShader
-    {
-    public:
-    	OpenGLShader() = default;
-    	OpenGLShader(const map<EShaderType, string>& shader_paths);
-	    virtual ~OpenGLShader() = default;
-	    //static GLuint LoadShaders(const std::string& vertex_file_path, const std::string& fragment_file_path)
-    	static GLuint LoadShaders(const map<EShaderType, string>& shader_paths);
-    	static void IncludeShader(const string& include_path);
-    	static std::vector<std::string> FindIncludeFiles(const string& code_content);
+	class OpenGLShader
+	{
+	public:
+		OpenGLShader() = default;
+		OpenGLShader(const map<EShaderType, string>& shader_paths);
+		virtual ~OpenGLShader() = default;
+		static GLuint LoadShaders(const map<EShaderType, string>& shader_paths);
+		/// 将 include 文件加入缓存（路径相对于 shader 根目录，可有可无前导 /）
+		static void IncludeShader(const string& include_path);
+		static std::vector<std::string> FindIncludeFiles(const string& code_content);
+		/// C++ 端预处理：展开 #include 并插入 #line，移除对 GL_ARB_shading_language_include 的依赖
+		static std::string PreProcessShader(const std::string& source, const std::string& current_file, int start_line, std::set<std::string>& visiting);
+
+	private:
+		/// include 路径 -> 预处理后的内容缓存
+		static std::map<std::string, std::string> s_include_cache;
+		static void LoadIncludeToCache(const std::string& normalized_path, std::set<std::string>& visiting);
+		static std::string NormalizeIncludePath(const std::string& path);
+		static std::string ResolveIncludePath(const std::string& normalized_path);
+		static int CountNewlines(std::string::const_iterator beg, std::string::const_iterator fin);
+		static bool IsIncludeLineCommented(const std::string& code, std::string::const_iterator includeStart);
 #if USE_DSA
+	public:
     	void SetBool(const std::string &name, bool value)
 	    {
     		GLint location = GetVariableLocation(name);

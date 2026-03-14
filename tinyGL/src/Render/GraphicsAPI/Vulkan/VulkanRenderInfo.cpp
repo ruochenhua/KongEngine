@@ -1,4 +1,4 @@
-#include "VulkanRenderInfo.hpp"
+﻿#include "VulkanRenderInfo.hpp"
 
 #include "VulkanDescriptor.hpp"
 #include "VulkanSwapChain.hpp"

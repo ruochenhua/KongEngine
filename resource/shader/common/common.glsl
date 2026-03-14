@@ -1,4 +1,4 @@
-#ifndef _COMMON_GLSL_
+﻿#ifndef _COMMON_GLSL_
 #define _COMMON_GLSL_
 
 #define POINT_LIGHT_MAX 512

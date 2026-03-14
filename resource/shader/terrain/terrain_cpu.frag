@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 in float out_height;
 out vec4 FragColor;
 

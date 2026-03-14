@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifdef RENDER_IN_VULKAN
 #include <vector>
 #include <vulkan/vulkan_core.h>

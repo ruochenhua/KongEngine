@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 layout (location = 0) in vec3 aPos;
 
 out vec3 WorldPos;

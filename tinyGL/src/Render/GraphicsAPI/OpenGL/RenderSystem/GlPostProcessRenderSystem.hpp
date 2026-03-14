@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "OpenGLRenderSystem.hpp"
 #include "Shader/OpenGL/PostprocessShader.h"
 #include "Shader/OpenGL/OpenGLShader.h"

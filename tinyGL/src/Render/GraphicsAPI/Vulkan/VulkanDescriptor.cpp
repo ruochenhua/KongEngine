@@ -1,4 +1,4 @@
-#include "VulkanDescriptor.hpp"
+﻿#include "VulkanDescriptor.hpp"
 
 #include "VulkanSwapChain.hpp"
 #ifdef RENDER_IN_VULKAN

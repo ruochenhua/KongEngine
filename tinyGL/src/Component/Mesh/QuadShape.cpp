@@ -1,8 +1,8 @@
-#include "QuadShape.h"
+﻿#include "QuadShape.h"
 
 #include "Render/RenderModule.hpp"
-#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #ifdef RENDER_IN_VULKAN
+#include "Render/GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 #endif
 using namespace Kong;

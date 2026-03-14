@@ -1,4 +1,4 @@
-//tiny openGL project
+﻿//tiny openGL project
 #include "App.hpp"
 
 using namespace Kong;

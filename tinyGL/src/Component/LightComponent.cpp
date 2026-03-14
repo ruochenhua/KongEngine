@@ -1,4 +1,4 @@
-#include "LightComponent.h"
+﻿#include "LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"

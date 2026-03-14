@@ -1,4 +1,4 @@
-#include "YamlParser.h"
+﻿#include "YamlParser.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -14,7 +14,9 @@
 #include "Component/Mesh/Terrain.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtc/random.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#endif
 
 using namespace Kong;
 

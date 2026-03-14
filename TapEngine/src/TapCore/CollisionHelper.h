@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "BoxShape.h"
 #include "Transform.h"
 
@@ -17,14 +17,14 @@ namespace Tap
 		bool IsCollide(SCollisionManifold& manifold);
 
 	private:
-		CTransform m_t0, m_t1;	//transformÐÅÏ¢
-		CBoxShape *m_s0, *m_s1;	//shapeÐÅÏ¢
+		CTransform m_t0, m_t1;	//transformï¿½ï¿½Ï¢
+		CBoxShape *m_s0, *m_s1;	//shapeï¿½ï¿½Ï¢
 
 	private:
-		//¼ì²éÁ½¸öboxÍ¶Ó°µ½Ä³¸öÖáÉÏµÄoverlapÇé¿ö,¸ºÖµÔò´ú±íÊÇ·Ö¿ªµÄ
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½boxÍ¶Ó°ï¿½ï¿½Ä³ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½overlapï¿½ï¿½ï¿½,ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·Ö¿ï¿½ï¿½ï¿½
 		float PenetrationOnAxis(const glm::vec3& axis);
 
-		//Í¶Ó°boxµ½Ä³¸öÖáÉÏ,·µ»Ø°ë³¤µÄ³¤¶È
+		//Í¶Ó°boxï¿½ï¿½Ä³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½Ø°ë³¤ï¿½Ä³ï¿½ï¿½ï¿½
 		float ProjectToAxis(const glm::vec3& axis, CBoxShape* shape, const CTransform& trans);
 	};
 };

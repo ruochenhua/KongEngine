@@ -1,4 +1,4 @@
-#include "../Vulkan/VulkanPipeline.hpp"
+﻿#include "../Vulkan/VulkanPipeline.hpp"
 
 #include <iostream>
 
@@ -8,37 +8,30 @@
 
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
-std::vector<VkVertexInputBindingDescription> Vertex::GetBindingDescription()
+#include "Render/RenderCommon.hpp"
+#include <vulkan/vulkan_core.h>
+
+namespace
+{
+std::vector<VkVertexInputBindingDescription> GetVertexBindingDescription()
 {
     std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
     bindingDescriptions[0].binding = 0;
     bindingDescriptions[0].stride = sizeof(Vertex);
     bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
     return bindingDescriptions;
 }
 
-std::vector<VkVertexInputAttributeDescription> Vertex::GetAttributeDescription()
+std::vector<VkVertexInputAttributeDescription> GetVertexAttributeDescription()
 {
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-    // // position
-    // attributeDescriptions[0].binding = 0;
-    // attributeDescriptions[0].location = 0;                      // location = 0
-    // attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;  // vec3
-    // attributeDescriptions[0].offset = offsetof(Vertex, position);
-    // // color
-    // attributeDescriptions[1].binding = 0;
-    // attributeDescriptions[1].location = 1;
-    // attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    // attributeDescriptions[1].offset = offsetof(Vertex, color);
-
     attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)});
     attributeDescriptions.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
     attributeDescriptions.push_back({2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)});
     attributeDescriptions.push_back({3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent)});
     attributeDescriptions.push_back({4, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, bitangent)});
-
     return attributeDescriptions;
+}
 }
 
 VulkanPipeline::VulkanPipeline(std::map<EShaderType, std::string>& shaderPaths,
@@ -205,8 +198,8 @@ void VulkanPipeline::CreateGraphicsPipeline(std::map<EShaderType, std::string>& 
     shaderStages[1].pSpecializationInfo = nullptr;
 
     // bindingDesc和attributeDesc后面要放到模型那边去
-    auto bindingDesc = Vertex::GetBindingDescription();
-    auto attributeDesc = Vertex::GetAttributeDescription();
+    auto bindingDesc = GetVertexBindingDescription();
+    auto attributeDesc = GetVertexAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

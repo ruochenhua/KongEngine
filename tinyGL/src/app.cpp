@@ -1,6 +1,8 @@
-#include "App.hpp"
+﻿#include "App.hpp"
 #include "Scene.hpp"
 #include "Window.hpp"
+#include "Render/Abstraction/IFrameContext.hpp"
+#include "Render/Abstraction/IGraphicsDevice.hpp"
 
 using namespace Kong;
 
@@ -49,19 +51,22 @@ void KongApp::Run()
         {
             m_UIManager.PreRenderUpdate(delta);
             m_SceneManager.PreRenderUpdate(delta);
-            
-#ifdef RENDER_IN_VULKAN
-            m_RenderModule.BeginFrame();
-#endif
 
-            m_RenderModule.Update(delta);
-      
-            m_UIManager.PostRenderUpdate();
-#ifdef RENDER_IN_VULKAN      
-            m_RenderModule.EndFrame();
-#else
-            glfwSwapBuffers(m_Window.GetWindow());
-#endif
+            auto* device = m_Window.GetGraphicsDevice();
+            if (device)
+            {
+                Kong::IFrameContext& frameCtx = device->BeginFrame();
+                m_RenderModule.Update(delta, &frameCtx);
+                // ImGui 必须画在 swap 之前，否则会画到下一帧的 back buffer 上，下一帧被场景覆盖就看不见
+                m_UIManager.PostRenderUpdate();
+                device->EndFrame();
+            }
+            else
+            {
+                m_RenderModule.Update(delta);
+                m_UIManager.PostRenderUpdate();
+            }
+
             current_time = new_time;
         }
     }

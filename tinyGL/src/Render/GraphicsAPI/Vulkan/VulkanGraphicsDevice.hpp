@@ -1,8 +1,16 @@
-#pragma once
+﻿#pragma once
 #ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
+#include <memory>
+#include <vector>
 
 #include "../GraphicsDevice.hpp"
+#include "Render/Abstraction/Types.hpp"
+#include "Render/Abstraction/IBuffer.hpp"
+#include "Render/Abstraction/ITexture.hpp"
+#include "Render/Abstraction/IFrameContext.hpp"
+#include "VkFrameContext.hpp"
+#include "VulkanSwapChain.hpp"
 
 struct ImGui_ImplVulkan_InitInfo;
 
@@ -34,10 +42,20 @@ namespace Kong
         VkPhysicalDevice GetPhysicsDevice() const {return m_physicalDevice;}
         VulkanGraphicsDevice();
         ~VulkanGraphicsDevice() override;
-        
-        GLFWwindow* Init(int width, int height) override;
-        
+
+        void* Init(int width, int height) override;
+        std::unique_ptr<IBuffer> CreateBuffer(const BufferDesc& desc) override;
+        std::unique_ptr<ITexture> CreateTexture(const TextureDesc& desc) override;
+        BackendType GetBackendType() const override { return BackendType::Vulkan; }
+        IFrameContext& BeginFrame() override;
+        void EndFrame() override;
+
         VkDevice GetDevice() const { return m_device; }
+        VulkanSwapChain* GetSwapChain() { return m_swapChain.get(); }
+        VkCommandBuffer GetCurrentCommandBuffer() const;
+        int GetFrameIndex() const;
+        bool IsFrameInProgress() const { return m_isFrameStarted; }
+        void SetExtent(uint32_t width, uint32_t height) { m_extent.width = width; m_extent.height = height; }
         VkQueue GetGraphicsQueue() const { return m_graphicsQueue; }
         VkQueue GetPresentQueue() const { return m_presentQueue; }
         VkCommandPool GetCommandPool() const {return m_commandPool;}
@@ -67,9 +85,20 @@ namespace Kong
         VkCommandBuffer BeginSingleTimeCommands();
         // 结束单次使用的命令缓冲区
         void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-        
+
+        void CreateCommandBuffers();
+        void FreeCommandBuffers();
+        void RecreateSwapChain();
+
     private:
         friend class KongUIManager;
+        VkExtent2D m_extent {0, 0};
+        std::unique_ptr<VulkanSwapChain> m_swapChain;
+        std::vector<VkCommandBuffer> m_commandBuffers;
+        int m_currentFrameIndex {0};
+        uint32_t m_currentImageIndex {0};
+        bool m_isFrameStarted {false};
+        VkFrameContext m_frameContext;
         VkInstance m_instance {VK_NULL_HANDLE};
         VkDebugUtilsMessengerEXT m_debugMessenger {VK_NULL_HANDLE};
         VkSurfaceKHR m_surface {VK_NULL_HANDLE};

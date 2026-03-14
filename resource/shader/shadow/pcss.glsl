@@ -1,4 +1,4 @@
-#ifndef _PCSS_GLSL_
+﻿#ifndef _PCSS_GLSL_
 #define _PCSS_GLSL_
 
 // PCSS算法的一些辅助函数

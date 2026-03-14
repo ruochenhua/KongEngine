@@ -1,4 +1,4 @@
-#ifndef _NOISE_GEN_GLSL_
+﻿#ifndef _NOISE_GEN_GLSL_
 #define _NOISE_GEN_GLSL_
 vec2 seed = vec2(1,1);
 

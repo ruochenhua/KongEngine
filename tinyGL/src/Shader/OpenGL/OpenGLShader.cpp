@@ -1,7 +1,12 @@
-#include "OpenGLShader.h"
+﻿#include "OpenGLShader.h"
 
+#include <cassert>
+#include <cctype>
 #include <regex>
 #include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "BlendShader.h"
 #include "DeferInfoShader.h"
@@ -17,6 +22,33 @@ using namespace glm;
 ShaderManager* g_shader_manager = new ShaderManager;
 set<string> shader_include_set;
 
+std::map<std::string, std::string> OpenGLShader::s_include_cache;
+
+std::string OpenGLShader::NormalizeIncludePath(const std::string& path) {
+	std::string p = path;
+	while (!p.empty() && (p.front() == ' ' || p.front() == '\t')) p.erase(0, 1);
+	while (!p.empty() && (p.back() == ' ' || p.back() == '\t')) p.pop_back();
+	if (!p.empty() && p.front() == '/') p.erase(0, 1);
+	return p;
+}
+
+std::string OpenGLShader::ResolveIncludePath(const std::string& normalized_path) {
+	return CSceneLoader::ToResourcePath("shader/" + normalized_path);
+}
+
+int OpenGLShader::CountNewlines(std::string::const_iterator beg, std::string::const_iterator fin) {
+	int n = 0;
+	for (; beg != fin; ++beg) if (*beg == '\n') ++n;
+	return n;
+}
+
+bool OpenGLShader::IsIncludeLineCommented(const std::string& code, std::string::const_iterator includeStart) {
+	std::string::const_iterator p = includeStart;
+	while (p != code.cbegin() && *(p - 1) != '\n') --p;
+	while (p != includeStart && (*p == ' ' || *p == '\t')) ++p;
+	return (includeStart - p >= 2 && *p == '/' && *(p + 1) == '/');
+}
+
 OpenGLShader::OpenGLShader(const map<EShaderType, string>& shader_paths)
 {
 	shader_path_map = shader_paths;
@@ -28,28 +60,29 @@ GLuint OpenGLShader::LoadShaders(const map<EShaderType, string>& shader_paths)
     vector<GLuint> shader_id_list;
     for(auto& shader_path_pair : shader_paths)
     {
-    	auto shader_type = shader_path_pair.first;
+    	EShaderType shader_type = shader_path_pair.first;
     	auto shader_path = shader_path_pair.second;
 
-    	// EShaderType对照GL_XXXX_SHADER
-    	GLuint shader_id = glCreateShader(shader_type);
+    	// EShaderType 映射到 GL_*_SHADER（引擎枚举 0,1,2... 不能直接传给 glCreateShader）
+    	static const GLenum kShaderTypeToGL[] = {
+    		GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, GL_GEOMETRY_SHADER,
+    		GL_COMPUTE_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER
+    	};
+    	unsigned st = static_cast<unsigned>(shader_type);
+    	GLenum glType = (st < sizeof(kShaderTypeToGL) / sizeof(kShaderTypeToGL[0]))
+    		? kShaderTypeToGL[st] : GL_VERTEX_SHADER;
+    	GLuint shader_id = glCreateShader(glType);
 
-    	// Read the Shader code from the file
     	std::string shader_code = Utils::ReadFile(shader_path);
+    	std::set<std::string> visiting;
+    	std::string processed = PreProcessShader(shader_code, shader_path, 1, visiting);
 
     	GLint result = GL_FALSE;
     	int info_log_length;
 
-    	// Compile Shader
     	printf("Compiling shader : %s\n", shader_path.c_str());
-    	char const * shader_string_ptr = shader_code.c_str();
+    	char const* shader_string_ptr = processed.c_str();
     	glShaderSource(shader_id, 1, &shader_string_ptr, NULL);
-    	vector<string> include_headers = FindIncludeFiles(shader_code);
-    	for(const auto& header : include_headers)
-    	{
-    		IncludeShader(header);
-    	}    	
-    	
     	glCompileShader(shader_id);
 
     	// Check Shader
@@ -59,7 +92,7 @@ GLuint OpenGLShader::LoadShaders(const map<EShaderType, string>& shader_paths)
     		std::vector<char> error_msg(info_log_length + 1);
     		glGetShaderInfoLog(shader_id, info_log_length, NULL, &error_msg[0]);
     		printf("%s\n", &error_msg[0]);
-    		assert(0, "Shader load failed");
+    		assert(0 && "Shader load failed");
     	}
 		shader_id_list.push_back(shader_id);
     }
@@ -82,7 +115,7 @@ GLuint OpenGLShader::LoadShaders(const map<EShaderType, string>& shader_paths)
 		std::vector<char> prog_error_msg(info_log_length + 1);
 		glGetProgramInfoLog(prog_id, info_log_length, NULL, &prog_error_msg[0]);
 		printf("%s\n", &prog_error_msg[0]);
-		assert(0);
+		assert(0 && "Program link failed");
 	}
 
     for(auto shader_id : shader_id_list)
@@ -96,39 +129,119 @@ GLuint OpenGLShader::LoadShaders(const map<EShaderType, string>& shader_paths)
 
 void OpenGLShader::IncludeShader(const string& include_path)
 {
-	// already include
-	if(shader_include_set.find(include_path) != shader_include_set.end())
-	{
+	std::string key = NormalizeIncludePath(include_path);
+	if (s_include_cache.find(key) != s_include_cache.end())
 		return;
+	std::set<std::string> visiting;
+	std::string full_path = ResolveIncludePath(key);
+	std::string content;
+	try {
+		content = Utils::ReadFile(full_path);
+	} catch (const std::exception& e) {
+		fprintf(stderr, "[Shader] Include not found: %s (resolved: %s)\n", key.c_str(), full_path.c_str());
+		throw;
 	}
-	
-	// include 文件名需要以“/”开头，要不然会报错，为什么？？
-	string full_path = CSceneLoader::ToResourcePath("/shader"+include_path);
-	string include_content_str = Utils::ReadFile(full_path);
-	
-	glNamedStringARB(GL_SHADER_INCLUDE_ARB,
-	include_path.size(),
-	include_path.c_str(),
-	include_content_str.size(),
-	include_content_str.c_str());
+	visiting.insert(key);
+	s_include_cache[key] = PreProcessShader(content, key, 1, visiting);
+}
+
+void OpenGLShader::LoadIncludeToCache(const std::string& normalized_path, std::set<std::string>& visiting)
+{
+	if (s_include_cache.count(normalized_path))
+		return;
+	if (visiting.count(normalized_path)) {
+		fprintf(stderr, "[Shader] Cycle detected in #include: %s\n", normalized_path.c_str());
+		throw std::runtime_error("Shader include cycle detected: " + normalized_path);
+	}
+	visiting.insert(normalized_path);
+	std::string full_path = ResolveIncludePath(normalized_path);
+	std::string content;
+	try {
+		content = Utils::ReadFile(full_path);
+	} catch (const std::exception& e) {
+		fprintf(stderr, "[Shader] Include file not found: %s (resolved: %s)\n", normalized_path.c_str(), full_path.c_str());
+		visiting.erase(normalized_path);
+		throw;
+	}
+	std::string processed = PreProcessShader(content, normalized_path, 1, visiting);
+	s_include_cache[normalized_path] = processed;
+	visiting.erase(normalized_path);
+}
+
+// #include "path" 或 #include <path>（用自定义分隔符避免 )" 提前结束 raw 字符串）
+static const std::regex s_include_regex(R"re(#\s*include\s*(?:"([^"]*)"|<([^>]*)>))re");
+// 整行 #extension GL_ARB_shading_language_include : require
+static const std::regex s_extension_include_regex(
+	R"re([ \t]*#\s*extension\s+GL_ARB_shading_language_include\s*:\s*require[ \t]*(?:\n|$))re",
+	std::regex::icase);
+
+std::string OpenGLShader::PreProcessShader(const std::string& source, const std::string& current_file, int start_line, std::set<std::string>& visiting)
+{
+	std::string result = source;
+	const size_t kMaxIncludeExpansions = 512u;
+	size_t expansion_count = 0;
+	// 1) 展开 #include（仅处理行首的 #include，避免匹配到字符串/注释中的字面量导致死循环）
+	while (expansion_count < kMaxIncludeExpansions) {
+		std::smatch m;
+		if (!std::regex_search(result, m, s_include_regex))
+			break;
+		size_t pos = m.position(0);
+		size_t line_start = result.rfind('\n', pos);
+		line_start = (line_start == std::string::npos) ? 0 : line_start + 1;
+		// 只展开“行首（仅空白）+ #include”，否则可能是字符串里的 "#include \"...\"" 会反复匹配导致死循环
+		size_t p = line_start;
+		while (p < pos && p < result.size() && (result[p] == ' ' || result[p] == '\t')) ++p;
+		if (p != pos) {
+			// 行首到 #include 之间非空白，当作非指令跳过（避免死循环）
+			result.replace(pos, 1u, " "); // 破坏该处 "#" 避免再次匹配
+			continue;
+		}
+		// 跳过行首空白后检查是否被 // 注释
+		p = line_start;
+		while (p < result.size() && (result[p] == ' ' || result[p] == '\t')) ++p;
+		bool commented = (p + 2 <= result.size() && result[p] == '/' && result[p + 1] == '/');
+		std::string path = m.str(1).empty() ? m.str(2) : m.str(1);
+		if (commented) {
+			size_t line_end = result.find('\n', line_start);
+			line_end = (line_end == std::string::npos) ? result.size() : line_end + 1;
+			result.erase(line_start, line_end - line_start);
+			continue;
+		}
+		std::string normalized = NormalizeIncludePath(path);
+		LoadIncludeToCache(normalized, visiting);
+		const std::string& included = s_include_cache[normalized];
+		int line_no = start_line + static_cast<int>(std::count(result.cbegin(), result.cbegin() + pos, '\n'));
+		std::string replacement = "\n#line 1 0\n" + included + "\n#line " + std::to_string(line_no + 1) + " 0\n";
+		size_t line_end = result.find('\n', pos);
+		line_end = (line_end == std::string::npos) ? result.size() : line_end + 1;
+		result.replace(line_start, line_end - line_start, replacement);
+		++expansion_count;
+	}
+	// 2) 去掉 #extension GL_ARB_shading_language_include : require 整行
+	result = std::regex_replace(result, s_extension_include_regex, "");
+	return result;
 }
 
 std::vector<std::string> OpenGLShader::FindIncludeFiles(const string& code_content)
 {
-	std::regex includeRegex("#include \"(.+)\"");  // Regex for #include statements
-	std::vector<std::string> includes;  // Vector to store extracted includes
-
-	// Iterate through lines in the code
+	std::vector<std::string> includes;
 	std::istringstream iss(code_content);
 	std::string line;
 	while (std::getline(iss, line)) {
-		std::smatch match;
-		// For each line, try to match the #include regex
-		if (std::regex_search(line, match, includeRegex)) {
-			includes.push_back(match[1]);  // Add matched content to includes
-		}
+		size_t j = 0;
+		while (j < line.size() && (line[j] == ' ' || line[j] == '\t')) ++j;
+		if (j + 9 >= line.size()) continue;
+		if (line.compare(j, 9, "#include ") != 0) continue;
+		j += 9;
+		while (j < line.size() && (line[j] == ' ' || line[j] == '\t')) ++j;
+		if (j >= line.size() || (line[j] != '"' && line[j] != '<')) continue;
+		char close_ch = (line[j] == '"') ? '"' : '>';
+		++j;
+		size_t path_start = j;
+		size_t path_end = line.find(close_ch, j);
+		if (path_end == std::string::npos) continue;
+		includes.push_back(line.substr(path_start, path_end - path_start));
 	}
-
 	return includes;
 }
 
@@ -136,14 +249,13 @@ std::vector<std::string> OpenGLShader::FindIncludeFiles(const string& code_conte
 void OpenGLShader::Init(const map<EShaderType, string>& shader_path_cache)
 {
     shader_id = OpenGLShader::LoadShaders(shader_path_cache);
-	
-	assert(shader_id, "Shader load failed!");
+	assert(shader_id && "Shader load failed");
 }
 
 void OpenGLShader::Use() const
 {
-    assert(shader_id, "Shader not loaded yet!");
-    glUseProgram(shader_id);
+	assert(shader_id && "Shader not loaded yet");
+	glUseProgram(shader_id);
 }
 
 void OpenGLShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
@@ -226,9 +338,7 @@ shared_ptr<OpenGLShader> ShaderManager::GetShaderFromTypeName(const string& shad
 	}
 	else
 	{
-		assert(0, "shader type not supported");
+		assert(0 && "shader type not supported");
 	}
-
-	
 	return nullptr;
 }

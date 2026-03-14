@@ -1,11 +1,13 @@
-#include "Actor.hpp"
+﻿#include "Actor.hpp"
 
 #include "Component/Mesh/MeshComponent.h"
 #include "Component/LightComponent.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/euler_angles.hpp"
 
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#endif
 using namespace Kong;
 using namespace glm;
 

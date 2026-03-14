@@ -1,10 +1,12 @@
-#pragma once
+﻿#pragma once
 #include "Common.h"
 #include "Component/Component.h"
 #include "Parser/ResourceManager.h"
 #include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 #include "Render/GraphicsAPI/Vulkan/RenderSystem/VulkanRenderSystem.hpp"
+#endif
 #include "Shader/OpenGL/OpenGLShader.h"
 
 struct aiMesh;

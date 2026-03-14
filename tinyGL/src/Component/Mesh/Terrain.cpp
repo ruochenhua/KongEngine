@@ -1,5 +1,6 @@
 ﻿#include "Terrain.h"
 
+#include <algorithm>
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
 #include "stb_image.h"
@@ -243,34 +244,35 @@ int Terrain::LoadHeightMap(const string& file_name)
 #if USE_TCS
     terrain_height_map = ResourceManager::GetOrLoadTexture_new(diffuse, file_name);   
 #else
-    
-    terrain_res = 1;
-    for(unsigned int i = 0; i < height; i++)
-    {
-        for(unsigned int j = 0; j < width; j++)
-        {
+    // 限制网格分辨率，避免 4096x4096 等大 heightmap 产生数百万顶点导致极卡（原 terrain_res=1 会逐像素建网格）
+    const unsigned int max_res = 256u;
+    unsigned int step = std::max(1u, std::min(height, width) / max_res);
+    terrain_res = static_cast<int>(step);
+    const unsigned int rows = (height - 1) / step + 1;
+    const unsigned int cols = (width - 1) / step + 1;
+    height_data.reserve(rows * cols * 3);
+    for (unsigned int si = 0; si < rows; ++si) {
+        unsigned int i = si * step;
+        if (i >= height) i = height - 1;
+        for (unsigned int sj = 0; sj < cols; ++sj) {
+            unsigned int j = sj * step;
+            if (j >= width) j = width - 1;
             unsigned char* texel = data + (j + width * i) * nrChannels;
             unsigned char y = texel[0];
-
             height_data.push_back(-height/2.0f + i);
             height_data.push_back((int)y*16 - 16);
             height_data.push_back(-width/2.0f + j);
         }
     }
-    
-    for(unsigned int i = 0; i < height-1; i+=terrain_res)
-    {
-        for(unsigned int j = 0; j < width; j+=terrain_res)
-        {
-            for(unsigned int k = 0; k < 2; k++)
-            {
-                height_indices.push_back(j + width * (i+k));
-            }
+    height_indices.clear();
+    for (unsigned int si = 0; si + 1 < rows; ++si) {
+        for (unsigned int sj = 0; sj < cols; ++sj) {
+            height_indices.push_back(si * cols + sj);
+            height_indices.push_back((si + 1) * cols + sj);
         }
     }
-
-    num_strips = (height - 1)/terrain_res;
-    num_verts_per_strip = (width/terrain_res) * 2 - 2;
+    num_strips = rows - 1;
+    num_verts_per_strip = cols * 2 - 2;
 #endif
     
     return 1;

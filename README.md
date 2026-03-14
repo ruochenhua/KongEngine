@@ -1,4 +1,4 @@
-# 关于KongEngine
+﻿# 关于KongEngine
 
 这个工程是我用于学习和实践引擎技术的项目。**维护与代码导航**见 [docs/INDEX.md](docs/INDEX.md)（项目索引）。原名是tinyGL，是一个功能较为基础的渲染引擎，现在计划是将他的能力扩展，接入更加先进多样的功能。
 ![terrain cloud](docs/Hello/kong_terrain_cloud.png)

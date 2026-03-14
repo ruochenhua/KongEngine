@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "VkModelRenderSystem.hpp"
 #ifdef RENDER_IN_VULKAN

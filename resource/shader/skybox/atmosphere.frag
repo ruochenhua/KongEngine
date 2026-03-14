@@ -1,5 +1,4 @@
-#version 450 compatibility
-#extension GL_ARB_shading_language_include : require
+﻿#version 450 compatibility
 #include "/common/common.glsl"
 
 layout(location = 0) out vec4 FragColor;

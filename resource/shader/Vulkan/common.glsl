@@ -1,4 +1,4 @@
-struct DirectionalLight
+﻿struct DirectionalLight
 {
     vec4 light_dir;
     vec4 light_color;

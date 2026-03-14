@@ -1,6 +1,8 @@
-#include "OpenGLGraphicsDevice.hpp"
-
+﻿#include "OpenGLGraphicsDevice.hpp"
+#include "GLFW/glfw3.h"
 #include <stdexcept>
+
+struct GLFWwindow;
 
 using namespace Kong;
 
@@ -20,7 +22,7 @@ OpenGLGraphicsDevice::~OpenGLGraphicsDevice()
 {
 }
 
-GLFWwindow* OpenGLGraphicsDevice::Init(int width, int height)
+void* OpenGLGraphicsDevice::Init(int width, int height)
 {
     if (!glfwInit())
     {
@@ -49,5 +51,27 @@ GLFWwindow* OpenGLGraphicsDevice::Init(int width, int height)
         throw std::runtime_error("Failed to initialize GLAD");
     }
 
-    return window;
+    m_window = window;
+    return static_cast<void*>(window);
+}
+
+IFrameContext& OpenGLGraphicsDevice::BeginFrame()
+{
+    return m_frameContext;
+}
+
+void OpenGLGraphicsDevice::EndFrame()
+{
+    if (m_window)
+        glfwSwapBuffers(m_window);
+}
+
+std::unique_ptr<IBuffer> OpenGLGraphicsDevice::CreateBuffer(const BufferDesc& desc)
+{
+    return std::make_unique<GLBuffer>(desc);
+}
+
+std::unique_ptr<ITexture> OpenGLGraphicsDevice::CreateTexture(const TextureDesc& desc)
+{
+    return std::make_unique<GLTexture>(desc);
 }

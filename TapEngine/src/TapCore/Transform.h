@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
@@ -23,6 +23,6 @@ namespace Tap
     private:
         glm::vec3 m_Pos;    //position
         glm::quat m_Rot;    //rotation
-        glm::vec3 m_Scale;  //scale, Ò²Ðí²»Ó¦¸ÃÓÐscale£¿
+        glm::vec3 m_Scale;  //scale, Ò²ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½scaleï¿½ï¿½
     };
 };

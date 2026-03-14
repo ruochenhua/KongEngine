@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 namespace Tap
 {
 	enum SHAPE_TYPE
@@ -10,11 +10,11 @@ namespace Tap
 		//...
 	};
 
-	// ÐÎ×´ÃèÊö½á¹¹,ÓÃÓÚÉú³É
+	// ï¿½ï¿½×´ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	struct SShapeDesc
 	{
 		SShapeDesc(SHAPE_TYPE type);
-		virtual void Init();	//±£³Ö¶àÌ¬ÀàÐÍ,µ«ÊÇÊµ¼ÊÉÏ»¹Ã»ÓÐÓÃµ½µÄµØ·½
+		virtual void Init();	//ï¿½ï¿½ï¿½Ö¶ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½Ï»ï¿½Ã»ï¿½ï¿½ï¿½Ãµï¿½ï¿½ÄµØ·ï¿½
 		SHAPE_TYPE shape_type;
 	};
 

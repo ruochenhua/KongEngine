@@ -1,4 +1,4 @@
-#include "OpenGLBuffer.hpp"
+﻿#include "OpenGLBuffer.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -63,7 +63,7 @@ void OpenGLRenderInfo::Draw(void* commandBuffer)
     // if no index, use draw array
     if(!index_buffer->IsValid())
     {
-        if(instance_buffer != GL_NONE)
+        if(instance_buffer != 0)
         {
             // Starting from vertex 0; 3 vertices total -> 1 triangle
             glDrawArraysInstanced(GL_TRIANGLES, 0,vertices.size(),instance_count);
@@ -76,7 +76,7 @@ void OpenGLRenderInfo::Draw(void* commandBuffer)
     }
     else
     {
-        if(instance_buffer != GL_NONE)
+        if(instance_buffer != 0)
         {
             glDrawElementsInstanced(GL_TRIANGLES, m_Index.size(), GL_UNSIGNED_INT, 0, instance_count);
         }

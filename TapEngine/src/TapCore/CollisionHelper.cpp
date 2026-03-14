@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CollisionHelper.h"
 #include "CollisionSolver.h"
 
@@ -16,7 +16,7 @@ namespace Tap
 		glm::quat q0 = m_t0.GetRotation();
 		glm::quat q1 = m_t1.GetRotation();
 
-		//»ù´¡µÄÁù¸öÖá,Ã¿¸öboxÈý¸ö
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ã¿ï¿½ï¿½boxï¿½ï¿½ï¿½ï¿½
 		glm::vec3 axis_0_x = q0 * glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 axis_0_y = q0 * glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::vec3 axis_0_z = q0 * glm::vec3(0.0f, 0.0f, 1.0f);
@@ -28,8 +28,8 @@ namespace Tap
 		glm::vec3 axis_array[] = {
 			axis_0_x,axis_0_y,axis_0_z,
 			axis_1_x,axis_1_y,axis_1_z,
-			//ÐèÒª¼ì²éedge case£¬ÊÇÁ½¸öboxµÄ·¨ÏßÖáÖ®¼äÏà»¥µÄ²î³Ë£¬¹²¾Å¸öÖá
-			//Ä¿Ç°ÎªÁË¼ò»¯,ÆäÊµÓ¦¸ÃÐèÒªµÄÊ±ºòÔÙ¼ÆËãµÄ
+			//ï¿½ï¿½Òªï¿½ï¿½ï¿½edge caseï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½boxï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½à»¥ï¿½Ä²ï¿½Ë£ï¿½ï¿½ï¿½ï¿½Å¸ï¿½ï¿½ï¿½
+			//Ä¿Ç°Îªï¿½Ë¼ï¿½,ï¿½ï¿½ÊµÓ¦ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ù¼ï¿½ï¿½ï¿½ï¿½
 			glm::cross(axis_0_x, axis_1_x),
 			glm::cross(axis_0_x, axis_1_y),
 			glm::cross(axis_0_x, axis_1_z),
@@ -49,7 +49,7 @@ namespace Tap
 		{
 			glm::vec3 a = axis_array[i];
 
-			//¼ì²éaxisÊÇ²»ÊÇÓÃÁ½Ìõ¼¸ºõÆ½ÐÐµÄÖáÉú³ÉµÄ,ÆäÊµÓ¦¸ÃÓÃlengthsquareµÄ,Ã»ÕÒµ½?
+			//ï¿½ï¿½ï¿½axisï¿½Ç²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½,ï¿½ï¿½ÊµÓ¦ï¿½ï¿½ï¿½ï¿½lengthsquareï¿½ï¿½,Ã»ï¿½Òµï¿½?
 			if(glm::length(a) < 0.001) 
 				continue;
 
@@ -72,15 +72,15 @@ namespace Tap
 
 		manifold._hit_depth = min_lap;
 
-		//Ñ°ÕÒÅö×²µã
-		//boxµÄÖáÎª×îÓÅ½â,Ò»°ãÒ²¾ÍÊÇpoint to face
+		//Ñ°ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½
+		//boxï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Å½ï¿½,Ò»ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½point to face
 		if (min_idx < 6)
 		{
 			//t1 -> t0
 			glm::vec3 select_axis = axis_array[min_idx];			
 
 			// box 0 axes
-			// ÕÒµ½box 1µÄ×î½ü¶¥µã
+			// ï¿½Òµï¿½box 1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			if (min_idx < 3)
 			{			
 				glm::vec3 half_extent = m_t0.GetRotation() * m_s1->GetHalfExtent();
@@ -128,14 +128,14 @@ namespace Tap
 			glm::vec3 half_1 = m_t1.Transform(m_s1->GetHalfExtent());
 
 			int idx = min_idx - 6;
-			int idx_0 = idx / 3;	//°´ÕÕÅÅÁÐ,¿ÉÒÔÅÐ¶Ï×î¼ÑµÄÖáboxµÄÄÄÁ½¸öµÄÖáµÄ²æ³Ë
+			int idx_0 = idx / 3;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½boxï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½
 			int idx_1 = idx % 3;
 
 			glm::vec3 axis_vec[3] = { glm::vec3(1,0,0), glm::vec3(0,1,0),  glm::vec3(0,0,1) };
-			//¼ÆËã³öÁ½¸öÖáµÄ×î¶Ì¾àÀëµÄÏòÁ¿,×÷Îªpenetration depth
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½Îªpenetration depth
 			for (int i = 0; i < 3; ++i)
 			{
-				//ÕÒ³öÁ½¸öÖáµÄÖÐµã,ÅäºÏ·½ÏòÃèÊöÊµÏß
+				//ï¿½Ò³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½,ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½
 				if (i == idx_0)
 					half_0[i] = 0;
 				else if (glm::dot(half_0*axis_vec[i], manifold._hit_normal) > 0)
@@ -157,7 +157,7 @@ namespace Tap
 
 			//half_0 is point 0
 			//half_1 is point 1
-			//¿ÉÒÔ¼ÆËã³öÁ½ÌõÏß¶ÎµÄ×î½üµã
+			//ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¶Îµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			glm::vec3 r = half_0 - half_1;
 			float a = glm::dot(dir_0, dir_0);
 			float b = glm::dot(dir_0, dir_1);
@@ -167,7 +167,7 @@ namespace Tap
 			float d = a * e - b * b;
 
 			if (d == 0.0f)
-				return false;	//Á½ÌõÏßÆ½ÐÐ,²»´¦ÀíÕâÖÖÇé¿ö
+				return false;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 			float s = (b*f - c * e) / d;
 			float t = (a*f - b * c) / d;
@@ -185,11 +185,11 @@ namespace Tap
 
 	float CBoxCollisionHelper::PenetrationOnAxis(const glm::vec3& axis)
 	{
-		//Í¶Ó°Á½¸öbox
+		//Í¶Ó°ï¿½ï¿½ï¿½ï¿½box
 		float proj0 = ProjectToAxis(axis, m_s0, m_t0);
 		float proj1 = ProjectToAxis(axis, m_s1, m_t1);
 
-		//°ÑÁ½¸öboxµÄ¾àÀëÍ¶Ó°µ½ÖáÉÏ
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½boxï¿½Ä¾ï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		glm::vec3 dist = m_t0.GetPosition() - m_t1.GetPosition();
 		float dist_abs = glm::abs(glm::dot(dist, axis));
 
@@ -198,7 +198,7 @@ namespace Tap
 
 	float CBoxCollisionHelper::ProjectToAxis(const glm::vec3& axis, CBoxShape* shape, const CTransform& trans)
 	{
-		//ÆäÊµ¾ÍÊÇ¼ì²éboxµÄ°Ë¸öµãÔÚaxisÉÏµÄ×î´óºÍ×îÐ¡,·µ»ØÁ½¸öµÄ²îµÄÒ»°ë
+		//ï¿½ï¿½Êµï¿½ï¿½ï¿½Ç¼ï¿½ï¿½boxï¿½Ä°Ë¸ï¿½ï¿½ï¿½ï¿½ï¿½axisï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½Ò»ï¿½ï¿½
 		glm::vec3 half_extent_world = shape->GetHalfExtent();
 		
 		glm::vec3 box_vertices[8] = {

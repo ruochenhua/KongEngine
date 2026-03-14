@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 
 layout(location = 0) out vec4 world_pos;
 layout(location = 1) out vec4 world_normal;

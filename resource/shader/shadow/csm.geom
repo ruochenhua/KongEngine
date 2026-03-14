@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 layout(triangles, invocations = 6) in;
 layout(triangle_strip, max_vertices = 3) out;
 

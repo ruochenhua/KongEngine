@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "OpenGLShader.h"
 #include "Render/Resource/Texture.hpp"
 

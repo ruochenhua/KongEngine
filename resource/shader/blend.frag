@@ -1,4 +1,4 @@
-#version 450 compatibility
+﻿#version 450 compatibility
 in vec2 out_texcoord;
 out vec4 FragColor;
 

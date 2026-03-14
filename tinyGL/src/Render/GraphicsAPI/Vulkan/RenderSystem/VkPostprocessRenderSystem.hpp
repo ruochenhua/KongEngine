@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "VulkanRenderSystem.hpp"
 
 #ifdef RENDER_IN_VULKAN

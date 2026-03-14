@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Shape.h"
 #include "glm/glm.hpp"
 
@@ -6,7 +6,7 @@ namespace Tap
 {
 	struct SBoxShapeDesc : public SShapeDesc
 	{
-		//ºÐ×´µÄ³õÊ¼»¯²ÎÊý,Îª³¤¿í¸ßµÄ°ë³¤
+		//ï¿½ï¿½×´ï¿½Ä³ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Îªï¿½ï¿½ï¿½ï¿½ßµÄ°ë³¤
 		SBoxShapeDesc(const glm::vec3& half_extent);
 		SBoxShapeDesc(float h_x, float h_y, float h_z);
 

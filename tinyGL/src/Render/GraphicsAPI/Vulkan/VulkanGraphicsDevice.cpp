@@ -1,6 +1,10 @@
-#include "VulkanGraphicsDevice.hpp"
+﻿#include "VulkanGraphicsDevice.hpp"
 
 #ifdef RENDER_IN_VULKAN
+#include "VkBufferRHI.hpp"
+#include "VkFrameContext.hpp"
+#include "VulkanSwapChain.hpp"
+#include "Window.hpp"
 #include <iostream>
 #include <set>
 #include <unordered_set>
@@ -67,8 +71,10 @@ VulkanGraphicsDevice::~VulkanGraphicsDevice()
 {
     if (m_instance == VK_NULL_HANDLE)
         return;
-    
-    // 销毁vulkan内容
+
+    FreeCommandBuffers();
+    m_swapChain.reset();
+
     vkDestroyCommandPool(m_device, m_commandPool, nullptr);
     vkDestroyDevice(m_device, nullptr);
 
@@ -81,16 +87,14 @@ VulkanGraphicsDevice::~VulkanGraphicsDevice()
     vkDestroyInstance(m_instance, nullptr);
 }
  
-GLFWwindow* VulkanGraphicsDevice::Init(int width, int height)
+void* VulkanGraphicsDevice::Init(int width, int height)
 {
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW3");
     }
-    
-    // 取消window的自动关联，否则vulkan会报错
+
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    // vulkan的窗口resize需要特殊处理，所以要在这里先关掉
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     GLFWwindow* window = glfwCreateWindow(width, height, "Kong Sample(Vulkan)", nullptr, nullptr);
@@ -101,7 +105,116 @@ GLFWwindow* VulkanGraphicsDevice::Init(int width, int height)
     }
     glfwSetWindowUserPointer(window, this);
     InitVulkanDevice(window);
-    return window;
+
+    m_extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    CreateCommandBuffers();
+    RecreateSwapChain();
+
+    return static_cast<void*>(window);
+}
+
+IFrameContext& VulkanGraphicsDevice::BeginFrame()
+{
+    assert(!m_isFrameStarted && "cannot begin frame when frame already in progress");
+    auto result = m_swapChain->AcquireNextImage(&m_currentImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        RecreateSwapChain();
+        result = m_swapChain->AcquireNextImage(&m_currentImageIndex);
+    }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("failed to acquire swap chain image");
+    m_isFrameStarted = true;
+    VkCommandBuffer cb = m_commandBuffers[m_currentFrameIndex];
+    m_frameContext.SetCommandBuffer(cb);
+    m_frameContext.SetFrameIndex(m_currentFrameIndex);
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if (vkBeginCommandBuffer(cb, &beginInfo) != VK_SUCCESS)
+        throw std::runtime_error("failed to begin recording command buffer");
+    return m_frameContext;
+}
+
+void VulkanGraphicsDevice::EndFrame()
+{
+    assert(m_isFrameStarted && "cannot end frame when frame not in progress");
+    VkCommandBuffer cb = m_commandBuffers[m_currentFrameIndex];
+    if (vkEndCommandBuffer(cb) != VK_SUCCESS)
+        throw std::runtime_error("failed to end command buffer");
+    auto result = m_swapChain->SubmitCommandBuffers(&cb, &m_currentImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        RecreateSwapChain();
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to submit command buffer frame");
+    m_isFrameStarted = false;
+    m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+}
+
+VkCommandBuffer VulkanGraphicsDevice::GetCurrentCommandBuffer() const
+{
+    assert(m_isFrameStarted && "cannot get command buffer when frame not in progress");
+    return m_commandBuffers[m_currentFrameIndex];
+}
+
+int VulkanGraphicsDevice::GetFrameIndex() const
+{
+    assert(m_isFrameStarted && "cannot get frame index when frame not in progress");
+    return m_currentFrameIndex;
+}
+
+void VulkanGraphicsDevice::CreateCommandBuffers()
+{
+    m_commandBuffers.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
+    if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+        throw std::runtime_error("failed to allocate command buffers!");
+}
+
+void VulkanGraphicsDevice::FreeCommandBuffers()
+{
+    if (m_commandBuffers.empty()) return;
+    vkFreeCommandBuffers(m_device, m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    m_commandBuffers.clear();
+}
+
+void VulkanGraphicsDevice::RecreateSwapChain()
+{
+    while (m_extent.width == 0 || m_extent.height == 0)
+    {
+        m_extent.width = static_cast<uint32_t>(KongWindow::GetWindowModule().windowSize.x);
+        m_extent.height = static_cast<uint32_t>(KongWindow::GetWindowModule().windowSize.y);
+        if (m_extent.width == 0 || m_extent.height == 0)
+            glfwWaitEvents();
+    }
+    if (m_swapChain == nullptr)
+        m_swapChain = std::make_unique<VulkanSwapChain>(*this, m_extent);
+    else
+    {
+        std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapChain);
+        m_swapChain = std::make_unique<VulkanSwapChain>(*this, m_extent, oldSwapChain);
+        if (!oldSwapChain->CompareSwapChainFormats(*m_swapChain.get()))
+            throw std::runtime_error("failed to create swap chain!");
+    }
+}
+
+std::unique_ptr<IBuffer> VulkanGraphicsDevice::CreateBuffer(const BufferDesc& desc)
+{
+#ifdef RENDER_IN_VULKAN
+    return std::make_unique<VkBufferRHI>(desc);
+#else
+    (void)desc;
+    return nullptr;
+#endif
+}
+
+std::unique_ptr<ITexture> VulkanGraphicsDevice::CreateTexture(const TextureDesc& desc)
+{
+    (void)desc;
+    return nullptr;
 }
 
 void VulkanGraphicsDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,

@@ -1,9 +1,13 @@
-#include "RenderCommon.hpp"
+﻿#include "RenderCommon.hpp"
 
 #include <memory>
 
 #include "RenderModule.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#else
+#include "glad/glad.h"
+#endif
 
 using namespace Kong;
 
@@ -14,11 +18,13 @@ void RenderMaterialInfo::BindTextureByType(ETextureType textureType, unsigned in
     {
         texture->Bind(location);
     }
+#ifndef RENDER_IN_VULKAN
     else
     {
         auto nullTex = dynamic_cast<OpenGLTexture*>(KongRenderModule::GetNullTex());
         glBindTextureUnit(location, nullTex->GetTextureId());
     }
+#endif
 }
 
 KongTexture* RenderMaterialInfo::GetTextureByType(ETextureType textureType)

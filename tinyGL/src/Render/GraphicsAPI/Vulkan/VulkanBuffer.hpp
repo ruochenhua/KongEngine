@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "VulkanGraphicsDevice.hpp"
 #include "Render/RenderCommon.hpp"
 #include "Render/Resource/Buffer.hpp"

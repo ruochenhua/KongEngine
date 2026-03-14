@@ -1,4 +1,4 @@
-#include "RenderModule.hpp"
+﻿#include "RenderModule.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
@@ -6,8 +6,11 @@
 #include <imgui.h>
 #endif
 #include <array>
-#include <imgui_impl_vulkan.h>
 #include <random>
+
+#ifdef RENDER_IN_VULKAN
+#include <imgui_impl_vulkan.h>
+#endif
 
 #include "Actor.hpp"
 #include "Component/CameraComponent.h"
@@ -22,12 +25,14 @@
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "GraphicsAPI/Vulkan/VulkanBuffer.hpp"
 #include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkPostprocessRenderSystem.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkShadowMapRenderSystem.h"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
 #include "GraphicsAPI/Vulkan/RenderSystem/VkSkyBoxRenderSystem.hpp"
+#endif
 
 using namespace Kong;
 using namespace glm;
@@ -83,9 +88,6 @@ shared_ptr<CQuadShape> KongRenderModule::GetScreenShape()
 
 KongRenderModule::~KongRenderModule()
 {
-#ifdef RENDER_IN_VULKAN
-	FreeCommandBuffers();
-#endif
 }
 
 int KongRenderModule::Init()
@@ -109,11 +111,6 @@ int KongRenderModule::Init()
 				.AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, meshTexCount)
 			   .Build();
 
-	CreateCommandBuffers();
-	RecreateSwapChain();
-
-
-	
 #else
 	m_quadShape = make_shared<CQuadShape>();
 	InitMainFBO();
@@ -157,34 +154,125 @@ int KongRenderModule::Init()
 	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
 	
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
-		m_swapChain.get(), m_descriptorPool.get(),
-		m_vkDeferRenderSystem->GetColorTexture()->m_imageView, 
+		GetSwapChain(), m_descriptorPool.get(),
+		m_vkDeferRenderSystem->GetColorTexture()->m_imageView,
 		m_vkDeferRenderSystem->GetColorTexture()->m_sampler,
 		m_vkDeferRenderSystem->GetColorTexture()->m_image
 	};
-	
+
 #else
 	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
-	// mesh需要初始化descriptorset
-	// todo:可能要放到其他地方 
 	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
-	
+
 	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
 		m_descriptorPool.get(),
 		m_vkSimpleRenderSystem->GetColorTexture(),
 		m_vkSimpleRenderSystem->GetDepthTexture()
 	};
-	
+
 	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
-	
+
 	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
-		m_swapChain.get(), m_descriptorPool.get(),
+		GetSwapChain(), m_descriptorPool.get(),
 		m_vkSimpleRenderSystem->GetColorTexture()->m_imageView,
 		m_vkSimpleRenderSystem->GetColorTexture()->m_sampler,
 	};
 #endif
 	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
 	
+#endif
+
+	// 统一 Pass 列表：按顺序注册 IRenderSystem 适配器，供 Update(delta, frameContext) 驱动
+#ifdef RENDER_IN_VULKAN
+	{
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
+			FrameInfo frameInfo{
+				frameContext.GetFrameIndex(),
+				sceneDrawInfo.frameTime,
+				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
+			};
+			m_vkShadowMapSystem->Draw(frameInfo);
+		}));
+#if VK_DEFER
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
+			FrameInfo frameInfo{
+				frameContext.GetFrameIndex(),
+				sceneDrawInfo.frameTime,
+				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
+			};
+			m_vkDeferRenderSystem->UpdateMeshUBO(frameInfo);
+			m_vkDeferRenderSystem->Draw(frameInfo);
+		}));
+#else
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
+			FrameInfo frameInfo{
+				frameContext.GetFrameIndex(),
+				sceneDrawInfo.frameTime,
+				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
+			};
+			m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
+			m_vkSimpleRenderSystem->Draw(frameInfo);
+		}));
+#endif
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
+			FrameInfo frameInfo{
+				frameContext.GetFrameIndex(),
+				sceneDrawInfo.frameTime,
+				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
+			};
+			m_vkSkyboxSystem->Draw(frameInfo);
+		}));
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
+			FrameInfo frameInfo{
+				frameContext.GetFrameIndex(),
+				sceneDrawInfo.frameTime,
+				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
+			};
+			m_vkPostProcessSystem->Draw(frameInfo);
+		}));
+	}
+#else
+	{
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo&) {
+			RenderShadowMap();
+		}));
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
+			m_skyboxRenderSystem.PreRenderUpdate();
+			matrix_ubo.Bind();
+			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+			matrix_ubo.EndBind();
+			latestRenderResult = RenderSceneObject();
+			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
+			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
+		}));
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
+			RenderResultInfo rri;
+			rri.frameBuffer = latestRenderResult.frameBuffer;
+			rri.resultColor = static_cast<GLuint>(sceneDrawInfo.currentColorRT);
+			rri.resultDepth = static_cast<GLuint>(sceneDrawInfo.currentDepthRT);
+			rri.resultBloom = latestRenderResult.resultBloom;
+			rri.resultPosition = latestRenderResult.resultPosition;
+			latestRenderResult = m_waterRenderSystem.Draw(static_cast<double>(sceneDrawInfo.frameTime), rri, this);
+			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
+			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
+		}));
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
+			RenderResultInfo rri;
+			rri.frameBuffer = latestRenderResult.frameBuffer;
+			rri.resultColor = static_cast<GLuint>(sceneDrawInfo.currentColorRT);
+			rri.resultDepth = static_cast<GLuint>(sceneDrawInfo.currentDepthRT);
+			rri.resultBloom = latestRenderResult.resultBloom;
+			rri.resultPosition = latestRenderResult.resultPosition;
+			latestRenderResult = m_postProcessRenderSystem.Draw(0.0, rri, this);
+			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
+			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
+		}));
+		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
+			RenderUI(static_cast<double>(sceneDrawInfo.frameTime));
+		}));
+	}
 #endif
 
 	return 0;
@@ -214,75 +302,47 @@ OpenGLRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType typ
 #ifdef RENDER_IN_VULKAN
 int KongRenderModule::GetFrameIndex() const
 {
-	assert(m_isFrameStarted && "Can not get frame index when frame not in progress");
-	return m_currentFrameIndex;
+	return VulkanGraphicsDevice::GetGraphicsDevice()->GetFrameIndex();
 }
 
-void KongRenderModule::BeginFrame()
+bool KongRenderModule::IsFrameInProgress() const
 {
-	assert(!m_isFrameStarted && "cannot begin frame when frame already in progress");
-
-	auto result = m_swapChain->AcquireNextImage(&m_currentImageIndex);
-	// 可能是窗口有变化，需要重新创建swapchain
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		RecreateSwapChain();
-	}
-
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error("failed to acquire swap chain image");
-	}
-
-	m_isFrameStarted = true;
-
-	// commandbuffer开始
-	auto commandBuffer = GetCurrentCommandBuffer();
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to begin recording command buffer");
-	}
+	return VulkanGraphicsDevice::GetGraphicsDevice()->IsFrameInProgress();
 }
 
-void KongRenderModule::EndFrame()
+VulkanSwapChain* KongRenderModule::GetSwapChain() const
 {
-	assert(m_isFrameStarted && "cannot end frame when frame not in progress");
-	auto commandBuffer = GetCurrentCommandBuffer();
+	return VulkanGraphicsDevice::GetGraphicsDevice()->GetSwapChain();
+}
 
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to end command buffer");
-	}
+VkCommandBuffer KongRenderModule::GetCurrentCommandBuffer() const
+{
+	return VulkanGraphicsDevice::GetGraphicsDevice()->GetCurrentCommandBuffer();
+}
 
-	auto result = m_swapChain->SubmitCommandBuffers(&commandBuffer, &m_currentImageIndex);
-	// 如果窗口有变化，需要重新创建swapchain
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		RecreateSwapChain();
-	}
-	else if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to submit command buffer frame");
-	}
+VkRenderPass KongRenderModule::GetSwapChainRenderPass() const
+{
+	return GetSwapChain()->GetRenderPass();
+}
 
-	m_isFrameStarted = false;
-	m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+float KongRenderModule::GetAspectRatio() const
+{
+	return GetSwapChain()->GetExtentAspectRatio();
 }
 
 void KongRenderModule::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
 {
-	assert(m_isFrameStarted && "cannot beginSwapChainRenderPass when frame not in progress");
+	assert(IsFrameInProgress() && "cannot beginSwapChainRenderPass when frame not in progress");
 	assert(commandBuffer == GetCurrentCommandBuffer() && "cannot begin render pass on command buffer from a different frame");
-
+	auto* swapChain = GetSwapChain();
+	int frameIndex = GetFrameIndex();
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_swapChain->GetRenderPass();
-	renderPassInfo.framebuffer = m_swapChain->GetFrameBuffer(m_currentFrameIndex);
+	renderPassInfo.renderPass = swapChain->GetRenderPass();
+	renderPassInfo.framebuffer = swapChain->GetFrameBuffer(frameIndex);
 
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_swapChain->GetSwapChainExtent();
+	renderPassInfo.renderArea.extent = swapChain->GetSwapChainExtent();
 
 	std::array<VkClearValue, 2> clearValues = {};
 	// 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth，所以只需要设置对应的颜色和depthStencil的clear值
@@ -300,43 +360,23 @@ void KongRenderModule::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(m_swapChain->GetSwapChainExtent().width);
-	viewport.height = static_cast<float>(m_swapChain->GetSwapChainExtent().height);
+	viewport.width = static_cast<float>(swapChain->GetSwapChainExtent().width);
+	viewport.height = static_cast<float>(swapChain->GetSwapChainExtent().height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	VkRect2D scissor{{0,0}, m_swapChain->GetSwapChainExtent()};
+	VkRect2D scissor{{0,0}, swapChain->GetSwapChainExtent()};
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
 void KongRenderModule::EndSwapChainRenderPass(VkCommandBuffer commandBuffer)
 {
-	assert(m_isFrameStarted && "cannot endSwapChainRenderPass when frame not in progress");
+	assert(IsFrameInProgress() && "cannot endSwapChainRenderPass when frame not in progress");
 	assert(commandBuffer == GetCurrentCommandBuffer() && "cannot end render pass on command buffer from a different frame");
     
 	vkCmdEndRenderPass(commandBuffer);
 }
 
-VkCommandBuffer KongRenderModule::GetCurrentCommandBuffer() const
-{
-	assert(m_isFrameStarted && "cannot get command buffer when frame not in progress");
-	return m_commandBuffers[m_currentFrameIndex];
-}
-
-VkRenderPass KongRenderModule::GetSwapChainRenderPass() const
-{
-	return m_swapChain->GetRenderPass();
-}
-
-float KongRenderModule::GetAspectRatio() const
-{
-	return m_swapChain->GetExtentAspectRatio();
-}
-
-VulkanSwapChain* KongRenderModule::GetSwapChain()
-{
-	return m_swapChain.get();
-}
 #endif
 
 
@@ -529,9 +569,30 @@ void KongRenderModule::InitMainFBO()
 
 int KongRenderModule::Update(double delta)
 {
+	return Update(delta, nullptr);
+}
+
+int KongRenderModule::Update(double delta, IFrameContext* frameContext)
+{
 	render_time += delta;
 	mainCamera->Update(delta);
 	UpdateSceneRenderInfo();
+
+	// 统一 RHI 路径：有帧上下文且已注册 Pass 时，按 m_renderSystems 顺序执行
+	if (frameContext && !m_renderSystems.empty())
+	{
+		SceneDrawInfo sceneDrawInfo;
+		sceneDrawInfo.frameIndex = frameContext->GetFrameIndex();
+		sceneDrawInfo.frameTime = static_cast<float>(delta);
+		sceneDrawInfo.sceneContext = this;
+		sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
+		sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
+		for (auto& sys : m_renderSystems)
+			sys->Draw(*frameContext, sceneDrawInfo);
+		return 1;
+	}
+
+	// 兼容旧路径（无设备或未注册 Pass 时）
 	RenderShadowMap();
 #ifdef RENDER_IN_VULKAN
 	if (auto commandBuffer = GetCurrentCommandBuffer())
@@ -543,11 +604,6 @@ int KongRenderModule::Update(double delta)
 			commandBuffer
 		};
 
-		// render
-		/* 每个frame之间可以有多个render pass*/
-		// 在beginrenderpas之前就应该更新好UBO，在begin之后更新是不可靠的，数据可能会无法传递
-
-		// 先渲染阴影
 		m_vkShadowMapSystem->Draw(frameInfo);
 		
 #if VK_DEFER
@@ -559,36 +615,20 @@ int KongRenderModule::Update(double delta)
 #endif
 		
 		m_vkSkyboxSystem->Draw(frameInfo);
-
-		VkImageView shadowmapView = m_vkShadowMapSystem->GetShadowMapDebugImageView();
-		VkSampler shadowmapSampler = m_vkShadowMapSystem->GetShadowMapDebugSampler();
-
-		if (shadowmapView != VK_NULL_HANDLE && shadowmapSampler != VK_NULL_HANDLE)
-		{
-			
-		}
-		
 		m_vkPostProcessSystem->Draw(frameInfo);		
 	}
 #else
-	// 更新场景信息
-	
 	m_skyboxRenderSystem.PreRenderUpdate();
 	
-	// 更新UBO里的相机数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
 	matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
 	matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
 	matrix_ubo.EndBind();
 	
-	// 普通渲染场景
 	latestRenderResult = RenderSceneObject();
 	latestRenderResult = m_waterRenderSystem.Draw(delta, latestRenderResult, this);
-
-	// do post process
 	latestRenderResult = m_postProcessRenderSystem.Draw(0.0, latestRenderResult, this);
-
 	RenderUI(delta);
 #endif
 	return 1;
@@ -704,6 +744,11 @@ void KongRenderModule::RenderShadowMap()
 		}
 	}
 
+#ifndef RENDER_IN_VULKAN
+	// 恢复背面剔除，否则后续场景（立方体等）会变成剔除正面
+	glCullFace(GL_BACK);
+#endif
+
 #if SHADOWMAP_DEBUG
 	
 	glCullFace(GL_BACK);
@@ -759,69 +804,6 @@ void KongRenderModule::RenderShadowMap()
 #endif
 }
 
-#ifdef RENDER_IN_VULKAN
-void KongRenderModule::CreateCommandBuffers()
-{
-	m_commandBuffers.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	/* level有两种: primary和secondary
-	* primary可以送到Device Graphics Queue执行，但是不能被其他Command Buffer引用
-	* secondary不能送到Device Graphics Queue执行，但是可以被其他command buffer引用
-	*/
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	auto device = VulkanGraphicsDevice::GetGraphicsDevice();
-	allocInfo.commandPool = device->GetCommandPool();
-	allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
-
-	if (vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate command buffers!");
-	}
-}
-
-void KongRenderModule::FreeCommandBuffers()
-{
-	auto device = VulkanGraphicsDevice::GetGraphicsDevice();
-	vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(),
-		static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
-
-	m_commandBuffers.clear();
-}
-
-void KongRenderModule::RecreateSwapChain()
-{
-	auto window_size = KongWindow::GetWindowModule().windowSize;
-    
-	VkExtent2D window_extent = {0, 0};
-
-	// 可能在全屏或者最小化之类的，窗口大小为0，要等待事件结束
-	while (window_size.x == 0 || window_size.y == 0)
-	{
-		window_size = KongWindow::GetWindowModule().windowSize;
-		glfwWaitEvents();
-	}
-
-	window_extent = {static_cast<uint32_t>(window_size.x), static_cast<uint32_t>(window_size.y)};
-
-	auto device = VulkanGraphicsDevice::GetGraphicsDevice();
-	if (m_swapChain == nullptr)
-	{
-		m_swapChain = std::make_unique<VulkanSwapChain>(*device, window_extent);
-	}
-	else
-	{
-		std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapChain);
-		m_swapChain = std::make_unique<VulkanSwapChain>(*device, window_extent, oldSwapChain);
-
-		if (!oldSwapChain->CompareSwapChainFormats(*m_swapChain.get()))
-		{
-			throw std::runtime_error("failed to create swap chain!");
-		}
-	}
-}
-#endif
 
 void KongRenderModule::OnWindowResize(int width, int height)
 {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+﻿cmake_minimum_required(VERSION 3.13)
 
 project(KongEngine)
 
@@ -32,14 +32,19 @@ add_subdirectory(${3RD_PARTY_DIR})
 set(IMGUI_DIR ${3RD_PARTY_DIR}/imgui)
 file(GLOB IMGUI_SRC ${IMGUI_DIR}/*.cpp)
 file(GLOB IMGUI_BACKEND_SRC ${IMGUI_DIR}/backends/*.cpp)
-# endif()
+# OpenGL 构建下不编译 ImGui Vulkan 后端，避免找不到 vulkan/vulkan.h
+if(NOT (Vulkan_FOUND AND USE_VULKAN))
+	list(FILTER IMGUI_BACKEND_SRC EXCLUDE REGEX ".*imgui_impl_vulkan.*")
+endif()
 
 file(GLOB_RECURSE MAIN_SRC ${SRC_DIR}/*.cpp)
 file(GLOB_RECURSE MAIN_HEAD ${SRC_DIR}/*.h ${SRC_DIR}/*.hpp)
 
-# if(Vulkan_FOUND AND USE_VULKAN)
-# add_executable(KongEngine ${MAIN_HEAD} ${MAIN_SRC})
-# else()
+# OpenGL 构建下不编译 Vulkan 专用源文件，避免 VK 相关编译错误
+if(NOT (Vulkan_FOUND AND USE_VULKAN))
+	list(FILTER MAIN_SRC EXCLUDE REGEX ".*GraphicsAPI.Vulkan.*")
+endif()
+
 add_executable(KongEngine ${MAIN_HEAD} ${MAIN_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND_SRC})
 
 target_include_directories(KongEngine PRIVATE ${IMGUI_DIR})

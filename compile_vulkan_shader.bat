@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal enabledelayedexpansion
 
 rem 启用ANSI颜色支持（仅Windows 10+有效）

@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "common.h"
+#include "Render/Abstraction/IGraphicsDevice.hpp"
 
 namespace Kong
 {
@@ -9,16 +10,15 @@ namespace Kong
         OPENGL,
         NONE
     };
-    
-    class GraphicsDevice
+
+    /** 图形设备基类，实现 RHI 层 IGraphicsDevice 接口 */
+    class GraphicsDevice : public IGraphicsDevice
     {
     public:
-        
-        virtual ~GraphicsDevice() = default;
-        virtual GLFWwindow* Init(int width, int height) = 0;
-        // virtual void BeginFrame() = 0;
-        // virtual void EndFrame() = 0;
-        // virtual void Destroy() = 0;
+        ~GraphicsDevice() override = default;
+
+        /** 初始化窗口与上下文；返回窗口句柄（如 GLFWwindow*） */
+        void* Init(int width, int height) override = 0;
 
     protected:
         GraphicsAPI m_API {NONE};

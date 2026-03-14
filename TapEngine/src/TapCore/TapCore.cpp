@@ -1,4 +1,4 @@
-//
+﻿//
 //  TapCore.cpp
 //  TapCore
 //

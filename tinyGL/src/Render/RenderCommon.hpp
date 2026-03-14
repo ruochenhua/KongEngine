@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
+/**
+ * 渲染公共类型，与 API 无关；不包含 GL/Vulkan 头文件，实现层负责映射。
+ * @see Render/Abstraction/Types.hpp 中 ShaderStage、DataFormat 等 RHI 类型
+ */
+#include <cstdint>
 #include <vector>
-#ifdef RENDER_IN_VULKAN
-#include <vulkan/vulkan_core.h>
-#endif
-
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 
-#include "glad/glad.h"
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
@@ -57,14 +57,15 @@ namespace Kong
         shadowmap,
     };
 
-    enum EShaderType 
+    /** 着色器类型（引擎侧整型），实现层映射到 GL_*_SHADER / VkShaderStageFlagBits */
+    enum EShaderType : unsigned
     {
-        vs = GL_VERTEX_SHADER,		        // vertex shader
-        fs = GL_FRAGMENT_SHADER,	        // fragment shader
-        gs = GL_GEOMETRY_SHADER,	        // geometry shader
-        cs = GL_COMPUTE_SHADER,
-        tcs = GL_TESS_CONTROL_SHADER,       // tessellation control shader
-        tes = GL_TESS_EVALUATION_SHADER,    // tessellation evaluation shader
+        vs  = 0,  // vertex
+        fs  = 1,  // fragment
+        gs  = 2,  // geometry
+        cs  = 3,  // compute
+        tcs = 4,  // tessellation control
+        tes = 5,  // tessellation evaluation
     };
 		
     class RenderMaterialInfo
@@ -94,18 +95,14 @@ namespace Kong
         glm::vec2 uv{0.0f};
         glm::vec3 tangent{0.0f};
         glm::vec3 bitangent{0.0f};
-        
-#ifdef RENDER_IN_VULKAN
-        static std::vector<VkVertexInputBindingDescription> GetBindingDescription();
-        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
-#endif
+        /* Vulkan 顶点布局由实现层提供，见 VulkanPipeline.cpp 中 GetVertexBindingDescription / GetVertexAttributeDescription */
     };
     
-    // 渲染信息 //todo: 改名, opengl和vulkan在这里做区分
+    /** 渲染信息（与 API 无关句柄），实现层将 instance_buffer 转为 GLuint/VkBuffer */
     class RenderInfo
     {
     public:
-        GLuint instance_buffer = 0;
+        uint32_t instance_buffer = 0;
         unsigned instance_count = 0;
         
         virtual void Draw(void* commandBuffer) {}

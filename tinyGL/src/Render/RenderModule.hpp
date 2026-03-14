@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
 #include "GraphicsAPI/OpenGL/RenderSystem/GlDeferRenderSystem.hpp"
@@ -6,9 +6,17 @@
 #include "GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
 #include "GraphicsAPI/OpenGL/RenderSystem/GlSSReflectionRenderSystem.hpp"
 #include "GraphicsAPI/OpenGL/RenderSystem/GlWaterRenderSystem.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "GraphicsAPI/Vulkan/RenderSystem/VkDeferRenderSystem.hpp"
+#endif
+#include "Render/Abstraction/IRenderSystem.hpp"
+#include "Render/Abstraction/RenderSystemAdapter.hpp"
+#include "Render/Abstraction/Types.hpp"
 
 #include "Shader/OpenGL/OpenGLShader.h"
+
+#include <vector>
+#include <memory>
 
 namespace Kong
 {
@@ -121,6 +129,8 @@ namespace Kong
 		
 		int Init();
 		int Update(double delta);
+		/** 统一 RHI 路径：传入当前帧上下文，按 m_renderSystems 顺序执行各 Pass */
+		int Update(double delta, IFrameContext* frameContext);
 		void RenderUI(double delta);
 		
 		shared_ptr<CCamera> GetCamera() const {return mainCamera;}
@@ -145,32 +155,19 @@ namespace Kong
 		OpenGLRenderSystem* GetRenderSystemByType(RenderSystemType type);
 
 #ifdef RENDER_IN_VULKAN
-		
 		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool{};
-		// vulkan的全局descriptorset，也是用于保存场景的基础信息
 		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorLayout;
 		std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
 		std::vector<VkDescriptorSet> m_descriptorSets;
 
 		int GetFrameIndex() const;
-
-		void BeginFrame();
-		void EndFrame();
-
 		void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
 		void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
-
-		bool IsFrameInProgress() const {return m_isFrameStarted;}
+		bool IsFrameInProgress() const;
 		VkCommandBuffer GetCurrentCommandBuffer() const;
-
 		VkRenderPass GetSwapChainRenderPass() const;
 		float GetAspectRatio() const;
-		
-		uint32_t m_currentImageIndex {0};
-		int m_currentFrameIndex {0};
-		bool m_isFrameStarted {false};
-
-		VulkanSwapChain* GetSwapChain();
+		VulkanSwapChain* GetSwapChain() const;
 
 		// todo: 放到private
 		// 简单渲染系统
@@ -216,17 +213,6 @@ namespace Kong
 		GLuint m_QuadVBO = GL_NONE;
 #endif
 
-#ifdef RENDER_IN_VULKAN
-		void CreateCommandBuffers();
-		void FreeCommandBuffers();
-		void RecreateSwapChain();
-
-		std::unique_ptr<VulkanSwapChain> m_swapChain;
-		std::vector<VkCommandBuffer> m_commandBuffers;
-
-#endif
-		
-		
 		shared_ptr<CCamera> mainCamera{};
 		
 
@@ -248,5 +234,8 @@ namespace Kong
 		GlWaterRenderSystem m_waterRenderSystem;
 		
 		shared_ptr<CQuadShape> m_quadShape;
+
+		/** 按固定顺序注册的渲染 Pass，由 Update(delta, frameContext) 统一驱动 */
+		std::vector<std::unique_ptr<IRenderSystem>> m_renderSystems;
 	};
 }

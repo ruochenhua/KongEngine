@@ -1,17 +1,22 @@
-#pragma once
-#include "VulkanGraphicsDevice.hpp"
+﻿#pragma once
 #ifdef RENDER_IN_VULKAN
+#include <vulkan/vulkan_core.h>
+#include <memory>
+#include <vector>
+#include <array>
+
 namespace Kong
 {
+    class VulkanGraphicsDevice;
+
     class VulkanSwapChain
     {
     public:
-        // 先默认使用两个frame
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-        VulkanSwapChain(VulkanGraphicsDevice &deviceRef, VkExtent2D extent);
+        VulkanSwapChain(VulkanGraphicsDevice& deviceRef, VkExtent2D extent);
         // 从老swapchain创建新swapchain，在重设窗口时使用
-        VulkanSwapChain(VulkanGraphicsDevice &deviceRef, VkExtent2D extent, std::shared_ptr<VulkanSwapChain> oldSwapChain);
+        VulkanSwapChain(VulkanGraphicsDevice& deviceRef, VkExtent2D extent, std::shared_ptr<VulkanSwapChain> oldSwapChain);
         ~VulkanSwapChain();
 
         // 不可复制和赋值

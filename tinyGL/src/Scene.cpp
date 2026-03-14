@@ -1,11 +1,13 @@
-#include "Scene.hpp"
+﻿#include "Scene.hpp"
 #include "Utils.hpp"
 #include "Component/Mesh/MeshComponent.h"
 
 #include "Actor.hpp"
 #include "Parser/YamlParser.h"
 #include "Render/RenderModule.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
+#endif
 
 using namespace Kong;
 KongSceneManager g_SceneManager;

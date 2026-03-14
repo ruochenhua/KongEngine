@@ -1,4 +1,4 @@
-//
+﻿//
 //  TapCorePriv.hpp
 //  TapCore
 //

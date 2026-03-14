@@ -1,4 +1,4 @@
-scene:
+﻿scene:
   - actor: directional_light
     component:
       - type: directional_light

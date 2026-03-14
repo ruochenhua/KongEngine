@@ -1,13 +1,10 @@
-#include <iostream>
+﻿#include <iostream>
 
 #include "Window.hpp"
 #include "common.h"
 #include <stdexcept>
-#ifdef RENDER_IN_VULKAN
-#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
-#else
-#include "Render/GraphicsAPI/OpenGL/OpenGLGraphicsDevice.hpp"
-#endif
+#include "Render/Abstraction/BackendType.hpp"
+#include "Render/Abstraction/DeviceFactory.hpp"
 
 using namespace Kong;
 
@@ -25,17 +22,15 @@ KongWindow& KongWindow::GetWindowModule()
 KongWindow::KongWindow()
 {
 #ifdef RENDER_IN_VULKAN
-    auto graphics_device = VulkanGraphicsDevice::GetGraphicsDevice();
-    m_window = graphics_device->Init(windowSize.x, windowSize.y);
-    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
-     
+    BackendType backend = BackendType::Vulkan;
 #else
-    auto graphics_device = OpenGLGraphicsDevice::GetGraphicsDevice();
-    m_window = graphics_device->Init(windowSize.x, windowSize.y);
-    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
-    
+    BackendType backend = BackendType::OpenGL;
 #endif
-    
+    auto devicePtr = CreateGraphicsDevice(backend);
+    m_device = devicePtr.get();
+    m_window = static_cast<GLFWwindow*>(m_device->Init(windowSize.x, windowSize.y));
+    aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW3");

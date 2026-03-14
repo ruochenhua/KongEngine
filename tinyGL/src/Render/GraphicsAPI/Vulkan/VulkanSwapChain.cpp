@@ -1,4 +1,5 @@
-#include "VulkanSwapChain.hpp"
+﻿#include "VulkanSwapChain.hpp"
+#include "VulkanGraphicsDevice.hpp"
 #include "Render/RenderCommon.hpp"
 #include <array>
 #include <iostream>

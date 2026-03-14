@@ -1,10 +1,12 @@
-#include "Texture.hpp"
+﻿#include "Texture.hpp"
 
 #include <yaml-cpp/node/detail/memory.h>
 
 #include "common.h"
 #include "Render/RenderModule.hpp"
+#ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
+#endif
 
 using namespace Kong;
 

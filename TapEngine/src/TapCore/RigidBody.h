@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <memory>
 #include "Shape.h"
@@ -20,7 +20,7 @@ namespace Tap
 			: _elastic(0.5f)
 		{}
 
-		float _elastic;	//µ¯ÐÔ
+		float _elastic;	//ï¿½ï¿½ï¿½ï¿½
 	};
 
     class CRigidBody
@@ -28,10 +28,10 @@ namespace Tap
     public:
         CRigidBody(int id);
 
-		//Ìí¼ÓÐÎ×´,·µ»ØÐÎ×´µÄid
+		//ï¿½ï¿½ï¿½ï¿½ï¿½×´,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´ï¿½ï¿½id
 		bool AttachShape(SShapeDesc* shape_desc);
-		//É¾³ýÐÎ×´
-		//TODO: Ä¿Ç°Ö»Ö§³ÖÒ»¸öÐÎ×´, ºóÐøÖ§³Ö¶àÐÎ×´
+		//É¾ï¿½ï¿½ï¿½ï¿½×´
+		//TODO: Ä¿Ç°Ö»Ö§ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½×´, ï¿½ï¿½ï¿½ï¿½Ö§ï¿½Ö¶ï¿½ï¿½ï¿½×´
 		bool DeleteShape();
 
 		// getter and setter
@@ -51,7 +51,7 @@ namespace Tap
 		void SetRigidBodyType(RIGIDBODY_TYPE type);
 		void SetForce(const glm::vec3& force);
     private:
-		//ÎªÁË·½±ã,µü´úºÍÅö×²¼ì²â¶¼ÉèÖÃÎªfriend class
+		//Îªï¿½Ë·ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½â¶¼ï¿½ï¿½ï¿½ï¿½Îªfriend class
 		friend class CIntegration;
 		friend class CCollisionSolver;
 		friend class CCDA;
@@ -60,21 +60,21 @@ namespace Tap
         //transform
 		CTransform m_Transform;
 
-		//¶¯ÄÜÊý¾ÝÏà¹Ø
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		float m_Mass;
 		float m_MassInv;    //inv of mass, need a lot
 
 		glm::vec3 m_LinearMomentom;
 		glm::vec3 m_AngularMomentom;
 
-		glm::vec3 m_Force;	// ÏßÐÔµÄÁ¦
-		glm::vec3 m_Torque;	// Ðý×ªµÄÁ¦¾Ø
+		glm::vec3 m_Force;	// ï¿½ï¿½ï¿½Ôµï¿½ï¿½ï¿½
+		glm::vec3 m_Torque;	// ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-		glm::mat3 m_InertiaTensor;	//¹ßÐÔÕÅÁ¿
+		glm::mat3 m_InertiaTensor;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 		RIGIDBODY_TYPE m_eRigidbodyType;
 
-		//²ÄÁÏÊôÐÔ
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		SMaterial m_material;
 
         //std::vector<CShape> m_shape; //support multiple shape later

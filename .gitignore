@@ -16,3 +16,8 @@
 /resource/.idea
 .idea
 *.spv
+.claude
+node_modules
+AGENTS.md
+package.json
+package-lock.json

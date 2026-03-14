@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "RigidBody.h"
 #include "SphereShape.h"
 #include "BoxShape.h"
