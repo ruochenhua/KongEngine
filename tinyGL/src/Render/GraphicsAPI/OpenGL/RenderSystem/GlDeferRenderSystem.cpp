@@ -1,4 +1,4 @@
-﻿#include "GlDeferRenderSystem.hpp"
+#include "GlDeferRenderSystem.hpp"
 #ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #endif
@@ -6,6 +6,7 @@
 
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
 #include "Scene.hpp"
 #include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
@@ -276,11 +277,9 @@ void GlDeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
             continue;
         }
 
-		auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
-    	
+		auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
         mesh_shader->Use();
-        // 等于1代表渲染skybox，会需要用到环境贴图
-        mesh_shader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
+        mesh_shader->SetBool("b_render_skybox", skybox_sys ? (skybox_sys->render_sky_env_status == 1) : false);
         mesh_shader->SetMat4("model", actor->GetModelMatrix());
         mesh_component->Draw();
     }

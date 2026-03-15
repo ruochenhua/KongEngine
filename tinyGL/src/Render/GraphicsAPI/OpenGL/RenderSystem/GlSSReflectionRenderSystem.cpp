@@ -1,6 +1,7 @@
-﻿#include "GlSSReflectionRenderSystem.hpp"
+#include "GlSSReflectionRenderSystem.hpp"
 
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/OpenGL/RenderSystem/GlDeferRenderSystem.hpp"
 #include "Shader/OpenGL/DeferInfoShader.h"
 
 using namespace Kong;
@@ -28,8 +29,10 @@ RenderResultInfo GlSSReflectionRenderSystem::Draw(double delta, const RenderResu
     glDisable(GL_DEPTH_TEST);
 	
     m_ssReflectionShader->Use();
-	auto defer_render_system = dynamic_cast<GlDeferRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::DEFERRED));
-    
+    auto* defer_render_system = dynamic_cast<GlDeferRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::DEFERRED));
+    if (!defer_render_system)
+        return render_result_info;
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, defer_render_system->GetPositionTexture());
     glActiveTexture(GL_TEXTURE0 + 1);

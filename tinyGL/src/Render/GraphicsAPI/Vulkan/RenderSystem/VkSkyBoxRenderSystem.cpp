@@ -1,9 +1,10 @@
-﻿#include "VkSkyBoxRenderSystem.hpp"
+#include "VkSkyBoxRenderSystem.hpp"
 
 #include <array>
 
 #include "Scene.hpp"
 #include "Render/RenderModule.hpp"
+#include "Render/RenderModuleBackendVulkan.hpp"
 
 using namespace Kong;
 #ifdef RENDER_IN_VULKAN
@@ -36,15 +37,17 @@ void VulkanSkyBoxRenderSystem::Draw(const FrameInfo& frameInfo)
     BeginRenderPass(frameInfo.commandBuffer);
 
     m_pipeline->Bind(frameInfo.commandBuffer);
-    // 全局变量，控制在render module中
-    vkCmdBindDescriptorSets(
-        frameInfo.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_pipelineLayout,
-        0, 1,
-        &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
-            , 0, nullptr);
-    
+    // 全局变量，从 Vulkan 后端获取
+    {
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+        VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
+        if (globalSet != VK_NULL_HANDLE)
+            vkCmdBindDescriptorSets(
+                frameInfo.commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_pipelineLayout,
+                0, 1, &globalSet, 0, nullptr);
+    }
     vkCmdBindDescriptorSets(
         frameInfo.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -69,7 +72,9 @@ void VulkanSkyBoxRenderSystem::CreateDescriptorSetLayout()
 void VulkanSkyBoxRenderSystem::CreatePipelineLayout()
 {
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    if (backend && backend->GetDescriptorLayout())
+        descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)
     {
         descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());

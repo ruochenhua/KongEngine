@@ -1,6 +1,7 @@
-﻿#include "App.hpp"
+#include "App.hpp"
 #include "Scene.hpp"
 #include "Window.hpp"
+#include "Parser/ResourceManager.h"
 #include "Render/Abstraction/IFrameContext.hpp"
 #include "Render/Abstraction/IGraphicsDevice.hpp"
 
@@ -15,19 +16,16 @@ KongApp::KongApp()
     , m_RenderModule{KongRenderModule::GetRenderModule()}
     , m_SceneManager{KongSceneManager::GetSceneManager()}
 {
-    m_RenderModule.Init();
+    m_RenderModule.Init(m_Window.GetGraphicsDevice());
     // 需要rendermodule先初始化完，拿到descriptorpool等信息
-    m_UIManager.Init(m_Window.GetWindow());
+    m_UIManager.Init(m_Window.GetWindow(), m_Window.GetGraphicsDevice());
 }
 
 KongApp::~KongApp()
 {
-#ifdef RENDER_IN_VULKAN
-    // cpu等待所有gpu任务完成
-    vkDeviceWaitIdle(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice());
+    if (auto* device = m_Window.GetGraphicsDevice())
+        device->WaitIdle();
     ResourceManager::Clean();
-#endif
-    
     m_UIManager.Destroy();
 }
 

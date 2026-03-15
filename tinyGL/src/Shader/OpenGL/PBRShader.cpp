@@ -1,7 +1,8 @@
-﻿#include "PBRShader.h"
+#include "PBRShader.h"
 
 #include "Component/LightComponent.h"
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
 #include "Scene.hpp"
 
 using namespace Kong;
@@ -60,7 +61,9 @@ void PBRShader::UpdateRenderData(shared_ptr<RenderMaterialInfo> render_material)
 	
 	// todo: 天空盒贴图需要每次都更新吗?
 	auto& render_module = KongRenderModule::GetRenderModule();
-	auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module.GetRenderSystemByType(RenderSystemType::SKYBOX));
+	auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module.GetRenderSystemByType(RenderSystemType::SKYBOX));
+	if (!skybox_sys)
+		return;
 	// 添加天空盒贴图
 	GLuint skybox_tex_id = skybox_sys->GetSkyBoxTextureId();
 	glBindTextureUnit(GL_TEXTURE0 + SKYBOX_TEX_SHADER_ID, skybox_tex_id);

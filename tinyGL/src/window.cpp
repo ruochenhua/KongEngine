@@ -1,4 +1,6 @@
-﻿#include <iostream>
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
 
 #include "Window.hpp"
 #include "common.h"
@@ -9,6 +11,21 @@
 using namespace Kong;
 
 static KongWindow* g_WindowModule = nullptr;
+
+static BackendType GetDefaultBackendType()
+{
+    const char* env = std::getenv("RENDER_BACKEND");
+    if (env)
+    {
+        if (std::strcmp(env, "Vulkan") == 0) return BackendType::Vulkan;
+        if (std::strcmp(env, "OpenGL") == 0) return BackendType::OpenGL;
+    }
+#ifdef RENDER_IN_VULKAN
+    return BackendType::Vulkan;
+#else
+    return BackendType::OpenGL;
+#endif
+}
 
 KongWindow& KongWindow::GetWindowModule()
 {
@@ -21,11 +38,7 @@ KongWindow& KongWindow::GetWindowModule()
 
 KongWindow::KongWindow()
 {
-#ifdef RENDER_IN_VULKAN
-    BackendType backend = BackendType::Vulkan;
-#else
-    BackendType backend = BackendType::OpenGL;
-#endif
+    BackendType backend = GetDefaultBackendType();
     auto devicePtr = CreateGraphicsDevice(backend);
     m_device = devicePtr.get();
     m_window = static_cast<GLFWwindow*>(m_device->Init(windowSize.x, windowSize.y));

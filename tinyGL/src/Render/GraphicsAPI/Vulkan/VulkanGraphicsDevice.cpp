@@ -1,4 +1,4 @@
-﻿#include "VulkanGraphicsDevice.hpp"
+#include "VulkanGraphicsDevice.hpp"
 
 #ifdef RENDER_IN_VULKAN
 #include "VkBufferRHI.hpp"
@@ -148,6 +148,11 @@ void VulkanGraphicsDevice::EndFrame()
         throw std::runtime_error("failed to submit command buffer frame");
     m_isFrameStarted = false;
     m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
+}
+
+void VulkanGraphicsDevice::WaitIdle()
+{
+    vkDeviceWaitIdle(m_device);
 }
 
 VkCommandBuffer VulkanGraphicsDevice::GetCurrentCommandBuffer() const

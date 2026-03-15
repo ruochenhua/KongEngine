@@ -1,4 +1,4 @@
-﻿#include "YamlParser.h"
+#include "YamlParser.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -16,6 +16,8 @@
 #include "glm/gtc/random.hpp"
 #ifdef RENDER_IN_VULKAN
 #include "Render/GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
+#else
+#include "Render/GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
 #endif
 
 using namespace Kong;
@@ -420,20 +422,19 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
     {
         auto& render_sys = KongRenderModule::GetRenderModule();
         auto setting = scene_node["setting"];
-        if(setting["skybox"])
+#ifndef RENDER_IN_VULKAN
+        if (setting["skybox"])
         {
             auto skybox_node = setting["skybox"];
-            if(skybox_node["render_sky_env_status"])
+            auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_sys.GetRenderSystemByType(RenderSystemType::SKYBOX));
+            if (skybox_sys)
             {
-                auto render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
-                render_sys.m_skyboxRenderSystem.render_sky_env_status = render_sky_env_status;
-            }
-
-            if(skybox_node["render_cloud"])
-            {
-                auto render_cloud = skybox_node["render_cloud"].as<bool>();
-                render_sys.m_skyboxRenderSystem.render_cloud = render_cloud;
+                if (skybox_node["render_sky_env_status"])
+                    skybox_sys->render_sky_env_status = skybox_node["render_sky_env_status"].as<int>();
+                if (skybox_node["render_cloud"])
+                    skybox_sys->render_cloud = skybox_node["render_cloud"].as<bool>();
             }
         }
+#endif
     }
 }

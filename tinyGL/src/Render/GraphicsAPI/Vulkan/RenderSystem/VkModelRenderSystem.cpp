@@ -1,10 +1,11 @@
-﻿#include "VkModelRenderSystem.hpp"
+#include "VkModelRenderSystem.hpp"
 
 #include <array>
 
 #include "Actor.hpp"
 #include "Scene.hpp"
 #include "Render/RenderModule.hpp"
+#include "Render/RenderModuleBackendVulkan.hpp"
 #include "Render/Resource/Texture.hpp"
 
 using namespace Kong;
@@ -71,8 +72,9 @@ void VkModelRenderSystem::CreateMeshDescriptorSet()
             continue;
         }
 
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
         mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout,
-            KongRenderModule::GetRenderModule().m_descriptorPool.get());
+            backend ? backend->GetDescriptorPool() : nullptr);
     }
 }
 
@@ -116,8 +118,9 @@ void VkModelRenderSystem::CreatePipelineLayout()
 
     // set放在vector中，从set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    // descriptor set layout
-    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    if (backend && backend->GetDescriptorLayout())
+        descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)
     {
         descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());

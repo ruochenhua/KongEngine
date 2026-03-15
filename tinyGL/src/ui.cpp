@@ -1,9 +1,12 @@
-﻿#include "ui.h"
+#include "ui.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+#include "Render/Abstraction/IGraphicsDevice.hpp"
+#include "Render/Abstraction/BackendType.hpp"
 #ifdef RENDER_IN_VULKAN
 #include <imgui_impl_vulkan.h>
+#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
 #else
 #include <imgui_impl_opengl3.h>
 #endif
@@ -50,24 +53,26 @@ KongUIManager::KongUIManager()
 	}
 }
 
-void KongUIManager::Init(GLFWwindow* windowHandle)
+void KongUIManager::Init(GLFWwindow* windowHandle, IGraphicsDevice* device)
 {
-	// 初始化imgui
+	m_imguiVulkan = (device != nullptr && device->GetBackendType() == BackendType::Vulkan);
+	m_imguiDescriptorPool = nullptr;
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.AddMouseButtonEvent(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS);
-	
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.AddMouseButtonEvent(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS);
 	ImGui::StyleColorsDark();
 
-	// 初始化imgui后端
+	if (m_imguiVulkan)
+	{
 #ifdef RENDER_IN_VULKAN
-	auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
+		auto vulkanDevice = VulkanGraphicsDevice::GetGraphicsDevice();
 
-	VkDescriptorPoolSize pool_sizes[] =
+		VkDescriptorPoolSize pool_sizes[] =
 		{
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -82,43 +87,45 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
 		};
 
-	VkDescriptorPoolCreateInfo pool_info = {};
-	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	pool_info.maxSets = 1000;
-	pool_info.poolSizeCount = std::size(pool_sizes);
-	pool_info.pPoolSizes = pool_sizes;
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000;
+		pool_info.poolSizeCount = std::size(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
 
-	if(vkCreateDescriptorPool(vulkanDevice->GetDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create imgui descriptor pool");
-	}
-	
-	//
-	ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
-	ImGui_ImplVulkan_InitInfo init_info{};
-	init_info.Instance = vulkanDevice->m_instance;
-	init_info.Device = vulkanDevice->m_device;
-	init_info.PhysicalDevice = vulkanDevice->m_physicalDevice;
-	init_info.QueueFamily = vulkanDevice->FindQueueFamilies(vulkanDevice->m_physicalDevice).graphicsFamily;
-	init_info.Queue = vulkanDevice->m_graphicsQueue;
-	init_info.PipelineCache = VK_NULL_HANDLE;
-	init_info.MinImageCount = 2;
-	init_info.ImageCount = 2;
-	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = KongRenderModule::GetRenderModule().GetSwapChainRenderPass();
-	init_info.Subpass = 0;
-	init_info.DescriptorPool = imguiPool;
+		VkDescriptorPool imguiPool = VK_NULL_HANDLE;
+		if(vkCreateDescriptorPool(vulkanDevice->GetDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create imgui descriptor pool");
+		}
+		m_imguiDescriptorPool = static_cast<void*>(imguiPool);
 
-	ImGui_ImplVulkan_Init(&init_info);
-	
-	//
-	// ImGui_ImplVulkan_Init(&init_info);
-	
-#else
-	ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-	ImGui_ImplOpenGL3_Init();
+		ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
+		ImGui_ImplVulkan_InitInfo init_info{};
+		init_info.Instance = vulkanDevice->m_instance;
+		init_info.Device = vulkanDevice->m_device;
+		init_info.PhysicalDevice = vulkanDevice->m_physicalDevice;
+		init_info.QueueFamily = vulkanDevice->FindPhysicsQueueFamilies().graphicsFamily;
+		init_info.Queue = vulkanDevice->m_graphicsQueue;
+		init_info.PipelineCache = VK_NULL_HANDLE;
+		init_info.MinImageCount = 2;
+		init_info.ImageCount = 2;
+		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		init_info.RenderPass = VulkanGraphicsDevice::GetGraphicsDevice()->GetSwapChain()->GetRenderPass();
+		init_info.Subpass = 0;
+		init_info.DescriptorPool = imguiPool;
+
+		ImGui_ImplVulkan_Init(&init_info);
 #endif
+	}
+	else
+	{
+#ifndef RENDER_IN_VULKAN
+		ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);
+		ImGui_ImplOpenGL3_Init();
+#endif
+	}
 	
 	string file_directory = std::filesystem::current_path().parent_path().string() + "/resource/scene";
 	g_scene_files = GetSceneFiles(file_directory);
@@ -136,11 +143,18 @@ void KongUIManager::Init(GLFWwindow* windowHandle)
 
 void KongUIManager::PreRenderUpdate(double delta)
 {
+	if (m_imguiVulkan)
+	{
 #ifdef RENDER_IN_VULKAN
-	ImGui_ImplVulkan_NewFrame();
-#else
-    ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplVulkan_NewFrame();
 #endif
+	}
+	else
+	{
+#ifndef RENDER_IN_VULKAN
+		ImGui_ImplOpenGL3_NewFrame();
+#endif
+	}
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	DescribeUIContent(delta);
@@ -149,24 +163,41 @@ void KongUIManager::PreRenderUpdate(double delta)
 
 void KongUIManager::PostRenderUpdate()
 {
+	if (m_imguiVulkan)
+	{
 #ifdef RENDER_IN_VULKAN
-	ImGui::EndFrame();
-#else
-	// (Your code clears your framebuffer, renders your other stuff etc.)
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	// (Your code calls glfwSwapBuffers() etc.)
+		ImGui::EndFrame();
 #endif
+	}
+	else
+	{
+#ifndef RENDER_IN_VULKAN
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+	}
 }
 
 void KongUIManager::Destroy()
 {
+	if (m_imguiVulkan)
+	{
 #ifdef RENDER_IN_VULKAN
-	ImGui_ImplVulkan_Shutdown();
-	vkDestroyDescriptorPool(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(), imguiPool, nullptr);
-#else
-	ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplVulkan_Shutdown();
+		if (m_imguiDescriptorPool)
+		{
+			vkDestroyDescriptorPool(VulkanGraphicsDevice::GetGraphicsDevice()->GetDevice(),
+				static_cast<VkDescriptorPool>(m_imguiDescriptorPool), nullptr);
+			m_imguiDescriptorPool = nullptr;
+		}
 #endif
+	}
+	else
+	{
+#ifndef RENDER_IN_VULKAN
+		ImGui_ImplOpenGL3_Shutdown();
+#endif
+	}
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 }

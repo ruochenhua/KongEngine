@@ -1,15 +1,15 @@
-﻿#include "VulkanRenderSystem.hpp"
+#include "VulkanRenderSystem.hpp"
 
 #include <array>
 
+#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
 #include "Render/GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
-#include "Render/RenderModule.hpp"
 
 #ifdef RENDER_IN_VULKAN
 using namespace Kong;
 
 VulkanRenderSystem::VulkanRenderSystem()
-    :m_swapChain(KongRenderModule::GetRenderModule().GetSwapChain())
+    :m_swapChain(VulkanGraphicsDevice::GetGraphicsDevice()->GetSwapChain())
 {
     // 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth。
     // 所以只需要设置对应的颜色和depthStencil的clear值

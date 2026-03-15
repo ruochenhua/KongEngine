@@ -1,4 +1,4 @@
-﻿#include "RenderCommon.hpp"
+#include "RenderCommon.hpp"
 
 #include <memory>
 
@@ -7,6 +7,8 @@
 #include "GraphicsAPI/Vulkan/VulkanRenderInfo.hpp"
 #else
 #include "glad/glad.h"
+#include "Render/Resource/Texture.hpp"
+#include "Render/GraphicsAPI/OpenGL/OpenGLBuffer.hpp"
 #endif
 
 using namespace Kong;

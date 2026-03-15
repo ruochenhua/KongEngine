@@ -1,8 +1,13 @@
-﻿#include "LightComponent.h"
+#include "LightComponent.h"
 #include "Component/Mesh/MeshComponent.h"
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
+#ifdef RENDER_IN_VULKAN
+#include "Render/GraphicsAPI/Vulkan/VulkanGraphicsDevice.hpp"
+#include "Render/GraphicsAPI/Vulkan/RenderSystem/VkModelRenderSystem.hpp"
+#include "Render/RenderModuleBackendVulkan.hpp"
+#endif
 #include "glm/gtx/euler_angles.hpp"
 #include "Shader/OpenGL/OpenGLShader.h"
 
@@ -321,13 +326,16 @@ void CDirectionalLightComponent::RenderShadowMap(const FrameInfo& frameInfo, VkP
         //     uniformBuffer->WriteToBuffer(&ubo);
         //     uniformBuffer->Flush();
         // }
-        vkCmdBindDescriptorSets(
-            frameInfo.commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineLayout,
-            0, 1,
-            &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
-                , 0, nullptr);
+        {
+            auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+            VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
+            if (globalSet != VK_NULL_HANDLE)
+                vkCmdBindDescriptorSets(
+                    frameInfo.commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    pipelineLayout,
+                    0, 1, &globalSet, 0, nullptr);
+        }
         
         // vkCmdBindDescriptorSets(
         //     frameInfo.commandBuffer,
@@ -517,7 +525,7 @@ void CDirectionalLightComponent::CreateFramebuffer(VkRenderPass renderPass)
 void CDirectionalLightComponent::CreateTextures()
 {
     // 创建深度贴图
-    VkFormat depthFormat = KongRenderModule::GetRenderModule().GetSwapChain()->FindDepthFormat();
+    VkFormat depthFormat = VulkanGraphicsDevice::GetGraphicsDevice()->GetSwapChain()->FindDepthFormat();
     
     VkImageCreateInfo depthImageInfo = {};
     depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

@@ -1,4 +1,8 @@
-﻿#include "RenderModule.hpp"
+#include "RenderModule.hpp"
+#include "Render/Abstraction/IGraphicsDevice.hpp"
+#ifndef RENDER_IN_VULKAN
+#include "Render/RenderModuleBackendOpenGL.hpp"
+#endif
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <chrono>
@@ -7,10 +11,6 @@
 #endif
 #include <array>
 #include <random>
-
-#ifdef RENDER_IN_VULKAN
-#include <imgui_impl_vulkan.h>
-#endif
 
 #include "Actor.hpp"
 #include "Component/CameraComponent.h"
@@ -25,19 +25,9 @@
 #include "Component/Mesh/QuadShape.h"
 #include "Component/Mesh/Water.h"
 #include "glm/gtx/dual_quaternion.hpp"
-#ifdef RENDER_IN_VULKAN
-#include "GraphicsAPI/Vulkan/VulkanBuffer.hpp"
-#include "GraphicsAPI/Vulkan/VulkanSwapChain.hpp"
-#include "GraphicsAPI/Vulkan/RenderSystem/VkPostprocessRenderSystem.hpp"
-#include "GraphicsAPI/Vulkan/RenderSystem/VkShadowMapRenderSystem.h"
-#include "GraphicsAPI/Vulkan/RenderSystem/VkSimpleRenderSystem.hpp"
-#include "GraphicsAPI/Vulkan/RenderSystem/VkSkyBoxRenderSystem.hpp"
-#endif
-
 using namespace Kong;
 using namespace glm;
 using namespace std;
-#define VK_DEFER true
 
 static KongRenderModule g_renderModule;
 
@@ -71,6 +61,12 @@ KongRenderModule& KongRenderModule::GetRenderModule()
 	return g_renderModule;
 }
 
+void KongRenderModule::PushRenderSystem(std::unique_ptr<IRenderSystem> sys)
+{
+	if (sys)
+		m_renderSystems.push_back(std::move(sys));
+}
+
 KongTexture* KongRenderModule::GetNullTex()
 {
 	return g_renderModule.m_nullTex.lock().get();
@@ -90,295 +86,55 @@ KongRenderModule::~KongRenderModule()
 {
 }
 
-int KongRenderModule::Init()
+int KongRenderModule::Init(IGraphicsDevice* device)
 {
+	m_device = device;
 	mainCamera = make_shared<CCamera>(vec3(-4.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f));
-	
+
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 	m_nullTex = ResourceManager::GetOrLoadTexture_new(diffuse, null_tex_path);
-	
-#ifdef RENDER_IN_VULKAN
-	// 创建描述符集池子
-	int meshCount = 30 * VulkanSwapChain::MAX_FRAMES_IN_FLIGHT;
-	int meshTexCount = 30;
-	m_descriptorPool = VulkanDescriptorPool::Builder()
-			   .SetMaxSets(meshCount)  // 简单设置一个最大数量
-			   .AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, meshCount)
-				.AddPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, meshCount)
-			   .AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, meshCount*meshTexCount)
-				.AddPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, meshTexCount)
-				.AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, meshTexCount)
-			   .Build();
 
-#else
-	m_quadShape = make_shared<CQuadShape>();
-	InitMainFBO();
-	
+	if (device && device->GetBackendType() == BackendType::OpenGL)
+	{
+		m_quadShape = make_shared<CQuadShape>();
+		InitMainFBO();
 #if SHADOWMAP_DEBUG
-	map<EShaderType, string> debug_shader_paths = {
-		{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.vert")},
-		{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.frag")}
-	};
-	shadowmap_debug_shader = make_shared<Shader>();
-
-	shadowmap_debug_shader->Init(debug_shader_paths);
-	shadowmap_debug_shader->Use();
-	shadowmap_debug_shader->SetInt("shadow_map", 0);
+		map<EShaderType, string> debug_shader_paths = {
+			{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.vert")},
+			{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.frag")}
+		};
+		shadowmap_debug_shader = make_shared<Shader>();
+		shadowmap_debug_shader->Init(debug_shader_paths);
+		shadowmap_debug_shader->Use();
+		shadowmap_debug_shader->SetInt("shadow_map", 0);
 #endif
-	
-	// add render system
-	m_skyboxRenderSystem.Init();
-	m_deferRenderSystem.Init();
-	m_postProcessRenderSystem.Init();
-	m_ssReflectionRenderSystem.Init();
-	m_waterRenderSystem.Init();
-#endif
-	
-	InitUBO();
-	
-#ifdef RENDER_IN_VULKAN
-	// 创建阴影系统
-	VulkanShadowMapCreateInfo shadowMapCreateInfo {m_descriptorPool.get()};
-	m_vkShadowMapSystem = make_unique<VkShadowMapRenderSystem>(shadowMapCreateInfo);
-	
-#if VK_DEFER
-	m_vkDeferRenderSystem = make_unique<VkDeferRenderSystem>();
-	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
-	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
-		m_descriptorPool.get(),
-		m_vkDeferRenderSystem->GetColorTexture(),
-		m_vkDeferRenderSystem->GetDepthTexture(),
-	};
-	
-	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
-	
-	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
-		GetSwapChain(), m_descriptorPool.get(),
-		m_vkDeferRenderSystem->GetColorTexture()->m_imageView,
-		m_vkDeferRenderSystem->GetColorTexture()->m_sampler,
-		m_vkDeferRenderSystem->GetColorTexture()->m_image
-	};
-
-#else
-	m_vkSimpleRenderSystem = make_unique<SimpleVulkanRenderSystem>();
-	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
-
-	VulkanSkyBoxRenderSystem::VulkanSkyBoxCreateInfo skyboxCreateInfo {
-		m_descriptorPool.get(),
-		m_vkSimpleRenderSystem->GetColorTexture(),
-		m_vkSimpleRenderSystem->GetDepthTexture()
-	};
-
-	m_vkSkyboxSystem = make_unique<VulkanSkyBoxRenderSystem>(skyboxCreateInfo);
-
-	VulkanPostprocessSystem::VulkanPostprocessCreateInfo createInfo {
-		GetSwapChain(), m_descriptorPool.get(),
-		m_vkSimpleRenderSystem->GetColorTexture()->m_imageView,
-		m_vkSimpleRenderSystem->GetColorTexture()->m_sampler,
-	};
-#endif
-	m_vkPostProcessSystem = make_unique<VulkanPostprocessSystem>(createInfo);
-	
-#endif
-
-	// 统一 Pass 列表：按顺序注册 IRenderSystem 适配器，供 Update(delta, frameContext) 驱动
-#ifdef RENDER_IN_VULKAN
-	{
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
-			FrameInfo frameInfo{
-				frameContext.GetFrameIndex(),
-				sceneDrawInfo.frameTime,
-				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
-			};
-			m_vkShadowMapSystem->Draw(frameInfo);
-		}));
-#if VK_DEFER
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
-			FrameInfo frameInfo{
-				frameContext.GetFrameIndex(),
-				sceneDrawInfo.frameTime,
-				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
-			};
-			m_vkDeferRenderSystem->UpdateMeshUBO(frameInfo);
-			m_vkDeferRenderSystem->Draw(frameInfo);
-		}));
-#else
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
-			FrameInfo frameInfo{
-				frameContext.GetFrameIndex(),
-				sceneDrawInfo.frameTime,
-				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
-			};
-			m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
-			m_vkSimpleRenderSystem->Draw(frameInfo);
-		}));
-#endif
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
-			FrameInfo frameInfo{
-				frameContext.GetFrameIndex(),
-				sceneDrawInfo.frameTime,
-				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
-			};
-			m_vkSkyboxSystem->Draw(frameInfo);
-		}));
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext& frameContext, SceneDrawInfo& sceneDrawInfo) {
-			FrameInfo frameInfo{
-				frameContext.GetFrameIndex(),
-				sceneDrawInfo.frameTime,
-				static_cast<VkCommandBuffer>(frameContext.GetCurrentCommandList())
-			};
-			m_vkPostProcessSystem->Draw(frameInfo);
-		}));
+		InitUBO();
 	}
-#else
+
+	if (device)
 	{
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo&) {
-			RenderShadowMap();
-		}));
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
-			m_skyboxRenderSystem.PreRenderUpdate();
-			matrix_ubo.Bind();
-			matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-			matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-			matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-			matrix_ubo.EndBind();
-			latestRenderResult = RenderSceneObject();
-			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
-			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
-		}));
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
-			RenderResultInfo rri;
-			rri.frameBuffer = latestRenderResult.frameBuffer;
-			rri.resultColor = static_cast<GLuint>(sceneDrawInfo.currentColorRT);
-			rri.resultDepth = static_cast<GLuint>(sceneDrawInfo.currentDepthRT);
-			rri.resultBloom = latestRenderResult.resultBloom;
-			rri.resultPosition = latestRenderResult.resultPosition;
-			latestRenderResult = m_waterRenderSystem.Draw(static_cast<double>(sceneDrawInfo.frameTime), rri, this);
-			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
-			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
-		}));
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
-			RenderResultInfo rri;
-			rri.frameBuffer = latestRenderResult.frameBuffer;
-			rri.resultColor = static_cast<GLuint>(sceneDrawInfo.currentColorRT);
-			rri.resultDepth = static_cast<GLuint>(sceneDrawInfo.currentDepthRT);
-			rri.resultBloom = latestRenderResult.resultBloom;
-			rri.resultPosition = latestRenderResult.resultPosition;
-			latestRenderResult = m_postProcessRenderSystem.Draw(0.0, rri, this);
-			sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
-			sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
-		}));
-		m_renderSystems.push_back(std::make_unique<RenderSystemAdapter>([this](IFrameContext&, SceneDrawInfo& sceneDrawInfo) {
-			RenderUI(static_cast<double>(sceneDrawInfo.frameTime));
-		}));
+		m_backend = CreateRenderModuleBackend(device->GetBackendType());
+		if (m_backend)
+			m_backend->Init(this, device);
 	}
-#endif
 
 	return 0;
 }
 
 OpenGLRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
 {
-	switch (type)
+#ifndef RENDER_IN_VULKAN
+	if (m_backend)
 	{
-	case RenderSystemType::SKYBOX:
-		return &m_skyboxRenderSystem;
-		
-	case RenderSystemType::DEFERRED:
-		return &m_deferRenderSystem;
-
-	case RenderSystemType::POST_PROCESS:
-		return &m_postProcessRenderSystem;
-
-	case RenderSystemType::SS_REFLECTION:
-		return &m_ssReflectionRenderSystem;
-	
-	default:
-		throw std::exception("Render system type not found");
+		auto* gl = dynamic_cast<RenderModuleBackendOpenGL*>(m_backend.get());
+		if (gl)
+			return gl->GetRenderSystemByType(type);
 	}
-}
-
-#ifdef RENDER_IN_VULKAN
-int KongRenderModule::GetFrameIndex() const
-{
-	return VulkanGraphicsDevice::GetGraphicsDevice()->GetFrameIndex();
-}
-
-bool KongRenderModule::IsFrameInProgress() const
-{
-	return VulkanGraphicsDevice::GetGraphicsDevice()->IsFrameInProgress();
-}
-
-VulkanSwapChain* KongRenderModule::GetSwapChain() const
-{
-	return VulkanGraphicsDevice::GetGraphicsDevice()->GetSwapChain();
-}
-
-VkCommandBuffer KongRenderModule::GetCurrentCommandBuffer() const
-{
-	return VulkanGraphicsDevice::GetGraphicsDevice()->GetCurrentCommandBuffer();
-}
-
-VkRenderPass KongRenderModule::GetSwapChainRenderPass() const
-{
-	return GetSwapChain()->GetRenderPass();
-}
-
-float KongRenderModule::GetAspectRatio() const
-{
-	return GetSwapChain()->GetExtentAspectRatio();
-}
-
-void KongRenderModule::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
-{
-	assert(IsFrameInProgress() && "cannot beginSwapChainRenderPass when frame not in progress");
-	assert(commandBuffer == GetCurrentCommandBuffer() && "cannot begin render pass on command buffer from a different frame");
-	auto* swapChain = GetSwapChain();
-	int frameIndex = GetFrameIndex();
-	VkRenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = swapChain->GetRenderPass();
-	renderPassInfo.framebuffer = swapChain->GetFrameBuffer(frameIndex);
-
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = swapChain->GetSwapChainExtent();
-
-	std::array<VkClearValue, 2> clearValues = {};
-	// 对应framebuffer和render pass的设定，attachment0是color，attachment1是depth，所以只需要设置对应的颜色和depthStencil的clear值
-	clearValues[0].color = { 0.f, 0.f, 0.f, 1.0f };
-	clearValues[1].depthStencil = { 1.0f, 0 };
-    
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
-    
-	// inline类型代表直接执行command buffer中的渲染指令，不存在引用其他command buffer
-	// VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS代表有引用的情况，两种不能混合使用
-	// 启用render pass
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swapChain->GetSwapChainExtent().width);
-	viewport.height = static_cast<float>(swapChain->GetSwapChainExtent().height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	VkRect2D scissor{{0,0}, swapChain->GetSwapChainExtent()};
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-}
-
-void KongRenderModule::EndSwapChainRenderPass(VkCommandBuffer commandBuffer)
-{
-	assert(IsFrameInProgress() && "cannot endSwapChainRenderPass when frame not in progress");
-	assert(commandBuffer == GetCurrentCommandBuffer() && "cannot end render pass on command buffer from a different frame");
-    
-	vkCmdEndRenderPass(commandBuffer);
-}
-
 #endif
-
+	(void)type;
+	return nullptr;
+}
 
 void KongRenderModule::UpdateSceneRenderInfo()
 {
@@ -459,56 +215,20 @@ void KongRenderModule::UpdateSceneRenderInfo()
 			
 	light_info.point_light_count = ivec4(point_light_count);
 
-#ifdef RENDER_IN_VULKAN
-	GlobalVulkanUbo ubo{};
-	ubo.projection = mainCamera->GetProjectionMatrix();
-	ubo.view = mainCamera->GetViewMatrix();
-	ubo.cameraPosition = vec4(mainCamera->GetPosition(), 1.0f);
-	
-	ubo.sceneLightInfo = light_info;
-	
-	for (const auto& m_uniformBuffer : m_uniformBuffers)
+	if (m_backend)
+		m_backend->UpdateSceneRenderInfo(this);
+	// OpenGL 下光照 UBO 仍由 RenderModule 更新；Vulkan 由 backend 写自己的 UBO
+	if (!m_backend || (m_device && m_device->GetBackendType() == BackendType::OpenGL))
 	{
-		m_uniformBuffer->WriteToBuffer(&ubo);
-		m_uniformBuffer->Flush();
+		scene_light_ubo.Bind();
+		scene_light_ubo.UpdateData(light_info, "light_info");
+		scene_light_ubo.EndBind();
 	}
-#else
-	scene_light_ubo.Bind();
-	scene_light_ubo.UpdateData(light_info, "light_info");
-	scene_light_ubo.EndBind();
-#endif
 }
 
 
 void KongRenderModule::InitUBO()
 {
-	// 初始化UBO数据
-#ifdef RENDER_IN_VULKAN
-	// set 0
-	m_descriptorLayout = VulkanDescriptorSetLayout::Builder()
-	.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-	.Build();
-
-	m_descriptorLayout->m_usage = VulkanDescriptorSetLayout::GlobalData;
-
-	// create ubo buffer
-	m_uniformBuffers.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
-	m_descriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
-	for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		m_uniformBuffers[i] = std::make_unique<VulkanBuffer>();
-		m_uniformBuffers[i]->Initialize(UNIFORM_BUFFER, sizeof(KongRenderModule::GlobalVulkanUbo), 1);
-		m_uniformBuffers[i]->Map();
-
-		auto bufferInfo = m_uniformBuffers[i]->DescriptorInfo();
-		VulkanDescriptorWriter(*m_descriptorLayout, *m_descriptorPool)
-		.WriteBuffer(0, &bufferInfo)
-		.Build(m_descriptorSets[i]);
-	}
-	// create descriptor sets
-	
-#else
-//	matrix_ubo.AppendData(glm::mat4(), "model");
 	matrix_ubo.AppendData(glm::mat4(), "view");
 	matrix_ubo.AppendData(glm::mat4(), "projection");
 	matrix_ubo.AppendData(glm::vec4(), "cam_pos");
@@ -518,10 +238,8 @@ void KongRenderModule::InitUBO()
 	scene_light_ubo.AppendData(SceneLightInfo(), "light_info");
 	scene_light_ubo.Init(1);
 
-	// 更新远近平面数据
 	matrix_ubo.Bind();
 	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
-#endif
 }
 
 void KongRenderModule::InitMainFBO()
@@ -592,128 +310,70 @@ int KongRenderModule::Update(double delta, IFrameContext* frameContext)
 		return 1;
 	}
 
-	// 兼容旧路径（无设备或未注册 Pass 时）
-	RenderShadowMap();
-#ifdef RENDER_IN_VULKAN
-	if (auto commandBuffer = GetCurrentCommandBuffer())
+	// 兼容路径：无 frameContext 时由后端执行整帧绘制，无后端时仅做阴影与 UI
+	if (m_backend)
+		m_backend->DrawFallback(this, delta);
+	else
 	{
-		int frameIndex = GetFrameIndex();
-		FrameInfo frameInfo{
-			frameIndex,
-			static_cast<float>(delta),
-			commandBuffer
-		};
-
-		m_vkShadowMapSystem->Draw(frameInfo);
-		
-#if VK_DEFER
-		m_vkDeferRenderSystem->UpdateMeshUBO(frameInfo);
-		m_vkDeferRenderSystem->Draw(frameInfo);
-#else
-		m_vkSimpleRenderSystem->UpdateMeshUBO(frameInfo);
-		m_vkSimpleRenderSystem->Draw(frameInfo);
-#endif
-		
-		m_vkSkyboxSystem->Draw(frameInfo);
-		m_vkPostProcessSystem->Draw(frameInfo);		
+		RenderShadowMap();
+		RenderUIBeforeSystems();
 	}
-#else
-	m_skyboxRenderSystem.PreRenderUpdate();
-	
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-	matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-	matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-	matrix_ubo.EndBind();
-	
-	latestRenderResult = RenderSceneObject();
-	latestRenderResult = m_waterRenderSystem.Draw(delta, latestRenderResult, this);
-	latestRenderResult = m_postProcessRenderSystem.Draw(0.0, latestRenderResult, this);
-	RenderUI(delta);
-#endif
 	return 1;
 }
 
-void KongRenderModule::RenderUI(double delta)
-{	
+void KongRenderModule::RenderUIBeforeSystems()
+{
 	auto main_cam = GetCamera();
 #ifndef RENDER_IN_VULKAN
-	if(main_cam)
+	if (main_cam)
 	{
-		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f,0.01f, 10.0f);
-		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f,1.0f, 100.0f);
+		ImGui::DragFloat("cam exposure", &main_cam->exposure, 0.02f, 0.01f, 10.0f);
+		ImGui::DragFloat("cam speed", &main_cam->move_speed, 0.2f, 1.0f, 100.0f);
 	}
-	
 	ImGui::Checkbox("screen space reflection", &use_screen_space_reflection);
 #endif
-	
-	m_skyboxRenderSystem.DrawUI();
-	m_deferRenderSystem.DrawUI();
-	
-	m_postProcessRenderSystem.DrawUI();
+}
+
+void KongRenderModule::RenderUI(double delta)
+{
+	(void)delta;
+	RenderUIBeforeSystems();
+	if (m_backend)
+		m_backend->DrawUI(this);
 }
 
 RenderResultInfo KongRenderModule::RenderSceneObject(GLuint target_fbo)
 {
-	RenderResultInfo render_result_info {latestRenderResult};
-#if !SHADOWMAP_DEBUG
-	// 延迟渲染需要先关掉混合，否则混合操作可能会导致延迟渲染的各个参数贴图的a/w通道影响rgb/xyz值的情况
-	glDisable(GL_BLEND);
-	ivec2 window_size = KongWindow::GetWindowModule().windowSize;
-
-	// render_scene_texture是场景渲染到屏幕上的未经过后处理的结果
-	GLuint render_scene_buffer = target_fbo == GL_NONE ? m_renderToBuffer : target_fbo;
-	// 正常渲染到后处理的buffer上
-	render_result_info.frameBuffer = render_scene_buffer;
-	render_result_info.resultColor = m_renderToTextures[0];
-	glViewport(0,0, window_size.x, window_size.y);
-	
-	render_result_info = m_deferRenderSystem.Draw(0.0, render_result_info, this);
-	
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	RenderNonDeferSceneObjects();
-	render_result_info = m_skyboxRenderSystem.Draw(0.0, render_result_info, this);
-		
-	// screen space reflection先放在这里吧
-	// 水面反射不做这个
-	if(use_screen_space_reflection)
+	(void)target_fbo;
+	if (m_backend)
 	{
-		// 屏幕空间反射的信息渲染到后处理buffer的第三个color attachment贴图中，后通过后处理合成
-		render_result_info = m_ssReflectionRenderSystem.Draw(0.0, render_result_info, this);
+		m_backend->DrawMainScene(this);
+		return latestRenderResult;
 	}
-#endif
-	return render_result_info;
+	return latestRenderResult;
 }
 
-void KongRenderModule::RenderNonDeferSceneObjects() const
+void KongRenderModule::RenderNonDeferSceneObjects(int skybox_render_sky_env_status) const
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
-	
+
 	auto actors = KongSceneManager::GetActors();
-	for(auto actor : actors)
+	for (auto actor : actors)
 	{
 		auto mesh_component = actor->GetComponent<CMeshComponent>();
-		if(!mesh_component)
-		{
+		if (!mesh_component)
 			continue;
-		}
 		auto mesh_shader = mesh_component->shader_data;
-		// 跳过延迟渲染的mesh和水体的部分
-		if(dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
+		if (dynamic_pointer_cast<DeferInfoShader>(mesh_shader)
 			|| dynamic_pointer_cast<DeferredTerrainInfoShader>(mesh_shader)
 			|| dynamic_pointer_cast<Water>(mesh_component)
 			|| dynamic_pointer_cast<GerstnerWaveWater>(mesh_component))
-		{
 			continue;
-		}
 
-		// 等于1代表渲染skybox，会需要用到环境贴图
 		mesh_shader->Use();
-		mesh_shader->SetBool("b_render_skybox", m_skyboxRenderSystem.render_sky_env_status == 1);
+		mesh_shader->SetBool("b_render_skybox", skybox_render_sky_env_status == 1);
 		mesh_shader->SetMat4("model", actor->GetModelMatrix());
 		mesh_shader->SetDouble("iTime", render_time);
 		mesh_component->Draw();
@@ -807,7 +467,8 @@ void KongRenderModule::RenderShadowMap()
 
 void KongRenderModule::OnWindowResize(int width, int height)
 {
-	m_postProcessRenderSystem.OnWindowResize(width, height);
+	if (m_backend)
+		m_backend->OnWindowResize(width, height);
 	//defer_buffer_.GenerateDeferRenderTextures(width, height);
 	//ssao_helper_.GenerateSSAOTextures(width, height);
 	// water_render_helper_.GenerateWaterRenderTextures(width, height);
@@ -815,19 +476,12 @@ void KongRenderModule::OnWindowResize(int width, int height)
 
 void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
 {
-	m_waterRenderSystem.m_waterActor = render_water_actor;
+	if (m_backend)
+		m_backend->SetRenderWater(render_water_actor);
 }
 
 void KongRenderModule::OnReloadScene()
 {
-#ifdef RENDER_IN_VULKAN
-	// todo: 放其他地方
-	m_vkShadowMapSystem->InitLightShadowMapResource(m_descriptorPool.get());
-#if VK_DEFER
-	m_vkDeferRenderSystem->CreateMeshDescriptorSet();
-#else
-	m_vkSimpleRenderSystem->CreateMeshDescriptorSet();
-#endif
-	
-#endif
+	if (m_backend)
+		m_backend->OnReloadScene(this);
 }

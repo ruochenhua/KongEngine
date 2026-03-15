@@ -1,4 +1,4 @@
-﻿#include "VkShadowMapRenderSystem.h"
+#include "VkShadowMapRenderSystem.h"
 
 #include "VkModelRenderSystem.hpp"
 #ifdef RENDER_IN_VULKAN
@@ -6,6 +6,7 @@
 #include "Scene.hpp"
 #include "Component/LightComponent.h"
 #include "Render/RenderModule.hpp"
+#include "Render/RenderModuleBackendVulkan.hpp"
 #include "Render/Resource/Texture.hpp"
 
 using namespace Kong;
@@ -198,8 +199,9 @@ void VkDirectLightShadowMapRenderSystem::CreatePipelineLayout()
     pushConstantRange.size = sizeof(VkModelRenderSystem::SimplePushConstantData);
     
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    // descriptor set layout
-    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    if (backend && backend->GetDescriptorLayout())
+        descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
    
     // for (auto& layout : m_descriptorSetLayout)
     // {

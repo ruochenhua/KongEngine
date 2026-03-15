@@ -1,7 +1,10 @@
-﻿#include "MeshComponent.h"
+#include "MeshComponent.h"
 //#include "OBJ_Loader.h"
 
 #include "Render/RenderModule.hpp"
+#ifdef RENDER_IN_VULKAN
+#include "Render/RenderModuleBackendVulkan.hpp"
+#endif
 #include "Shader/OpenGL/OpenGLShader.h"
 
 #include "glm/gtc/random.hpp"
@@ -110,14 +113,17 @@ void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pi
 			continue;
 		}
 
-		// 全局变量，控制在render module中
-		vkCmdBindDescriptorSets(
-		    frameInfo.commandBuffer,
-		    VK_PIPELINE_BIND_POINT_GRAPHICS,
-		    pipelineLayout,
-		    0, 1,
-		    &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
-		    	, 0, nullptr);
+		// 全局变量，从 Vulkan 后端获取
+		{
+		    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+		    VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
+		    if (globalSet != VK_NULL_HANDLE)
+		        vkCmdBindDescriptorSets(
+		            frameInfo.commandBuffer,
+		            VK_PIPELINE_BIND_POINT_GRAPHICS,
+		            pipelineLayout,
+		            0, 1, &globalSet, 0, nullptr);
+		}
 
 		vkCmdBindDescriptorSets(
 			frameInfo.commandBuffer,

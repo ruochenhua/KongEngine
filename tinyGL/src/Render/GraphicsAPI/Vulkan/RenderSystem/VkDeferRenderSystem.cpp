@@ -1,4 +1,4 @@
-﻿#include "VkDeferRenderSystem.hpp"
+#include "VkDeferRenderSystem.hpp"
 
 #include <array>
 
@@ -6,6 +6,7 @@
 #include "Scene.hpp"
 #include "Component/LightComponent.h"
 #include "Render/RenderModule.hpp"
+#include "Render/RenderModuleBackendVulkan.hpp"
 #include "Render/Resource/Texture.hpp"
 
 using namespace Kong;
@@ -120,13 +121,16 @@ void VkDeferRenderSystem::Draw(const FrameInfo& frameInfo)
     // 光照阶段管线
     m_deferColorPipeline->Bind(frameInfo.commandBuffer);
     
-    vkCmdBindDescriptorSets(
-        frameInfo.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_deferColorPipelineLayout,
-        0, 1,
-        &KongRenderModule::GetRenderModule().m_descriptorSets[frameInfo.frameIndex]
-            , 0, nullptr);
+    {
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+        VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
+        if (globalSet != VK_NULL_HANDLE)
+            vkCmdBindDescriptorSets(
+                frameInfo.commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_deferColorPipelineLayout,
+                0, 1, &globalSet, 0, nullptr);
+    }
 
     vkCmdBindDescriptorSets(
         frameInfo.commandBuffer,
@@ -378,7 +382,8 @@ void VkDeferRenderSystem::CreateDescriptorSets()
     VkDescriptorImageInfo shadowImageInfo {nullTex->m_sampler, nullTex->m_imageView,
     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     
-    auto descriptorPool = KongRenderModule::GetRenderModule().m_descriptorPool.get();
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* descriptorPool = backend ? backend->GetDescriptorPool() : nullptr;
     m_deferColorDescriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
     for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -447,7 +452,9 @@ void VkDeferRenderSystem::CreateDeferColorPipelineLayout()
     // set��˳�����vector�У�set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     // �ȷ�ȫ�ֵ�descriptor set layout
-    descriptorSetLayouts.push_back(KongRenderModule::GetRenderModule().m_descriptorLayout->GetDescriptorSetLayout());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    if (backend && backend->GetDescriptorLayout())
+        descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_deferColorDescriptorSetLayouts)
     {
         descriptorSetLayouts.push_back(layout->GetDescriptorSetLayout());

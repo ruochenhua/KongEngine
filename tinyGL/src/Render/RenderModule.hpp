@@ -1,17 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "Component/CameraComponent.h"
 #include "Common.h"
-#include "GraphicsAPI/OpenGL/RenderSystem/GlDeferRenderSystem.hpp"
 #include "GraphicsAPI/OpenGL/RenderSystem/OpenGLRenderSystem.hpp"
-#include "GraphicsAPI/OpenGL/RenderSystem/GlSkyboxRenderSystem.hpp"
-#include "GraphicsAPI/OpenGL/RenderSystem/GlSSReflectionRenderSystem.hpp"
-#include "GraphicsAPI/OpenGL/RenderSystem/GlWaterRenderSystem.hpp"
-#ifdef RENDER_IN_VULKAN
-#include "GraphicsAPI/Vulkan/RenderSystem/VkDeferRenderSystem.hpp"
-#endif
 #include "Render/Abstraction/IRenderSystem.hpp"
 #include "Render/Abstraction/RenderSystemAdapter.hpp"
 #include "Render/Abstraction/Types.hpp"
+#include "Render/Abstraction/IRenderModuleBackend.hpp"
+#include "Render/Abstraction/BackendType.hpp"
 
 #include "Shader/OpenGL/OpenGLShader.h"
 
@@ -20,15 +15,8 @@
 
 namespace Kong
 {
+	class IGraphicsDevice;
 	class CQuadShape;
-	class VulkanBuffer;
-	class VulkanDescriptorSetLayout;
-	class VulkanDescriptorPool;
-	class SimpleVulkanRenderSystem;
-	class VulkanPostprocessSystem;
-	class VulkanSkyBoxRenderSystem;
-	class VkShadowMapRenderSystem;
-	class VulkanSwapChain;
 	class CCamera;
 
 	// 针对场景中的所有渲染物，使用UBO存储基础数据优化性能
@@ -127,11 +115,18 @@ namespace Kong
 		KongRenderModule(const KongRenderModule&) = delete;
 		KongRenderModule& operator=(const KongRenderModule&) = delete;
 		
-		int Init();
+		/** 初始化；传入当前图形设备（由 Window 提供），可为 nullptr 走兼容路径 */
+		int Init(IGraphicsDevice* device = nullptr);
 		int Update(double delta);
 		/** 统一 RHI 路径：传入当前帧上下文，按 m_renderSystems 顺序执行各 Pass */
 		int Update(double delta, IFrameContext* frameContext);
 		void RenderUI(double delta);
+
+		/** 供 IRenderModuleBackend 注册 Pass 使用 */
+		void PushRenderSystem(std::unique_ptr<IRenderSystem> sys);
+
+		/** 当前后端，Vulkan 路径下可转为 RenderModuleBackendVulkan* 取 descriptor pool/sets */
+		IRenderModuleBackend* GetBackend() { return m_backend.get(); }
 		
 		shared_ptr<CCamera> GetCamera() const {return mainCamera;}
 
@@ -139,7 +134,14 @@ namespace Kong
 
 		void SetRenderWater(const weak_ptr<AActor>& water_actor);
 		void OnReloadScene();
-				
+
+		/** OpenGL 主 FBO / 主颜色附件，供后端 DrawMainScene 使用 */
+		GLuint GetMainFBO() const { return m_renderToBuffer; }
+		GLuint GetMainColorTexture(unsigned index) const { return index < FRAGOUT_TEXTURE_COUNT ? m_renderToTextures[index] : 0; }
+
+		/** ImGui 等与相机/SSR 等相关的 UI，在具体 RenderSystem 的 DrawUI 之前调用 */
+		void RenderUIBeforeSystems();
+
 		double render_time = 0.0;
 		// 预先处理一下场景中的光照。目前场景只支持一个平行光和四个点光源，后续需要根据object的位置等信息映射对应的光源
 		RenderResultInfo RenderSceneObject(GLuint target_fbo = GL_NONE);
@@ -154,35 +156,10 @@ namespace Kong
 
 		OpenGLRenderSystem* GetRenderSystemByType(RenderSystemType type);
 
-#ifdef RENDER_IN_VULKAN
-		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool{};
-		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorLayout;
-		std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffers;
-		std::vector<VkDescriptorSet> m_descriptorSets;
+		/** 当前后端状态，由 Init(device) 时创建 */
+		std::unique_ptr<IRenderModuleBackend> m_backend;
 
-		int GetFrameIndex() const;
-		void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		bool IsFrameInProgress() const;
-		VkCommandBuffer GetCurrentCommandBuffer() const;
-		VkRenderPass GetSwapChainRenderPass() const;
-		float GetAspectRatio() const;
-		VulkanSwapChain* GetSwapChain() const;
-
-		// todo: 放到private
-		// 简单渲染系统
-		std::unique_ptr<SimpleVulkanRenderSystem> m_vkSimpleRenderSystem{nullptr};
-		// 延迟渲染系统
-		std::unique_ptr<VkDeferRenderSystem> m_vkDeferRenderSystem{nullptr};
-		// 后处理渲染系统
-		std::unique_ptr<VulkanPostprocessSystem> m_vkPostProcessSystem{nullptr};
-		// 天空盒渲染系统
-		std::unique_ptr<VulkanSkyBoxRenderSystem> m_vkSkyboxSystem{nullptr};
-		// 阴影图渲染系统
-		std::unique_ptr<VkShadowMapRenderSystem> m_vkShadowMapSystem{nullptr};
-#endif
-		/* 矩阵UBO，保存场景基础的矩阵信息
-		 */
+		/* 矩阵UBO，保存场景基础的矩阵信息（OpenGL 路径使用） */
 		UBOHelper matrix_ubo;
 	private:
 		// 更新场景的渲染信息（光照、相机等等）
@@ -190,8 +167,8 @@ namespace Kong
 		void InitUBO();
 		void InitMainFBO();
 		
-		// 渲染不支持延迟渲染的物体
-		void RenderNonDeferSceneObjects() const;
+		// 渲染不支持延迟渲染的物体；skybox_render_sky_env_status 由 OpenGL 后端传入
+		void RenderNonDeferSceneObjects(int skybox_render_sky_env_status) const;
 		
 		void RenderShadowMap();
 
@@ -216,26 +193,22 @@ namespace Kong
 		shared_ptr<CCamera> mainCamera{};
 		
 
-		// 光照UBO，保存场景基础的光照信息
-		/*		
-		 *	SceneLightInfo light_info
-		 */
+		// 光照UBO，保存场景基础的光照信息（OpenGL 路径使用）
 		UBOHelper scene_light_ubo;
-		
-		// 天空盒
-		GlSkyboxRenderSystem m_skyboxRenderSystem;
-		// 延迟渲染
-		GlDeferRenderSystem m_deferRenderSystem;
-		// 后处理
-		GlPostProcessRenderSystem m_postProcessRenderSystem;
-		// 屏幕空间反射
-		GlSSReflectionRenderSystem m_ssReflectionRenderSystem;
-		// 水体渲染实现
-		GlWaterRenderSystem m_waterRenderSystem;
-		
+
 		shared_ptr<CQuadShape> m_quadShape;
 
 		/** 按固定顺序注册的渲染 Pass，由 Update(delta, frameContext) 统一驱动 */
 		std::vector<std::unique_ptr<IRenderSystem>> m_renderSystems;
+
+		/** 当前 RHI 设备，由 Init(device) 设置 */
+		IGraphicsDevice* m_device {nullptr};
+
+#ifndef RENDER_IN_VULKAN
+		friend class RenderModuleBackendOpenGL;
+#endif
+#ifdef RENDER_IN_VULKAN
+		friend class RenderModuleBackendVulkan;
+#endif
 	};
 }

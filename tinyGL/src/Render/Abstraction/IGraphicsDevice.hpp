@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file IGraphicsDevice.hpp
  * @brief RHI 图形设备接口，负责初始化与资源创建。
  * @ingroup RenderAbstraction
@@ -50,6 +50,9 @@ namespace Kong
 
         /** 结束本帧并提交/呈现 */
         virtual void EndFrame() = 0;
+
+        /** 等待设备空闲（如析构前等待 GPU 完成）。默认空实现；Vulkan 实现中调用 vkDeviceWaitIdle。 */
+        virtual void WaitIdle() {}
 
         /** 创建管线（阶段 5，默认返回 nullptr，由后端实现） */
         virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineDesc& desc) { (void)desc; return nullptr; }

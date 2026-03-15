@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
 #include <memory>
@@ -49,6 +49,7 @@ namespace Kong
         BackendType GetBackendType() const override { return BackendType::Vulkan; }
         IFrameContext& BeginFrame() override;
         void EndFrame() override;
+        void WaitIdle() override;
 
         VkDevice GetDevice() const { return m_device; }
         VulkanSwapChain* GetSwapChain() { return m_swapChain.get(); }

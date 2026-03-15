@@ -1,8 +1,9 @@
-﻿#include "Terrain.h"
+#include "Terrain.h"
 
 #include <algorithm>
 #include "Render/RenderModule.hpp"
 #include "Scene.hpp"
+#include "Shader/OpenGL/DeferInfoShader.h"
 #include "stb_image.h"
 #include "Render/Resource/Texture.hpp"
 #include "Component/LightComponent.h"
