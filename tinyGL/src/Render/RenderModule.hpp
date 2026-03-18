@@ -204,11 +204,11 @@ namespace Kong
 		/** 当前 RHI 设备，由 Init(device) 设置 */
 		IGraphicsDevice* m_device {nullptr};
 
-#ifndef RENDER_IN_VULKAN
-		friend class RenderModuleBackendOpenGL;
-#endif
+
 #ifdef RENDER_IN_VULKAN
 		friend class RenderModuleBackendVulkan;
+#else
+		friend class RenderModuleBackendOpenGL;
 #endif
 	};
 }
