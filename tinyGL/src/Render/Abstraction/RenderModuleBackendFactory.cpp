@@ -9,8 +9,6 @@
 
 #ifdef RENDER_IN_VULKAN
 #include "Render/RenderModuleBackendVulkan.hpp"
-#else
-#include "Render/RenderModuleBackendOpenGL.hpp"
 #endif
 
 namespace Kong
@@ -22,8 +20,8 @@ namespace Kong
             return std::make_unique<RenderModuleBackendVulkan>();
         return nullptr;
 #else
-        if (type == BackendType::OpenGL)
-            return std::make_unique<RenderModuleBackendOpenGL>();
+        (void)type;
+        // OpenGL：无独立 Backend 对象，Pass 与 Gl* 子系统由 KongRenderModule 持有
         return nullptr;
 #endif
     }

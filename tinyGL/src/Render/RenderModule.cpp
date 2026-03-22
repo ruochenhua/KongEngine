@@ -1,7 +1,10 @@
 #include "RenderModule.hpp"
 #include "Render/Abstraction/IGraphicsDevice.hpp"
+#include "Render/Abstraction/IFrameContext.hpp"
+#include "Render/Abstraction/IRenderModuleBackend.hpp"
+#include "Render/Abstraction/BackendType.hpp"
 #ifndef RENDER_IN_VULKAN
-#include "Render/RenderModuleBackendOpenGL.hpp"
+#include "Render/GraphicsAPI/OpenGL/OpenGLRenderPassHost.hpp"
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -30,31 +33,6 @@ using namespace glm;
 using namespace std;
 
 static KongRenderModule g_renderModule;
-
-void UBOHelper::Init(GLuint in_binding)
-{
-	binding = in_binding;
-	// 创建UBO
-	glGenBuffers(1, &ubo_idx);
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo_idx);
-	glBufferData(GL_UNIFORM_BUFFER, next_offset, NULL, GL_STATIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo_idx);
-	glBindBuffer(GL_UNIFORM_BUFFER, GL_NONE);
-}
-
-void UBOHelper::Bind() const
-{
-#if !USE_DSA
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo_idx);
-#endif
-}
-
-void UBOHelper::EndBind() const
-{
-#if !USE_DSA
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-#endif
-}
 
 KongRenderModule& KongRenderModule::GetRenderModule()
 {
@@ -95,21 +73,14 @@ int KongRenderModule::Init(IGraphicsDevice* device)
 	string null_tex_path = RESOURCE_PATH + "Engine/null_texture.png";
 	m_nullTex = ResourceManager::GetOrLoadTexture_new(diffuse, null_tex_path);
 
+	if (device)
+		m_passHost = device->CreateRenderPassHost();
+
 	if (device && device->GetBackendType() == BackendType::OpenGL)
 	{
 		m_quadShape = make_shared<CQuadShape>();
-		InitMainFBO();
-#if SHADOWMAP_DEBUG
-		map<EShaderType, string> debug_shader_paths = {
-			{EShaderType::vs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.vert")},
-			{EShaderType::fs, CSceneLoader::ToResourcePath("shader/shadow/shadowmap_debug.frag")}
-		};
-		shadowmap_debug_shader = make_shared<Shader>();
-		shadowmap_debug_shader->Init(debug_shader_paths);
-		shadowmap_debug_shader->Use();
-		shadowmap_debug_shader->SetInt("shadow_map", 0);
-#endif
-		InitUBO();
+		if (m_passHost)
+			m_passHost->OnAttached(*this, device);
 	}
 
 	if (device)
@@ -122,22 +93,9 @@ int KongRenderModule::Init(IGraphicsDevice* device)
 	return 0;
 }
 
-OpenGLRenderSystem* KongRenderModule::GetRenderSystemByType(RenderSystemType type)
-{
-#ifndef RENDER_IN_VULKAN
-	if (m_backend)
-	{
-		auto* gl = dynamic_cast<RenderModuleBackendOpenGL*>(m_backend.get());
-		if (gl)
-			return gl->GetRenderSystemByType(type);
-	}
-#endif
-	(void)type;
-	return nullptr;
-}
-
 void KongRenderModule::UpdateSceneRenderInfo()
 {
+	// todo: 改为和渲染API无关
 	scene_render_info.clear();
 	auto actors = KongSceneManager::GetActors();
 	for(auto actor: actors)
@@ -217,71 +175,8 @@ void KongRenderModule::UpdateSceneRenderInfo()
 
 	if (m_backend)
 		m_backend->UpdateSceneRenderInfo(this);
-	// OpenGL 下光照 UBO 仍由 RenderModule 更新；Vulkan 由 backend 写自己的 UBO
-	if (!m_backend || (m_device && m_device->GetBackendType() == BackendType::OpenGL))
-	{
-		scene_light_ubo.Bind();
-		scene_light_ubo.UpdateData(light_info, "light_info");
-		scene_light_ubo.EndBind();
-	}
-}
-
-
-void KongRenderModule::InitUBO()
-{
-	matrix_ubo.AppendData(glm::mat4(), "view");
-	matrix_ubo.AppendData(glm::mat4(), "projection");
-	matrix_ubo.AppendData(glm::vec4(), "cam_pos");
-	matrix_ubo.AppendData(glm::vec4(), "near_far");
-	matrix_ubo.Init(0);
-
-	scene_light_ubo.AppendData(SceneLightInfo(), "light_info");
-	scene_light_ubo.Init(1);
-
-	matrix_ubo.Bind();
-	matrix_ubo.UpdateData(vec4(mainCamera->GetNearFar(), 0, 0), "near_far");
-}
-
-void KongRenderModule::InitMainFBO()
-{
-	auto window_size = KongWindow::GetWindowModule().windowSize;
-	int width = window_size.x;
-	int height = window_size.y;
-	
-	glGenFramebuffers(1, &m_renderToBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_renderToBuffer);
-	
-	TextureCreateInfo fragout_texture_create_info
-	{
-	    GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT,
-	    width, height, GL_REPEAT, GL_REPEAT, GL_REPEAT,
-	    GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
-	};
-	
-	
-	for(unsigned i = 0; i < FRAGOUT_TEXTURE_COUNT; ++i)
-	{
-	    TextureBuilder::CreateTexture(m_renderToTextures[i], fragout_texture_create_info);
-	    
-	    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i,
-	        GL_TEXTURE_2D, m_renderToTextures[i], 0);
-	}
-	// depth buffer
-	if(!m_renderToRbo)
-	{
-	    // 注意这里不是glGenTextures，搞错了查了半天
-	    glGenRenderbuffers(1, &m_renderToRbo);
-	}
-	glBindRenderbuffer(GL_RENDERBUFFER, m_renderToRbo);
-	
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_renderToRbo);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	// 渲染到多个颜色附件上
-	GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};  
-	glDrawBuffers(3, color_attachment); 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (m_passHost)
+		m_passHost->OnSceneLightInfoUpdated(*this, light_info);
 }
 
 
@@ -292,6 +187,7 @@ int KongRenderModule::Update(double delta)
 
 int KongRenderModule::Update(double delta, IFrameContext* frameContext)
 {
+	// 更新相机
 	render_time += delta;
 	mainCamera->Update(delta);
 	UpdateSceneRenderInfo();
@@ -305,6 +201,10 @@ int KongRenderModule::Update(double delta, IFrameContext* frameContext)
 		sceneDrawInfo.sceneContext = this;
 		sceneDrawInfo.currentColorRT = static_cast<uintptr_t>(latestRenderResult.resultColor);
 		sceneDrawInfo.currentDepthRT = static_cast<uintptr_t>(latestRenderResult.resultDepth);
+		sceneDrawInfo.rhiCommandList = frameContext->GetRHICommandList();
+		sceneDrawInfo.currentFramebuffer = latestRenderResult.rhiFramebuffer;
+		sceneDrawInfo.rhiCurrentColor = latestRenderResult.rhiResultColor;
+		sceneDrawInfo.rhiCurrentDepth = latestRenderResult.rhiResultDepth;
 		for (auto& sys : m_renderSystems)
 			sys->Draw(*frameContext, sceneDrawInfo);
 		return 1;
@@ -338,6 +238,8 @@ void KongRenderModule::RenderUI(double delta)
 {
 	(void)delta;
 	RenderUIBeforeSystems();
+	if (m_passHost && m_passHost->HasSubsystemUI())
+		m_passHost->DrawSubsystemUI(*this);
 	if (m_backend)
 		m_backend->DrawUI(this);
 }
@@ -345,6 +247,11 @@ void KongRenderModule::RenderUI(double delta)
 RenderResultInfo KongRenderModule::RenderSceneObject(GLuint target_fbo)
 {
 	(void)target_fbo;
+	if (m_device && m_device->GetBackendType() == BackendType::OpenGL && m_passHost)
+	{
+		m_passHost->DrawMainScene(*this, nullptr);
+		return latestRenderResult;
+	}
 	if (m_backend)
 	{
 		m_backend->DrawMainScene(this);
@@ -410,63 +317,15 @@ void KongRenderModule::RenderShadowMap()
 #endif
 
 #if SHADOWMAP_DEBUG
-	
-	glCullFace(GL_BACK);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	auto window_size = Engine::GetEngine().GetWindowSize();
-	int width = window_size.x, height = window_size.y;
-
-	glViewport(0,0,width, height);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// 先只画平行光的
-	CDirectionalLightComponent* dir_light = scene_render_info.scene_dirlight.lock().get();
-	
-	if(!dir_light)
-		return;
-	shadowmap_debug_shader->Use();
-	// glUseProgram(m_ShadowMapDebugShaderId);
-	// Shader::SetFloat(m_ShadowMapDebugShaderId, "near_plane", dir_light->near_plane);
-	// Shader::SetFloat(m_ShadowMapDebugShaderId, "far_plane", dir_light->far_plane);
-	glActiveTexture(GL_TEXTURE0);
-
-	GLuint dir_light_shadowmap_id = dir_light->GetShadowMapTexture();
-#if USE_CSM
-	glBindTexture(GL_TEXTURE_2D_ARRAY, dir_light_shadowmap_id);
-#else
-	glBindTexture(GL_TEXTURE_2D, dir_light_shadowmap_id);
-#endif
-	// renderQuad() renders a 1x1 XY quad in NDC
-	// -----------------------------------------
-	if (m_QuadVAO == 0)
-	{
-		float quadVertices[] = {
-			// positions        // texture Coords
-			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		};
-		// setup plane VAO
-		glGenVertexArrays(1, &m_QuadVAO);
-		glGenBuffers(1, &m_QuadVBO);
-		glBindVertexArray(m_QuadVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_QuadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	}
-	glBindVertexArray(m_QuadVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
+	if (auto* glh = dynamic_cast<OpenGLRenderPassHost*>(m_passHost.get()))
+		glh->DrawShadowMapDebug(*this);
 #endif
 }
 
-
 void KongRenderModule::OnWindowResize(int width, int height)
 {
+	if (m_passHost)
+		m_passHost->OnWindowResize(*this, width, height);
 	if (m_backend)
 		m_backend->OnWindowResize(width, height);
 	//defer_buffer_.GenerateDeferRenderTextures(width, height);
@@ -476,6 +335,8 @@ void KongRenderModule::OnWindowResize(int width, int height)
 
 void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)
 {
+	if (m_passHost)
+		m_passHost->SetRenderWater(*this, render_water_actor);
 	if (m_backend)
 		m_backend->SetRenderWater(render_water_actor);
 }
@@ -485,3 +346,55 @@ void KongRenderModule::OnReloadScene()
 	if (m_backend)
 		m_backend->OnReloadScene(this);
 }
+
+#ifndef RENDER_IN_VULKAN
+OpenGLRenderSystem* KongRenderModule::GetOpenGLSubsystem(RenderSystemType type)
+{
+	return m_passHost ? m_passHost->TryGetOpenGLSubsystem(type) : nullptr;
+}
+
+IRHIRenderSubsystem* KongRenderModule::GetRHISubsystem(RHISubsystemKind kind)
+{
+	return m_passHost ? m_passHost->TryGetRHISubsystem(kind) : nullptr;
+}
+
+GLuint KongRenderModule::GetMainFBO()
+{
+	return m_passHost ? static_cast<GLuint>(m_passHost->GetMainFBONativeHandle()) : 0;
+}
+
+GLuint KongRenderModule::GetMainColorTexture(unsigned index)
+{
+	return m_passHost ? static_cast<GLuint>(m_passHost->GetMainColorTextureNativeHandle(index)) : 0;
+}
+
+IFramebuffer* KongRenderModule::GetMainSceneFramebuffer()
+{
+	return m_passHost ? m_passHost->GetMainSceneFramebuffer(*this) : nullptr;
+}
+#else
+OpenGLRenderSystem* KongRenderModule::GetOpenGLSubsystem(RenderSystemType)
+{
+	return nullptr;
+}
+
+IRHIRenderSubsystem* KongRenderModule::GetRHISubsystem(RHISubsystemKind kind)
+{
+	return m_passHost ? m_passHost->TryGetRHISubsystem(kind) : nullptr;
+}
+
+GLuint KongRenderModule::GetMainFBO()
+{
+	return 0;
+}
+
+GLuint KongRenderModule::GetMainColorTexture(unsigned)
+{
+	return 0;
+}
+
+IFramebuffer* KongRenderModule::GetMainSceneFramebuffer()
+{
+	return nullptr;
+}
+#endif

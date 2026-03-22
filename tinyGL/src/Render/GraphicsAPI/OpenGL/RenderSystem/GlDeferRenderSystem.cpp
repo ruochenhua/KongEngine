@@ -277,7 +277,8 @@ void GlDeferRenderSystem::RenderToBuffer(KongRenderModule* render_module)
             continue;
         }
 
-		auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
+		auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(
+			render_module->GetOpenGLSubsystem(RenderSystemType::SKYBOX));
         mesh_shader->Use();
         mesh_shader->SetBool("b_render_skybox", skybox_sys ? (skybox_sys->render_sky_env_status == 1) : false);
         mesh_shader->SetMat4("model", actor->GetModelMatrix());
@@ -323,13 +324,16 @@ void GlDeferRenderSystem::RenderToTexture(GLuint render_to_buffer, KongRenderMod
 	glBindTextureUnit(texture_idx++, GetAlbedoTexture());
 	glBindTextureUnit(texture_idx++, GetOrmTexture());
 	
-	auto skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::SKYBOX));
-    m_deferredBRDFShader->SetBool("b_render_skybox", skybox_sys->render_sky_env_status == 1);
-	// auto& render_module = KongRenderModule::GetRenderModule();
-	glBindTextureUnit(texture_idx++, skybox_sys->GetSkyBoxTextureId());
-	glBindTextureUnit(texture_idx++, skybox_sys->GetDiffuseIrradianceTexture());
-	glBindTextureUnit(texture_idx++, skybox_sys->GetPrefilterTexture());
-	glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
+	auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(
+		render_module->GetOpenGLSubsystem(RenderSystemType::SKYBOX));
+    m_deferredBRDFShader->SetBool("b_render_skybox", skybox_sys && skybox_sys->render_sky_env_status == 1);
+	if (skybox_sys)
+	{
+		glBindTextureUnit(texture_idx++, skybox_sys->GetSkyBoxTextureId());
+		glBindTextureUnit(texture_idx++, skybox_sys->GetDiffuseIrradianceTexture());
+		glBindTextureUnit(texture_idx++, skybox_sys->GetPrefilterTexture());
+		glBindTextureUnit(texture_idx++, skybox_sys->GetBRDFLutTexture());
+	}
 
 	auto m_quadShape = KongRenderModule::GetScreenShape();
     m_deferredBRDFShader->UpdateRenderData(m_quadShape->mesh_resource->mesh_list[0]->m_RenderInfo->material);

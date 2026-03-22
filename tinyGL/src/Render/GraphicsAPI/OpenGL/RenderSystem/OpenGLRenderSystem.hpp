@@ -1,13 +1,19 @@
-﻿#pragma once
+#pragma once
 #include "glad/glad.h"
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
+#include "Render/Abstraction/RenderSubsystemTypes.hpp"
 
 namespace Kong
 {
     class KongRenderModule;
+    class ITexture;
+    class IFramebuffer;
 
-    // 返回渲染结果信息
+    /**
+     * 返回渲染结果信息。
+     * @deprecated GLuint 字段为 GL 遗留；新 Pass 应优先写入 rhiFramebuffer / rhiResultColor / rhiResultDepth。
+     */
     struct RenderResultInfo
     {
         GLuint frameBuffer {GL_NONE};
@@ -15,21 +21,15 @@ namespace Kong
         GLuint resultDepth {GL_NONE};
         GLuint resultBloom {GL_NONE};
         GLuint resultPosition {GL_NONE};
+        IFramebuffer* rhiFramebuffer = nullptr;
+        ITexture*     rhiResultColor   = nullptr;
+        ITexture*     rhiResultDepth   = nullptr;
     };
 
     // 渲染传入信息
     struct RenderInputInfo
     {
         GLuint frameBuffer {GL_NONE};
-    };
-
-    enum class RenderSystemType : uint8_t
-    {
-        DEFERRED = 0,
-        SKYBOX,
-        POST_PROCESS,
-        SS_REFLECTION,
-        NONE,
     };
 
     // 渲染系统，每个渲染效果或者阶段都独立出来

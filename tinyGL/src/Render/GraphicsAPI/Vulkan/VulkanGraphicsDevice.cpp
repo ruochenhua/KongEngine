@@ -1,6 +1,7 @@
 #include "VulkanGraphicsDevice.hpp"
 
 #ifdef RENDER_IN_VULKAN
+#include "VulkanRenderPassHost.hpp"
 #include "VkBufferRHI.hpp"
 #include "VkFrameContext.hpp"
 #include "VulkanSwapChain.hpp"
@@ -698,6 +699,11 @@ SwapChainSupportDetails VulkanGraphicsDevice::QuerySwapChainSupport(VkPhysicalDe
             details.presentModes.data());
     }
     return details;
+}
+
+std::unique_ptr<IRenderPassHost> VulkanGraphicsDevice::CreateRenderPassHost()
+{
+    return std::make_unique<VulkanRenderPassHost>();
 }
 
 #endif

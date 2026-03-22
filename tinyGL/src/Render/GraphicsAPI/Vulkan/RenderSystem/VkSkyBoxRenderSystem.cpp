@@ -39,7 +39,7 @@ void VulkanSkyBoxRenderSystem::Draw(const FrameInfo& frameInfo)
     m_pipeline->Bind(frameInfo.commandBuffer);
     // 全局变量，从 Vulkan 后端获取
     {
-        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
         VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
         if (globalSet != VK_NULL_HANDLE)
             vkCmdBindDescriptorSets(
@@ -72,7 +72,7 @@ void VulkanSkyBoxRenderSystem::CreateDescriptorSetLayout()
 void VulkanSkyBoxRenderSystem::CreatePipelineLayout()
 {
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
     if (backend && backend->GetDescriptorLayout())
         descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)

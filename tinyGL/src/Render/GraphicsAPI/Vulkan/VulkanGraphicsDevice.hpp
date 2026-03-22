@@ -9,6 +9,7 @@
 #include "Render/Abstraction/IBuffer.hpp"
 #include "Render/Abstraction/ITexture.hpp"
 #include "Render/Abstraction/IFrameContext.hpp"
+#include "Render/Abstraction/IRenderPassHost.hpp"
 #include "VkFrameContext.hpp"
 #include "VulkanSwapChain.hpp"
 
@@ -50,6 +51,8 @@ namespace Kong
         IFrameContext& BeginFrame() override;
         void EndFrame() override;
         void WaitIdle() override;
+
+        std::unique_ptr<IRenderPassHost> CreateRenderPassHost() override;
 
         VkDevice GetDevice() const { return m_device; }
         VulkanSwapChain* GetSwapChain() { return m_swapChain.get(); }

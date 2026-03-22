@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "VkModelRenderSystem.hpp"
 
 #ifdef RENDER_IN_VULKAN
@@ -10,9 +11,11 @@ namespace Kong
 
 namespace Kong
 {
-    class VkDeferRenderSystem : public VkModelRenderSystem
+    class VkDeferRenderSystem : public VkModelRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Deferred; }
+
         VkDeferRenderSystem();
         ~VkDeferRenderSystem() override;
         

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file GLBuffer.hpp
  * @brief OpenGL 实现的 IBuffer，RHI 缓冲接口。
  * @ingroup RenderAbstraction
@@ -24,6 +24,8 @@ namespace Kong
 
         void Upload(const void* data, size_t size = 0, size_t offset = 0) override;
         void Bind(uint32_t slot, void* commandList = nullptr) override;
+
+        unsigned int GetGLBufferId() const { return m_bufferId; }
 
     private:
         unsigned int m_bufferId {0};

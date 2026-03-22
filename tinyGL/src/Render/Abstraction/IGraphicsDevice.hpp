@@ -13,6 +13,8 @@
 #include "Render/Abstraction/IPipeline.hpp"
 #include "Render/Abstraction/IRenderPass.hpp"
 #include "Render/Abstraction/IFramebuffer.hpp"
+#include "Render/Abstraction/ISampler.hpp"
+#include "Render/Abstraction/IRenderPassHost.hpp"
 
 #include <memory>
 
@@ -42,6 +44,9 @@ namespace Kong
         /** 创建纹理，返回抽象纹理对象；失败可返回 nullptr */
         virtual std::unique_ptr<ITexture> CreateTexture(const TextureDesc& desc) = 0;
 
+        /** 创建采样器；未实现时返回 nullptr（可用纹理内嵌采样状态代替） */
+        virtual std::unique_ptr<ISampler> CreateSampler(const SamplerDesc& desc) { (void)desc; return nullptr; }
+
         /** 返回当前后端类型 */
         virtual BackendType GetBackendType() const = 0;
 
@@ -60,6 +65,9 @@ namespace Kong
         virtual std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassDesc& desc) { (void)desc; return nullptr; }
         /** 创建帧缓冲（阶段 5，默认返回 nullptr） */
         virtual std::unique_ptr<IFramebuffer> CreateFramebuffer(const RenderPassDesc& desc, ITexture* color, ITexture* depth) { (void)desc; (void)color; (void)depth; return nullptr; }
+
+        /** 创建当前后端的 Pass 宿主（子系统 + 拓扑注册）；默认 nullptr */
+        virtual std::unique_ptr<IRenderPassHost> CreateRenderPassHost() { return nullptr; }
 
         IGraphicsDevice(const IGraphicsDevice&) = delete;
         IGraphicsDevice& operator=(const IGraphicsDevice&) = delete;

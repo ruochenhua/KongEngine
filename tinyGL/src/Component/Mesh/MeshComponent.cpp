@@ -115,7 +115,7 @@ void CMeshComponent::Draw(const FrameInfo& frameInfo, const VkPipelineLayout& pi
 
 		// 全局变量，从 Vulkan 后端获取
 		{
-		    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+		    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
 		    VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
 		    if (globalSet != VK_NULL_HANDLE)
 		        vkCmdBindDescriptorSets(

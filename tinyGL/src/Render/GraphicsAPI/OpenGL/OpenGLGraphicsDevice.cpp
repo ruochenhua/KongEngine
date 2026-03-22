@@ -1,4 +1,5 @@
-﻿#include "OpenGLGraphicsDevice.hpp"
+#include "OpenGLGraphicsDevice.hpp"
+#include "OpenGLRenderPassHost.hpp"
 #include "GLFW/glfw3.h"
 #include <stdexcept>
 
@@ -74,4 +75,9 @@ std::unique_ptr<IBuffer> OpenGLGraphicsDevice::CreateBuffer(const BufferDesc& de
 std::unique_ptr<ITexture> OpenGLGraphicsDevice::CreateTexture(const TextureDesc& desc)
 {
     return std::make_unique<GLTexture>(desc);
+}
+
+std::unique_ptr<IRenderPassHost> OpenGLGraphicsDevice::CreateRenderPassHost()
+{
+    return std::make_unique<OpenGLRenderPassHost>();
 }

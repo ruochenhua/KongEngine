@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "OpenGLRenderSystem.hpp"
 #include "Shader/OpenGL/PostprocessShader.h"
 #include "Shader/OpenGL/OpenGLShader.h"
@@ -6,9 +7,11 @@
 
 namespace Kong
 {
-    class GlPostProcessRenderSystem : public OpenGLRenderSystem
+    class GlPostProcessRenderSystem : public OpenGLRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::PostProcess; }
+
         GlPostProcessRenderSystem();
         
         void Init() override;

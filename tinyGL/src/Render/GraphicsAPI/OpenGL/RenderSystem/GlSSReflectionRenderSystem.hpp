@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include <memory>
 
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/QuadShape.h"
 
@@ -8,9 +9,14 @@ namespace Kong
 {
     class SSReflectionShader;
 
-    class GlSSReflectionRenderSystem : public OpenGLRenderSystem
+    class GlSSReflectionRenderSystem : public OpenGLRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override
+        {
+            return RHISubsystemKind::ScreenSpaceReflection;
+        }
+
         GlSSReflectionRenderSystem();
         
         void Init() override;

@@ -1,5 +1,6 @@
-﻿
+
 #pragma once
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "VulkanRenderSystem.hpp"
 #include "Component/Mesh/BoxShape.h"
 #include "Render/Resource/Texture.hpp"
@@ -7,9 +8,11 @@
 
 namespace Kong
 {
-    class VulkanSkyBoxRenderSystem : public VulkanRenderSystem
+    class VulkanSkyBoxRenderSystem : public VulkanRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Skybox; }
+
         struct VulkanSkyBoxCreateInfo
         {
             VulkanDescriptorPool* descriptorPool {nullptr};

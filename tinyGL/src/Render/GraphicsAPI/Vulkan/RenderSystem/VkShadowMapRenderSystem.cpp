@@ -199,7 +199,7 @@ void VkDirectLightShadowMapRenderSystem::CreatePipelineLayout()
     pushConstantRange.size = sizeof(VkModelRenderSystem::SimplePushConstantData);
     
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
     if (backend && backend->GetDescriptorLayout())
         descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
    

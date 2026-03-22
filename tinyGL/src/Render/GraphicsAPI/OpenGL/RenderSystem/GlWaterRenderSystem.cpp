@@ -1,7 +1,8 @@
-﻿#include "GlWaterRenderSystem.hpp"
+#include "GlWaterRenderSystem.hpp"
 
 #include "Actor.hpp"
 #include "Render/RenderModule.hpp"
+#include "Render/GraphicsAPI/OpenGL/OpenGLRenderPassHost.hpp"
 #include "Render/Resource/Texture.hpp"
 #include "Window.hpp"
 #include "Component/Mesh/GerstnerWaveWater.h"
@@ -32,6 +33,11 @@ RenderResultInfo GlWaterRenderSystem::Draw(double delta, const RenderResultInfo&
     // 有水体，需要做一次从下往上的渲染获取反射的内容
     if (auto water_actor = m_waterActor.lock())
     {
+        auto* glHost = dynamic_cast<OpenGLRenderPassHost*>(render_module->GetRenderPassHost());
+        if (!glHost)
+            return render_result_info;
+        UBOHelper& matrix_ubo = glHost->GetMatrixUbo();
+
         auto mainCamera = render_module->GetCamera();
         vec3 origin_cam_pos = mainCamera->GetPosition();
         // camera在水面之上
@@ -49,11 +55,11 @@ RenderResultInfo GlWaterRenderSystem::Draw(double delta, const RenderResultInfo&
             mainCamera->SetPosition(origin_cam_pos + vec3(0,-2*height_diff, 0));
             mainCamera->InvertPitch();
 		
-            render_module->matrix_ubo.Bind();
-            render_module->matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-            render_module->matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-            render_module->matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-            render_module->matrix_ubo.EndBind();
+            matrix_ubo.Bind();
+            matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+            matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+            matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+            matrix_ubo.EndBind();
                         
             bool tmp_ssr = render_module->use_screen_space_reflection;
             render_module->use_screen_space_reflection = false;
@@ -64,11 +70,11 @@ RenderResultInfo GlWaterRenderSystem::Draw(double delta, const RenderResultInfo&
             mainCamera->SetPosition(origin_cam_pos);
             mainCamera->InvertPitch();
 		
-            render_module->matrix_ubo.Bind();
-            render_module->matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
-            render_module->matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
-            render_module->matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
-            render_module->matrix_ubo.EndBind();
+            matrix_ubo.Bind();
+            matrix_ubo.UpdateData(mainCamera->GetViewMatrix(), "view");
+            matrix_ubo.UpdateData(mainCamera->GetProjectionMatrix(), "projection");
+            matrix_ubo.UpdateData(mainCamera->GetPosition(), "cam_pos");
+            matrix_ubo.EndBind();
             
             DrawWater(delta, render_result_info, render_module);
         }

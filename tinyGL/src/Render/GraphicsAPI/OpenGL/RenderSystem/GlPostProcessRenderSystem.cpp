@@ -1,9 +1,10 @@
-﻿#include "GlPostProcessRenderSystem.hpp"
+#include "GlPostProcessRenderSystem.hpp"
 #ifndef RENDER_IN_VULKAN
 #include <imgui.h>
 #endif
 #include "Render/RenderModule.hpp"
 #include "Render/Resource/Texture.hpp"
+#include "Render/RenderCommon.hpp"
 #include "Window.hpp"
 using namespace Kong;
 
@@ -55,9 +56,11 @@ RenderResultInfo GlPostProcessRenderSystem::Draw(double delta, const RenderResul
     // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     
-    // 渲染到屏幕的texture
+    // 渲染到屏幕的 texture（来自主场景 MRT，与 Host 内 m_renderToTextures 一致）
     // 0: 正常场景；1：bloom颜色；2：反射颜色
-    auto& screen_quad_texture = render_module->m_renderToTextures;
+    GLuint screen_quad_texture[FRAGOUT_TEXTURE_COUNT];
+    for (unsigned i = 0; i < FRAGOUT_TEXTURE_COUNT; ++i)
+        screen_quad_texture[i] = render_module->GetMainColorTexture(i);
     // 先将屏幕空间反射和主场景渲染的内容整合
     combine_process->SetCombineMode(CombineProcessShader::Alpha);
     auto postprocess_rst = combine_process->Draw({screen_quad_texture[0], screen_quad_texture[2]}, screen_quad_vao);

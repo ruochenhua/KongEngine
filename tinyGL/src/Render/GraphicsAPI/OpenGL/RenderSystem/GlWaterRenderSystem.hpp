@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include <memory>
 
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "OpenGLRenderSystem.hpp"
 
 namespace Kong
@@ -12,9 +13,11 @@ namespace Kong
 {
     class AActor;
 
-    class GlWaterRenderSystem : public OpenGLRenderSystem
+    class GlWaterRenderSystem : public OpenGLRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Water; }
+
         void Init() override;
         RenderResultInfo Draw(double delta, const RenderResultInfo& render_result_info,
             KongRenderModule* render_module) override;

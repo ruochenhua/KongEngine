@@ -72,7 +72,7 @@ void VkModelRenderSystem::CreateMeshDescriptorSet()
             continue;
         }
 
-        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
         mesh_component->CreateMeshDescriptorSet(m_descriptorSetLayout,
             backend ? backend->GetDescriptorPool() : nullptr);
     }
@@ -118,7 +118,7 @@ void VkModelRenderSystem::CreatePipelineLayout()
 
     // set放在vector中，从set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
     if (backend && backend->GetDescriptorLayout())
         descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_descriptorSetLayout)

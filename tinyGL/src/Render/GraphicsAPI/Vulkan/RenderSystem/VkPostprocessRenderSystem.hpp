@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "VulkanRenderSystem.hpp"
 
 #ifdef RENDER_IN_VULKAN
@@ -16,9 +17,11 @@ namespace Kong
         int bloom {0};
     };
 
-    class VulkanPostprocessSystem : public VulkanRenderSystem
+    class VulkanPostprocessSystem : public VulkanRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::PostProcess; }
+
         struct VulkanPostprocessCreateInfo
         {
             VulkanSwapChain *swapChain {nullptr};

@@ -426,7 +426,8 @@ void CYamlParser::ParseYamlFile(const std::string& scene_content, std::vector<st
         if (setting["skybox"])
         {
             auto skybox_node = setting["skybox"];
-            auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(render_sys.GetRenderSystemByType(RenderSystemType::SKYBOX));
+            auto* skybox_sys = dynamic_cast<GlSkyboxRenderSystem*>(
+                render_sys.GetOpenGLSubsystem(RenderSystemType::SKYBOX));
             if (skybox_sys)
             {
                 if (skybox_node["render_sky_env_status"])

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file IFrameContext.hpp
  * @brief RHI 帧上下文接口，表示当前帧的提交上下文。
  * @ingroup RenderAbstraction
@@ -8,6 +8,8 @@
 
 namespace Kong
 {
+    class IRHICommandList;
+
     /**
      * 与 API 无关的帧上下文。
      * - OpenGL: 轻量封装，BeginFrame/EndFrame 可空或仅状态重置；GetCurrentCommandList() 返回 nullptr。
@@ -33,6 +35,11 @@ namespace Kong
 
         /** 当前帧索引（多缓冲用）。OpenGL 恒为 0，Vulkan 为 swapchain 帧索引 */
         virtual int GetFrameIndex() const = 0;
+
+        /**
+         * 本帧 RHI 命令列表；OpenGL 为 OpenGLCommandList，Vulkan 为 VulkanRHICommandList。
+         */
+        virtual IRHICommandList* GetRHICommandList() { return nullptr; }
 
         IFrameContext(const IFrameContext&) = delete;
         IFrameContext& operator=(const IFrameContext&) = delete;

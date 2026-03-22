@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../GraphicsDevice.hpp"
 #include "Render/Abstraction/Types.hpp"
 #include "Render/Abstraction/IBuffer.hpp"
@@ -7,6 +7,7 @@
 #include "Render/GraphicsAPI/OpenGL/GLTexture.hpp"
 #include "Render/GraphicsAPI/OpenGL/GLFrameContext.hpp"
 #include "Render/Abstraction/IFrameContext.hpp"
+#include "Render/Abstraction/IRenderPassHost.hpp"
 #include <memory>
 
 struct GLFWwindow;
@@ -27,6 +28,8 @@ namespace Kong
         BackendType GetBackendType() const override { return BackendType::OpenGL; }
         IFrameContext& BeginFrame() override;
         void EndFrame() override;
+
+        std::unique_ptr<IRenderPassHost> CreateRenderPassHost() override;
 
     private:
         GLFrameContext m_frameContext;

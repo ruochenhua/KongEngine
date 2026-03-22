@@ -122,7 +122,7 @@ void VkDeferRenderSystem::Draw(const FrameInfo& frameInfo)
     m_deferColorPipeline->Bind(frameInfo.commandBuffer);
     
     {
-        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+        auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
         VkDescriptorSet globalSet = backend ? backend->GetDescriptorSet(static_cast<uint32_t>(frameInfo.frameIndex)) : VK_NULL_HANDLE;
         if (globalSet != VK_NULL_HANDLE)
             vkCmdBindDescriptorSets(
@@ -382,7 +382,7 @@ void VkDeferRenderSystem::CreateDescriptorSets()
     VkDescriptorImageInfo shadowImageInfo {nullTex->m_sampler, nullTex->m_imageView,
     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     
-    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
     auto* descriptorPool = backend ? backend->GetDescriptorPool() : nullptr;
     m_deferColorDescriptorSets.resize(VulkanSwapChain::MAX_FRAMES_IN_FLIGHT);
     for (int i = 0; i < VulkanSwapChain::MAX_FRAMES_IN_FLIGHT; i++)
@@ -452,7 +452,7 @@ void VkDeferRenderSystem::CreateDeferColorPipelineLayout()
     // set��˳�����vector�У�set0,set1,set2 ...
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     // �ȷ�ȫ�ֵ�descriptor set layout
-    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetBackend());
+    auto* backend = static_cast<RenderModuleBackendVulkan*>(KongRenderModule::GetRenderModule().GetRenderBackend());
     if (backend && backend->GetDescriptorLayout())
         descriptorSetLayouts.push_back(backend->GetDescriptorLayout()->GetDescriptorSetLayout());
     for (auto& layout : m_deferColorDescriptorSetLayouts)

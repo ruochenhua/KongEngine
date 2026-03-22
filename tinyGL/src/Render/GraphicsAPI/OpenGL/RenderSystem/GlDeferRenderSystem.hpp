@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include <unordered_map>
 
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "GlPostProcessRenderSystem.hpp"
 #include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/QuadShape.h"
@@ -28,9 +29,11 @@ namespace Kong
         void GenerateSSAOTextures(int width, int height);
     };
     
-    class GlDeferRenderSystem : public OpenGLRenderSystem
+    class GlDeferRenderSystem : public OpenGLRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Deferred; }
+
         enum class DeferResType : uint8_t
         {
             Position    = 0,

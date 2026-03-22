@@ -29,7 +29,8 @@ RenderResultInfo GlSSReflectionRenderSystem::Draw(double delta, const RenderResu
     glDisable(GL_DEPTH_TEST);
 	
     m_ssReflectionShader->Use();
-    auto* defer_render_system = dynamic_cast<GlDeferRenderSystem*>(render_module->GetRenderSystemByType(RenderSystemType::DEFERRED));
+    auto* defer_render_system = dynamic_cast<GlDeferRenderSystem*>(
+        render_module->GetOpenGLSubsystem(RenderSystemType::DEFERRED));
     if (!defer_render_system)
         return render_result_info;
 

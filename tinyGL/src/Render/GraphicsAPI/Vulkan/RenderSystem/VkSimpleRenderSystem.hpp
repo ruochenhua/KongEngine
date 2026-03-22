@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "VkModelRenderSystem.hpp"
 #ifdef RENDER_IN_VULKAN
 #include <vulkan/vulkan_core.h>
@@ -13,9 +14,11 @@ namespace Kong
     class VulkanBuffer;
     class VulkanDescriptorSetLayout;
     
-    class SimpleVulkanRenderSystem : public VkModelRenderSystem
+    class SimpleVulkanRenderSystem : public VkModelRenderSystem, public IRHIRenderSubsystem
     {
     public:
+        RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Deferred; }
+
         SimpleVulkanRenderSystem();
         ~SimpleVulkanRenderSystem() override;
 

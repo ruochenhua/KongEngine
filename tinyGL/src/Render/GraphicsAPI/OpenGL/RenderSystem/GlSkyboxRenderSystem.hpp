@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "Component/Mesh/BoxShape.h"
 #include "Common.h"
 #include "Render/RenderCommon.hpp"
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
 #include "OpenGLRenderSystem.hpp"
 #include "Component/Mesh/VolumetricCloud.h"
 #include "Shader/OpenGL/SkyboxShader.h"
@@ -16,9 +17,11 @@ namespace Kong
 		atmosphere,
 	};
 	
-	class GlSkyboxRenderSystem : public OpenGLRenderSystem
+	class GlSkyboxRenderSystem : public OpenGLRenderSystem, public IRHIRenderSubsystem
 	{
 	public:
+		RHISubsystemKind GetRHISubsystemKind() const noexcept override { return RHISubsystemKind::Skybox; }
+
 		GlSkyboxRenderSystem();
 		void Init() override;
 		void DrawUI() override;

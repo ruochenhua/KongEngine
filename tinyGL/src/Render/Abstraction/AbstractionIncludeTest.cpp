@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file AbstractionIncludeTest.cpp
  * @brief 仅用于验证 RHI 抽象层头文件可被编译，无实际逻辑。
  * @ingroup RenderAbstraction
@@ -14,6 +14,10 @@
 #include "Render/Abstraction/IPipeline.hpp"
 #include "Render/Abstraction/IRenderPass.hpp"
 #include "Render/Abstraction/IFramebuffer.hpp"
+#include "Render/Abstraction/IRHICommandList.hpp"
+#include "Render/Abstraction/RHIRenderSubsystems.hpp"
+#include "Render/Abstraction/ISampler.hpp"
+#include "Render/Logic/RenderPassCatalog.hpp"
 
 namespace Kong
 {
@@ -23,8 +27,12 @@ namespace Kong
         BufferDesc bd{};
         TextureDesc td{};
         SceneDrawInfo sdi{};
+        SamplerDesc sd{};
         (void)bd;
         (void)td;
         (void)sdi;
+        (void)sd;
+        (void)RenderLogicPassId::PostProcess;
+        (void)RHISubsystemKind::Deferred;
     }
 }

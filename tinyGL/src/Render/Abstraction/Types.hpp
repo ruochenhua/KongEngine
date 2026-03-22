@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Types.hpp
  * @brief RHI 层与 API 无关的枚举与描述符类型，不依赖 OpenGL/Vulkan。
  * @ingroup RenderAbstraction
@@ -14,6 +14,9 @@
 
 namespace Kong
 {
+    class IRHICommandList;
+    class IFramebuffer;
+    class ITexture;
     // ========== 数据格式与用途枚举 ==========
 
     /** 像素/顶点数据格式，实现层映射到 GL_* / VkFormat */
@@ -78,6 +81,42 @@ namespace Kong
         TessEvaluation = 5,
     };
 
+    /** 索引缓冲元素类型 */
+    enum class IndexElementType : uint32_t
+    {
+        UInt16 = 0,
+        UInt32 = 1,
+    };
+
+    /** 输入装配图元类型 */
+    enum class PrimitiveTopology : uint32_t
+    {
+        PointList = 0,
+        LineList,
+        LineStrip,
+        TriangleList,
+        TriangleStrip,
+    };
+
+    /** IRHICommandList::ClearRenderTarget 清除掩码 */
+    enum class RHIClearMask : uint32_t
+    {
+        None    = 0,
+        Color   = 1 << 0,
+        Depth   = 1 << 1,
+        Stencil = 1 << 2,
+    };
+
+    inline RHIClearMask operator|(RHIClearMask a, RHIClearMask b)
+    {
+        return static_cast<RHIClearMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    }
+
+    inline RHIClearMask operator&(RHIClearMask a, RHIClearMask b)
+    {
+        return static_cast<RHIClearMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+    }
+
     // ========== 描述符结构体（仅字段，无 GL/Vk 类型） ==========
 
     /** 缓冲创建描述符 */
@@ -87,6 +126,17 @@ namespace Kong
         uint64_t    size      = 0;
         uint32_t    instanceCount = 1;
         void*       initialData = nullptr;  ///< 可选初始数据
+    };
+
+    /** 采样器创建描述符（可与 TextureDesc 分离，Vulkan 常见） */
+    struct SamplerDesc
+    {
+        TextureFilter minFilter  = TextureFilter::Linear;
+        TextureFilter magFilter  = TextureFilter::Linear;
+        TextureWrap   wrapS      = TextureWrap::Repeat;
+        TextureWrap   wrapT      = TextureWrap::Repeat;
+        TextureWrap   wrapR      = TextureWrap::Repeat;
+        float         maxAnisotropy = 1.f; ///< 1 表示关闭各向异性
     };
 
     /** 纹理创建描述符 */
@@ -131,7 +181,13 @@ namespace Kong
         int       frameIndex   = 0;
         float     frameTime    = 0.0f;
         void*     sceneContext = nullptr;   ///< 引擎场景/光照等，实现层按需强转
-        uintptr_t currentColorRT = 0;       ///< 当前主颜色 RT 句柄（占位，后续可改为 ITexture*）
+        uintptr_t currentColorRT = 0;       ///< 当前主颜色 RT 句柄（GL GLuint / 占位）
         uintptr_t currentDepthRT = 0;       ///< 当前深度 RT 句柄
+        IRHICommandList* rhiCommandList = nullptr;
+        /** 当前主渲染目标（如 Module 主场景 FBO 包装）；可为 nullptr */
+        IFramebuffer* currentFramebuffer = nullptr;
+        /** 与 currentColorRT 并行的 RHI 颜色附件，逐步实现后优先使用 */
+        ITexture* rhiCurrentColor = nullptr;
+        ITexture* rhiCurrentDepth = nullptr;
     };
 }
