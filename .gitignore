@@ -7,7 +7,6 @@
 /tinyGL/msvc/tinyGL/.vs
 /TapEngine/platform/Win/TapSample/.idea
 /tinyGL/msvc/tinyGL/tinyGL/Debug
-/tinyGL/msvc/tinyGL/tinyGL/Debug
 *.exe
 *.lastbuildstate
 *.user
@@ -21,9 +20,11 @@ node_modules
 AGENTS.md
 package.json
 package-lock.json
-*.spv
-.claude
-node_modules
-AGENTS.md
-package.json
-package-lock.json
+
+# TapEngine：构建输出与用户/IDE 状态（勿提交）
+TapEngine/**/x64/
+TapEngine/**/[Dd]ebug/
+TapEngine/**/[Rr]elease/
+TapEngine/**/*.vcxproj.user
+TapEngine/**/*.xcuserstate
+TapEngine/**/xcuserdata/

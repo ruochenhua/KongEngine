@@ -1,6 +1,7 @@
 #include "OpenGLCommandList.hpp"
 #include "GLBuffer.hpp"
 #include "GLFramebuffer.hpp"
+#include "Render/Abstraction/IPipeline.hpp"
 #include "Render/Abstraction/ITexture.hpp"
 
 #include "glad/glad.h"
@@ -27,11 +28,20 @@ namespace Kong
 
     void OpenGLCommandList::BindFramebuffer(IFramebuffer* framebuffer)
     {
-        GLuint name = 0;
-        if (auto* glfb = dynamic_cast<GLFramebuffer*>(framebuffer))
-            name = glfb->GetGLName();
-        glBindFramebuffer(GL_FRAMEBUFFER, name);
+        if (!framebuffer)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawBuffer(GL_BACK);
+            return;
+        }
+        auto* glfb = dynamic_cast<GLFramebuffer*>(framebuffer);
+        if (!glfb)
+            return;
+        glBindFramebuffer(GL_FRAMEBUFFER, glfb->GetGLName());
+        glfb->ApplyDrawBuffers();
     }
+
+    void OpenGLCommandList::EndRenderPass() {}
 
     void OpenGLCommandList::ClearRenderTarget(RHIClearMask mask, const float* colorRGBA, float depth,
                                               uint32_t stencil)
@@ -61,7 +71,21 @@ namespace Kong
 
     void OpenGLCommandList::BindPipeline(IPipeline* pipeline)
     {
-        (void)pipeline;
+        if (pipeline)
+            pipeline->BindGraphics(this);
+    }
+
+    void OpenGLCommandList::SetDepthWriteEnabled(bool enable)
+    {
+        glDepthMask(enable ? GL_TRUE : GL_FALSE);
+    }
+
+    void OpenGLCommandList::SetDepthTestEnabled(bool enable)
+    {
+        if (enable)
+            glEnable(GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
     }
 
     void OpenGLCommandList::BindVertexBuffer(uint32_t slot, IBuffer* buffer, uint64_t offset)

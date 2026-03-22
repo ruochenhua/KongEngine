@@ -2,6 +2,8 @@
 
 本文档与仓库内 `tinyGL/src/Render/Abstraction/*`、`Render/Logic/RenderPassCatalog.hpp` 对齐，描述**主模块（场景/编辑器）之下**的三层渲染划分：**渲染逻辑层 → RHI → Render API（OpenGL / Vulkan）**。
 
+**当前采纳的实现顺序**（与路线图一致）：**RHI 契约按 Vulkan 思维定；关键路径先在 OpenGL 实现跑通，再补全 Vulkan。** 见 [`rhi-target-roadmap.md`](./rhi-target-roadmap.md) §0。
+
 ---
 
 ## 1. 渲染逻辑层（Render Logic Layer）
@@ -156,3 +158,8 @@ Render API **实现**上述接口，不暴露给渲染逻辑层。
 | `Render/Abstraction/Types.hpp` | 描述符与 `SamplerDesc`、清除掩码、图元类型等 |
 | `Render/Abstraction/ISampler.hpp` | 采样器对象 |
 | `Render/Logic/RenderPassCatalog.hpp` | 逻辑 Pass 编目与顺序约定 |
+
+## 6. 待办跟踪（与 Cursor Todos 同步）
+
+- 任务 ID 与表格：[`rhi-todo-backlog.md`](./rhi-todo-backlog.md)  
+- **目标架构验收标准、分阶段路线、统一 Host 前置条件**：[`rhi-target-roadmap.md`](./rhi-target-roadmap.md)

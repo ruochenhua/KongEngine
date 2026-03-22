@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file GLTexture.cpp
  * @brief OpenGL ITexture 实现。
  * @ingroup RenderAbstraction
@@ -107,6 +107,19 @@ namespace Kong
     {
         (void)commandList;
         glActiveTexture(0x84C0 + slot); /* GL_TEXTURE0 */
+        glBindTexture(0x0DE1, m_texId);
+    }
+
+    GLTextureView::GLTextureView(unsigned int glTextureId, int width, int height)
+        : m_texId(glTextureId)
+        , m_width(width > 0 ? width : 1)
+        , m_height(height > 0 ? height : 1)
+    {}
+
+    void GLTextureView::Bind(uint32_t slot, void* commandList)
+    {
+        (void)commandList;
+        glActiveTexture(0x84C0 + slot);
         glBindTexture(0x0DE1, m_texId);
     }
 }

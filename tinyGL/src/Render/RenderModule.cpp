@@ -328,9 +328,6 @@ void KongRenderModule::OnWindowResize(int width, int height)
 		m_passHost->OnWindowResize(*this, width, height);
 	if (m_backend)
 		m_backend->OnWindowResize(width, height);
-	//defer_buffer_.GenerateDeferRenderTextures(width, height);
-	//ssao_helper_.GenerateSSAOTextures(width, height);
-	// water_render_helper_.GenerateWaterRenderTextures(width, height);
 }
 
 void KongRenderModule::SetRenderWater(const weak_ptr<AActor>& render_water_actor)

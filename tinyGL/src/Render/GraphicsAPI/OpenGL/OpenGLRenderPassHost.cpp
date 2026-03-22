@@ -68,7 +68,8 @@ void OpenGLRenderPassHost::InitMainFBO()
     GLuint color_attachment[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
     glDrawBuffers(3, color_attachment);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    m_mainSceneGLFramebuffer.SetGLName(m_renderToBuffer);
+    m_mainSceneGLFramebuffer.SetFromGLAttachments(m_renderToBuffer, width, height, m_renderToTextures,
+                                                  FRAGOUT_TEXTURE_COUNT, 0);
 }
 
 void OpenGLRenderPassHost::InitUBOForModule(KongRenderModule& module)

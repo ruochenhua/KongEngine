@@ -16,11 +16,14 @@ namespace Kong
         void SetScissor(int x, int y, int width, int height) override;
 
         void BindFramebuffer(IFramebuffer* framebuffer) override;
+        void EndRenderPass() override;
 
         void ClearRenderTarget(RHIClearMask mask, const float* colorRGBA = nullptr, float depth = 1.f,
                                uint32_t stencil = 0) override;
 
         void BindPipeline(IPipeline* pipeline) override;
+        void SetDepthWriteEnabled(bool enable) override;
+        void SetDepthTestEnabled(bool enable) override;
 
         void BindVertexBuffer(uint32_t slot, IBuffer* buffer, uint64_t offset = 0) override;
         void BindIndexBuffer(IBuffer* buffer, IndexElementType indexType, uint64_t offset = 0) override;

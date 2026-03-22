@@ -49,15 +49,25 @@ namespace Kong
 
         /**
          * 绑定离屏或交换链目标；nullptr 表示默认 backbuffer（由实现定义）。
-         * 多渲染目标应通过 IFramebuffer 封装。
+         * 多渲染目标应通过 IFramebuffer 封装；OpenGL 实现会为 MRT 设置 glDrawBuffers。
          */
         virtual void BindFramebuffer(IFramebuffer* framebuffer) = 0;
+
+        /**
+         * 结束当前渲染通道（Vulkan：vkCmdEndRenderPass；OpenGL：无操作）。
+         * 再次 BindFramebuffer 前若仍在 pass 内，Vulkan 实现应先结束当前 pass。
+         */
+        virtual void EndRenderPass() {}
 
         /** colorRGBA 可为 nullptr 表示默认清除色（实现定义，常为 0） */
         virtual void ClearRenderTarget(RHIClearMask mask, const float* colorRGBA = nullptr, float depth = 1.f,
                                        uint32_t stencil = 0) = 0;
 
         virtual void BindPipeline(IPipeline* pipeline) = 0;
+
+        /** 深度写入 / 深度测试（GBuffer 与光照 pass 常用） */
+        virtual void SetDepthWriteEnabled(bool enable) { (void)enable; }
+        virtual void SetDepthTestEnabled(bool enable) { (void)enable; }
 
         virtual void BindVertexBuffer(uint32_t slot, IBuffer* buffer, uint64_t offset = 0) = 0;
         virtual void BindIndexBuffer(IBuffer* buffer, IndexElementType indexType, uint64_t offset = 0) = 0;

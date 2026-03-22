@@ -12,6 +12,8 @@ namespace Kong
     public:
         void SetCommandBuffer(VkCommandBuffer cb) { m_cb = cb; }
 
+        VkCommandBuffer GetVulkanCommandBuffer() const { return m_cb; }
+
         void Begin() override;
         void End() override;
 
@@ -20,6 +22,7 @@ namespace Kong
         void SetScissor(int x, int y, int width, int height) override;
 
         void BindFramebuffer(IFramebuffer* framebuffer) override;
+        void EndRenderPass() override;
 
         void ClearRenderTarget(RHIClearMask mask, const float* colorRGBA = nullptr, float depth = 1.f,
                                uint32_t stencil = 0) override;
@@ -39,12 +42,18 @@ namespace Kong
         void BindTexture(uint32_t slot, ITexture* texture) override;
         void BindUniformBuffer(uint32_t slot, IBuffer* buffer) override;
 
+        void SetDepthWriteEnabled(bool enable) override;
+        void SetDepthTestEnabled(bool enable) override;
+
     private:
         VkIndexType IndexTypeToVk(IndexElementType t) const;
 
         VkCommandBuffer  m_cb {VK_NULL_HANDLE};
         IndexElementType m_boundIndexType {IndexElementType::UInt32};
         bool             m_hasIndexBuffer {false};
+        bool             m_inRenderPass {false};
+        int              m_fbWidth {0};
+        int              m_fbHeight {0};
     };
 }
 
